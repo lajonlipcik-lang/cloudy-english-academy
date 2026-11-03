@@ -386,15 +386,43 @@ const TQ={
 };
 let PT;
 const dk=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),wait=ms=>new Promise(r=>setTimeout(r,ms)),ruOf=en=>((D.flatMap(l=>l.w).find(x=>x[0]==en))||[])[1]||'';
-/* ===== AUTH: демо на localStorage. В Lovable заменить методы на supabase.auth (signUp, signInWithPassword, signOut) ===== */
+/* ===== AUTH: verified Supabase session via the same-origin parent bridge ===== */
+const authPending=new Map();
+let authSequence=0;
+function authRequest(action,payload={}){
+ return new Promise((resolve,reject)=>{
+  const id=String(++authSequence)+'-'+Date.now();
+  authPending.set(id,{resolve,reject});
+  window.parent.postMessage({channel:'cloudy-auth',type:'request',id,action,...payload},location.origin);
+  setTimeout(()=>{const pending=authPending.get(id);if(pending){authPending.delete(id);reject(new Error('Сервер не ответил. Проверьте соединение и попробуйте снова.'))}},15000);
+ });
+}
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.source!==window.parent||!event.data||event.data.channel!=='cloudy-auth')return;
+ const msg=event.data;
+ if(msg.type==='session'){
+  if(msg.ok&&msg.user){Auth.start(msg.user.email,msg.user.name||'Ученик')}
+  else{ls('cl2s','');load('cl2');S.user=null;view()}
+  return;
+ }
+ if(msg.type!=='response'||!authPending.has(String(msg.id)))return;
+ const pending=authPending.get(String(msg.id));authPending.delete(String(msg.id));
+ if(!msg.ok){pending.reject(new Error(msg.error||'Ошибка авторизации'));return}
+ pending.resolve(msg);
+});
 const Auth={
- async hash(p){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(p));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return btoa(unescape(encodeURIComponent(p)))}},
- users(){try{return JSON.parse(ls('cl2users')||'{}')}catch(e){return {}}},
- async signUp(name,email,pw){await wait(500);const u=this.users();if(u[email])throw new Error('Этот email уже зарегистрирован');u[email]={name,h:await this.hash(pw)};ls('cl2users',JSON.stringify(u));return this.start(email,name)},
- async signIn(email,pw){await wait(500);const u=this.users()[email];if(!u||u.h!=await this.hash(pw))throw new Error('Неверный email или пароль');return this.start(email,u.name)},
+ async signUp(name,email,pw){
+  const result=await authRequest('signUp',{name,email,password:pw});
+  if(result.needsConfirmation)throw new Error('Проверьте почту и подтвердите регистрацию, затем войдите.');
+  return this.start(result.user.email,result.user.name||name);
+ },
+ async signIn(email,pw){
+  const result=await authRequest('signIn',{email,password:pw});
+  return this.start(result.user.email,result.user.name||'Ученик');
+ },
  start(email,name){ls('cl2s',email);load('cl2:'+email);S.user={email,name};save();return S.user},
  guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость'};save()},
- signOut(){ls('cl2s','');load('cl2');S.user=null}
+ async signOut(){await authRequest('signOut');ls('cl2s','');load('cl2');S.user=null}
 };
 let AM='in',busy=0,CH=[],SM=null;
 function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'>${AM=='up'?`<label>Имя<input id='an' autocomplete='name' placeholder='Анна'></label>`:''}<label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button></div>`}
