@@ -8,6 +8,12 @@ CREATE TABLE IF NOT EXISTS public.cloudy_ai_rate_limits (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS public.user_learning_profiles (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  profile jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(profile) = 'object'),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS public.cloudy_ai_request_leases (
   request_id uuid PRIMARY KEY,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -18,10 +24,13 @@ CREATE INDEX IF NOT EXISTS cloudy_ai_request_leases_user_expiry_idx
 
 ALTER TABLE public.cloudy_ai_rate_limits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cloudy_ai_request_leases ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_learning_profiles ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.cloudy_ai_rate_limits FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON public.cloudy_ai_request_leases FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON public.user_learning_profiles FROM PUBLIC, anon, authenticated;
 GRANT ALL ON public.cloudy_ai_rate_limits TO service_role;
 GRANT ALL ON public.cloudy_ai_request_leases TO service_role;
+GRANT ALL ON public.user_learning_profiles TO service_role;
 
 CREATE OR REPLACE FUNCTION public.acquire_cloudy_ai_request(_user_id uuid, _request_id uuid)
 RETURNS jsonb
