@@ -40,7 +40,8 @@ function CloudyOriginalApp() {
         }
         const user = data.session?.user;
         accessTokenRef.current = data.session?.access_token ?? null;
-        if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) { try { await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } }); } catch { console.error("[cloudy-admin] owner role refresh failed"); } }
+        let ownerIsAdmin = user?.app_metadata?.role === "admin";
+        if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) { try { const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } }); ownerIsAdmin = role.isAdmin; } catch { console.error("[cloudy-admin] owner role refresh failed"); } }
         let progress: { state: Record<string, unknown>; updated_at: string } | null = null;
         if (user) {
           const { data: saved, error: progressError } = await supabase
@@ -50,7 +51,7 @@ function CloudyOriginalApp() {
             .maybeSingle();
           if (progressError) {
             // Keep the authenticated session even when the optional cloud snapshot is unavailable.
-            send({ type: "session", ok: true, user: { id: user.id, email: user.email ?? "", name: String(user.user_metadata?.name ?? user.user_metadata?.display_name ?? ""), isAdmin: user.app_metadata?.role === "admin" }, progress: null, progressWarning: "Не удалось загрузить облачный прогресс. Локальные данные сохранены." });
+            send({ type: "session", ok: true, user: { id: user.id, email: user.email ?? "", name: String(user.user_metadata?.name ?? user.user_metadata?.display_name ?? ""), isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com" }, progress: null, progressWarning: "Не удалось загрузить облачный прогресс. Локальные данные сохранены." });
             return;
           }
           progress = saved;
@@ -63,7 +64,7 @@ function CloudyOriginalApp() {
                 id: user.id,
                 email: user.email ?? "",
                 name: String(user.user_metadata?.name ?? user.user_metadata?.display_name ?? ""),
-                isAdmin: user.app_metadata?.role === "admin",
+                isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com",
               }
             : null,
           progress,
@@ -146,6 +147,7 @@ function CloudyOriginalApp() {
             password: String(message.password ?? ""),
           });
           if (error) throw error;
+          accessTokenRef.current = data.session.access_token;
           const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
           reply({
             ok: true,
