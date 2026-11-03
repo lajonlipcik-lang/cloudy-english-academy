@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { isLessonInLevel } from "@/lib/cloudy/progress-policy";
 
-type ProgressInput = { accessToken: string; state?: unknown; lessonIndex?: number; level?: string };
+type ProgressInput = { accessToken: string; state?: unknown; expectedUpdatedAt?: string | null; lessonIndex?: number; level?: string };
 
 function validate(input: ProgressInput) {
   const token = String(input?.accessToken ?? "");
@@ -28,12 +28,15 @@ export const saveCloudyProgress = createServerFn({ method: "POST" })
       throw new Error("Invalid progress payload");
     }
     const { user, db } = await getUserAndAdmin(data.accessToken);
+    const expectedUpdatedAt = data.expectedUpdatedAt == null ? null : new Date(data.expectedUpdatedAt);
+    if (expectedUpdatedAt && Number.isNaN(expectedUpdatedAt.getTime())) throw new Error("Некорректная версия прогресса.");
     const { data: saved, error } = await db.rpc("save_cloudy_progress", {
       _user_id: user.id,
       _state: data.state,
+      _expected_updated_at: expectedUpdatedAt?.toISOString() ?? null,
     });
     if (error) throw new Error("Не удалось сохранить прогресс.");
-    return { state: saved };
+    return saved as { ok: boolean; conflict: boolean; state: unknown; updated_at: string };
   });
 
 export const awardCloudyLessonXp = createServerFn({ method: "POST" })
