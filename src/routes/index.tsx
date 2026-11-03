@@ -31,7 +31,7 @@ function CloudyOriginalApp() {
         }
         const user = data.session?.user;
         accessTokenRef.current = data.session?.access_token ?? null;
-        let ownerIsAdmin = user?.app_metadata?.role === "admin";
+        let ownerIsAdmin = user?.app_metadata?.["role"] === "admin";
         if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) { try { const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } }); ownerIsAdmin = role.isAdmin; } catch { console.error("[cloudy-admin] owner role refresh failed"); } }
         let progress: { state: unknown; updated_at: string } | null = null;
         if (user) {
@@ -69,7 +69,7 @@ function CloudyOriginalApp() {
         const state = message.state;
         if (!state || typeof state !== "object" || Array.isArray(state)) return;
         const record = state as Record<string, unknown>;
-        const week = record["wk"] && typeof record["wk"] === "object" ? (record.wk as Record<string, unknown>) : {};
+        const week = record["wk"] && typeof record["wk"] === "object" ? (record["wk"] as Record<string, unknown>) : {};
         const { error: saveError } = await supabase.from("user_progress").upsert(
           {
             user_id: authData.user.id,
@@ -145,7 +145,7 @@ function CloudyOriginalApp() {
             user: {
               id: data.user.id,
               email: data.user.email ?? "",
-              name: String(data.user.user_metadata?.name ?? data.user.user_metadata?.["display_name"] ?? ""),
+              name: String(data.user.user_metadata?.["name"] ?? data.user.user_metadata?.["display_name"] ?? ""),
               isAdmin: role.isAdmin,
             },
           });
