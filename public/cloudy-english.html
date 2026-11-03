@@ -472,7 +472,7 @@ const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button cl
 function skipP(){if(done)return;fx(true,'Пропущено')}
 let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false,lastVoiceTranscript='';
 function normalizeSpeechText(value){
- return String(value||"").normalize("NFKD").toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9\\s]/g," ").replace(/\\s+/g," ").trim();
+ return String(value||"").normalize("NFKD").toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
 }
 function speechDistance(a,b){
  const prev=Array.from({length:b.length+1},(_,i)=>i);
@@ -569,7 +569,7 @@ async function chat(){app.innerHTML=`<section class="chat-shell"><div class="top
 function scrollChat(){const box=$('#msgs');if(box)box.scrollTop=box.scrollHeight}
 function bub(r,t,scroll=true){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);if(scroll)requestAnimationFrame(scrollChat);return d}
 function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
-async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await wait(text.length>500?9:16)}el.classList.remove('chat-type-cursor')}
+async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await new Promise(resolve=>setTimeout(resolve,text.length>500?9:16))}el.classList.remove('chat-type-cursor')}
 async function ask(u){if(u){CH.push({r:'u',t:u});bub('u',u)}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}scrollChat()}
 async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('tap');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
 setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
@@ -637,8 +637,9 @@ async function askExerciseCoach(){
  const box=$("#exerciseCoachReply"),e=ex[i];if(!box||!e||box.dataset.loading)return;
  box.dataset.loading="1";box.textContent="Cloudy разбирает задание…";
  const target=String(e.a??e.en??"");
- const response=e.k==="p"?lastVoiceTranscript:e.k==="b"?built.map(j=>e.o[j]).join(" "):e.k==="c"?String(e.o?.[sel]??""):e.k==="l"?String(e.o?.[sel]??""):"";
- const exerciseContext={type:e.k==="p"?"pronunciation":e.k==="b"?"sentence-building":e.k==="m"?"matching":"vocabulary",question:String(e.q??e.title??"").slice(0,180),target:target.slice(0,160),learnerAnswer:String(response).slice(0,160),correct:normalizeSpeechText(response)===normalizeSpeechText(target),level:S.lv||"A1"};
+ const pairTarget=e.k==="m"?(e.L||[]).map(([left,id])=>String(left)+" → "+String((e.R||[]).find(([,rightId])=>rightId===id)?.[0]??"")).join("; "):"";
+ const response=e.k==="p"?lastVoiceTranscript:e.k==="b"?built.map(j=>e.o[j]).join(" "):e.k==="m"?"Упражнение на сопоставление завершено":e.k==="c"||e.k==="l"?String(e.o?.[sel]??""):"";
+ const exerciseContext={type:e.k==="p"?"pronunciation":e.k==="b"?"sentence-building":e.k==="m"?"matching":e.k==="l"?"listening":"vocabulary",question:String(e.q??e.title??"").slice(0,180),target:(pairTarget||target).slice(0,500),learnerAnswer:String(response).slice(0,160),level:S.lv||"A1"};
  try{
   const result=await authRequest("ai-chat",{payload:{message:"Разбери со мной только что выполненное упражнение. Объясни разницу между моим ответом и правильным, если была ошибка. Дай короткую подсказку и одно похожее задание для закрепления. Учитывай мой уровень.",level:S.lv||"A1",history:[],learnerProfile:window.CloudyLearning?.profile(KEY)||null,exerciseContext}});
   box.textContent=String(result.result?.answer||"Cloudy не смог подготовить разбор. Попробуйте позже.");
