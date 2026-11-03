@@ -432,9 +432,9 @@ const Auth={
   const result=await authRequest('signIn',{email,password:pw});
   return this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin);
  },
- start(email,name,isAdmin=false){ls('cl2s',email);load('cl2:'+email);S.user={email,name,isAdmin:!!isAdmin};save();return S.user},
- guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость'};save()},
- async signOut(){await authRequest('signOut');cloudUserId=null;clearTimeout(cloudSyncTimer);ls('cl2s','');load('cl2');S.user=null}
+ start(email,name,isAdmin=false){ls('cl2s',email);load('cl2:'+email);S.user={email,name,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
+ guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость'};save();window.CloudyAdmin?.setUser(S.user)},
+ async signOut(){await authRequest('signOut');cloudUserId=null;clearTimeout(cloudSyncTimer);ls('cl2s','');load('cl2');S.user=null;window.CloudyAdmin?.setUser(null)}
 };
 let AM='in',busy=0,CH=[],SM=null;
 function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'>${AM=='up'?`<label>Имя<input id='an' autocomplete='name' placeholder='Анна'></label>`:''}<label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button></div>`}
