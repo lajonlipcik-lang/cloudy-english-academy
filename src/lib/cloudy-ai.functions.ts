@@ -66,7 +66,7 @@ export const testAiProvider=createServerFn({method:"POST"}).inputValidator(valid
 function safeLearnerProfile(value:unknown){
   if(!value||typeof value!=="object")return null;
   const p=value as any;
-  const skills=Array.isArray(p.skills)?p.skills.slice(0,30).map((s:any)=>({
+  const skills=Array.isArray(p.skills)?p.skills.slice(0,80).map((s:any)=>({
     id:String(s?.id??"").slice(0,90),
     mastery:Math.max(0,Math.min(1,Number(s?.mastery)||0)),
     evidence:Math.max(0,Math.min(1000,Number(s?.evidence)||0)),
@@ -128,7 +128,13 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     ]);
     const state=progressResult.data?.state&&typeof progressResult.data.state==="object"?progressResult.data.state as any:{};
     const requestedLevel=["A1","A2","B1","B2"].includes(String(data.level))?String(data.level):"A1";
-    const learnerProfile=safeLearnerProfile(data.learnerProfile);
+    const incomingProfile=safeLearnerProfile(data.learnerProfile);
+    if(incomingProfile){
+      const {error:profileError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:incomingProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+      if(profileError)throw new Error("Не удалось сохранить профиль обучения.");
+    }
+    const {data:storedProfile}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
+    const learnerProfile=safeLearnerProfile(storedProfile?.profile)||incomingProfile;
     const context=makeLearnerContext(user.id,state,xpResult.data,learnerProfile,requestedLevel);
     const history=Array.isArray(data.history)?data.history.slice(-16).map((m:any)=>({role:m?.role==="assistant"?"assistant":"user",content:String(m?.content??"").slice(0,3000)})).filter((m:any)=>m.content):[];
     const providers=(await rows(db)).filter((x:any)=>x.enabled).sort((a:any,b:any)=>a.priority-b.priority);
