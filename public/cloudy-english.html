@@ -409,8 +409,8 @@ window.addEventListener('message',event=>{
    const localKey='cl2:'+msg.user.email,localExists=ls(localKey)!==null,localAt=Number(ls('cl2sync:'+msg.user.email)||0),dirtyAt=Number(ls('cl2dirty:'+msg.user.email)||0),remoteAt=msg.progress?.updated_at?Date.parse(msg.progress.updated_at):0;
    const guestState=(()=>{try{return JSON.parse(ls('cl2')||'{}')}catch(e){return {}}})();
    cloudUpdatedAt=msg.progress?.updated_at||null;cloudSyncInFlight=null;cloudSyncPending=null;cloudSyncAttempts=0;cloudSyncPaused=true;
-   Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin);if(msg.progressLoadFailed)toast('Не удалось загрузить облачный прогресс. Проверьте интернет; данные на этом устройстве не затронуты.',false);
-   if(msg.progress?.state&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(msg.progress.state));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
+   Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin,msg.user.age);if(msg.progressLoadFailed)toast('Не удалось загрузить облачный прогресс. Проверьте интернет; данные на этом устройстве не затронуты.',false);
+   if(msg.progress?.state&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(msg.progress.state));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):null,isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
    else if(!localExists&&!msg.progress?.state&&['A1','A2','B1','B2'].includes(guestState.lv)){try{load('cl2');S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save()}catch(e){}}
    else{queueCloudProgress()}
    cloudSyncPaused=false;queueCloudProgress();
@@ -457,15 +457,15 @@ window.addEventListener('message',event=>{
 });
 const Auth={
  async signUp(name,email,pw){
-  const result=await authRequest('signUp',{name,email,password:pw});
+  const result=await authRequest('signUp',{name,email,password:pw,age:Number(INTRO.age)||null});
   if(result.needsConfirmation)throw new Error('Проверьте почту и подтвердите регистрацию, затем войдите.');
-  return this.start(result.user.email,result.user.name||name);
+  return this.start(result.user.email,result.user.name||name,false,result.user.age);
  },
  async signIn(email,pw){
   const result=await authRequest('signIn',{email,password:pw});
-  return this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin);
+  return this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin,result.user.age);
  },
- start(email,name,isAdmin=false){ls('cl2s',email);load('cl2:'+email);S.user={email,name,age:Number(INTRO.age)||null,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
+ start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);S.user={email,name,age:Number.isInteger(Number(age))&&Number(age)>=5&&Number(age)<=120?Number(age):null,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
  guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:INTRO.name||'Гость',age:Number(INTRO.age)||null};save();window.CloudyAdmin?.setUser(S.user)},
  async signOut(){await authRequest('signOut');cloudUserId=null;cloudUpdatedAt=null;cloudSyncPending=null;cloudSyncInFlight=null;clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRetry);cloudSyncRetry=0;ls('cl2s','');load('cl2');S.user=null;window.CloudyAdmin?.setUser(null)}
 };
