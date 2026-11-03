@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureOwnerAdmin } from "@/lib/admin-role.functions";
+import { toUserErrorMessage } from "@/lib/cloudy/user-errors";
 
 type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown };
 
@@ -22,7 +23,7 @@ function CloudyOriginalApp() {
       if (!currentFrame?.contentWindow) return;
       const { data, error } = await supabase.auth.getSession();
       if (error) {
-        send({ type: "session", ok: false, error: "Не удалось проверить сессию." });
+        send({ type: "session", ok: false, error: toUserErrorMessage(error, "auth") });
         return;
       }
       const user = data.session?.user;
@@ -90,7 +91,7 @@ function CloudyOriginalApp() {
           { onConflict: "user_id" },
         );
         if (saveError) {
-          send({ type: "progress-save-result", ok: false, error: "Не удалось сохранить прогресс в облако." });
+          send({ type: "progress-save-result", ok: false, error: toUserErrorMessage(saveError, "progress") });
         } else {
           send({ type: "progress-save-result", ok: true });
         }
