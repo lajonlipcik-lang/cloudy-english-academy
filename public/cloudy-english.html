@@ -406,6 +406,7 @@ window.addEventListener('message',event=>{
    cloudUpdatedAt=msg.updatedAt||cloudUpdatedAt;cloudSyncAttempts=0;
    if(msg.state&&typeof msg.state==='object'){S.xp=Number(msg.state.xp)||0;const wk=msg.state.wk&&typeof msg.state.wk==='object'?msg.state.wk:{};S.wk={k:String(wk.k||''),xp:Number(wk.xp)||0};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
    if(S.user?.email)ls('cl2sync:'+S.user.email,String(Date.now()));
+   if(!cloudSyncPending&&S.user?.email)ls('cl2dirty:'+S.user.email,'');
    if(cloudSyncPending)flushCloudProgress();
   }else{
    cloudSyncPending=cloudSyncPending||sent;scheduleCloudRetry();
