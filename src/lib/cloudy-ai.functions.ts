@@ -73,14 +73,34 @@ function safeLearnerProfile(value:unknown){
     correct:Math.max(0,Math.min(10000,Number(s?.correct)||0)),
     incorrect:Math.max(0,Math.min(10000,Number(s?.incorrect)||0)),
     due:!!s?.due,
+    lastPracticed:Math.max(0,Number(s?.lastPracticed)||0),
   })).filter((s:any)=>s.id):[];
   const recentEvents=Array.isArray(p.recentEvents)?p.recentEvents.slice(-20).map((e:any)=>({
     skillId:String(e?.skillId??"").slice(0,90),
     exerciseType:String(e?.exerciseType??"").slice(0,24),
     correct:!!e?.correct,
     retry:!!e?.retry,
+    at:Math.max(0,Number(e?.at)||0),
   })).filter((e:any)=>e.skillId):[];
   return {attempts:Math.max(0,Math.min(100000,Number(p.attempts)||0)),dueCount:Math.max(0,Math.min(10000,Number(p.dueCount)||0)),skills,recentEvents};
+}
+function mergeLearnerProfiles(existing:any,incoming:any){
+  if(!existing)return incoming;
+  if(!incoming)return existing;
+  const bySkill=new Map<string,any>();
+  for(const skill of existing.skills??[])bySkill.set(skill.id,skill);
+  for(const skill of incoming.skills??[]){
+    const prior=bySkill.get(skill.id);
+    if(!prior||skill.evidence>prior.evidence||(skill.evidence===prior.evidence&&skill.lastPracticed>prior.lastPracticed))bySkill.set(skill.id,skill);
+  }
+  const events=new Map<string,any>();
+  for(const event of [...(existing.recentEvents??[]),...(incoming.recentEvents??[])]){
+    const key=[event.at,event.skillId,event.exerciseType,event.correct,event.retry].join(":");
+    events.set(key,event);
+  }
+  const skills=[...bySkill.values()].sort((a,b)=>a.mastery-b.mastery);
+  const recentEvents=[...events.values()].sort((a,b)=>a.at-b.at).slice(-20);
+  return {attempts:Math.max(existing.attempts??0,incoming.attempts??0),dueCount:skills.filter(s=>s.due).length,skills,recentEvents};
 }
 function makeLearnerContext(userId:string,state:any,ledger:any,profile:any,fallbackLevel:string){
   const levels=["A1","A2","B1","B2"];
@@ -130,12 +150,12 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const state=progressResult.data?.state&&typeof progressResult.data.state==="object"?progressResult.data.state as any:{};
     const requestedLevel=["A1","A2","B1","B2"].includes(String(data.level))?String(data.level):"A1";
     const incomingProfile=safeLearnerProfile(data.learnerProfile);
-    if(incomingProfile){
-      const {error:profileError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:incomingProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+    const {data:storedProfile}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
+    const learnerProfile=mergeLearnerProfiles(safeLearnerProfile(storedProfile?.profile),incomingProfile);
+    if(learnerProfile){
+      const {error:profileError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:learnerProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
       if(profileError)throw new Error("Не удалось сохранить профиль обучения.");
     }
-    const {data:storedProfile}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
-    const learnerProfile=safeLearnerProfile(storedProfile?.profile)||incomingProfile;
     const context=makeLearnerContext(user.id,state,xpResult.data,learnerProfile,requestedLevel);
     const history=Array.isArray(data.history)?data.history.slice(-16).map((m:any)=>({role:m?.role==="assistant"?"assistant":"user",content:String(m?.content??"").slice(0,3000)})).filter((m:any)=>m.content):[];
     const providers=(await rows(db)).filter((x:any)=>x.enabled).sort((a:any,b:any)=>a.priority-b.priority);
