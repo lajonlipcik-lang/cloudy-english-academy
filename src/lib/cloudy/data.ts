@@ -69,5 +69,5 @@ export const LG: [string, number][] = [["Бронза", 0], ["Серебро", 2
 export const LC = ["#cd7f32", "#c0c8d8", "#ffd35a", "#4db3ff", "#b9f2ff"];
 
 export const ruOf = (en: string) => D.flatMap((l) => l.w).find((x) => x[0] === en)?.[1] ?? "";
-export const levelPool = (lv: Level) => LV[lv].s.flatMap((x) => x.l).flatMap((j) => D[j].w);
+export const levelPool = (lv: Level) => LV[lv].s.flatMap((section) => section.l).flatMap((index) => D[index]?.w ?? []);
 export const levelLessons = (lv: Level) => LV[lv].s.flatMap((x) => x.l);
