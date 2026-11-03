@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { runWithAiFallback } from "@/lib/ai/router";
 const OWNER="lajonlipcik@gmail.com";
 type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>};
 function validate(v:Input){const t=String(v?.accessToken??"");if(!t||t.length>8192||t.split(".").length!==3)throw new Error("Unauthorized");return {...v,accessToken:t}}
@@ -17,7 +18,35 @@ async function legacyUnseal(ciphertext:string,iv:string){
 }
 const safe=(r:any)=>({id:r.id,provider:r.provider,label:r.label,model:r.model,enabled:r.enabled,priority:r.priority,key_hint:r.key_hint,last_tested_at:r.last_tested_at,last_status:r.last_status});
 async function rows(db:any){const {data,error}=await db.from("ai_provider_secrets").select("*").order("priority");if(error)throw new Error("AI Vault не создан. Примените миграцию 0001_cloudy_ai_vault.");return data??[]}
-async function ask(r:any,messages:any[],max_tokens=700){const key=String(r.api_key??"").trim()||(r.ciphertext&&r.iv?await legacyUnseal(r.ciphertext,r.iv):"");if(!key)throw new Error("Для провайдера не сохранён API-ключ. Добавьте его в админ-панели.");const provider=r.provider,model=r.model||(provider==="groq"?"openai/gpt-oss-120b":provider==="openrouter"?"openrouter/auto":"gpt-4o-mini"),base=provider==="groq"?"https://api.groq.com/openai/v1":provider==="openrouter"?"https://openrouter.ai/api/v1":"https://api.openai.com/v1";const res=await fetch(base+"/chat/completions",{method:"POST",headers:{Authorization:"Bearer "+key,"Content-Type":"application/json",...(provider==="openrouter"?{"HTTP-Referer":"https://cloudy-english-quest.lovable.app","X-Title":"Cloudy English Academy"}:{})},body:JSON.stringify({model,messages,temperature:.35,max_tokens}),signal:AbortSignal.timeout(25000)});if(!res.ok)throw new Error(provider+" API: HTTP "+res.status);const data=await res.json() as any;const content=data.choices?.[0]?.message?.content;if(!content)throw new Error("Пустой ответ AI");return {content,provider,model}}
+async function ask(r:any,messages:any[],max_tokens=700){
+  const key=String(r.api_key??"").trim()||(r.ciphertext&&r.iv?await legacyUnseal(r.ciphertext,r.iv):"");
+  if(!key)throw new Error("Для провайдера не сохранён API-ключ. Добавьте его в админ-панели.");
+  const provider=String(r.provider??"");
+  const model=String(r.model??"").trim()||(provider==="groq"?"openai/gpt-oss-120b":provider==="openrouter"?"openrouter/auto":"gpt-4o-mini");
+  const endpoints:Record<string,string>={groq:"https://api.groq.com/openai/v1",openrouter:"https://openrouter.ai/api/v1",openai:"https://api.openai.com/v1"};
+  const base=endpoints[provider];
+  if(!base)throw new Error("Провайдер не поддерживается.");
+  const res=await fetch(base+"/chat/completions",{
+    method:"POST",
+    headers:{
+      Authorization:"Bearer "+key,
+      "Content-Type":"application/json",
+      ...(provider==="openrouter"?{"HTTP-Referer":"https://cloudy-english-quest.lovable.app","X-Title":"Cloudy English Academy"}:{}),
+    },
+    body:JSON.stringify({model,messages,temperature:.35,max_tokens:Math.max(1,Math.min(Number(max_tokens)||700,2000))}),
+    signal:AbortSignal.timeout(25000),
+  });
+  if(!res.ok){
+    const error=new Error(provider+" API: HTTP "+res.status) as Error & {status:number};
+    error.status=res.status;
+    throw error;
+  }
+  const data=await res.json() as any;
+  const raw=data.choices?.[0]?.message?.content;
+  const content=typeof raw==="string"?raw:Array.isArray(raw)?raw.map((part:any)=>typeof part?.text==="string"?part.text:"").join(""):"";
+  if(!content.trim())throw new Error("Пустой ответ AI");
+  return {content:content.trim(),provider,model};
+}
 export const listCloudyUsers=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);const {data:u,error}=await db.auth.admin.listUsers({page:1,perPage:200});if(error)throw new Error("Не удалось загрузить пользователей.");const ids=(u.users??[]).map((x:any)=>x.id);const [p,g]=await Promise.all([db.from("profiles").select("id,display_name").in("id",ids),db.from("user_progress").select("user_id,total_xp,week_xp,updated_at").in("user_id",ids)]);const pm=new Map((p.data??[]).map((x:any)=>[x.id,x])),gm=new Map((g.data??[]).map((x:any)=>[x.user_id,x]));return {users:(u.users??[]).map((x:any)=>({id:x.id,email:x.email??"",name:(pm.get(x.id) as any)?.display_name??x.user_metadata?.["name"]??"Ученик",created_at:x.created_at,last_sign_in_at:x.last_sign_in_at??null,confirmed:!!x.email_confirmed_at,total_xp:(gm.get(x.id) as any)?.total_xp??0,week_xp:(gm.get(x.id) as any)?.week_xp??0}))}});
 export const listAiProviders=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);return {providers:(await rows(db)).map(safe)}});
 export const saveAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db,user}=await ctx(data.accessToken,true),provider=String(data.provider??"");if(!["openai","groq","openrouter"].includes(provider))throw new Error("Провайдер не поддерживается.");const secret=String(data.apiKey??"").trim();if(secret.length<12||secret.length>500)throw new Error("Проверьте API-ключ.");const {data:r,error}=await db.from("ai_provider_secrets").upsert({provider,
@@ -33,4 +62,4 @@ export const saveAiProvider=createServerFn({method:"POST"}).inputValidator(valid
     updated_at: new Date().toISOString(),},{onConflict:"provider"}).select("*").single();if(error)throw new Error("Не удалось сохранить API: "+error.message);return {provider:safe(r)}});
 export const deleteAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);const {error}=await db.from("ai_provider_secrets").delete().eq("id",String(data.id??""));if(error)throw new Error("Не удалось удалить API.");return {ok:true}});
 export const testAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true),r=(await rows(db)).find((x:any)=>x.id===String(data.id??""));if(!r)throw new Error("Провайдер не найден.");try{const a=await ask(r,[{role:"user",content:"Ответь одним словом: Cloudy работает."}],20);await db.from("ai_provider_secrets").update({last_tested_at:new Date().toISOString(),last_status:"ok"}).eq("id",r.id);return {ok:true,provider:a.provider,model:a.model,response:a.content}}catch(e){await db.from("ai_provider_secrets").update({last_tested_at:new Date().toISOString(),last_status:"error"}).eq("id",r.id);throw e}});
-export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken),prompt=String(data.message??"").trim().slice(0,3000);if(!prompt)throw new Error("Напишите сообщение.");const level=["A1","A2","B1","B2"].includes(String(data.level))?String(data.level):"A1";const history=Array.isArray(data.history)?data.history.slice(-16).map((m:any)=>({role:m?.role==="assistant"?"assistant":"user",content:String(m?.content??"").slice(0,3000)})).filter((m:any)=>m.content):[];const providers=(await rows(db)).filter((x:any)=>x.enabled).sort((a:any,b:any)=>a.priority-b.priority);if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");const system="Ты Cloudy — дружелюбный преподаватель английского языка для русскоговорящего ученика уровня CEFR "+level+". Отвечай коротко и понятно, используй английский по уровню ученика. Мягко исправляй ошибки и объясняй по-русски одной строкой. Задавай только один вопрос за раз. Без эмодзи и Markdown. Не выдумывай прогресс ученика.";const messages=[{role:"system",content:system},...history];if(!history.length||history[history.length-1]?.role!=="user")messages.push({role:"user",content:prompt});let last:any;for(const r of providers){try{const a=await ask(r,messages,700);return {answer:a.content,provider:a.provider,model:a.model}}catch(e){last=e}}throw new Error(last instanceof Error?last.message:"Все AI-провайдеры недоступны.")});
+export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken),prompt=String(data.message??"").trim().slice(0,3000);if(!prompt)throw new Error("Напишите сообщение.");const level=["A1","A2","B1","B2"].includes(String(data.level))?String(data.level):"A1";const history=Array.isArray(data.history)?data.history.slice(-16).map((m:any)=>({role:m?.role==="assistant"?"assistant":"user",content:String(m?.content??"").slice(0,3000)})).filter((m:any)=>m.content):[];const providers=(await rows(db)).filter((x:any)=>x.enabled).sort((a:any,b:any)=>a.priority-b.priority);if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");const system="Ты Cloudy — дружелюбный преподаватель английского языка для русскоговорящего ученика уровня CEFR "+level+". Отвечай коротко и понятно, используй английский по уровню ученика. Мягко исправляй ошибки и объясняй по-русски одной строкой. Задавай только один вопрос за раз. Без эмодзи и Markdown. Не выдумывай прогресс ученика.";const messages=[{role:"system",content:system},...history];if(!history.length||history[history.length-1]?.role!=="user")messages.push({role:"user",content:prompt});const routed=await runWithAiFallback(providers.map((r:any)=>({id:String(r.id),priority:Number(r.priority)||0})),async(candidate)=>{const provider=providers.find((r:any)=>String(r.id)===candidate.id);if(!provider)throw new Error("AI provider configuration changed.");return ask(provider,messages,700)});const a=routed.value;return {answer:a.content,provider:a.provider,model:a.model}});
