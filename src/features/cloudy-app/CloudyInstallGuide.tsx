@@ -25,7 +25,7 @@ function readEnvironment(): InstallEnvironment {
 
 function CloudyMascot() {
   return (
-    <svg className={styles.mascot} viewBox="0 0 100 80" aria-hidden="true">
+    <svg className={styles["mascot"]} viewBox="0 0 100 80" aria-hidden="true">
       <path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#gb)" />
       <g className="eyes">
         <circle cx="40" cy="45" r="5" fill="#06143a" />
@@ -74,31 +74,31 @@ export function CloudyInstallGuide({ onInstalled }: { onInstalled: () => void })
   if (!environment || !environment.isAppleMobile || environment.installed) return null;
 
   return (
-    <main className={styles.installGate}>
-      <section className={`${styles.installPanel} ${shaking ? styles.shake : ""}`}>
-        <div className={styles.installCloud}><CloudyMascot /></div>
-        <h1 className={styles.installTitle}>Давай установим Cloudy!</h1>
-        <p className={styles.installLead}>Добавь Cloudy на главный экран iPhone — и открывай его как настоящее приложение. Это займёт всего несколько секунд ☁️</p>
-        <div className={styles.installSteps}>
-          <div className={styles.installStep}>
-            <span className={styles.installNumber}>1</span>
+    <main className={styles["installGate"]}>
+      <section className={`${styles["installPanel"]} ${shaking ? styles["shake"] : ""}`}>
+        <div className={styles["installCloud"]}><CloudyMascot /></div>
+        <h1 className={styles["installTitle"]}>Давай установим Cloudy!</h1>
+        <p className={styles["installLead"]}>Добавь Cloudy на главный экран iPhone — и открывай его как настоящее приложение. Это займёт всего несколько секунд ☁️</p>
+        <div className={styles["installSteps"]}>
+          <div className={styles["installStep"]}>
+            <span className={styles["installNumber"]}>1</span>
             <div><strong>Нажми «Поделиться»</strong><small>{environment.safari ? "Внизу Safari нажми квадрат со стрелкой вверх." : "Открой этот сайт в Safari, затем нажми квадрат со стрелкой вверх."}</small></div>
-            <span className={styles.installShareIcon} aria-hidden="true">↥</span>
+            <span className={styles["installShareIcon"]} aria-hidden="true">↥</span>
           </div>
-          <div className={styles.installStep}>
-            <span className={styles.installNumber}>2</span>
+          <div className={styles["installStep"]}>
+            <span className={styles["installNumber"]}>2</span>
             <div><strong>Выбери «На экран Домой»</strong><small>Прокрути меню вниз, выбери этот пункт и оставь включённым «Открывать как веб-приложение», если появится переключатель.</small></div>
-            <span className={styles.installShareIcon}>＋</span>
+            <span className={styles["installShareIcon"]}>＋</span>
           </div>
-          <div className={styles.installStep}>
-            <span className={styles.installNumber}>3</span>
+          <div className={styles["installStep"]}>
+            <span className={styles["installNumber"]}>3</span>
             <div><strong>Нажми «Добавить»</strong><small>Затем вернись на главный экран и открой иконку Cloudy.</small></div>
-            <span className={styles.installShareIcon}>☁️</span>
+            <span className={styles["installShareIcon"]}>☁️</span>
           </div>
         </div>
-        <p className={styles.installNote} aria-live="polite">{note || (environment.safari ? "После добавления открой Cloudy именно с главного экрана iPhone." : "Для установки потребуется Safari. Встроенный браузер приложения не поддерживает этот способ.")}</p>
-        <button className={styles.installAction} onClick={checkInstallation}>Я добавил Cloudy — проверить</button>
-        <span className={styles.installBrowser}>Cloudy English · Твой путь к английскому</span>
+        <p className={styles["installNote"]} aria-live="polite">{note || (environment.safari ? "После добавления открой Cloudy именно с главного экрана iPhone." : "Для установки потребуется Safari. Встроенный браузер приложения не поддерживает этот способ.")}</p>
+        <button className={styles["installAction"]} onClick={checkInstallation}>Я добавил Cloudy — проверить</button>
+        <span className={styles["installBrowser"]}>Cloudy English · Твой путь к английскому</span>
       </section>
     </main>
   );
