@@ -309,7 +309,7 @@ function load(key){KEY=key;S=DEF();try{const j=JSON.parse(ls(key)||"{}");S=Objec
 load(ls("cl2s")?"cl2:"+ls("cl2s"):"cl2");
 let cloudUserId=null,cloudSyncTimer=0;
 function queueCloudProgress(){if(!cloudUserId||S.user?.guest)return;clearTimeout(cloudSyncTimer);cloudSyncTimer=setTimeout(()=>{try{window.parent.postMessage({channel:'cloudy-auth',type:'progress-save',state:S},location.origin)}catch(e){}},700)}
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));if(S.user?.email)ls('cl2sync:'+S.user.email,String(Date.now()));queueCloudProgress()}catch(e){}};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));queueCloudProgress()}catch(e){}};
 const roll=()=>{const t=new Date().toDateString();if(S.td.d!=t)S.td={d:t,xp:0,les:0,ok:0,claim:0}};
 const $=s=>document.querySelector(s),sh=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const app=$("#app"),ic=n=>`<svg class="i"><use href="#${n}"/></svg>`;
@@ -415,7 +415,7 @@ window.addEventListener('message',event=>{
   }else{cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
   return;
  }
- if(msg.type==='progress-save-result')return;
+ if(msg.type==='progress-save-result'){if(msg.ok){if(S.user?.email)ls('cl2sync:'+S.user.email,String(Date.now()))}else{toast(msg.error||'Не удалось сохранить прогресс в облаке. Проверьте интернет и повторите попытку.',false)}return;}
  if(msg.type!=='response'||!authPending.has(String(msg.id)))return;
  const pending=authPending.get(String(msg.id));authPending.delete(String(msg.id));
  if(!msg.ok){pending.reject(new Error(msg.error||'Ошибка авторизации'));return}
@@ -462,9 +462,9 @@ function review(){const w=Object.keys(S.mis).slice(0,8).map(en=>[en,ruOf(en)]).f
 function again(){rv?review():go(L)}
 const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button class="spk" onclick="say('${e.en}',1)">${ic('spk')}</button></div><button class="big" id="mic" onclick="rec()">${ic('mic')}</button><p id="rs" style="text-align:center;opacity:.85">Нажмите и произнесите слово</p><button class="btn ghost" onclick="skipP()">ПРОПУСТИТЬ</button>`;
 function skipP(){if(done)return;fx(true,'Пропущено')}
-function rec(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return skipP();if(done)return;const e=ex[i],r=new SR(),m=$('#mic');let got=0;r.lang='en-US';r.maxAlternatives=3;m.classList.add('rec');snd('pick');
+function rec(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('В этом браузере голосовой ввод не поддерживается. Выберите ответ вручную.',false);return;}if(done)return;const e=ex[i],r=new SR(),m=$('#mic');let got=0;r.lang='en-US';r.maxAlternatives=3;m.classList.add('rec');snd('pick');
  r.onresult=ev=>{got=1;m.classList.remove('rec');const t=[...ev.results[0]].map(x=>x.transcript.toLowerCase()).join(' ');if(t.includes(e.en.toLowerCase())){if(window.CloudyLearning)CloudyLearning.record(KEY,e,true,{retry:!!rt});ok++;tot++;cmb++;snd('ok',cmb);fx(true,'Отлично!')}else{if(window.CloudyLearning)CloudyLearning.record(KEY,e,false,{retry:!!rt});addMis(e.en);miss();fx(false,'Нужно сказать: '+e.en)}};
- r.onerror=r.onend=()=>{m.classList.remove('rec');if(!got&&!done){const s=$('#rs');if(s)s.textContent='Не расслышал, попробуйте ещё раз'}};try{r.start()}catch(x){}}
+ r.onerror=ev=>{m.classList.remove('rec');if(ev.error==='not-allowed'||ev.error==='service-not-allowed')toast('Нет доступа к микрофону. Разрешите его использование в настройках браузера.',false);else if(ev.error==='audio-capture')toast('Микрофон не найден или уже используется другим приложением.',false);else if(ev.error==='network')toast('Не удалось распознать речь из-за проблем с соединением. Попробуйте ещё раз.',false);else if(!got&&!done)toast('Не удалось распознать речь. Попробуйте ещё раз или выберите ответ вручную.',false)};r.onend=()=>{m.classList.remove('rec');if(!got&&!done){const s=$('#rs');if(s)s.textContent='Не расслышал, попробуйте ещё раз'}};try{r.start()}catch(x){}}
 function theme(t){S.set.th=t;save();snd('tab');view(0)}
 async function chat(){app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs"></div></div><div class="foot cin"><input id="ci" placeholder="Напишите по-английски" autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}"><button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button></div>`;CH.forEach(m=>bub(m.r,m.t));
  try{SM=SM||await claude.use('sample')}catch(e){SM=null}
