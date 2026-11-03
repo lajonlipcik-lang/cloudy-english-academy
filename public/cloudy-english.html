@@ -406,8 +406,8 @@ window.addEventListener('message',event=>{
   if(msg.ok&&msg.user){
    cloudUserId=msg.user.id;
    const localKey='cl2:'+msg.user.email,localExists=ls(localKey)!==null,localAt=Number(ls('cl2sync:'+msg.user.email)||0),remoteAt=msg.progress?.updated_at?Date.parse(msg.progress.updated_at):0;
-   Auth.start(msg.user.email,msg.user.name||'Ученик');
-   if(msg.progress?.state&&(!localExists||remoteAt>localAt)){try{localStorage.setItem(localKey,JSON.stringify(msg.progress.state));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик'}}catch(e){}}
+   Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin);
+   if(msg.progress?.state&&(!localExists||remoteAt>localAt)){try{localStorage.setItem(localKey,JSON.stringify(msg.progress.state));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin}}catch(e){}}
    else{queueCloudProgress()}
    view();
   }else{cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
@@ -426,18 +426,20 @@ const Auth={
   if(result.needsConfirmation)throw new Error('Проверьте почту и подтвердите регистрацию, затем войдите.');
   return this.start(result.user.email,result.user.name||name);
  },
- async signIn(email,pw){
+ async signIn(login,pw){
+  const normalized=String(login||'').trim().toLowerCase();
+  const email=normalized==='ahma05'?'ahma05@cloudy-english.app':normalized;
   const result=await authRequest('signIn',{email,password:pw});
-  return this.start(result.user.email,result.user.name||'Ученик');
+  return this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin);
  },
- start(email,name){ls('cl2s',email);load('cl2:'+email);S.user={email,name};save();return S.user},
+ start(email,name,isAdmin=false){ls('cl2s',email);load('cl2:'+email);S.user={email,name,isAdmin:!!isAdmin};save();return S.user},
  guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость'};save()},
  async signOut(){await authRequest('signOut');cloudUserId=null;clearTimeout(cloudSyncTimer);ls('cl2s','');load('cl2');S.user=null}
 };
 let AM='in',busy=0,CH=[],SM=null;
-function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'>${AM=='up'?`<label>Имя<input id='an' autocomplete='name' placeholder='Анна'></label>`:''}<label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button></div>`}
+function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'>${AM=='up'?`<label>Имя<input id='an' autocomplete='name' placeholder='Анна'></label>`:''}<label>${AM=='up'?'Email':'Email или логин'}<input id='ae' type='${AM=='up'?'email':'text'}' autocomplete='${AM=='up'?'email':'username'}' placeholder='${AM=='up'?'you@mail.com':'you@mail.com или ahma05'}'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button></div>`}
 async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap').value,nm=AM=='up'?$('#an').value.trim():'',er=$('#er'),b=$('#ab'),lbl=AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ',bad=m=>{er.textContent=m;er.classList.remove('shk');void er.offsetWidth;er.classList.add('shk');snd('bad')};
- if(!em.includes('@')||!em.includes('.'))return bad('Введите корректный email');if(pw.length<6)return bad('Пароль: минимум 6 символов');if(AM=='up'&&!nm)return bad('Введите имя');
+ if(AM=='up'&&(!em.includes('@')||!em.includes('.')))return bad('Введите корректный email');if(AM=='in'&&!em)return bad('Введите email или логин');if(pw.length<6)return bad('Пароль: минимум 6 символов');if(AM=='up'&&!nm)return bad('Введите имя');
  b.classList.add('ld');b.textContent='ПОДОЖДИТЕ...';er.textContent='';
  try{AM=='up'?await Auth.signUp(nm,em,pw):await Auth.signIn(em,pw);snd('win');view()}catch(x){b.classList.remove('ld');b.textContent=lbl;bad(x.message||'Ошибка входа')}}
 function authG(){Auth.guest();snd('go');view()}
