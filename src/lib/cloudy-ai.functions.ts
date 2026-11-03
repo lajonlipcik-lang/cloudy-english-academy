@@ -98,6 +98,7 @@ function makeLearnerContext(userId:string,state:any,ledger:any,profile:any,fallb
     nextLessonId===undefined?"Level status: all lessons in this level completed.":`Next lesson: ${D[nextLessonId]?.t??"next lesson"}.`,
     `Total XP: ${Number(ledger?.total_xp??state?.xp)||0}; weekly XP: ${Number(ledger?.week_xp??state?.wk?.xp)||0}.`,
     `Streak: ${Math.max(0,Number(state?.streak)||0)} days; placement test completed: ${!!state?.tested}.`,
+    `Achievements: ${Array.isArray(state?.ach)?state.ach.length:0}; active days recorded: ${Array.isArray(state?.days)?state.days.length:0}.`,
     `Overall accuracy: ${Array.isArray(state?.acc)&&Number(state.acc[1])>0?Math.round(Number(state.acc[0])/Number(state.acc[1])*100)+"%":"not enough data"}.`,
     `Learning evidence: ${profile?.attempts??0} recorded attempts; ${profile?.dueCount??0} skills due for review.`,
     skillLines.length?"Skill mastery (lower values need more practice):": "No detailed skill profile is available yet.",
@@ -105,7 +106,7 @@ function makeLearnerContext(userId:string,state:any,ledger:any,profile:any,fallb
     recent.length?"Recent answer activity:":"No recent answer events supplied.",
     ...recent,
     "Teaching rules: continue from the learner's actual stage; do not repeat mastered material unnecessarily; prioritize due/weak skills; praise progress accurately; never invent missing evidence."
-  ].join("\\n");
+  ].join("\n");
 }
 export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
