@@ -32,23 +32,23 @@ export function CloudyAppFrame() {
         background: "#050d2b",
       }}
     >
-      {showInstallGuide === null ? null : showInstallGuide ? (
+      <iframe
+        ref={frameRef}
+        title="Cloudy English"
+        src="/cloudy-english.html"
+        allow="microphone"
+        referrerPolicy="same-origin"
+        style={{
+          display: "block",
+          width: "100%",
+          height: "100%",
+          border: 0,
+          background: "transparent",
+          visibility: showInstallGuide === false ? "visible" : "hidden",
+        }}
+      />
+      {showInstallGuide === true && (
         <CloudyInstallGuide onInstalled={() => setShowInstallGuide(false)} />
-      ) : (
-        <iframe
-          ref={frameRef}
-          title="Cloudy English"
-          src="/cloudy-english.html"
-          allow="microphone"
-          referrerPolicy="same-origin"
-          style={{
-            display: "block",
-            width: "100%",
-            height: "100%",
-            border: 0,
-            background: "transparent",
-          }}
-        />
       )}
     </main>
   );
