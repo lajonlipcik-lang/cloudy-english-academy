@@ -11,31 +11,84 @@ export const defaultState = (): CloudyState => ({
   td: { d: "", xp: 0, les: 0, ok: 0, claim: 0 },
 });
 
-const num = (v: unknown, d = 0) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+const num = (value: unknown, fallback = 0): number =>
+  typeof value === "number" && Number.isFinite(value) ? value : fallback;
 
-/** Normalizes any stored/legacy state (including the original single-file "cl2" format). Never carries `user` or passwords. */
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Normalizes saved state, including the original single-file "cl2" format. */
 export function normalizeState(raw: unknown): CloudyState {
-  const d = defaultState();
-  if (!raw || typeof raw !== "object") return d;
-  const j = raw as Record<string, any>;
-  const s: CloudyState = {
-    ...d,
-    xp: num(j.xp), streak: num(j.streak), last: typeof j.last === "string" ? j.last : "",
-    lv: LVS.includes(j.lv) ? j.lv : "",
-    dn: { ...d.dn, ...(j.dn && typeof j.dn === "object" ? j.dn : {}) },
-    acc: Array.isArray(j.acc) && j.acc.length === 2 ? [num(j.acc[0]), num(j.acc[1])] : [0, 0],
-    mis: j.mis && typeof j.mis === "object" ? { ...j.mis } : {},
-    days: Array.isArray(j.days) ? j.days.filter((x: unknown) => typeof x === "string") : [],
-    ach: Array.isArray(j.ach) ? j.ach.filter((x: unknown) => typeof x === "string") : [],
-    wk: j.wk && typeof j.wk === "object" ? { k: String(j.wk.k ?? ""), xp: num(j.wk.xp) } : d.wk,
-    perf: num(j.perf), tested: num(j.tested),
-    set: { ...d.set, ...(j.set && typeof j.set === "object" ? j.set : {}) },
-    td: { ...d.td, ...(j.td && typeof j.td === "object" ? j.td : {}) },
+  const defaults = defaultState();
+  if (!isRecord(raw)) return defaults;
+
+  const savedDn = isRecord(raw["dn"]) ? raw["dn"] : {};
+  const savedAcc = raw["acc"];
+  const savedMis = isRecord(raw["mis"]) ? raw["mis"] : {};
+  const savedWk = isRecord(raw["wk"]) ? raw["wk"] : {};
+  const savedSet = isRecord(raw["set"]) ? raw["set"] : {};
+  const savedTd = isRecord(raw["td"]) ? raw["td"] : {};
+  const mis: Record<string, number> = {};
+
+  for (const [word, count] of Object.entries(savedMis)) {
+    if (typeof count === "number" && Number.isFinite(count) && count > 0) {
+      mis[word] = count;
+    }
+  }
+
+  const state: CloudyState = {
+    ...defaults,
+    xp: num(raw["xp"]),
+    streak: num(raw["streak"]),
+    last: typeof raw["last"] === "string" ? raw["last"] : "",
+    lv: LVS.find((level) => level === raw["lv"]) ?? "",
+    dn: {
+      A1: num(savedDn["A1"]),
+      A2: num(savedDn["A2"]),
+      B1: num(savedDn["B1"]),
+      B2: num(savedDn["B2"]),
+    },
+    acc: Array.isArray(savedAcc) && savedAcc.length === 2
+      ? [num(savedAcc[0]), num(savedAcc[1])]
+      : [0, 0],
+    mis,
+    days: Array.isArray(raw["days"])
+      ? raw["days"].filter((value): value is string => typeof value === "string")
+      : [],
+    ach: Array.isArray(raw["ach"])
+      ? raw["ach"].filter((value): value is string => typeof value === "string")
+      : [],
+    wk: {
+      k: typeof savedWk["k"] === "string" ? savedWk["k"] : "",
+      xp: num(savedWk["xp"]),
+    },
+    perf: num(raw["perf"]),
+    tested: num(raw["tested"]),
+    set: {
+      snd: num(savedSet["snd"], defaults.set.snd),
+      vol: num(savedSet["vol"], defaults.set.vol),
+      voice: num(savedSet["voice"], defaults.set.voice),
+      goal: num(savedSet["goal"], defaults.set.goal),
+      mic: num(savedSet["mic"], defaults.set.mic),
+      th: savedSet["th"] === "light" ? "light" : "dark",
+      rem: num(savedSet["rem"], defaults.set.rem),
+      remT: typeof savedSet["remT"] === "string" ? savedSet["remT"] : defaults.set.remT,
+    },
+    td: {
+      d: typeof savedTd["d"] === "string" ? savedTd["d"] : "",
+      xp: num(savedTd["xp"]),
+      les: num(savedTd["les"]),
+      ok: num(savedTd["ok"]),
+      claim: num(savedTd["claim"]),
+    },
   };
-  // legacy migration from original: done counter without dn/lv
-  if (!j.dn && j.done && j.lv === undefined) { s.dn.A1 = num(j.done); s.lv = "A1"; }
-  if (s.set.th !== "light") s.set.th = "dark";
-  return s;
+
+  // Legacy migration: old saves stored a completed-lesson counter in "done".
+  if (!raw["dn"] && raw["done"] && raw["lv"] === undefined) {
+    state.dn.A1 = num(raw["done"]);
+    state.lv = "A1";
+  }
+  return state;
 }
 
 export const dayKey = (d: Date) => d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
@@ -51,7 +104,7 @@ export function rollDay(s: CloudyState, now = new Date()): CloudyState {
 
 export const shuffle = <T,>(a: readonly T[], r: Rand = Math.random): T[] => {
   const b = [...a];
-  for (let i = b.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0; [b[i], b[j]] = [b[j], b[i]]; }
+  for (let i = b.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0;\n    const current = b[i]!;\n    b[i] = b[j]!;\n    b[j] = current; }
   return b;
 };
 
@@ -67,7 +120,7 @@ export function buildExercises(l: Pick<Lesson, "w" | "s">, pool: Pair[], opts: {
   const p = shuffle(l.w, r).slice(0, 4);
   if (p.length) out.push({ k: "m", L: shuffle(p.map((x) => [x[0], x[0]] as Pair), r), R: shuffle(p.map((x) => [x[1], x[0]] as Pair), r) });
   l.s.forEach(([ru, en, d]) => out.push({ k: "b", q: ru, a: en, o: shuffle([...en.split(" "), ...d.split(" ")], r), title: "Переведите на английский" }));
-  if (l.w.length && opts.mic) out.push({ k: "p", en: shuffle(l.w, r)[0][0] });
+  const pronunciation = shuffle(l.w, r)[0];\n  if (pronunciation && opts.mic) out.push({ k: "p", en: pronunciation[0] });
   return shuffle(out, r);
 }
 
