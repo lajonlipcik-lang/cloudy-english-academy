@@ -17,6 +17,49 @@ function CloudyOriginalApp() {
       frame.contentWindow?.postMessage({ channel: "cloudy-auth", ...payload }, window.location.origin);
     };
 
+    const syncSession = async () => {
+      const currentFrame = frameRef.current;
+      if (!currentFrame?.contentWindow) return;
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        send({ type: "session", ok: false, error: "Не удалось проверить сессию." });
+        return;
+      }
+      const user = data.session?.user;
+      accessTokenRef.current = data.session?.access_token ?? null;
+      let ownerIsAdmin = user?.app_metadata?.["role"] === "admin";
+      if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) {
+        try {
+          const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
+          ownerIsAdmin = role.isAdmin;
+        } catch {
+          console.error("[cloudy-admin] owner role refresh failed");
+        }
+      }
+      let progress: { state: unknown; updated_at: string } | null = null;
+      if (user) {
+        const { data: saved } = await supabase
+          .from("user_progress")
+          .select("state, updated_at")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        progress = saved;
+      }
+      send({
+        type: "session",
+        ok: true,
+        user: user
+          ? {
+              id: user.id,
+              email: user.email ?? "",
+              name: String(user.user_metadata?.["name"] ?? user.user_metadata?.["display_name"] ?? ""),
+              isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com",
+            }
+          : null,
+        progress,
+      });
+    };
+
     const onMessage = async (event: MessageEvent<unknown>) => {
       if (event.origin !== window.location.origin || event.source !== frame.contentWindow) return;
       if (!event.data || typeof event.data !== "object") return;
@@ -24,42 +67,7 @@ function CloudyOriginalApp() {
       if (message.channel !== "cloudy-auth") return;
 
       if (message.type === "init") {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          send({ type: "session", ok: false, error: "Не удалось проверить сессию. Попробуйте обновить страницу." });
-          return;
-        }
-        const user = data.session?.user;
-        accessTokenRef.current = data.session?.access_token ?? null;
-        let ownerIsAdmin = user?.app_metadata?.["role"] === "admin";
-        if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) { try { const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } }); ownerIsAdmin = role.isAdmin; } catch { console.error("[cloudy-admin] owner role refresh failed"); } }
-        let progress: { state: unknown; updated_at: string } | null = null;
-        if (user) {
-          const { data: saved, error: progressError } = await supabase
-            .from("user_progress")
-            .select("state, updated_at")
-            .eq("user_id", user.id)
-            .maybeSingle();
-          if (progressError) {
-            // Keep the authenticated session even when the optional cloud snapshot is unavailable.
-            send({ type: "session", ok: true, user: { id: user.id, email: user.email ?? "", name: String(user.user_metadata?.["name"] ?? user.user_metadata?.["display_name"] ?? ""), isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com" }, progress: null, progressWarning: "Не удалось загрузить облачный прогресс. Локальные данные сохранены." });
-            return;
-          }
-          progress = saved;
-        }
-        send({
-          type: "session",
-          ok: true,
-          user: user
-            ? {
-                id: user.id,
-                email: user.email ?? "",
-                name: String(user.user_metadata?.["name"] ?? user.user_metadata?.["display_name"] ?? ""),
-                isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com",
-              }
-            : null,
-          progress,
-        });
+        await syncSession();
         return;
       }
 
@@ -165,14 +173,30 @@ function CloudyOriginalApp() {
       }
     };
 
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      void syncSession();
+    });
+
     window.addEventListener("message", onMessage);
-    const initialize = () => { const doc = frame.contentDocument; if (doc && !doc.getElementById("cloudy-admin-runtime")) { const script = doc.createElement("script"); script.id = "cloudy-admin-runtime"; script.src = "/cloudy-admin.js"; script.onload = () => send({ type: "init" }); doc.body.appendChild(script); } else send({ type: "init" }); };
+    const initialize = () => {
+      const doc = frame.contentDocument;
+      if (doc && !doc.getElementById("cloudy-admin-runtime")) {
+        const script = doc.createElement("script");
+        script.id = "cloudy-admin-runtime";
+        script.src = "/cloudy-admin.js";
+        script.onload = () => { void syncSession(); };
+        doc.body.appendChild(script);
+      } else {
+        void syncSession();
+      }
+    };
     if (frame.contentDocument?.readyState === "complete") initialize();
     else frame.addEventListener("load", initialize, { once: true });
 
     return () => {
       window.removeEventListener("message", onMessage);
       frame.removeEventListener("load", initialize);
+      authListener.subscription.unsubscribe();
     };
   }, []);
 
