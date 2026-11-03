@@ -132,7 +132,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
   const {db,user}=await ctx(data.accessToken);
   const prompt=String(data.message??"").trim().slice(0,2000);
   if(!prompt)throw new Error("Напишите сообщение.");
-  if(data.history!==undefined&&(!Array.isArray(data.history)||data.history.length>100))throw new Error("Слишком большой контекст чата.");
+  if(data.history!==undefined&&(!Array.isArray(data.history)||data.history.length>16))throw new Error("Слишком большой контекст чата.");
   if(data.learnerProfile!==undefined){
     let profileBytes=0;
     try{profileBytes=JSON.stringify(data.learnerProfile).length}catch{throw new Error("Некорректный профиль обучения.")}
