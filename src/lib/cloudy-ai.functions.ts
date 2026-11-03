@@ -143,7 +143,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       return ask(provider,messages,700);
     });
     const a=routed.value;
-    return {answer:a.content,provider:a.provider,model:a.model,learnerId:user.id,learningStage:context};
+    return {answer:a.content,provider:a.provider,model:a.model};
   }finally{
     await db.rpc("release_cloudy_ai_request",{_user_id:user.id,_request_id:requestId});
   }
