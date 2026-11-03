@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureOwnerAdmin } from "@/lib/admin-role.functions";
 import { toUserErrorMessage } from "@/lib/cloudy/user-errors";
 
-type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown; lessonIndex?: unknown; level?: unknown };
+type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown; lessonIndex?: unknown; level?: unknown; expectedUpdatedAt?: unknown; syncId?: unknown };
 
 function CloudyOriginalApp() {
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -82,15 +82,28 @@ function CloudyOriginalApp() {
         const state = message.state;
         const accessToken = accessTokenRef.current;
         if (!state || typeof state !== "object" || Array.isArray(state) || !accessToken) {
-          send({ type: "progress-save-result", ok: false, error: "Сессия истекла. Войдите снова." });
+          send({ type: "progress-save-result", ok: false, error: "Сессия истекла. Войдите снова.", syncId: message.syncId });
           return;
         }
         try {
           const api = await import("@/lib/cloudy/progress.functions");
-          const saved = await api.saveCloudyProgress({ data: { accessToken, state } });
-          send({ type: "progress-save-result", ok: true, state: saved.state });
+          const saved = await api.saveCloudyProgress({
+            data: {
+              accessToken,
+              state,
+              expectedUpdatedAt: typeof message.expectedUpdatedAt === "string" ? message.expectedUpdatedAt : null,
+            },
+          });
+          send({
+            type: "progress-save-result",
+            ok: saved.ok,
+            conflict: saved.conflict,
+            state: saved.state,
+            updatedAt: saved.updated_at,
+            syncId: message.syncId,
+          });
         } catch (error) {
-          send({ type: "progress-save-result", ok: false, error: toUserErrorMessage(error, "progress") });
+          send({ type: "progress-save-result", ok: false, error: toUserErrorMessage(error, "progress"), syncId: message.syncId });
         }
         return;
       }
