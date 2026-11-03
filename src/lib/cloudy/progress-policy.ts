@@ -42,7 +42,7 @@ export function sanitizeCloudyProgress(raw: unknown): CloudyState {
       .filter(([word]) => word.length > 0 && word.length <= 80)
       .map(([word, count]) => [word, clampInt(count, 0, 10_000)]),
   );
-  state.days = [...new Set(state.days.filter((day) => /^\\d{4}-\\d{1,2}-\\d{1,2}$/.test(day)).slice(-60))];
+  state.days = [...new Set(state.days.filter((day) => /^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$/.test(day)).slice(-60))];
   state.ach = [...new Set(state.ach.filter((id) => /^[a-z0-9_-]{1,24}$/i.test(id)).slice(0, 32))];
   state.wk = {
     k: state.wk.k.slice(0, 16),
@@ -58,7 +58,7 @@ export function sanitizeCloudyProgress(raw: unknown): CloudyState {
     mic: state.set.mic ? 1 : 0,
     th: state.set.th,
     rem: state.set.rem ? 1 : 0,
-    remT: /^([01]\\d|2[0-3]):[0-5]\\d$/.test(state.set.remT) ? state.set.remT : "19:00",
+    remT: /^([01][0-9]|2[0-3]):[0-5][0-9]$/.test(state.set.remT) ? state.set.remT : "19:00",
   };
   state.td = {
     d: state.td.d.slice(0, 40),
