@@ -16,7 +16,7 @@ describe("server XP policy", () => {
     const safe = sanitizeCloudyProgress({
       xp: 999999999, streak: 999999, lv: "A1",
       dn: { A1: 999, A2: -4, B1: 2.8, B2: "bad" },
-      acc: [999999999, -1], mis: { hello: 999999, "x".repeat(100): 4 },
+      acc: [999999999, -1], mis: { hello: 999999, ["x".repeat(100)]: 4 },
       days: Array.from({ length: 100 }, (_, i) => `2026-01-${String(i + 1).padStart(2, "0")}`),
       ach: ["first", "not allowed!"], set: { vol: 4, goal: 9999, remT: "not-time" },
       unknownSecret: "must not survive", user: { id: "attacker" },
