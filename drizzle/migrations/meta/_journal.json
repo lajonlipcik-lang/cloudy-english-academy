@@ -36,6 +36,13 @@
       "when": 1793751000000,
       "tag": "0004_server_authoritative_xp",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793754600000,
+      "tag": "0005_progress_sync_concurrency",
+      "breakpoints": true
     }
   ]
 }
