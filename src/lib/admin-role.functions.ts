@@ -28,7 +28,7 @@ export const ensureOwnerAdmin = createServerFn({ method: "POST" })
     if (verifyError || !verified.user) throw new Error("Unauthorized");
 
     const email = (verified.user.email ?? "").trim().toLowerCase();
-    if (email !== OWNER_EMAIL) return { isAdmin: verified.user.app_metadata?.role === "admin" };
+    if (email !== OWNER_EMAIL) return { isAdmin: verified.user.app_metadata?.["role"] === "admin" };
 
     const admin = createClient<Database>(url, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -41,5 +41,5 @@ export const ensureOwnerAdmin = createServerFn({ method: "POST" })
       console.error("[admin-role] Failed to assign owner role", updateError?.name ?? "unknown");
       throw new Error("Не удалось назначить роль администратора. Повторите попытку позже.");
     }
-    return { isAdmin: updated.user.app_metadata?.role === "admin" };
+    return { isAdmin: updated.user.app_metadata?.["role"] === "admin" };
   });
