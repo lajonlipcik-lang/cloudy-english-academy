@@ -148,11 +148,17 @@ window.addEventListener('message',event=>{
    cloudUserId=msg.user.id;
    const localKey='cl2:'+msg.user.email,localExists=ls(localKey)!==null,localAt=Number(ls('cl2sync:'+msg.user.email)||0),dirtyAt=Number(ls('cl2dirty:'+msg.user.email)||0),remoteAt=msg.progress?.updated_at?Date.parse(msg.progress.updated_at):0;
    const guestState=(()=>{try{return JSON.parse(ls('cl2')||'{}')}catch(e){return {}}})();
+   const profileLevel=['A1','A2','B1','B2'].includes(msg.learnerProfile?.english_level)?msg.learnerProfile.english_level:'';
+   const profileTested=Boolean(msg.learnerProfile?.placement_test_completed);
+   const remoteState=msg.progress?.state&&typeof msg.progress.state==='object'
+    ?{...msg.progress.state,lv:profileLevel||msg.progress.state.lv||'',tested:profileTested||msg.progress.state.tested?1:0}
+    :profileLevel?{lv:profileLevel,tested:profileTested?1:0}:null;
    cloudUpdatedAt=msg.progress?.updated_at||null;cloudSyncInFlight=null;cloudSyncPending=null;cloudSyncAttempts=0;cloudSyncPaused=true;
    Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin,msg.user.age);if(msg.progressLoadFailed)toast('Не удалось загрузить облачный прогресс. Проверьте интернет; данные на этом устройстве не затронуты.',false);
-   if(msg.progress?.state&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(msg.progress.state));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):(Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age):null),isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
-   else if(!localExists&&!msg.progress?.state&&['A1','A2','B1','B2'].includes(guestState.lv)){try{load('cl2');S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save()}catch(e){}}
+   if(remoteState&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(remoteState));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):(Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age):null),isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
+   else if(!localExists&&!remoteState&&['A1','A2','B1','B2'].includes(guestState.lv)){try{load('cl2');S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save()}catch(e){}}
    else{queueCloudProgress()}
+   if(profileLevel){S.lv=profileLevel;S.tested=profileTested||S.tested?1:0;save(true)}
    cloudSyncPaused=false;queueCloudProgress();
    view();
   }else if(msg.ok===false){toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false)}else{cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
