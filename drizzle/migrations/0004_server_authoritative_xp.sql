@@ -144,11 +144,13 @@ BEGIN
       daily_key = v_day, daily_lessons = v_xp.daily_lessons
   WHERE user_id = _user_id;
 
-  UPDATE public.user_progress
-  SET state = jsonb_set(jsonb_set(COALESCE(state, '{}'::jsonb), '{xp}', to_jsonb(v_xp.total_xp), true),
+  INSERT INTO public.user_progress (user_id, state, total_xp, week_key, week_xp, updated_at)
+  VALUES (_user_id, jsonb_build_object('xp', v_xp.total_xp, 'wk', jsonb_build_object('k', v_xp.week_key, 'xp', v_xp.week_xp)),
+    v_xp.total_xp, v_xp.week_key, v_xp.week_xp, now())
+  ON CONFLICT (user_id) DO UPDATE
+  SET state = jsonb_set(jsonb_set(COALESCE(public.user_progress.state, '{}'::jsonb), '{xp}', to_jsonb(v_xp.total_xp), true),
     '{wk}', jsonb_build_object('k', v_xp.week_key, 'xp', v_xp.week_xp), true),
-    total_xp = v_xp.total_xp, week_key = v_xp.week_key, week_xp = v_xp.week_xp, updated_at = now()
-  WHERE user_id = _user_id;
+    total_xp = v_xp.total_xp, week_key = v_xp.week_key, week_xp = v_xp.week_xp, updated_at = now();
 
   RETURN jsonb_build_object('awarded', v_award, 'total_xp', v_xp.total_xp, 'week_key', v_xp.week_key, 'week_xp', v_xp.week_xp, 'daily_lessons', v_xp.daily_lessons);
 END;
