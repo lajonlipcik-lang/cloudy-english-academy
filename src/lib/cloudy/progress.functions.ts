@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { isLessonInLevel } from "@/lib/cloudy/progress-policy";
 
 type ProgressInput = { accessToken: string; state?: unknown; lessonIndex?: number; level?: string };
 
@@ -40,7 +41,7 @@ export const awardCloudyLessonXp = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const lessonIndex = Number(data.lessonIndex);
     const level = String(data.level ?? "");
-    if (!Number.isInteger(lessonIndex) || lessonIndex < 0 || lessonIndex > 23 || !["A1", "A2", "B1", "B2"].includes(level)) {
+    if (!isLessonInLevel(lessonIndex, level)) {
       throw new Error("Некорректный урок.");
     }
     const { user, db } = await getUserAndAdmin(data.accessToken);
