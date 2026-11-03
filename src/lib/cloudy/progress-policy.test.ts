@@ -24,7 +24,7 @@ describe("server XP policy", () => {
     expect(safe.dn).toEqual({ A1: 6, A2: 0, B1: 2, B2: 0 });
     expect(safe.streak).toBe(3650);
     expect(safe.acc).toEqual([1_000_000, 0]);
-    expect(safe.mis.hello).toBe(10_000);
+    expect(safe.mis["hello"]).toBe(10_000);
     expect(Object.keys(safe.mis)).toHaveLength(1);
     expect(safe.days).toHaveLength(60);
     expect(safe.ach).toEqual(["first"]);
