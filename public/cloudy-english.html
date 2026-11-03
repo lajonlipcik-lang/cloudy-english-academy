@@ -185,6 +185,32 @@ h2{font-size:21px;margin:0 0 16px}
 .cf{position:fixed;top:-24px;border-radius:2px;pointer-events:none;z-index:30;animation:fall var(--t) cubic-bezier(.3,.5,.5,1) forwards}
 @keyframes fall{to{transform:translate(var(--dx),110vh) rotate(var(--r))}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* Cloudy Ai floating assistant */
+#cloudyAiLauncher{position:fixed;right:20px;bottom:calc(22px + env(safe-area-inset-bottom,0px));z-index:10000;width:76px;height:76px;padding:0;border:3px solid rgba(255,255,255,.92);border-radius:50%;background:radial-gradient(circle at 32% 22%,#bfe8ff 0%,#55b8ff 52%,#1764d8 100%);box-shadow:0 8px 28px rgba(0,70,170,.38),0 0 0 6px rgba(120,202,255,.18);display:grid;place-items:center;cursor:pointer;animation:cloudyFloat 3.6s ease-in-out infinite;transition:transform .25s,box-shadow .25s}
+#cloudyAiLauncher:hover{transform:translateY(-4px) scale(1.04);box-shadow:0 12px 34px rgba(0,70,170,.48),0 0 0 8px rgba(120,202,255,.2)}
+#cloudyAiLauncher svg{width:68px;height:68px;filter:drop-shadow(0 3px 3px rgba(0,45,120,.2));animation:cloudyBob 2.8s ease-in-out infinite}
+#cloudyAiLauncher:after{content:"";position:absolute;inset:-8px;border:2px solid rgba(190,231,255,.65);border-radius:50%;animation:cloudyPulse 2.4s ease-out infinite;pointer-events:none}
+#cloudyAiLauncher .cloudy-dot{position:absolute;right:1px;top:2px;width:13px;height:13px;border:2px solid white;border-radius:50%;background:#38d39a}
+#cloudyAiTip{position:fixed;right:108px;bottom:calc(38px + env(safe-area-inset-bottom,0px));z-index:9999;max-width:205px;padding:11px 15px;border:1px solid rgba(255,255,255,.85);border-radius:18px 18px 5px 18px;background:rgba(255,255,255,.94);color:#12366e;font-size:13px;font-weight:750;box-shadow:0 8px 24px rgba(0,45,120,.18);animation:cloudyTipIn .5s both}
+#cloudyAiPanel{position:fixed;right:20px;bottom:calc(112px + env(safe-area-inset-bottom,0px));z-index:10001;width:min(350px,calc(100vw - 28px));padding:18px;border:1px solid rgba(255,255,255,.65);border-radius:24px;background:linear-gradient(155deg,rgba(255,255,255,.98),rgba(225,242,255,.97));color:#102e63;box-shadow:0 18px 55px rgba(0,36,100,.28);backdrop-filter:blur(18px);display:none;transform-origin:bottom right}
+#cloudyAiPanel.open{display:block;animation:cloudyPanelIn .28s cubic-bezier(.2,.8,.2,1) both}
+#cloudyAiPanel .ca-head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+#cloudyAiPanel .ca-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(145deg,#a9e0ff,#398ff0);display:grid;place-items:center;flex:none;box-shadow:0 4px 14px #7bbcff66}
+#cloudyAiPanel .ca-avatar svg{width:43px;height:43px}
+#cloudyAiPanel .ca-name{font-size:17px;font-weight:850}
+#cloudyAiPanel .ca-sub{font-size:11px;opacity:.7;margin-top:2px}
+#cloudyAiPanel .ca-close{margin-left:auto;border:0;border-radius:50%;width:32px;height:32px;background:#e8f3ff;color:#17457f;font-size:20px}
+#cloudyAiPanel .ca-message{padding:13px 14px;border-radius:16px 16px 16px 5px;background:#fff;box-shadow:0 3px 12px rgba(38,105,180,.08);font-size:14px;line-height:1.5}
+#cloudyAiPanel .ca-note{font-size:11px;line-height:1.45;opacity:.65;margin:12px 2px 0}
+@keyframes cloudyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+@keyframes cloudyBob{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg) translateY(-2px)}}
+@keyframes cloudyPulse{0%{transform:scale(.94);opacity:.8}100%{transform:scale(1.2);opacity:0}}
+@keyframes cloudyTipIn{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes cloudyPanelIn{from{opacity:0;transform:translateY(12px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:480px){#cloudyAiLauncher{right:14px;bottom:calc(16px + env(safe-area-inset-bottom,0px));width:68px;height:68px}#cloudyAiLauncher svg{width:61px;height:61px}#cloudyAiTip{right:94px;bottom:calc(30px + env(safe-area-inset-bottom,0px));font-size:12px}#cloudyAiPanel{right:14px;bottom:calc(96px + env(safe-area-inset-bottom,0px))}}
+@media(prefers-reduced-motion:reduce){#cloudyAiLauncher,#cloudyAiLauncher svg,#cloudyAiLauncher:after,#cloudyAiTip,#cloudyAiPanel.open{animation:none!important;transition:none!important}}
+
 </style>
 </head>
 <body>
@@ -212,6 +238,24 @@ h2{font-size:21px;margin:0 0 16px}
 <symbol id='mic' viewBox='0 0 24 24'><rect x='9' y='3' width='6' height='11' rx='3' fill='currentColor'/><path d='M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3' fill='none' stroke='currentColor' stroke-width='2.2' stroke-linecap='round'/></symbol><symbol id='redo' viewBox='0 0 24 24'><path d='M20 4.5v5h-5M4 19.5v-5h5' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/><path d='M19 10a7.5 7.5 0 0 0-13-2.5M5 14a7.5 7.5 0 0 0 13 2.5' fill='none' stroke='currentColor' stroke-width='2.6' stroke-linecap='round'/></symbol><symbol id='medal' viewBox='0 0 24 24'><path d='M7 2l3 6h4l3-6z' fill='currentColor' opacity='.6'/><circle cx='12' cy='15' r='6.5' fill='currentColor'/><path d='M12 11.5l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z' fill='#fff' opacity='.85'/></symbol><symbol id='send' viewBox='0 0 24 24'><path fill='currentColor' d='M3 11.5L21 3l-8.5 18-2.2-7.3z'/></symbol></defs></svg>
 <div class="amb"></div>
 <div id="app"></div>
+
+<div id="cloudyAiTip">Привет! Я Cloudy Ai 👋</div>
+<button id="cloudyAiLauncher" type="button" aria-label="Открыть Cloudy Ai" aria-expanded="false" onclick="toggleCloudyAi()">
+<svg viewBox="0 0 100 100" role="img" aria-label="Cloudy Ai">
+<defs><linearGradient id="caCloud" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#cceaff"/></linearGradient></defs>
+<path d="M20 66c-12 0-17-9-14-19 2-8 9-12 17-11 3-17 18-25 31-18 8 4 11 10 12 17 13-3 25 6 25 18 0 9-7 15-17 15H20z" fill="url(#caCloud)" stroke="#e9f7ff" stroke-width="2"/>
+<path d="M28 23 49 9l23 13-22 6z" fill="#153c8d"/><path d="M49 9v9" stroke="#153c8d" stroke-width="2"/><path d="M72 22v12" stroke="#ffd35a" stroke-width="2.5"/><circle cx="72" cy="36" r="3" fill="#ffd35a"/>
+<ellipse cx="36" cy="48" rx="4" ry="6" fill="#14366d"/><ellipse cx="65" cy="48" rx="4" ry="6" fill="#14366d"/><circle cx="37" cy="46" r="1.5" fill="#fff"/><circle cx="66" cy="46" r="1.5" fill="#fff"/>
+<ellipse cx="25" cy="58" rx="5" ry="2.5" fill="#ff9db0" opacity=".8"/><ellipse cx="76" cy="58" rx="5" ry="2.5" fill="#ff9db0" opacity=".8"/>
+<path d="M43 61q8 11 17 0" fill="#ff6b81" stroke="#b83d62" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M11 54q-8-12-5-18" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+</svg><span class="cloudy-dot"></span></button>
+<section id="cloudyAiPanel" role="dialog" aria-label="Cloudy Ai">
+<div class="ca-head"><div class="ca-avatar"><svg viewBox="0 0 100 100"><path d="M20 66c-12 0-17-9-14-19 2-8 9-12 17-11 3-17 18-25 31-18 8 4 11 10 12 17 13-3 25 6 25 18 0 9-7 15-17 15H20z" fill="#fff" stroke="#d9f0ff" stroke-width="3"/><path d="M28 23 49 9l23 13-22 6z" fill="#153c8d"/><ellipse cx="36" cy="48" rx="4" ry="6" fill="#14366d"/><ellipse cx="65" cy="48" rx="4" ry="6" fill="#14366d"/><path d="M43 61q8 11 17 0" fill="#ff6b81"/></svg></div><div><div class="ca-name">Cloudy Ai</div><div class="ca-sub">Твой помощник по английскому</div></div><button class="ca-close" type="button" aria-label="Закрыть" onclick="toggleCloudyAi(false)">×</button></div>
+<div class="ca-message">Привет! 👋 Я Cloudy Ai. Скоро мы сможем вместе практиковать английский, разбирать грамматику и исправлять ошибки.</div>
+<div class="ca-note">ИИ-чат пока не подключён. Следующий шаг — подключение Groq API.</div>
+</section>
+
 <script>
 const D=[
 {t:"Привет",w:[["hello","привет"],["goodbye","пока"],["thanks","спасибо"],["please","пожалуйста"],["yes","да"],["no","нет"]],s:[["Привет, меня зовут Анна","Hello my name is Anna","you the"],["Да, пожалуйста","Yes please","no thanks"]]},
@@ -474,6 +518,9 @@ function fin(){roll();const t=new Date().toDateString(),y=new Date(Date.now()-86
  snd("win");conf();for(let k=0;k<st;k++)setTimeout(()=>snd("star"),300+k*300);
  const el=$("#xp"),s0=performance.now();(function f(n){const p=Math.min((n-s0)/1000,1);el.textContent="+"+Math.round(gain*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s0)}
 view();
+
+function toggleCloudyAi(force){const p=document.getElementById("cloudyAiPanel"),b=document.getElementById("cloudyAiLauncher"),tip=document.getElementById("cloudyAiTip");if(!p||!b)return;const open=typeof force==="boolean"?force:!p.classList.contains("open");p.classList.toggle("open",open);b.setAttribute("aria-expanded",String(open));if(tip)tip.style.display=open?"none":"";if(open){const close=()=>{if(!p.classList.contains("open"))document.removeEventListener("keydown",onKey)};const onKey=e=>{if(e.key==="Escape"){toggleCloudyAi(false);close()}};document.addEventListener("keydown",onKey,{once:true})}}
+
 </script>
 </body>
 </html>
