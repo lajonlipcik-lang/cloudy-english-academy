@@ -20,8 +20,8 @@ describe("Cloudy learning progress", () => {
     expect(good.session.hp).toBe(5);
     const bad = applyAnswer(state, session, false, "hello");
     expect(bad.session.hp).toBe(4);
-    expect(bad.state.mis.hello).toBe(1);
-    expect(state.mis.hello).toBeUndefined();
+    expect(bad.state.mis["hello"]).toBe(1);
+    expect(state.mis["hello"]).toBeUndefined();
   });
 
   it("awards lesson XP and updates the daily streak", () => {
