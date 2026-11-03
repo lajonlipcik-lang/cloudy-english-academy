@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { isLessonInLevel } from "@/lib/cloudy/progress-policy";
+import type { Json } from "@/integrations/supabase/types";
 
 type ProgressInput = { accessToken: string; state?: unknown; expectedUpdatedAt?: string | null; lessonIndex?: number; level?: string };
 
@@ -36,7 +37,7 @@ export const saveCloudyProgress = createServerFn({ method: "POST" })
       _expected_updated_at: expectedUpdatedAt?.toISOString() ?? null,
     });
     if (error) throw new Error("Не удалось сохранить прогресс.");
-    return saved as { ok: boolean; conflict: boolean; state: unknown; updated_at: string };
+    return saved as { ok: boolean; conflict: boolean; state: Json; updated_at: string };
   });
 
 export const awardCloudyLessonXp = createServerFn({ method: "POST" })
