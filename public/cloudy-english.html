@@ -212,13 +212,13 @@ h2{font-size:21px;margin:0 0 16px}
 @media(prefers-reduced-motion:reduce){#cloudyAiLauncher,#cloudyAiLauncher svg,#cloudyAiLauncher:after,#cloudyAiTip,#cloudyAiPanel.open{animation:none!important;transition:none!important}}
 
 /* Compact launcher; visible only after placement test */
-#cloudyAiLauncher{display:none;width:54px;height:54px;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));border-width:2px;box-shadow:0 5px 18px rgba(0,70,170,.3),0 0 0 4px rgba(120,202,255,.14)}
+#cloudyAiLauncher{display:none;width:54px;height:54px;right:14px;bottom:calc(94px + env(safe-area-inset-bottom,0px));border-width:2px;box-shadow:0 5px 18px rgba(0,70,170,.3),0 0 0 4px rgba(120,202,255,.14)}
 #cloudyAiLauncher svg{width:49px;height:49px}
 #cloudyAiLauncher:after{inset:-5px}
 #cloudyAiLauncher .cloudy-dot{width:10px;height:10px}
-#cloudyAiPanel{right:14px;bottom:calc(78px + env(safe-area-inset-bottom,0px));width:min(320px,calc(100vw - 28px));padding:15px}
+#cloudyAiPanel{right:14px;bottom:calc(154px + env(safe-area-inset-bottom,0px));width:min(320px,calc(100vw - 28px));padding:15px}
 #cloudyAiTip{display:none!important}
-@media(max-width:480px){#cloudyAiLauncher{right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:50px;height:50px}#cloudyAiLauncher svg{width:45px;height:45px}#cloudyAiPanel{right:12px;bottom:calc(72px + env(safe-area-inset-bottom,0px))}}
+@media(max-width:480px){#cloudyAiLauncher{right:12px;bottom:calc(88px + env(safe-area-inset-bottom,0px));width:50px;height:50px}#cloudyAiLauncher svg{width:45px;height:45px}#cloudyAiPanel{right:12px;bottom:calc(148px + env(safe-area-inset-bottom,0px))}}
 
 
 </style>
@@ -335,7 +335,7 @@ const TQ={
  ["There ___ a book on the table.",["are","be","is","have"],2],
  ["Как образуется множественное число слова “child”?",["childs","children","childes","child"],1],
  ["Выбери правильное предложение.",["He don't like tea.","He doesn't likes tea.","He doesn't like tea.","He not like tea."],2],
- ["Does he ___ football every weekend?",["play","plays","playing","played"],1],
+ ["Does he ___ football every weekend?",["play","plays","playing","played"],0],
  ["My parents ___ in Bishkek.",["lives","living","live","to live"],2],
  ["We ___ got a dog.",["has","have","having","are"],1],
  ["___ you like apples?",["Are","Does","Do","Have"],2]
