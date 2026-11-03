@@ -3,6 +3,15 @@ import styles from "./CloudyInstallGuide.module.css";
 
 type InstallEnvironment = { isAppleMobile: boolean; installed: boolean; safari: boolean };
 
+export function isCloudyInstallRequired() {
+  const appleMobile = /iPhone|iPad|iPod/.test(navigator.userAgent)
+    || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const installed = (navigator as Navigator & { standalone?: boolean }).standalone === true
+    || window.matchMedia("(display-mode: standalone)").matches
+    || window.matchMedia("(display-mode: fullscreen)").matches;
+  return appleMobile && !installed;
+}
+
 function readEnvironment(): InstallEnvironment {
   const appleMobile = /iPhone|iPad|iPod/.test(navigator.userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
