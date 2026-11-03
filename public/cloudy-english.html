@@ -469,7 +469,7 @@ const cq=(en,ru,m)=>{const o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice
 function review(){const w=Object.keys(S.mis).slice(0,8).map(en=>[en,ruOf(en)]).filter(x=>x[1]);if(!w.length)return snd('bad');snd('go');rv=1;rt=1;lm=[];L=-1;ex=mk({w,s:[]});i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
 function again(){rv?review():go(L)}
 const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button class="spk" onclick="say('${e.en}',1)">${ic('spk')}</button></div><button class="big" id="mic" onclick="rec()">${ic('mic')}</button><p id="rs" style="text-align:center;opacity:.85">Нажмите и произнесите слово</p><button class="btn ghost" onclick="skipP()">ПРОПУСТИТЬ</button>`;
-function skipP(){if(done)return;fx(true,'Пропущено')}
+function skipP(){if(done)return;lastVoiceTranscript="";fx(true,'Пропущено')}
 let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false,lastVoiceTranscript='';
 function normalizeSpeechText(value){
  return String(value||"").normalize("NFKD").toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
@@ -605,7 +605,7 @@ function tg(el,k){S.set[k]=S.set[k]?0:1;el.classList.toggle("on");save();snd("ta
 function goal(n){S.set.goal=n;save();snd("pick");view(0)}
 function rst(){sheet(`<h3>Сбросить прогресс?</h3><p style="opacity:.85">Уроки, XP и серия обнулятся. Настройки сохранятся.</p><button class="btn" onclick="doRst()">СБРОСИТЬ</button><br><br><button class="btn" onclick="closeSh()">ОТМЕНА</button>`)}
 function doRst(){const s=S.set;S=DEF();S.set=s;save();closeSh();T=0;view()}
-let ex,i,hp,sel,built,done,ml,mc,cmb,ok,tot,L,rv=0,lm=[],rt=0;
+let ex,i,hp,sel,built,done,ml,mc,cmb,ok,tot,L,rv=0,lm=[],rt=0,exerciseMatchAttempts=[];
 function mk(l){const r=[],modes=sh([0,0,1,1,2,2]);
  const titles={
   ru:["Переведите на английский","Как сказать это по-английски?","Выберите английский перевод"],
@@ -621,7 +621,7 @@ function mk(l){const r=[],modes=sh([0,0,1,1,2,2]);
  if(l.w.length&&(window.SpeechRecognition||window.webkitSpeechRecognition)&&S.set.mic)r.push({k:"p",en:sh(l.w)[0][0]});return sh(r)}
 function go(n){snd("go");rv=0;lm=[];rt=0;L=n;ex=window.CloudyLearning?CloudyLearning.prioritize(KEY,mk(D[n])):mk(D[n]);i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
 const opts=e=>e.o.map((o,k)=>`<button class="opt" style="--i:${k}" onclick="pick(${k})">${o}</button>`).join("");
-function draw(){const e=ex[i];sel=null;built=[];done=false;ml=null;mc=0;let b;
+function draw(){const e=ex[i];sel=null;built=[];done=false;ml=null;mc=0;lastVoiceTranscript="";exerciseMatchAttempts=[];let b;
  if(e.k=="c")b=`<h2>${e.title}</h2><div class="qq">${e.q}${e.spk?`<button class="spk" onclick="say('${e.en}',1)">${ic("spk")}</button>`:""}</div>${opts(e)}`;
  else if(e.k=="l")b=`<h2>${e.title}</h2><button class="big" onclick="say('${e.en}',1)">${ic("spk")}</button>${opts(e)}`;
  else if(e.k=="b")b=`<h2>${e.title}</h2><div class="qq" style="font-size:24px">${e.q}</div><div class="ans" id="ans"></div><div class="bank">${e.o.map((o,k)=>`<button class="chip" id="c${k}" onclick="tog(${k})">${o}</button>`).join("")}</div>`;
@@ -638,7 +638,7 @@ async function askExerciseCoach(){
  box.dataset.loading="1";box.textContent="Cloudy разбирает задание…";
  const target=String(e.a??e.en??"");
  const pairTarget=e.k==="m"?(e.L||[]).map(([left,id])=>String(left)+" → "+String((e.R||[]).find(([,rightId])=>rightId===id)?.[0]??"")).join("; "):"";
- const response=e.k==="p"?lastVoiceTranscript:e.k==="b"?built.map(j=>e.o[j]).join(" "):e.k==="m"?"Упражнение на сопоставление завершено":e.k==="c"||e.k==="l"?String(e.o?.[sel]??""):"";
+ const response=e.k==="p"?(lastVoiceTranscript||"Не произносил — пропущено"):e.k==="b"?built.map(j=>e.o[j]).join(" "):e.k==="m"?exerciseMatchAttempts.map(x=>x.left+" → "+x.right+(x.correct?" ✓":" ✗")).join("; ")||"Нет записанных попыток":e.k==="c"||e.k==="l"?String(e.o?.[sel]??""):"";
  const exerciseContext={type:e.k==="p"?"pronunciation":e.k==="b"?"sentence-building":e.k==="m"?"matching":e.k==="l"?"listening":"vocabulary",question:String(e.q??e.title??"").slice(0,180),target:(pairTarget||target).slice(0,500),learnerAnswer:String(response).slice(0,160),level:S.lv||"A1"};
  try{
   const result=await authRequest("ai-chat",{payload:{message:"Разбери со мной только что выполненное упражнение. Объясни разницу между моим ответом и правильным, если была ошибка. Дай короткую подсказку и одно похожее задание для закрепления. Учитывай мой уровень.",level:S.lv||"A1",history:[],learnerProfile:window.CloudyLearning?.profile(KEY)||null,exerciseContext}});
@@ -654,8 +654,8 @@ function check(){if(done)return;const e=ex[i];
  fx(good,good?["Отлично!","Верно!","Супер!","Так держать!"][Math.random()*4|0]:"Правильный ответ: "+e.a)}
 function mp(side,id,el){if(done||el.classList.contains("good"))return;
  if(side==0){snd("pick");ml=[id,el];document.querySelectorAll(".mt .opt").forEach(b=>b.classList.remove("sel"));el.classList.add("sel");return}
- if(!ml)return;const l=ml[1];
- if(ml[0]==id){if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:id},true,{retry:!!rt});l.classList.remove("sel");l.classList.add("good");el.classList.add("good");snd("match");ml=null;if(++mc==ex[i].L.length){ok++;tot++;cmb++;setTimeout(()=>{snd("ok",cmb);fx(true,"Все пары найдены!")},350)}}
+ if(!ml)return;const l=ml[1],attempt={left:l.textContent.trim(),right:el.textContent.trim(),correct:ml[0]==id};exerciseMatchAttempts.push(attempt);
+ if(attempt.correct){if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:id},true,{retry:!!rt});l.classList.remove("sel");l.classList.add("good");el.classList.add("good");snd("match");ml=null;if(++mc==ex[i].L.length){ok++;tot++;cmb++;setTimeout(()=>{snd("ok",cmb);fx(true,"Все пары найдены!")},350)}}
  else{if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:ml[0]},false,{retry:!!rt});[l,el].forEach(b=>{b.classList.add("wrong");setTimeout(()=>b.classList.remove("wrong"),500)});l.classList.remove("sel");addMis(ml[0]);ml=null;miss();if(hp<=0)setTimeout(fail,800)}}
 function next(){if(hp<=0)return fail();snd("tap");if(++i>=ex.length&&!rt&&lm.length){rt=1;lm.slice(0,3).forEach(en=>ex.push(cq(en,ruOf(en),Math.random()*2|0)))}if(i>=ex.length)return fin();draw()}
 function fail(){snd("bad");app.innerHTML=`<div class="scr res">${mascot("s")}<div class="big2">Жизни закончились</div><p style="opacity:.85">Ничего страшного, попробуем ещё раз.</p><br><button class="btn" onclick="again()">ПОПРОБОВАТЬ СНОВА</button><br><br><button class="btn" onclick="view()" style="background:rgba(255,255,255,.15);color:#fff;box-shadow:none">НА ГЛАВНУЮ</button></div>`}
