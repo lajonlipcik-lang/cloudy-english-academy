@@ -14,9 +14,9 @@ export const ensureOwnerAdmin = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const url = process.env["SUPABASE_URL"];
-    const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+    
     const publishableKey = process.env["SUPABASE_PUBLISHABLE_KEY"];
-    if (!url || !serviceKey || !publishableKey) {
+    if (!url || !publishableKey) {
       throw new Error("Admin role service is not configured");
     }
 
@@ -30,9 +30,7 @@ export const ensureOwnerAdmin = createServerFn({ method: "POST" })
     const email = (verified.user.email ?? "").trim().toLowerCase();
     if (email !== OWNER_EMAIL) return { isAdmin: verified.user.app_metadata?.["role"] === "admin" };
 
-    const admin = createClient<Database>(url, serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: updated, error: updateError } = await admin.auth.admin.updateUserById(
       verified.user.id,
       { app_metadata: { ...verified.user.app_metadata, role: "admin" } },
