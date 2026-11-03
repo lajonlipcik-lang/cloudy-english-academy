@@ -40,11 +40,9 @@ describe("AI provider router", () => {
   });
 
   it("skips a provider during its cooldown on the next request", async () => {
-    const first: string[] = [];
     await expect(runWithAiFallback(
-      [{ id: "groq", priority: 1 }, { id: "openai", priority: 2 }],
-      async (provider) => {
-        first.push(provider.id);
+      [{ id: "groq", priority: 1 }],
+      async () => {
         const error = new Error("rate limited") as Error & { status: number };
         error.status = 429;
         throw error;
