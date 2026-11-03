@@ -3,16 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureOwnerAdmin } from "@/lib/admin-role.functions";
 
-type AuthRequest = {
-  channel: "cloudy-auth";
-  type: "request";
-  id: string;
-  action: "signUp" | "signIn" | "signOut";
-  name?: string;
-  email?: string;
-  password?: string;
-  state?: unknown;
-};
+type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown };
 
 function CloudyOriginalApp() {
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -29,7 +20,7 @@ function CloudyOriginalApp() {
     const onMessage = async (event: MessageEvent<unknown>) => {
       if (event.origin !== window.location.origin || event.source !== frame.contentWindow) return;
       if (!event.data || typeof event.data !== "object") return;
-      const message = event.data as Partial<AuthRequest> & { channel?: string; type?: string };
+      const message = event.data as AuthRequest;
       if (message.channel !== "cloudy-auth") return;
 
       if (message.type === "init") {
@@ -42,7 +33,7 @@ function CloudyOriginalApp() {
         accessTokenRef.current = data.session?.access_token ?? null;
         let ownerIsAdmin = user?.app_metadata?.role === "admin";
         if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) { try { const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } }); ownerIsAdmin = role.isAdmin; } catch { console.error("[cloudy-admin] owner role refresh failed"); } }
-        let progress: { state: Record<string, unknown>; updated_at: string } | null = null;
+        let progress: { state: unknown; updated_at: string } | null = null;
         if (user) {
           const { data: saved, error: progressError } = await supabase
             .from("user_progress")
@@ -51,7 +42,7 @@ function CloudyOriginalApp() {
             .maybeSingle();
           if (progressError) {
             // Keep the authenticated session even when the optional cloud snapshot is unavailable.
-            send({ type: "session", ok: true, user: { id: user.id, email: user.email ?? "", name: String(user.user_metadata?.name ?? user.user_metadata?.display_name ?? ""), isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com" }, progress: null, progressWarning: "Не удалось загрузить облачный прогресс. Локальные данные сохранены." });
+            send({ type: "session", ok: true, user: { id: user.id, email: user.email ?? "", name: String(user.user_metadata?.["name"] ?? user.user_metadata?.["display_name"] ?? ""), isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com" }, progress: null, progressWarning: "Не удалось загрузить облачный прогресс. Локальные данные сохранены." });
             return;
           }
           progress = saved;
@@ -78,14 +69,14 @@ function CloudyOriginalApp() {
         const state = message.state;
         if (!state || typeof state !== "object" || Array.isArray(state)) return;
         const record = state as Record<string, unknown>;
-        const week = record.wk && typeof record.wk === "object" ? (record.wk as Record<string, unknown>) : {};
+        const week = record["wk"] && typeof record.wk === "object" ? (record.wk as Record<string, unknown>) : {};
         const { error: saveError } = await supabase.from("user_progress").upsert(
           {
             user_id: authData.user.id,
-            state: record,
-            total_xp: Number(record.xp) || 0,
-            week_key: typeof week.k === "string" ? week.k : "",
-            week_xp: Number(week.xp) || 0,
+            state: record as import("@/integrations/supabase/types").Json,
+            total_xp: Number(record["xp"]) || 0,
+            week_key: typeof week["k"] === "string" ? week.k : "",
+            week_xp: Number(week["xp"]) || 0,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "user_id" },
@@ -134,7 +125,7 @@ function CloudyOriginalApp() {
             user: {
               id: data.user.id,
               email: data.user.email ?? "",
-              name: String(data.user.user_metadata?.name ?? ""),
+              name: String(data.user.user_metadata?.["name"] ?? ""),
               isAdmin: role.isAdmin,
             },
           });
@@ -154,7 +145,7 @@ function CloudyOriginalApp() {
             user: {
               id: data.user.id,
               email: data.user.email ?? "",
-              name: String(data.user.user_metadata?.name ?? data.user.user_metadata?.display_name ?? ""),
+              name: String(data.user.user_metadata?.name ?? data.user.user_metadata?.["display_name"] ?? ""),
               isAdmin: role.isAdmin,
             },
           });
