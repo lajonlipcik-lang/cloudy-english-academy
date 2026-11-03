@@ -28,7 +28,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .lgc{display:flex;align-items:center;gap:14px}.mdl{font-size:56px;display:flex;animation:float 3s infinite}.lr{animation:rise2 .5s both}.lr.me{background:rgba(255,255,255,.2);border-radius:12px;padding:10px 8px}
 .ag{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 8px;text-align:center}.bd{font-size:30px;display:flex;flex-direction:column;align-items:center;gap:4px;filter:grayscale(1);opacity:.35}.bd.on{filter:none;opacity:1;animation:pop .6s both}.bd small{font-size:10px;font-weight:700}
 .toast{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:50%;background:#fff;color:#0a2a73;padding:12px 18px;border-radius:16px;font-weight:800;z-index:50;animation:tst 3.1s both}@keyframes tst{0%{transform:translate(-50%,-90px)}12%,85%{transform:translate(-50%,0)}100%{transform:translate(-50%,-90px)}}
-#msgs{padding-bottom:70px}.bub{max-width:84%;padding:12px 15px;border-radius:18px;margin:8px 0;line-height:1.35;animation:rise2 .4s both;white-space:pre-wrap}.bub.a{background:#fff;color:#0a2a73;border-bottom-left-radius:4px}.bub.u{background:linear-gradient(#5bbcff,#2d86f2);margin-left:auto;border-bottom-right-radius:4px}.bub.typ{animation:blk 1s infinite}@keyframes blk{50%{opacity:.3}}
+#msgs{padding-bottom:24px}.chat-shell{height:100dvh;max-width:480px;margin:0 auto;display:flex;flex-direction:column;overflow:hidden;padding:calc(10px + env(safe-area-inset-top,0px)) 18px calc(10px + env(safe-area-inset-bottom,0px));position:relative;z-index:1}.chat-shell .top{flex:none}.chat-messages{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:8px 0 18px;scrollbar-width:none}.chat-messages::-webkit-scrollbar{display:none}.chat-composer{flex:none;display:flex;gap:10px;align-items:center;padding:10px 0 0;background:transparent}.chat-composer input{flex:1;min-width:0;margin:0;padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.22);background:rgba(6,20,58,.5);color:inherit;font:inherit;font-size:16px;outline:0}.chat-composer .spk{flex:none}.chat-typing{display:inline-flex;align-items:center;gap:5px;min-width:48px}.chat-typing i{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.35;animation:chatDot 1s infinite}.chat-typing i:nth-child(2){animation-delay:.15s}.chat-typing i:nth-child(3){animation-delay:.3s}@keyframes chatDot{50%{opacity:1;transform:translateY(-3px)}}.chat-type-cursor:after{content:' ';display:inline-block;width:2px;height:1em;background:currentColor;vertical-align:-2px;margin-left:2px;animation:cursorBlink .8s steps(2) infinite}@keyframes cursorBlink{50%{opacity:0}}.bub{max-width:84%;padding:12px 15px;border-radius:18px;margin:8px 0;line-height:1.35;animation:rise2 .4s both;white-space:pre-wrap}.bub.a{background:#fff;color:#0a2a73;border-bottom-left-radius:4px}.bub.u{background:linear-gradient(#5bbcff,#2d86f2);margin-left:auto;border-bottom-right-radius:4px}.bub.typ{animation:blk 1s infinite}@keyframes blk{50%{opacity:.3}}
 .cin{display:flex;gap:10px;align-items:center;background:rgba(6,20,58,.88);backdrop-filter:blur(14px);border-radius:0}.cin input{margin:0}
 body[data-th=light]{background:linear-gradient(165deg,#fff 0%,#dff0ff 45%,#8fcaff 100%) fixed!important;color:#06143a}
 body[data-th=light] .pill,body[data-th=light] .card,body[data-th=light] .av,body[data-th=light] .chest:not(.rdy){background:rgba(255,255,255,.75);color:#06143a}
@@ -470,7 +470,7 @@ function review(){const w=Object.keys(S.mis).slice(0,8).map(en=>[en,ruOf(en)]).f
 function again(){rv?review():go(L)}
 const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button class="spk" onclick="say('${e.en}',1)">${ic('spk')}</button></div><button class="big" id="mic" onclick="rec()">${ic('mic')}</button><p id="rs" style="text-align:center;opacity:.85">Нажмите и произнесите слово</p><button class="btn ghost" onclick="skipP()">ПРОПУСТИТЬ</button>`;
 function skipP(){if(done)return;fx(true,'Пропущено')}
-let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false;
+let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false,lastVoiceTranscript='';
 function normalizeSpeechText(value){
  return String(value||"").normalize("NFKD").toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9\\s]/g," ").replace(/\\s+/g," ").trim();
 }
@@ -482,10 +482,12 @@ function speechDistance(a,b){
 function speechMatches(transcript,target){
  const heard=normalizeSpeechText(transcript),expected=normalizeSpeechText(target);
  if(!heard||!expected)return false;
+ // Short English words often differ by a single phoneme (son/sun, ship/sheep).
+ // Browser ASR's fuzzy transcript matching cannot safely distinguish them.
  if(heard===expected)return true;
- if(!expected.includes(" ")&&expected.length>=5)return speechDistance(heard,expected)<=1;
- const maxErrors=Math.max(1,Math.floor(expected.length*.1));
- return Math.abs(heard.length-expected.length)<=maxErrors&&speechDistance(heard,expected)<=maxErrors;
+ if(expected.includes(" "))return false;
+ if(expected.length<5)return false;
+ return Math.abs(heard.length-expected.length)<=1&&speechDistance(heard,expected)<=1;
 }
 function clearCloudyRecognition(){
  clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
@@ -517,6 +519,7 @@ function rec(autoRetry=false){
   cloudyVoiceHandled=true;clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
   const best=alternatives.sort((x,y)=>y.confidence-x.confidence).find(x=>speechMatches(x.text,exercise.en));
   const heard=alternatives[0].text;
+  lastVoiceTranscript=heard;
   clearCloudyRecognition();
   if(best){
    if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,true,{retry:!!rt});
@@ -562,9 +565,12 @@ function rec(autoRetry=false){
  }
 }
 function theme(t){S.set.th=t;save();snd('tab');view(0)}
-async function chat(){app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs"></div></div><div class="foot cin"><input id="ci" placeholder="Напишите по-английски" autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}"><button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button></div>`;CH.forEach(m=>bub(m.r,m.t));if(!CH.length)await ask();const input=$('#ci');if(input)input.focus()}
-function bub(r,t){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});return d}
-async function ask(u){if(u){CH.push({r:'u',t:u});bub('u',u)}const el=bub('a','Подключаю Cloudy…');el.classList.add('typ');try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');el.classList.remove('typ');el.textContent=reply;CH.push({r:'a',t:reply});snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}
+async function chat(){app.innerHTML=`<section class="chat-shell"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs" class="chat-messages" aria-live="polite"></div><div class="chat-composer"><input id="ci" placeholder="Напишите по-английски" autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}"><button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button></div></section>`;CH.forEach(m=>bub(m.r,m.t,false));if(!CH.length)await ask();const input=$('#ci');if(input)input.focus()}
+function scrollChat(){const box=$('#msgs');if(box)box.scrollTop=box.scrollHeight}
+function bub(r,t,scroll=true){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);if(scroll)requestAnimationFrame(scrollChat);return d}
+function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
+async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await wait(text.length>500?9:16)}el.classList.remove('chat-type-cursor')}
+async function ask(u){if(u){CH.push({r:'u',t:u});bub('u',u)}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}scrollChat()}
 async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('tap');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
 setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
 function amb(){const l=S.lv||"A1",a=$(".amb");document.body.dataset.lv=l;document.body.dataset.th=S.set.th||"dark";if(a.dataset.l==l)return;a.dataset.l=l;a.innerHTML="";const n={A1:5,A2:16,B1:28,B2:4}[l],r=Math.random;for(let k=0;k<n;k++){const u=document.createElement("u"),z={A1:200+r()*220,A2:14+r()*40,B1:3+r()*6,B2:90}[l];u.style.cssText=`left:${r()*100}%;top:${r()*100}%;width:${z}px;height:${z}px;animation-delay:-${r()*12}s;animation-duration:${l=="A2"?7+r()*8:l=="B1"?2+r()*3:l=="B2"?12+r()*8:14+r()*8}s`;a.appendChild(u)}}
