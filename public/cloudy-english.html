@@ -249,7 +249,7 @@ h2{font-size:21px;margin:0 0 16px}
 <div class="amb"></div>
 <div id="app"></div>
 
-<button id="cloudyAiLauncher" type="button" aria-label="Открыть Cloudy Ai" aria-expanded="false" onclick="toggleCloudyAi()">
+<button id="cloudyAiLauncher" type="button" aria-label="Открыть Cloudy Ai" onclick="chat()">
 <svg viewBox="0 0 100 100" role="img" aria-label="Cloudy Ai">
 <defs><linearGradient id="caCloud" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#cceaff"/></linearGradient></defs>
 <path d="M20 66c-12 0-17-9-14-19 2-8 9-12 17-11 3-17 18-25 31-18 8 4 11 10 12 17 13-3 25 6 25 18 0 9-7 15-17 15H20z" fill="url(#caCloud)" stroke="#e9f7ff" stroke-width="2"/>
@@ -259,11 +259,7 @@ h2{font-size:21px;margin:0 0 16px}
 <path d="M43 61q8 11 17 0" fill="#ff6b81" stroke="#b83d62" stroke-width="1.5" stroke-linecap="round"/>
 <path d="M11 54q-8-12-5-18" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
 </svg><span class="cloudy-dot"></span></button>
-<section id="cloudyAiPanel" role="dialog" aria-label="Cloudy Ai">
-<div class="ca-head"><div class="ca-avatar"><svg viewBox="0 0 100 100"><path d="M20 66c-12 0-17-9-14-19 2-8 9-12 17-11 3-17 18-25 31-18 8 4 11 10 12 17 13-3 25 6 25 18 0 9-7 15-17 15H20z" fill="#fff" stroke="#d9f0ff" stroke-width="3"/><path d="M28 23 49 9l23 13-22 6z" fill="#153c8d"/><ellipse cx="36" cy="48" rx="4" ry="6" fill="#14366d"/><ellipse cx="65" cy="48" rx="4" ry="6" fill="#14366d"/><path d="M43 61q8 11 17 0" fill="#ff6b81"/></svg></div><div><div class="ca-name">Cloudy Ai</div><div class="ca-sub">Твой помощник по английскому</div></div><button class="ca-close" type="button" aria-label="Закрыть" onclick="toggleCloudyAi(false)">×</button></div>
-<div class="ca-message">Привет! 👋 Я Cloudy Ai. Скоро мы сможем вместе практиковать английский, разбирать грамматику и исправлять ошибки.</div>
-<div class="ca-note">ИИ-чат пока не подключён. Следующий шаг — подключение Groq API.</div>
-</section>
+
 
 <script src="/cloudy-learning.js"></script>
 <script>
@@ -466,7 +462,7 @@ function rec(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition
  r.onresult=ev=>{got=1;m.classList.remove('rec');const t=[...ev.results[0]].map(x=>x.transcript.toLowerCase()).join(' ');if(t.includes(e.en.toLowerCase())){if(window.CloudyLearning)CloudyLearning.record(KEY,e,true,{retry:!!rt});ok++;tot++;cmb++;snd('ok',cmb);fx(true,'Отлично!')}else{if(window.CloudyLearning)CloudyLearning.record(KEY,e,false,{retry:!!rt});addMis(e.en);miss();fx(false,'Нужно сказать: '+e.en)}};
  r.onerror=ev=>{m.classList.remove('rec');if(ev.error==='not-allowed'||ev.error==='service-not-allowed')toast('Нет доступа к микрофону. Разрешите его использование в настройках браузера.',false);else if(ev.error==='audio-capture')toast('Микрофон не найден или уже используется другим приложением.',false);else if(ev.error==='network')toast('Не удалось распознать речь из-за проблем с соединением. Попробуйте ещё раз.',false);else if(!got&&!done)toast('Не удалось распознать речь. Попробуйте ещё раз или выберите ответ вручную.',false)};r.onend=()=>{m.classList.remove('rec');if(!got&&!done){const s=$('#rs');if(s)s.textContent='Не расслышал, попробуйте ещё раз'}};try{r.start()}catch(x){}}
 function theme(t){S.set.th=t;save();snd('tab');view(0)}
-async function chat(){toggleCloudyAi(false);app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs"></div></div><div class="foot cin"><input id="ci" placeholder="Напишите по-английски" autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}"><button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button></div>`;CH.forEach(m=>bub(m.r,m.t));if(!CH.length)await ask();const input=$('#ci');if(input)input.focus()}
+async function chat(){app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs"></div></div><div class="foot cin"><input id="ci" placeholder="Напишите по-английски" autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}"><button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button></div>`;CH.forEach(m=>bub(m.r,m.t));if(!CH.length)await ask();const input=$('#ci');if(input)input.focus()}
 function bub(r,t){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});return d}
 async function ask(u){if(u){CH.push({r:'u',t:u});bub('u',u)}const el=bub('a','Подключаю Cloudy…');el.classList.add('typ');try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t}))}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');el.classList.remove('typ');el.textContent=reply;CH.push({r:'a',t:reply});snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}
 async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('tap');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
@@ -554,7 +550,6 @@ view();
 setCloudyAiAvailability();
 
 function setCloudyAiAvailability(){const b=document.getElementById("cloudyAiLauncher");if(b)b.style.display=S&&S.tested?"grid":"none"}
-function toggleCloudyAi(force){if(!S||!S.tested)return;const p=document.getElementById("cloudyAiPanel"),b=document.getElementById("cloudyAiLauncher");if(!p||!b)return;const open=typeof force==="boolean"?force:!p.classList.contains("open");p.classList.toggle("open",open);b.setAttribute("aria-expanded",String(open));if(open){p.classList.remove("open");b.setAttribute("aria-expanded","false");chat()}}
 
 </script>
 <script id="cloudy-admin-runtime" src="/cloudy-admin.js"></script>
