@@ -63,11 +63,11 @@ export const saveAiProvider=createServerFn({method:"POST"}).inputValidator(valid
     updated_at: new Date().toISOString(),},{onConflict:"provider"}).select("*").single();if(error)throw new Error("Не удалось сохранить API: "+error.message);return {provider:safe(r)}});
 export const deleteAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);const {error}=await db.from("ai_provider_secrets").delete().eq("id",String(data.id??""));if(error)throw new Error("Не удалось удалить API.");return {ok:true}});
 export const testAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true),r=(await rows(db)).find((x:any)=>x.id===String(data.id??""));if(!r)throw new Error("Провайдер не найден.");try{const a=await ask(r,[{role:"user",content:"Ответь одним словом: Cloudy работает."}],20);await db.from("ai_provider_secrets").update({last_tested_at:new Date().toISOString(),last_status:"ok"}).eq("id",r.id);return {ok:true,provider:a.provider,model:a.model,response:a.content}}catch(e){await db.from("ai_provider_secrets").update({last_tested_at:new Date().toISOString(),last_status:"error"}).eq("id",r.id);throw e}});
-function safeLearnerProfile(value:unknown){
+const safeContextText=(value:unknown,max:number)=>String(value??"").replace(/[\\u0000-\\u001f\\u007f]/g," ").replace(/\\s+/g," ").trim().slice(0,max);\nfunction safeLearnerProfile(value:unknown){
   if(!value||typeof value!=="object")return null;
   const p=value as any;
   const skills=Array.isArray(p.skills)?p.skills.slice(0,80).map((s:any)=>({
-    id:String(s?.id??"").slice(0,90),
+    id:String(s?.id??"").replace(/[^a-zA-Z0-9:_-]/g,"").slice(0,90),
     mastery:Math.max(0,Math.min(1,Number(s?.mastery)||0)),
     evidence:Math.max(0,Math.min(1000,Number(s?.evidence)||0)),
     correct:Math.max(0,Math.min(10000,Number(s?.correct)||0)),
@@ -76,8 +76,8 @@ function safeLearnerProfile(value:unknown){
     lastPracticed:Math.max(0,Number(s?.lastPracticed)||0),
   })).filter((s:any)=>s.id):[];
   const recentEvents=Array.isArray(p.recentEvents)?p.recentEvents.slice(-20).map((e:any)=>({
-    skillId:String(e?.skillId??"").slice(0,90),
-    exerciseType:String(e?.exerciseType??"").slice(0,24),
+    skillId:String(e?.skillId??"").replace(/[^a-zA-Z0-9:_-]/g,"").slice(0,90),
+    exerciseType:String(e?.exerciseType??"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,24),
     correct:!!e?.correct,
     retry:!!e?.retry,
     at:Math.max(0,Number(e?.at)||0),
@@ -166,7 +166,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const history=Array.isArray(data.history)?data.history.slice(-16).map((m:any)=>({role:m?.role==="assistant"?"assistant":"user",content:String(m?.content??"").slice(0,1200)})).filter((m:any)=>m.content):[];
     const providers=(await rows(db)).filter((x:any)=>x.enabled).sort((a:any,b:any)=>a.priority-b.priority);
     if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
-    const displayName=String(profileResult.data?.display_name??user.user_metadata?.["name"]??"ученик").slice(0,60);
+    const displayName=safeContextText(profileResult.data?.display_name??user.user_metadata?.["name"]??"ученик",40)||"ученик";
     const system="Ты Cloudy — персональный дружелюбный преподаватель английского языка для русскоговорящего ученика. Имя ученика: "+displayName+".\\n"+context+"\\nОтвечай коротко и понятно, используй английский по уровню ученика. Мягко исправляй ошибки и объясняй по-русски одной строкой. Задавай только один вопрос за раз. Без эмодзи и Markdown. Не выдумывай прогресс и не раскрывай внутренний ID.";
     const messages=[{role:"system",content:system},...history];
     if(!history.length||history[history.length-1]?.role!=="user")messages.push({role:"user",content:prompt});
