@@ -37,7 +37,7 @@ function CloudyOriginalApp() {
           console.error("[cloudy-admin] owner role refresh failed");
         }
       }
-      let progress: { state: unknown; updated_at: string } | null = null;
+      let progress: { state: unknown; updated_at: string } | null = null;\n      let progressLoadFailed = false;
       if (user) {
         const { data: saved } = await supabase
           .from("user_progress")
