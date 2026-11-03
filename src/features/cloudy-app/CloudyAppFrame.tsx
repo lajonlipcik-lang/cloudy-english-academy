@@ -1,9 +1,24 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { CloudyInstallGuide, isCloudyInstallRequired } from "@/features/cloudy-app/CloudyInstallGuide";
 import { useCloudyAppBridge } from "@/features/cloudy-app/useCloudyAppBridge";
 
 export function CloudyAppFrame() {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
+  const [showInstallGuide, setShowInstallGuide] = useState<boolean | null>(null);
   useCloudyAppBridge(frameRef);
+
+  useEffect(() => {
+    const refreshInstallState = () => setShowInstallGuide(isCloudyInstallRequired());
+    refreshInstallState();
+    window.addEventListener("pageshow", refreshInstallState);
+    window.addEventListener("focus", refreshInstallState);
+    document.addEventListener("visibilitychange", refreshInstallState);
+    return () => {
+      window.removeEventListener("pageshow", refreshInstallState);
+      window.removeEventListener("focus", refreshInstallState);
+      document.removeEventListener("visibilitychange", refreshInstallState);
+    };
+  }, []);
 
   return (
     <main
@@ -17,20 +32,24 @@ export function CloudyAppFrame() {
         background: "#050d2b",
       }}
     >
-      <iframe
-        ref={frameRef}
-        title="Cloudy English"
-        src="/cloudy-english.html"
-        allow="microphone"
-        referrerPolicy="same-origin"
-        style={{
-          display: "block",
-          width: "100%",
-          height: "100%",
-          border: 0,
-          background: "transparent",
-        }}
-      />
+      {showInstallGuide === null ? null : showInstallGuide ? (
+        <CloudyInstallGuide onInstalled={() => setShowInstallGuide(false)} />
+      ) : (
+        <iframe
+          ref={frameRef}
+          title="Cloudy English"
+          src="/cloudy-english.html"
+          allow="microphone"
+          referrerPolicy="same-origin"
+          style={{
+            display: "block",
+            width: "100%",
+            height: "100%",
+            border: 0,
+            background: "transparent",
+          }}
+        />
+      )}
     </main>
   );
 }
