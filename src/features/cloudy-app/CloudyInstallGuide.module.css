@@ -1,0 +1,20 @@
+.installGate{position:fixed;inset:0;min-height:100dvh;display:flex;align-items:center;justify-content:center;overflow-y:auto;padding:24px 20px calc(28px + env(safe-area-inset-bottom,0px));z-index:9999;text-align:center;background:linear-gradient(165deg,#050d2b 0%,#0a2a73 48%,#3aa0ff 100%);color:#fff}
+.installPanel{font-family:inherit;width:100%;max-width:390px;padding:25px 21px 22px;border:1px solid rgba(255,255,255,.23);border-radius:30px;background:rgba(255,255,255,.13);backdrop-filter:blur(22px);box-shadow:0 24px 70px rgba(0,0,0,.24);animation:cloudyInstallIn .6s both}
+.installCloud{width:136px;height:100px;margin:0 auto 12px;display:grid;place-items:center;animation:cloudyWelcomeFloat 3.4s ease-in-out infinite;filter:drop-shadow(0 12px 22px rgba(0,0,0,.18))}
+.mascot{width:136px}
+.installTitle{font-size:29px;line-height:1.12;font-weight:900;letter-spacing:-.7px;margin:0 0 9px}
+.installLead{font-size:14px;line-height:1.5;opacity:.82;margin:0 auto 20px;max-width:300px}
+.installSteps{display:grid;gap:10px;text-align:left;margin:0 0 18px}
+.installStep{display:flex;align-items:center;gap:12px;padding:12px;border-radius:17px;background:rgba(255,255,255,.105);border:1px solid rgba(255,255,255,.12)}
+.installNumber{width:30px;height:30px;flex:none;border-radius:11px;display:grid;place-items:center;background:linear-gradient(145deg,#fff,#cfe9ff);color:#14519b;font-weight:900}
+.installStep strong{display:block;font-size:14px;margin-bottom:2px}
+.installStep small{display:block;font-size:12px;line-height:1.4;opacity:.78}
+.installShareIcon{width:30px;height:30px;flex:none;display:grid;place-items:center;font-size:21px;color:#d9f0ff}
+.installNote{min-height:34px;font-size:12px;line-height:1.4;opacity:.82;margin:0 0 12px}
+.installAction{width:100%;min-height:55px;border:1px solid rgba(255,255,255,.55);border-radius:17px;background:linear-gradient(110deg,#fff,#d9efff);color:#0a367e;font-weight:900;font-size:15px;box-shadow:0 5px 0 rgba(23,83,157,.65),0 12px 25px rgba(0,0,0,.16)}
+.installAction:active{transform:translateY(2px)}
+.installBrowser{display:inline-block;margin-top:13px;font-size:12px;opacity:.75}
+.shake{animation:cloudyInstallShake .45s}
+@keyframes cloudyWelcomeFloat{50%{transform:translateY(-8px)}}
+@keyframes cloudyInstallIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes cloudyInstallShake{20%,60%{transform:translateX(-7px)}40%,80%{transform:translateX(7px)}}
