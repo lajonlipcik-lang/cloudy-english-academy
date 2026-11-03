@@ -149,7 +149,9 @@ export function applyAnswer(s: CloudyState, sess: Session, good: boolean, en?: s
     let st = s;
     if (sess.review && en && st.mis[en]) {
       const mis = { ...st.mis };
-      const remaining = (mis[en] ?? 0) - 1;\n      if (remaining <= 0) delete mis[en];\n      else mis[en] = remaining;
+      const remaining = (mis[en] ?? 0) - 1;
+      if (remaining <= 0) delete mis[en];
+      else mis[en] = remaining;
       st = { ...st, mis };
     }
     return { state: st, session: { ...sess, ok: sess.ok + 1, tot: sess.tot + 1, cmb: sess.cmb + 1 } };
