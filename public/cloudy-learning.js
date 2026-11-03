@@ -59,7 +59,7 @@
   }
   function profile(scope) {
     const data = safeRead(storageKey(scope));
-    const skills = Object.entries(data.skills).map(([id, value]) => ({ id, ...value }));
+    const skills = Object.entries(data.skills).map(([id, value]) => ({ id, ...value, due: value.dueAt <= Date.now() }));
     return {
       version: VERSION,
       attempts: data.events.length,
