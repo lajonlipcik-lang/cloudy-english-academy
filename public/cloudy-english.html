@@ -754,7 +754,7 @@ function fin(){roll();const t=new Date().toDateString(),y=new Date(Date.now()-86
  snd("win");conf();for(let k=0;k<st;k++)setTimeout(()=>snd("star"),300+k*300);
  if(cloudUserId){window.parent.postMessage({channel:'cloudy-auth',type:'lesson-complete',lessonIndex:L,level:S.lv},location.origin);return}
  const el=$("#xp"),s0=performance.now();(function f(n){const p=Math.min((n-s0)/1000,1);el.textContent="+"+Math.round(gain*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s0)}
-view();
+bootCloudy();
 </script>
 <script id="cloudy-admin-runtime" src="/cloudy-admin.js"></script>
 </body>
