@@ -36,6 +36,19 @@ function CloudyOriginalApp() {
           return;
         }
         const user = data.session?.user;
+        let progress: { state: Record<string, unknown>; updated_at: string } | null = null;
+        if (user) {
+          const { data: saved, error: progressError } = await supabase
+            .from("user_progress")
+            .select("state, updated_at")
+            .eq("user_id", user.id)
+            .maybeSingle();
+          if (progressError) {
+            send({ type: "session", ok: false, error: "Не удалось загрузить облачный прогресс. Локальные данные сохранены." });
+            return;
+          }
+          progress = saved;
+        }
         send({
           type: "session",
           ok: true,
@@ -46,7 +59,34 @@ function CloudyOriginalApp() {
                 name: String(user.user_metadata?.name ?? user.user_metadata?.display_name ?? ""),
               }
             : null,
+          progress,
         });
+        return;
+      }
+
+      if (message.type === "progress-save") {
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData.user) return;
+        const state = message.state;
+        if (!state || typeof state !== "object" || Array.isArray(state)) return;
+        const record = state as Record<string, unknown>;
+        const week = record.wk && typeof record.wk === "object" ? (record.wk as Record<string, unknown>) : {};
+        const { error: saveError } = await supabase.from("user_progress").upsert(
+          {
+            user_id: authData.user.id,
+            state: record,
+            total_xp: Number(record.xp) || 0,
+            week_key: typeof week.k === "string" ? week.k : "",
+            week_xp: Number(week.xp) || 0,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+        if (saveError) {
+          send({ type: "progress-save-result", ok: false, error: "Не удалось сохранить прогресс в облако." });
+        } else {
+          send({ type: "progress-save-result", ok: true });
+        }
         return;
       }
 
