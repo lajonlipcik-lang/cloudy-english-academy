@@ -428,12 +428,18 @@ function goal(n){S.set.goal=n;save();snd("pick");view(0)}
 function rst(){sheet(`<h3>Сбросить прогресс?</h3><p style="opacity:.85">Уроки, XP и серия обнулятся. Настройки сохранятся.</p><button class="btn" onclick="doRst()">СБРОСИТЬ</button><br><br><button class="btn" onclick="closeSh()">ОТМЕНА</button>`)}
 function doRst(){const s=S.set;S=DEF();S.set=s;save();closeSh();T=0;view()}
 let ex,i,hp,sel,built,done,ml,mc,cmb,ok,tot,L,rv=0,lm=[],rt=0;
-function mk(l){const r=[];
- l.w.forEach(([en,ru],k)=>{const m=k%3,o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice(0,3)]);
-  if(m==2)r.push({k:"l",a:en,en,o:o.map(x=>x[0]),title:"Что вы слышите?"});
-  else r.push({k:"c",q:m?en:ru,a:m?ru:en,en,spk:!!m,o:o.map(x=>m?x[1]:x[0]),title:m?"Что это значит?":"Переведите на английский"})});
- const p=sh(l.w).slice(0,4);r.push({k:"m",L:sh(p.map(x=>[x[0],x[0]])),R:sh(p.map(x=>[x[1],x[0]]))});
- l.s.forEach(([ru,en,d])=>r.push({k:"b",q:ru,a:en,o:sh([...en.split(" "),...d.split(" ")]),title:"Переведите на английский"}));
+function mk(l){const r=[],modes=sh([0,0,1,1,2,2]);
+ const titles={
+  ru:["Переведите на английский","Как сказать это по-английски?","Выберите английский перевод"],
+  en:["Что это значит?","Выберите перевод слова","Как переводится это слово?"],
+  listen:["Что вы услышали?","Прослушайте и выберите слово","Какое слово произнесено?"],
+  bank:["Составьте предложение на английском","Переведите фразу на английский","Соберите правильный перевод"]
+ };
+ l.w.forEach(([en,ru])=>{const m=modes.pop(),o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice(0,3)]);
+  if(m==2)r.push({k:"l",a:en,en,o:o.map(x=>x[0]),title:titles.listen[Math.random()*titles.listen.length|0]});
+  else r.push({k:"c",q:m?en:ru,a:m?ru:en,en,spk:!!m,o:o.map(x=>m?x[1]:x[0]),title:(m?titles.en:titles.ru)[Math.random()*(m?titles.en:titles.ru).length|0]})});
+ const p=sh(l.w).slice(0,4);r.push({k:"m",L:sh(p.map(x=>[x[0],x[0]])),R:sh(p.map(x=>[x[1],x[0]])),title:"Найдите пары"});
+ l.s.forEach(([ru,en,d])=>r.push({k:"b",q:ru,a:en,o:sh([...en.split(" "),...d.split(" ")]),title:titles.bank[Math.random()*titles.bank.length|0]}));
  if(l.w.length&&(window.SpeechRecognition||window.webkitSpeechRecognition)&&S.set.mic)r.push({k:"p",en:sh(l.w)[0][0]});return sh(r)}
 function go(n){snd("go");rv=0;lm=[];rt=0;L=n;ex=mk(D[n]);i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
 const opts=e=>e.o.map((o,k)=>`<button class="opt" style="--i:${k}" onclick="pick(${k})">${o}</button>`).join("");
@@ -441,7 +447,7 @@ function draw(){const e=ex[i];sel=null;built=[];done=false;ml=null;mc=0;let b;
  if(e.k=="c")b=`<h2>${e.title}</h2><div class="qq">${e.q}${e.spk?`<button class="spk" onclick="say('${e.en}',1)">${ic("spk")}</button>`:""}</div>${opts(e)}`;
  else if(e.k=="l")b=`<h2>${e.title}</h2><button class="big" onclick="say('${e.en}',1)">${ic("spk")}</button>${opts(e)}`;
  else if(e.k=="b")b=`<h2>${e.title}</h2><div class="qq" style="font-size:24px">${e.q}</div><div class="ans" id="ans"></div><div class="bank">${e.o.map((o,k)=>`<button class="chip" id="c${k}" onclick="tog(${k})">${o}</button>`).join("")}</div>`;
- else if(e.k=="p")b=PB(e);else b=`<h2>Найдите пары</h2><div class="mt"><div>${e.L.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(0,'${id}',this)">${t}</button>`).join("")}</div><div>${e.R.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(1,'${id}',this)">${t}</button>`).join("")}</div></div>`;
+ else if(e.k=="p")b=PB(e);else b=`<h2>${e.title||"Найдите пары"}</h2><div class="mt"><div>${e.L.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(0,'${id}',this)">${t}</button>`).join("")}</div><div>${e.R.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(1,'${id}',this)">${t}</button>`).join("")}</div></div>`;
  app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic("x")}</button><div class="bar"><i style="width:${i/ex.length*100}%"></i></div><span class="hp" id="hp">${ic("heart")}${hp}</span></div><div class="body">${b}</div></div>`+(e.k=="m"||e.k=="p"?'<div class="foot" id="ft" style="display:none"></div>':`<div class="foot" id="ft"><button class="btn" id="go" disabled onclick="check()">ПРОВЕРИТЬ</button></div>`);
  requestAnimationFrame(()=>{const f=$(".bar i");if(f)f.style.width=i/ex.length*100+"%"});
  if(e.k=="l")setTimeout(()=>say(e.en,1),400);if(e.k=="c"&&e.spk)setTimeout(()=>say(e.en),400)}
