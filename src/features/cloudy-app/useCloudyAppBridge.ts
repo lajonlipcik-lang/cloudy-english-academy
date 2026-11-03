@@ -36,6 +36,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
         }
       }
       let progress: { state: unknown; updated_at: string } | null = null;
+      let learnerProfile: { english_level: string | null; placement_test_completed: boolean } | null = null;
       let progressLoadFailed = false;
       if (user) {
         const { data: saved, error: progressError } = await supabase
@@ -47,6 +48,16 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
         if (progressError) {
           progressLoadFailed = true;
           console.warn("[cloudy-progress] cloud progress could not be loaded");
+        }
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("english_level, placement_test_completed")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (profileError) {
+          console.warn("[cloudy-progress] learner profile could not be loaded");
+        } else {
+          learnerProfile = profile;
         }
       }
       send({
@@ -62,6 +73,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
             }
           : null,
         progress,
+        learnerProfile,
         progressLoadFailed,
       });
     };
