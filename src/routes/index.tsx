@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureOwnerAdmin } from "@/lib/admin-role.functions";
 
 type AuthRequest = {
   channel: "cloudy-auth";
@@ -108,12 +109,14 @@ function CloudyOriginalApp() {
             reply({ ok: true, needsConfirmation: true });
             return;
           }
+          const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
           reply({
             ok: true,
             user: {
               id: data.user.id,
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.name ?? ""),
+              isAdmin: role.isAdmin,
             },
           });
           return;
@@ -125,13 +128,14 @@ function CloudyOriginalApp() {
             password: String(message.password ?? ""),
           });
           if (error) throw error;
+          const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
           reply({
             ok: true,
             user: {
               id: data.user.id,
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.name ?? data.user.user_metadata?.display_name ?? ""),
-              isAdmin: data.user.app_metadata?.role === "admin",
+              isAdmin: role.isAdmin,
             },
           });
           return;
