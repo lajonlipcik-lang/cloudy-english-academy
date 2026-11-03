@@ -363,13 +363,13 @@ window.addEventListener('message',event=>{
   }else if(msg.ok===false){toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false)}else{cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
   return;
  }
- if(msg.type==='progress-save-result'){if(msg.ok){if(S.user?.email)ls('cl2sync:'+S.user.email,String(Date.now()))}else{toast(msg.error||'Не удалось сохранить прогресс в облаке. Проверьте интернет и повторите попытку.',false)}return;}
+ if(msg.type==='progress-save-result'){if(msg.ok){if(msg.state&&typeof msg.state==='object'){S.xp=Number(msg.state.xp)||0;const wk=msg.state.wk&&typeof msg.state.wk==='object'?msg.state.wk:{};S.wk={k:String(wk.k||''),xp:Number(wk.xp)||0};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}if(S.user?.email)ls('cl2sync:'+S.user.email,String(Date.now()))}else{toast(msg.error||'Не удалось сохранить прогресс в облаке. Проверьте интернет и повторите попытку.',false)}return;}
  if(msg.type==='lesson-award-result'){
   if(!msg.ok){toast(msg.error||'Не удалось начислить XP.',false);return;}
   const award=msg.result||{};
   S.xp=Number(award.total_xp)||0;
-  S.wk={k:String(award.week_key||''),xp:Number(award.week_xp)||0};
   if(Number(award.awarded)>0){S.td.xp+=Number(award.awarded);track(Number(award.awarded));}
+  S.wk={k:String(award.week_key||''),xp:Number(award.week_xp)||0};
   save();checkAch();
   const xpLabel=$('#xp');if(xpLabel)xpLabel.textContent='+'+(Number(award.awarded)||0);
   return;
