@@ -27,18 +27,8 @@ FROM public.user_progress up
 WHERE up.user_id = p.id
   AND up.state->>'lv' IN ('A1', 'A2', 'B1', 'B2');
 
--- Preserve an explicitly supplied updated_at from the concurrency-safe save RPC.
--- The previous trigger replaced it with transaction time, so the RPC returned a
--- timestamp that could differ from the actual row version and cause false conflicts.
-CREATE OR REPLACE FUNCTION public.sync_progress_columns() RETURNS trigger
-LANGUAGE plpgsql SET search_path = public AS $$
-BEGIN
-  NEW.week_key := COALESCE(NEW.state->'wk'->>'k', '');
-  NEW.week_xp := LEAST(GREATEST(COALESCE((NEW.state->'wk'->>'xp')::int, 0), 0), 100000);
-  NEW.total_xp := GREATEST(COALESCE((NEW.state->>'xp')::int, 0), 0);
-  NEW.updated_at := COALESCE(NEW.updated_at, now());
-  RETURN NEW;
-END $$;
+-- The existing trigger intentionally assigns transaction time on every write.
+-- The save RPC must return the timestamp actually stored after that trigger runs.
 
 CREATE OR REPLACE FUNCTION public.save_cloudy_progress(_user_id uuid, _state jsonb, _expected_updated_at timestamptz DEFAULT NULL)
 RETURNS jsonb
