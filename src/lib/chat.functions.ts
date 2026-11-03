@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { AiProvidersUnavailableError, runWithAiFallback } from "@/lib/ai/router";
 
 type Msg = { r: "u" | "a"; t: string };
 type In = { level: string; history: Msg[] };
@@ -23,11 +24,15 @@ export const claudyReply = createServerFn({ method: "POST" })
     const tr = data.history.map((m) => (m.r === "u" ? "Ученик: " : "Клауди: ") + m.t).join("\n");
     try {
       const { generateResponse } = await import("@lovable.dev/ai-gateway");
-      const res = await generateResponse({
-        model: "openai/gpt-6-astra",
-        instructions: sys,
-        input: "Диалог:\n" + (tr || "(пока пусто, начни разговор)") + "\n\nНапиши следующую реплику Клауди.",
-      });
+      const routed = await runWithAiFallback(
+        [{ id: "lovable-gateway", priority: 0 }],
+        () => generateResponse({
+          model: "openai/gpt-6-astra",
+          instructions: sys,
+          input: "Диалог:\n" + (tr || "(пока пусто, начни разговор)") + "\n\nНапиши следующую реплику Клауди.",
+        }),
+      );
+      const res = routed.value;
       const out = (res as { output?: Array<{ type: string; content?: Array<{ type: string; text?: string }> }> }).output ?? [];
       const text = out
         .filter((o) => o.type === "message")
@@ -38,7 +43,8 @@ export const claudyReply = createServerFn({ method: "POST" })
         .trim();
       return text ? { ok: true, text } : { ok: false, error: "failed" };
     } catch (e) {
-      const name = (e as { name?: string })?.name;
+      const cause = e instanceof AiProvidersUnavailableError ? e.lastError : e;
+      const name = (cause as { name?: string })?.name;
       console.error("claudy chat failed", name);
       if (name === "ConfigurationError" || name === "AuthenticationError") return { ok: false, error: "not_configured" };
       if (name === "PaymentRequiredError") return { ok: false, error: "credits" };
