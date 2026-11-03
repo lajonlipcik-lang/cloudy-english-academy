@@ -82,7 +82,7 @@ function CloudyOriginalApp() {
         const state = message.state;
         const accessToken = accessTokenRef.current;
         if (!state || typeof state !== "object" || Array.isArray(state) || !accessToken) {
-          send({ type: "progress-save-result", ok: false, error: "Сессия истекла. Войдите снова." });
+          send({ type: "progress-save-result", ok: false, error: "Сессия истекла. Войдите снова.", syncId: message.syncId });
           return;
         }
         try {
