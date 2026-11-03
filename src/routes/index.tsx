@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureOwnerAdmin } from "@/lib/admin-role.functions";
 import { toUserErrorMessage } from "@/lib/cloudy/user-errors";
 
-type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown };
+type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown; lessonIndex?: unknown; level?: unknown };
 
 function CloudyOriginalApp() {
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -79,30 +79,36 @@ function CloudyOriginalApp() {
       }
 
       if (message.type === "progress-save") {
-        const { data: authData, error: authError } = await supabase.auth.getUser();
-        if (authError || !authData.user) {
-          send({ type: "progress-save-result", ok: false, error: toUserErrorMessage(authError ?? new Error("Session expired"), "progress") });
+        const state = message.state;
+        const accessToken = accessTokenRef.current;
+        if (!state || typeof state !== "object" || Array.isArray(state) || !accessToken) {
+          send({ type: "progress-save-result", ok: false, error: "Сессия истекла. Войдите снова." });
           return;
         }
-        const state = message.state;
-        if (!state || typeof state !== "object" || Array.isArray(state)) return;
-        const record = state as Record<string, unknown>;
-        const week = record["wk"] && typeof record["wk"] === "object" ? (record["wk"] as Record<string, unknown>) : {};
-        const { error: saveError } = await supabase.from("user_progress").upsert(
-          {
-            user_id: authData.user.id,
-            state: record as unknown as import("@/integrations/supabase/types").Json,
-            total_xp: Number(record["xp"]) || 0,
-            week_key: typeof week["k"] === "string" ? week["k"] : "",
-            week_xp: Number(week["xp"]) || 0,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "user_id" },
-        );
-        if (saveError) {
-          send({ type: "progress-save-result", ok: false, error: toUserErrorMessage(saveError, "progress") });
-        } else {
+        try {
+          const api = await import("@/lib/cloudy/progress.functions");
+          await api.saveCloudyProgress({ data: { accessToken, state } });
           send({ type: "progress-save-result", ok: true });
+        } catch (error) {
+          send({ type: "progress-save-result", ok: false, error: toUserErrorMessage(error, "progress") });
+        }
+        return;
+      }
+
+      if (message.type === "lesson-complete") {
+        const accessToken = accessTokenRef.current;
+        if (!accessToken) {
+          send({ type: "lesson-award-result", ok: false, error: "Сессия истекла. Войдите снова." });
+          return;
+        }
+        try {
+          const api = await import("@/lib/cloudy/progress.functions");
+          const result = await api.awardCloudyLessonXp({
+            data: { accessToken, lessonIndex: Number(message.lessonIndex), level: String(message.level ?? "") },
+          });
+          send({ type: "lesson-award-result", ok: true, result });
+        } catch (error) {
+          send({ type: "lesson-award-result", ok: false, error: toUserErrorMessage(error, "progress") });
         }
         return;
       }
