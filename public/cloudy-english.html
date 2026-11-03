@@ -632,7 +632,19 @@ function draw(){const e=ex[i];sel=null;built=[];done=false;ml=null;mc=0;let b;
 function pick(k){if(done)return;sel=k;snd("pick");document.querySelectorAll(".opt").forEach((b,j)=>b.classList.toggle("sel",j==k));$("#go").disabled=false}
 function tog(k){if(done)return;snd("tap");const p=built.indexOf(k);p>-1?built.splice(p,1):built.push(k);const e=ex[i];$("#ans").innerHTML=built.map(j=>`<button class="chip" onclick="tog(${j})">${e.o[j]}</button>`).join("");e.o.forEach((_,j)=>$("#c"+j).classList.toggle("gone",built.includes(j)));$("#go").disabled=!built.length}
 function miss(){hp--;cmb=0;tot++;snd("bad");const h=$("#hp");h.innerHTML=ic("heart")+hp;h.classList.remove("hit");void h.offsetWidth;h.classList.add("hit");if(navigator.vibrate)try{navigator.vibrate(60)}catch(e){}}
-function fx(good,msg){done=true;const ft=$("#ft");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<p>${msg}</p><button class="btn" onclick="next()">ДАЛЬШЕ</button>`;if(good)$(".bar i").style.width=(i+1)/ex.length*100+"%"}
+function fx(good,msg){done=true;const ft=$("#ft");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<p>${msg}</p><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good)$(".bar i").style.width=(i+1)/ex.length*100+"%"}
+async function askExerciseCoach(){
+ const box=$("#exerciseCoachReply"),e=ex[i];if(!box||!e||box.dataset.loading)return;
+ box.dataset.loading="1";box.textContent="Cloudy разбирает задание…";
+ const target=String(e.a??e.en??"");
+ const response=e.k==="p"?lastVoiceTranscript:e.k==="b"?built.map(j=>e.o[j]).join(" "):e.k==="c"?String(e.o?.[sel]??""):e.k==="l"?String(e.o?.[sel]??""):"";
+ const exerciseContext={type:e.k==="p"?"pronunciation":e.k==="b"?"sentence-building":e.k==="m"?"matching":"vocabulary",question:String(e.q??e.title??"").slice(0,180),target:target.slice(0,160),learnerAnswer:String(response).slice(0,160),correct:normalizeSpeechText(response)===normalizeSpeechText(target),level:S.lv||"A1"};
+ try{
+  const result=await authRequest("ai-chat",{payload:{message:"Разбери со мной только что выполненное упражнение. Объясни разницу между моим ответом и правильным, если была ошибка. Дай короткую подсказку и одно похожее задание для закрепления. Учитывай мой уровень.",level:S.lv||"A1",history:[],learnerProfile:window.CloudyLearning?.profile(KEY)||null,exerciseContext}});
+  box.textContent=String(result.result?.answer||"Cloudy не смог подготовить разбор. Попробуйте позже.");
+ }catch(error){box.textContent=error?.message||"Не удалось получить разбор от Cloudy."}
+ delete box.dataset.loading;
+}
 function check(){if(done)return;const e=ex[i];
  const good=e.k=="b"?built.map(j=>e.o[j]).join(" ").toLowerCase()==e.a.toLowerCase():e.o[sel]==e.a;
  if(window.CloudyLearning)CloudyLearning.record(KEY,e,good,{retry:!!rt});
