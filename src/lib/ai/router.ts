@@ -1,0 +1,81 @@
+export type AiProviderCandidate = {
+  id: string;
+  priority?: number;
+};
+
+type CooldownEntry = { until: number; failures: number };
+
+const cooldowns = new Map<string, CooldownEntry>();
+const DEFAULT_COOLDOWN_MS = 15_000;
+
+function statusOf(error: unknown): number | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
+}
+
+function cooldownFor(error: unknown, failures: number): number {
+  const status = statusOf(error);
+  if (status === 401 || status === 403) return 60_000;
+  if (status === 429) return 30_000;
+  if (status === 408 || status === 409 || status === 425 || (status !== undefined && status >= 500)) {
+    return Math.min(60_000, DEFAULT_COOLDOWN_MS * failures);
+  }
+  if (error instanceof Error && /timeout|network|fetch failed|socket|econn/i.test(error.message)) {
+    return Math.min(60_000, DEFAULT_COOLDOWN_MS * failures);
+  }
+  return 0;
+}
+
+export class AiProvidersUnavailableError extends Error {
+  constructor(readonly lastError?: unknown) {
+    super("Все AI-провайдеры временно недоступны. Попробуйте ещё раз позже.");
+    this.name = "AiProvidersUnavailableError";
+  }
+}
+
+/**
+ * Runs providers by priority, falls back on failures and temporarily cools down
+ * providers that are rate-limited, misconfigured or unavailable.
+ *
+ * Cooldowns are intentionally process-local: they are an availability hint,
+ * not a security or billing control. Every request still checks credentials.
+ */
+export async function runWithAiFallback<T>(
+  providers: AiProviderCandidate[],
+  execute: (provider: AiProviderCandidate) => Promise<T>,
+  now = Date.now(),
+): Promise<{ value: T; providerId: string }> {
+  const ordered = [...providers].sort((a, b) => (a.priority ?? 0) - (b.priority ?? 0));
+  if (ordered.length === 0) throw new AiProvidersUnavailableError();
+
+  const ready = ordered.filter((provider) => (cooldowns.get(provider.id)?.until ?? 0) <= now);
+  // If every provider is cooling down, probe the one whose cooldown expires first.
+  const candidates = ready.length > 0
+    ? ready
+    : [ordered.reduce((a, b) =>
+        (cooldowns.get(a.id)?.until ?? 0) <= (cooldowns.get(b.id)?.until ?? 0) ? a : b,
+      )];
+
+  let lastError: unknown;
+  for (const provider of candidates) {
+    try {
+      const value = await execute(provider);
+      cooldowns.delete(provider.id);
+      return { value, providerId: provider.id };
+    } catch (error) {
+      lastError = error;
+      const failures = (cooldowns.get(provider.id)?.failures ?? 0) + 1;
+      const delay = cooldownFor(error, failures);
+      if (delay > 0) cooldowns.set(provider.id, { until: now + delay, failures });
+      else cooldowns.delete(provider.id);
+    }
+  }
+
+  throw new AiProvidersUnavailableError(lastError);
+}
+
+/** Test-only reset; does not expose or alter provider credentials. */
+export function resetAiRouterState(): void {
+  cooldowns.clear();
+}
