@@ -103,8 +103,9 @@ function mergeLearnerProfiles(existing:any,incoming:any){
   const recentEvents=[...events.values()].sort((a,b)=>a.at-b.at).slice(-20);
   return {attempts:Math.max(existing.attempts??0,incoming.attempts??0),dueCount:skills.filter(s=>s.due).length,skills,recentEvents};
 }
-function makeLearnerContext(userId:string,state:any,ledger:any,profile:any,fallbackLevel:string){
-  const rawAge=Number(state?.user?.age);
+function makeLearnerContext(userId:string,state:any,ledger:any,profile:any,fallbackLevel:string,accountAge:unknown){
+  const metadataAge=Number(accountAge);
+  const rawAge=Number.isInteger(metadataAge)&&metadataAge>=5&&metadataAge<=120?metadataAge:Number(state?.user?.age);
   const learnerAge=Number.isInteger(rawAge)&&rawAge>=5&&rawAge<=120?rawAge:null;
   const ageLine=learnerAge===null?"Learner age: not provided; use a universally age-appropriate, cautious teaching style and do not assume adulthood.":`Learner age: ${learnerAge}. ${learnerAge<18?"MINOR-SAFETY MODE: learner is under 18. Use age-appropriate examples and vocabulary; keep a warm, respectful teacher-student relationship; never flirt, sexualize, encourage secrecy, or request sensitive personal details. Do not provide instructions that facilitate dangerous, illegal, self-harm, or other harmful activity. For serious personal or safety concerns, respond supportively and encourage contacting a trusted adult or appropriate local help. Avoid adult themes and graphic content.":"Use a respectful, adult-appropriate teaching style while following all safety rules."}`;
   const levels=["A1","A2","B1","B2"];
@@ -171,7 +172,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       const {error:profileError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:learnerProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
       if(profileError)throw new Error("Не удалось сохранить профиль обучения.");
     }
-    const context=makeLearnerContext(user.id,state,xpResult.data,learnerProfile,requestedLevel);
+    const context=makeLearnerContext(user.id,state,xpResult.data,learnerProfile,requestedLevel,user.user_metadata?.["age"]);
     const history=Array.isArray(data.history)?data.history.slice(-16).map((m:any)=>({role:m?.role==="assistant"?"assistant":"user",content:String(m?.content??"").slice(0,1200)})).filter((m:any)=>m.content):[];
     const providers=(await rows(db)).filter((x:any)=>x.enabled).sort((a:any,b:any)=>a.priority-b.priority);
     if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
