@@ -87,8 +87,8 @@ function CloudyOriginalApp() {
         }
         try {
           const api = await import("@/lib/cloudy/progress.functions");
-          await api.saveCloudyProgress({ data: { accessToken, state } });
-          send({ type: "progress-save-result", ok: true });
+          const saved = await api.saveCloudyProgress({ data: { accessToken, state } });
+          send({ type: "progress-save-result", ok: true, state: saved.state });
         } catch (error) {
           send({ type: "progress-save-result", ok: false, error: toUserErrorMessage(error, "progress") });
         }
