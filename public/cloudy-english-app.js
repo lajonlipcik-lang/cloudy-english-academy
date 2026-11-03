@@ -304,24 +304,7 @@ function again(){rv?review():go(L)}
 const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button class="spk" onclick="say('${e.en}',1)">${ic('spk')}</button></div><button class="big" id="mic" onclick="rec()">${ic('mic')}</button><p id="rs" style="text-align:center;opacity:.85">Нажмите и произнесите слово</p><button class="btn ghost" onclick="skipP()">ПРОПУСТИТЬ</button>`;
 function skipP(){if(done)return;fx(true,'Пропущено')}
 let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false,lastVoiceTranscript='';
-function normalizeSpeechText(value){
- return String(value||"").normalize("NFKD").toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
-}
-function speechDistance(a,b){
- const prev=Array.from({length:b.length+1},(_,i)=>i);
- for(let i=1;i<=a.length;i++){let diagonal=prev[0];prev[0]=i;for(let j=1;j<=b.length;j++){const above=prev[j];prev[j]=Math.min(prev[j]+1,prev[j-1]+1,diagonal+(a[i-1]===b[j-1]?0:1));diagonal=above;}}
- return prev[b.length];
-}
-function speechMatches(transcript,target){
- const heard=normalizeSpeechText(transcript),expected=normalizeSpeechText(target);
- if(!heard||!expected)return false;
- // Short English words often differ by a single phoneme (son/sun, ship/sheep).
- // Browser ASR's fuzzy transcript matching cannot safely distinguish them.
- if(heard===expected)return true;
- if(expected.includes(" "))return false;
- if(expected.length<5)return false;
- return Math.abs(heard.length-expected.length)<=1&&speechDistance(heard,expected)<=1;
-}
+const { normalizeSpeechText, speechDistance, speechMatches } = window.CloudySpeech;
 function clearCloudyRecognition(){
  clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
  const active=cloudyRecognition;cloudyRecognition=null;
