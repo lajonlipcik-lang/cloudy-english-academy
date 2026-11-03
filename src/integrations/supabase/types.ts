@@ -14,13 +14,64 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      user_progress: {
+        Row: {
+          state: Json
+          total_xp: number
+          updated_at: string
+          user_id: string
+          week_key: string
+          week_xp: number
+        }
+        Insert: {
+          state?: Json
+          total_xp?: number
+          updated_at?: string
+          user_id: string
+          week_key?: string
+          week_xp?: number
+        }
+        Update: {
+          state?: Json
+          total_xp?: number
+          updated_at?: string
+          user_id?: string
+          week_key?: string
+          week_xp?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_weekly_league: {
+        Args: { _week: string }
+        Returns: {
+          display_name: string
+          is_me: boolean
+          week_xp: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
