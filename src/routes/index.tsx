@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureOwnerAdmin } from "@/lib/admin-role.functions";
 import { toUserErrorMessage } from "@/lib/cloudy/user-errors";
 
-type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown; lessonIndex?: unknown; level?: unknown; expectedUpdatedAt?: unknown; syncId?: unknown };
+type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; age?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown; lessonIndex?: unknown; level?: unknown; expectedUpdatedAt?: unknown; syncId?: unknown };
 
 function CloudyOriginalApp() {
   const frameRef = useRef<HTMLIFrameElement>(null);
@@ -59,6 +59,7 @@ function CloudyOriginalApp() {
               id: user.id,
               email: user.email ?? "",
               name: String(user.user_metadata?.["name"] ?? user.user_metadata?.["display_name"] ?? ""),
+              age: Number.isInteger(Number(user.user_metadata?.["age"])) && Number(user.user_metadata?.["age"]) >= 5 && Number(user.user_metadata?.["age"]) <= 120 ? Number(user.user_metadata?.["age"]) : null,
               isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com",
             }
           : null,
@@ -148,7 +149,7 @@ function CloudyOriginalApp() {
           const { data, error } = await supabase.auth.signUp({
             email: String(message.email ?? "").trim().toLowerCase(),
             password: String(message.password ?? ""),
-            options: { data: { name: String(message.name ?? "").trim() } },
+            options: { data: { name: String(message.name ?? "").trim(), age: Number.isInteger(Number(message.age)) && Number(message.age) >= 5 && Number(message.age) <= 120 ? Number(message.age) : null } },
           });
           if (error) throw error;
           if (!data.session || !data.user) {
@@ -163,6 +164,7 @@ function CloudyOriginalApp() {
               id: data.user.id,
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.["name"] ?? ""),
+              age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 5 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
               isAdmin: role.isAdmin,
             },
           });
@@ -183,6 +185,7 @@ function CloudyOriginalApp() {
               id: data.user.id,
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.["name"] ?? data.user.user_metadata?.["display_name"] ?? ""),
+              age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 5 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
               isAdmin: role.isAdmin,
             },
           });
