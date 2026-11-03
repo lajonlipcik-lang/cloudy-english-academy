@@ -67,7 +67,9 @@ function Index() {
     setPickedLeft(null);
     setPickedRight(null);
     const lesson = levelIndexes[Math.min(nextState.dn[selectedLevel], levelIndexes.length - 1)] ?? 0;
-    const lessonData = D[lesson];\n    if (!lessonData) return;\n    setSession(newSession(lesson, buildExercises(lessonData, levelPool(selectedLevel), { mic: true })));
+    const lessonData = D[lesson];
+    if (!lessonData) return;
+    setSession(newSession(lesson, buildExercises(lessonData, levelPool(selectedLevel), { mic: true })));
   }
 
   function grade(good: boolean, word?: string) {
