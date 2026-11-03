@@ -103,7 +103,7 @@ function Index() {
 
   function checkTextAnswer() {
     if (!exercise || (exercise.k !== "b" && exercise.k !== "p")) return;
-    const expected = exercise.a ?? exercise.en ?? "";
+    const expected = exercise.k === "b" ? exercise.a : exercise.en;
     const actual = draft.trim().replace(/\s+/g, " ").toLowerCase().replace(/[.!?]/g, "");
     const target = expected.trim().replace(/\s+/g, " ").toLowerCase().replace(/[.!?]/g, "");
     grade(actual === target, exercise.k === "p" ? exercise.en : expected);
