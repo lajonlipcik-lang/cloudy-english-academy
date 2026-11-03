@@ -404,8 +404,9 @@ window.addEventListener('message',event=>{
  const msg=event.data;
  if(msg.type==='session'){
   if(msg.ok&&msg.user){
-   cloudUserId=msg.user.id;Auth.start(msg.user.email,msg.user.name||'Ученик');
+   cloudUserId=msg.user.id;
    const localKey='cl2:'+msg.user.email,localExists=ls(localKey)!==null,localAt=Number(ls('cl2sync:'+msg.user.email)||0),remoteAt=msg.progress?.updated_at?Date.parse(msg.progress.updated_at):0;
+   Auth.start(msg.user.email,msg.user.name||'Ученик');
    if(msg.progress?.state&&(!localExists||remoteAt>localAt)){try{localStorage.setItem(localKey,JSON.stringify(msg.progress.state));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик'}}catch(e){}}
    else{queueCloudProgress()}
    view();
