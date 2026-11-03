@@ -54,7 +54,7 @@ function CloudyOriginalApp() {
             ? {
                 id: user.id,
                 email: user.email ?? "",
-                name: String(user.user_metadata?.name ?? user.user_metadata?.display_name ?? ""),
+                name: String(user.user_metadata?.["name"] ?? user.user_metadata?.["display_name"] ?? ""),
                 isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com",
               }
             : null,
@@ -69,13 +69,13 @@ function CloudyOriginalApp() {
         const state = message.state;
         if (!state || typeof state !== "object" || Array.isArray(state)) return;
         const record = state as Record<string, unknown>;
-        const week = record["wk"] && typeof record.wk === "object" ? (record.wk as Record<string, unknown>) : {};
+        const week = record["wk"] && typeof record["wk"] === "object" ? (record.wk as Record<string, unknown>) : {};
         const { error: saveError } = await supabase.from("user_progress").upsert(
           {
             user_id: authData.user.id,
-            state: record as import("@/integrations/supabase/types").Json,
+            state: record as unknown as import("@/integrations/supabase/types").Json,
             total_xp: Number(record["xp"]) || 0,
-            week_key: typeof week["k"] === "string" ? week.k : "",
+            week_key: typeof week["k"] === "string" ? week["k"] : "",
             week_xp: Number(week["xp"]) || 0,
             updated_at: new Date().toISOString(),
           },
