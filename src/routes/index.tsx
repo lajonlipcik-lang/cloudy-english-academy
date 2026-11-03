@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureOwnerAdmin } from "@/lib/admin-role.functions";
+import { toUserErrorMessage } from "@/lib/cloudy/user-errors";
 
 type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown };
 
@@ -22,7 +23,7 @@ function CloudyOriginalApp() {
       if (!currentFrame?.contentWindow) return;
       const { data, error } = await supabase.auth.getSession();
       if (error) {
-        send({ type: "session", ok: false, error: "Не удалось проверить сессию." });
+        send({ type: "session", ok: false, error: toUserErrorMessage(error, "auth") });
         return;
       }
       const user = data.session?.user;
@@ -37,13 +38,18 @@ function CloudyOriginalApp() {
         }
       }
       let progress: { state: unknown; updated_at: string } | null = null;
+      let progressLoadFailed = false;
       if (user) {
-        const { data: saved } = await supabase
+        const { data: saved, error: progressError } = await supabase
           .from("user_progress")
           .select("state, updated_at")
           .eq("user_id", user.id)
           .maybeSingle();
         progress = saved;
+        if (progressError) {
+          progressLoadFailed = true;
+          console.warn("[cloudy-progress] cloud progress could not be loaded");
+        }
       }
       send({
         type: "session",
@@ -57,6 +63,7 @@ function CloudyOriginalApp() {
             }
           : null,
         progress,
+        progressLoadFailed,
       });
     };
 
@@ -73,7 +80,10 @@ function CloudyOriginalApp() {
 
       if (message.type === "progress-save") {
         const { data: authData, error: authError } = await supabase.auth.getUser();
-        if (authError || !authData.user) return;
+        if (authError || !authData.user) {
+          send({ type: "progress-save-result", ok: false, error: toUserErrorMessage(authError ?? new Error("Session expired"), "progress") });
+          return;
+        }
         const state = message.state;
         if (!state || typeof state !== "object" || Array.isArray(state)) return;
         const record = state as Record<string, unknown>;
@@ -90,7 +100,7 @@ function CloudyOriginalApp() {
           { onConflict: "user_id" },
         );
         if (saveError) {
-          send({ type: "progress-save-result", ok: false, error: "Не удалось сохранить прогресс в облако." });
+          send({ type: "progress-save-result", ok: false, error: toUserErrorMessage(saveError, "progress") });
         } else {
           send({ type: "progress-save-result", ok: true });
         }
@@ -168,7 +178,10 @@ function CloudyOriginalApp() {
           return;
         }
       } catch (error) {
-        const messageText = error instanceof Error ? error.message : "Не удалось выполнить запрос.";
+        const isAdminAction = String(message.action ?? "").startsWith("admin-");
+        const messageText = isAdminAction
+          ? (error instanceof Error ? error.message : "Не удалось выполнить действие.")
+          : toUserErrorMessage(error, message.action === "ai-chat" ? "ai" : "auth");
         reply({ ok: false, error: messageText });
       }
     };
