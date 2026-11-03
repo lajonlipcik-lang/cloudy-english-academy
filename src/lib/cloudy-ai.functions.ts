@@ -106,7 +106,8 @@ function makeLearnerContext(userId:string,state:any,ledger:any,profile:any,fallb
     recent.length?"Recent answer activity:":"No recent answer events supplied.",
     ...recent,
     "Teaching rules: continue from the learner's actual stage; do not repeat mastered material unnecessarily; prioritize due/weak skills; praise progress accurately; never invent missing evidence."
-  ].join("\n");
+  ].join("
+");
 }
 export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
@@ -141,7 +142,9 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const providers=(await rows(db)).filter((x:any)=>x.enabled).sort((a:any,b:any)=>a.priority-b.priority);
     if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
     const displayName=String(profileResult.data?.display_name??user.user_metadata?.["name"]??"ученик").slice(0,60);
-    const system="Ты Cloudy — персональный дружелюбный преподаватель английского языка для русскоговорящего ученика. Имя ученика: "+displayName+".\\n"+context+"\\nОтвечай коротко и понятно, используй английский по уровню ученика. Мягко исправляй ошибки и объясняй по-русски одной строкой. Задавай только один вопрос за раз. Без эмодзи и Markdown. Не выдумывай прогресс и не раскрывай внутренний ID.";
+    const system="Ты Cloudy — персональный дружелюбный преподаватель английского языка для русскоговорящего ученика. Имя ученика: "+displayName+".\
+"+context+"\
+Отвечай коротко и понятно, используй английский по уровню ученика. Мягко исправляй ошибки и объясняй по-русски одной строкой. Задавай только один вопрос за раз. Без эмодзи и Markdown. Не выдумывай прогресс и не раскрывай внутренний ID.";
     const messages=[{role:"system",content:system},...history];
     if(!history.length||history[history.length-1]?.role!=="user")messages.push({role:"user",content:prompt});
     const routed=await runWithAiFallback(providers.map((r:any)=>({id:String(r.id),priority:Number(r.priority)||0})),async(candidate)=>{
