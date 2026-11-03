@@ -31,7 +31,7 @@ export const ensureOwnerAdmin = createServerFn({ method: "POST" })
     if (email !== OWNER_EMAIL) return { isAdmin: verified.user.app_metadata?.["role"] === "admin" };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: updated, error: updateError } = await admin.auth.admin.updateUserById(
+    const { data: updated, error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
       verified.user.id,
       { app_metadata: { ...verified.user.app_metadata, role: "admin" } },
     );
