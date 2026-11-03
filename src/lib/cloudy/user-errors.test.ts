@@ -18,6 +18,16 @@ describe("user-facing error messages", () => {
     expect(message).not.toMatch(/groq|HTTP|404|API/i);
   });
 
+  it("preserves the AI request wait time for rate-limited learners", () => {
+    expect(toUserErrorMessage(new Error("Слишком много запросов к ИИ. Повторите через 17 сек."), "ai"))
+      .toContain("17 сек.");
+  });
+
+  it("explains when another AI request is already running", () => {
+    expect(toUserErrorMessage(new Error("У вас уже выполняются запросы к ИИ. Подождите немного."), "ai"))
+      .toContain("Подождите немного");
+  });
+
   it("gives a specific next step for progress failures", () => {
     expect(toUserErrorMessage(new Error("database unavailable"), "progress"))
       .toContain("сохранить прогресс");
