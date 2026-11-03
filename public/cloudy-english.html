@@ -363,7 +363,17 @@ window.addEventListener('message',event=>{
   }else if(msg.ok===false){toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false)}else{cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
   return;
  }
- if(msg.type==='progress-save-result'){if(msg.ok){if(S.user?.email)ls('cl2sync:'+S.user.email,String(Date.now()))}else{toast(msg.error||'Не удалось сохранить прогресс в облаке. Проверьте интернет и повторите попытку.',false)}return;}
+ if(msg.type==='progress-save-result'){if(msg.ok){if(msg.state&&typeof msg.state==='object'){S.xp=Number(msg.state.xp)||0;const wk=msg.state.wk&&typeof msg.state.wk==='object'?msg.state.wk:{};S.wk={k:String(wk.k||''),xp:Number(wk.xp)||0};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}if(S.user?.email)ls('cl2sync:'+S.user.email,String(Date.now()))}else{toast(msg.error||'Не удалось сохранить прогресс в облаке. Проверьте интернет и повторите попытку.',false)}return;}
+ if(msg.type==='lesson-award-result'){
+  if(!msg.ok){toast(msg.error||'Не удалось начислить XP.',false);return;}
+  const award=msg.result||{};
+  S.xp=Number(award.total_xp)||0;
+  if(Number(award.awarded)>0){S.td.xp+=Number(award.awarded);track(Number(award.awarded));}
+  S.wk={k:String(award.week_key||''),xp:Number(award.week_xp)||0};
+  save();checkAch();
+  const xpLabel=$('#xp');if(xpLabel)xpLabel.textContent='+'+(Number(award.awarded)||0);
+  return;
+ }
  if(msg.type!=='response'||!authPending.has(String(msg.id)))return;
  const pending=authPending.get(String(msg.id));authPending.delete(String(msg.id));
  if(!msg.ok){pending.reject(new Error(msg.error||'Ошибка авторизации'));return}
@@ -492,11 +502,13 @@ function mp(side,id,el){if(done||el.classList.contains("good"))return;
  else{if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:ml[0]},false,{retry:!!rt});[l,el].forEach(b=>{b.classList.add("wrong");setTimeout(()=>b.classList.remove("wrong"),500)});l.classList.remove("sel");addMis(ml[0]);ml=null;miss();if(hp<=0)setTimeout(fail,800)}}
 function next(){if(hp<=0)return fail();snd("tap");if(++i>=ex.length&&!rt&&lm.length){rt=1;lm.slice(0,3).forEach(en=>ex.push(cq(en,ruOf(en),Math.random()*2|0)))}if(i>=ex.length)return fin();draw()}
 function fail(){snd("bad");app.innerHTML=`<div class="scr res">${mascot("s")}<div class="big2">Жизни закончились</div><p style="opacity:.85">Ничего страшного, попробуем ещё раз.</p><br><button class="btn" onclick="again()">ПОПРОБОВАТЬ СНОВА</button><br><br><button class="btn" onclick="view()" style="background:rgba(255,255,255,.15);color:#fff;box-shadow:none">НА ГЛАВНУЮ</button></div>`}
-function fin(){roll();const t=new Date().toDateString(),y=new Date(Date.now()-864e5).toDateString(),gain=15+hp*3,st=hp>=5?3:hp>=3?2:1,acc=Math.round(ok/Math.max(tot,1)*100);
+function fin(){roll();const t=new Date().toDateString(),y=new Date(Date.now()-864e5).toDateString(),gain=cloudUserId?24:15+hp*3,st=hp>=5?3:hp>=3?2:1,acc=Math.round(ok/Math.max(tot,1)*100);
  if(S.last!=t){S.streak=S.last==y?S.streak+1:1;S.last=t}
- S.xp+=gain;S.td.xp+=gain;track(gain);S.td.les++;S.td.ok+=ok;S.acc[0]+=ok;S.acc[1]+=tot;const ps=SEC.flatMap(s=>s.l);if(ps.indexOf(L)==S.dn[S.lv]&&S.dn[S.lv]<ps.length)S.dn[S.lv]++;save();checkAch();
+ if(!cloudUserId){S.xp+=gain;S.td.xp+=gain;track(gain)}
+ S.td.les++;S.td.ok+=ok;S.acc[0]+=ok;S.acc[1]+=tot;const ps=SEC.flatMap(s=>s.l);if(ps.indexOf(L)==S.dn[S.lv]&&S.dn[S.lv]<ps.length)S.dn[S.lv]++;save();if(!cloudUserId)checkAch();
  app.innerHTML=`<div class="scr res">${mascot()}<div class="big2">Урок пройден!</div><div class="stars">${[0,1,2].map(k=>`<span style="animation-delay:${.3+k*.3}s;display:block">${ic(k<st?"starg":"stard")}</span>`).join("")}</div><div class="rs"><div style="animation-delay:.2s"><span id="xp">+0</span><small>XP</small></div><div style="animation-delay:.35s">${acc}%<small>точность</small></div><div style="animation-delay:.5s">${S.streak}<small>серия</small></div></div><button class="btn" onclick="snd('tab');T=0;view()">ПРОДОЛЖИТЬ</button></div>`;
  snd("win");conf();for(let k=0;k<st;k++)setTimeout(()=>snd("star"),300+k*300);
+ if(cloudUserId){window.parent.postMessage({channel:'cloudy-auth',type:'lesson-complete',lessonIndex:L,level:S.lv},location.origin);return}
  const el=$("#xp"),s0=performance.now();(function f(n){const p=Math.min((n-s0)/1000,1);el.textContent="+"+Math.round(gain*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s0)}
 view();
 </script>
