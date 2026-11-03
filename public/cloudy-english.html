@@ -470,9 +470,97 @@ function review(){const w=Object.keys(S.mis).slice(0,8).map(en=>[en,ruOf(en)]).f
 function again(){rv?review():go(L)}
 const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button class="spk" onclick="say('${e.en}',1)">${ic('spk')}</button></div><button class="big" id="mic" onclick="rec()">${ic('mic')}</button><p id="rs" style="text-align:center;opacity:.85">Нажмите и произнесите слово</p><button class="btn ghost" onclick="skipP()">ПРОПУСТИТЬ</button>`;
 function skipP(){if(done)return;fx(true,'Пропущено')}
-function rec(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('В этом браузере голосовой ввод не поддерживается. Выберите ответ вручную.',false);return;}if(done)return;const e=ex[i],r=new SR(),m=$('#mic');let got=0;r.lang='en-US';r.maxAlternatives=3;m.classList.add('rec');snd('pick');
- r.onresult=ev=>{got=1;m.classList.remove('rec');const t=[...ev.results[0]].map(x=>x.transcript.toLowerCase()).join(' ');if(t.includes(e.en.toLowerCase())){if(window.CloudyLearning)CloudyLearning.record(KEY,e,true,{retry:!!rt});ok++;tot++;cmb++;snd('ok',cmb);fx(true,'Отлично!')}else{if(window.CloudyLearning)CloudyLearning.record(KEY,e,false,{retry:!!rt});addMis(e.en);miss();fx(false,'Нужно сказать: '+e.en)}};
- r.onerror=ev=>{m.classList.remove('rec');if(ev.error==='not-allowed'||ev.error==='service-not-allowed')toast('Нет доступа к микрофону. Разрешите его использование в настройках браузера.',false);else if(ev.error==='audio-capture')toast('Микрофон не найден или уже используется другим приложением.',false);else if(ev.error==='network')toast('Не удалось распознать речь из-за проблем с соединением. Попробуйте ещё раз.',false);else if(!got&&!done)toast('Не удалось распознать речь. Попробуйте ещё раз или выберите ответ вручную.',false)};r.onend=()=>{m.classList.remove('rec');if(!got&&!done){const s=$('#rs');if(s)s.textContent='Не расслышал, попробуйте ещё раз'}};try{r.start()}catch(x){}}
+let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false;
+function normalizeSpeechText(value){
+ return String(value||"").normalize("NFKD").toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9\\s]/g," ").replace(/\\s+/g," ").trim();
+}
+function speechDistance(a,b){
+ const prev=Array.from({length:b.length+1},(_,i)=>i);
+ for(let i=1;i<=a.length;i++){let diagonal=prev[0];prev[0]=i;for(let j=1;j<=b.length;j++){const above=prev[j];prev[j]=Math.min(prev[j]+1,prev[j-1]+1,diagonal+(a[i-1]===b[j-1]?0:1));diagonal=above;}}
+ return prev[b.length];
+}
+function speechMatches(transcript,target){
+ const heard=normalizeSpeechText(transcript),expected=normalizeSpeechText(target);
+ if(!heard||!expected)return false;
+ if(heard===expected)return true;
+ if(!expected.includes(" ")&&expected.length>=5)return speechDistance(heard,expected)<=1;
+ const maxErrors=Math.max(1,Math.floor(expected.length*.1));
+ return Math.abs(heard.length-expected.length)<=maxErrors&&speechDistance(heard,expected)<=maxErrors;
+}
+function clearCloudyRecognition(){
+ clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
+ const active=cloudyRecognition;cloudyRecognition=null;
+ if(active)try{active.onresult=active.onerror=active.onend=null;active.stop()}catch(e){}
+ const mic=$('#mic');if(mic)mic.classList.remove('rec');
+}
+function rec(autoRetry=false){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){toast('Голосовой ввод не поддерживается этим браузером. Можно продолжить упражнение вручную.',false);return;}
+ if(done)return;
+ if(cloudyRecognition){try{cloudyRecognition.stop()}catch(e){}return;}
+ const exercise=ex[i],mic=$('#mic'),status=$('#rs');
+ if(!exercise||!mic)return;
+ if(!autoRetry){cloudyVoiceRetryCount=0;cloudyVoiceHandled=false;snd('pick');}
+ const recognition=new SR();cloudyRecognition=recognition;
+ recognition.lang='en-US';recognition.maxAlternatives=5;recognition.continuous=false;recognition.interimResults=false;
+ if(status)status.textContent=autoRetry?'Слушаю ещё раз…':'Слушаю… Говорите чётко';
+ mic.classList.add('rec');
+ recognition.onstart=()=>{if(status)status.textContent='Слушаю… Говорите чётко';};
+ recognition.onresult=ev=>{
+  if(cloudyVoiceHandled||done)return;
+  const alternatives=[];
+  for(let index=ev.resultIndex||0;index<ev.results.length;index++){
+   const result=ev.results[index];if(!result.isFinal)continue;
+   for(let alt=0;alt<result.length;alt++)alternatives.push({text:result[alt].transcript,confidence:Number(result[alt].confidence)||0});
+  }
+  if(!alternatives.length)return;
+  cloudyVoiceHandled=true;clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
+  const best=alternatives.sort((x,y)=>y.confidence-x.confidence).find(x=>speechMatches(x.text,exercise.en));
+  const heard=alternatives[0].text;
+  clearCloudyRecognition();
+  if(best){
+   if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,true,{retry:!!rt});
+   ok++;tot++;cmb++;snd('ok',cmb);fx(true,'Отлично! Распознано: '+best.text);
+  }else{
+   if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,false,{retry:!!rt});
+   addMis(exercise.en);miss();fx(false,'Распознано: '+heard+'. Нужно сказать: '+exercise.en);
+  }
+ };
+ recognition.onerror=ev=>{
+  if(cloudyVoiceHandled)return;
+  const error=ev.error||'unknown';
+  if(error==='no-speech'&&cloudyVoiceRetryCount<1){cloudyVoiceRetryCount++;if(status)status.textContent='Не услышал голос. Повторяю попытку…';return;}
+  if(status){
+   status.textContent=error==='not-allowed'||error==='service-not-allowed'?'Нет доступа к микрофону — разрешите его в настройках браузера.':
+    error==='audio-capture'?'Микрофон не найден или занят другим приложением.':
+    error==='network'?'Проблема с соединением при распознавании. Проверьте интернет.':
+    error==='no-speech'?'Не услышал голос. Нажмите на микрофон и попробуйте ещё раз.':
+    'Не удалось распознать речь. Попробуйте ещё раз.';
+  }
+  if(error!=='no-speech')toast(status?.textContent||'Не удалось распознать речь.',false);
+ };
+ recognition.onend=()=>{
+  if(cloudyRecognition!==recognition)return;
+  cloudyRecognition=null;clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
+  if(cloudyVoiceHandled||done){if(mic)mic.classList.remove('rec');return;}
+  if(cloudyVoiceRetryCount===1){
+   cloudyVoiceRetryCount=2;
+   if(status)status.textContent='Повторная попытка…';
+   setTimeout(()=>{if(!done&&!cloudyRecognition)rec(true)},350);
+   return;
+  }
+  if(mic)mic.classList.remove('rec');
+  if(status&&!status.textContent.includes('Нет доступа')&&!status.textContent.includes('Микрофон не найден')&&!status.textContent.includes('Проблема с соединением'))status.textContent='Готово. Нажмите на микрофон, чтобы попробовать снова.';
+ };
+ try{
+  recognition.start();
+  cloudyRecognitionTimer=setTimeout(()=>{if(cloudyRecognition===recognition){if(status)status.textContent='Время прослушивания истекло. Попробуйте ещё раз.';try{recognition.stop()}catch(e){}}},15000);
+ }catch(error){
+  cloudyRecognition=null;mic.classList.remove('rec');
+  if(status)status.textContent='Не удалось запустить микрофон. Проверьте разрешение и попробуйте снова.';
+  toast('Не удалось запустить распознавание речи.',false);
+ }
+}
 function theme(t){S.set.th=t;save();snd('tab');view(0)}
 async function chat(){app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs"></div></div><div class="foot cin"><input id="ci" placeholder="Напишите по-английски" autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}"><button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button></div>`;CH.forEach(m=>bub(m.r,m.t));if(!CH.length)await ask();const input=$('#ci');if(input)input.focus()}
 function bub(r,t){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});return d}
