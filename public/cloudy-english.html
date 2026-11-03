@@ -410,7 +410,7 @@ window.addEventListener('message',event=>{
    const guestState=(()=>{try{return JSON.parse(ls('cl2')||'{}')}catch(e){return {}}})();
    cloudUpdatedAt=msg.progress?.updated_at||null;cloudSyncInFlight=null;cloudSyncPending=null;cloudSyncAttempts=0;cloudSyncPaused=true;
    Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin,msg.user.age);if(msg.progressLoadFailed)toast('Не удалось загрузить облачный прогресс. Проверьте интернет; данные на этом устройстве не затронуты.',false);
-   if(msg.progress?.state&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(msg.progress.state));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):null,isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
+   if(msg.progress?.state&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(msg.progress.state));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):(Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age):null),isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
    else if(!localExists&&!msg.progress?.state&&['A1','A2','B1','B2'].includes(guestState.lv)){try{load('cl2');S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save()}catch(e){}}
    else{queueCloudProgress()}
    cloudSyncPaused=false;queueCloudProgress();
@@ -465,7 +465,7 @@ const Auth={
   const result=await authRequest('signIn',{email,password:pw});
   return this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin,result.user.age);
  },
- start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);S.user={email,name,age:Number.isInteger(Number(age))&&Number(age)>=5&&Number(age)<=120?Number(age):null,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
+ start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);const savedAge=Number(S.user?.age);const validAge=Number.isInteger(Number(age))&&Number(age)>=5&&Number(age)<=120?Number(age):Number.isInteger(savedAge)&&savedAge>=5&&savedAge<=120?savedAge:null;S.user={email,name,age:validAge,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
  guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:INTRO.name||'Гость',age:Number(INTRO.age)||null};save();window.CloudyAdmin?.setUser(S.user)},
  async signOut(){await authRequest('signOut');cloudUserId=null;cloudUpdatedAt=null;cloudSyncPending=null;cloudSyncInFlight=null;clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRetry);cloudSyncRetry=0;ls('cl2s','');load('cl2');S.user=null;window.CloudyAdmin?.setUser(null)}
 };
