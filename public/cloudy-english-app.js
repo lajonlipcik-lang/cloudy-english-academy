@@ -1,0 +1,503 @@
+
+const D=[
+{t:"Привет",w:[["hello","привет"],["goodbye","пока"],["thanks","спасибо"],["please","пожалуйста"],["yes","да"],["no","нет"]],s:[["Привет, меня зовут Анна","Hello my name is Anna","you the"],["Да, пожалуйста","Yes please","no thanks"]]},
+{t:"Семья",w:[["mother","мама"],["father","папа"],["brother","брат"],["sister","сестра"],["son","сын"],["daughter","дочь"]],s:[["У меня есть брат","I have a brother","sister the"],["Это моя мама","This is my mother","father your"]]},
+{t:"Числа",w:[["one","один"],["two","два"],["three","три"],["four","четыре"],["five","пять"],["six","шесть"]],s:[["Это число шесть","This is number six","four the"],["У меня три книги","I have three books","two a"]]},
+{t:"Еда",w:[["apple","яблоко"],["water","вода"],["bread","хлеб"],["milk","молоко"],["coffee","кофе"],["cheese","сыр"]],s:[["Я люблю кофе","I like coffee","water the"],["Мне нужна вода","I need water","bread a"]]},
+{t:"Дом",w:[["house","дом"],["door","дверь"],["window","окно"],["table","стол"],["bed","кровать"],["book","книга"]],s:[["Это мой дом","This is my house","your a"],["У меня есть книга","I have a book","table the"]]},
+{t:"Цвета",w:[["red","красный"],["blue","синий"],["green","зелёный"],["yellow","жёлтый"],["black","чёрный"],["white","белый"]],s:[["Это красное яблоко","This is a red apple","blue the"],["Небо синее","The sky is blue","red green"]]}
+];
+D.push(
+{t:"Город",w:[["bank","банк"],["street","улица"],["station","вокзал"],["market","рынок"],["park","парк"],["bridge","мост"]],s:[["Я иду в парк","I go to the park","market a"],["Где находится вокзал","Where is the station","street a"]]},
+{t:"Покупки",w:[["cheap","дешёвый"],["expensive","дорогой"],["price","цена"],["shop","магазин"],["money","деньги"],["ticket","билет"]],s:[["Сколько это стоит","How much is it","cheap the"],["У меня нет денег","I have no money","shop a"]]},
+{t:"Время",w:[["morning","утро"],["evening","вечер"],["today","сегодня"],["tomorrow","завтра"],["week","неделя"],["always","всегда"]],s:[["Увидимся завтра","See you tomorrow","today the"],["Я всегда пью кофе утром","I always drink coffee in the morning","evening a"]]},
+{t:"Работа",w:[["job","работа"],["office","офис"],["meeting","встреча"],["boss","начальник"],["salary","зарплата"],["skill","навык"]],s:[["У меня завтра встреча","I have a meeting tomorrow","office the"],["Я ищу новую работу","I am looking for a new job","boss the"]]},
+{t:"Поездки",w:[["journey","путешествие"],["luggage","багаж"],["passport","паспорт"],["flight","рейс"],["hotel","отель"],["reservation","бронь"]],s:[["Я забронировал отель","I booked a hotel","flight the"],["Где мой багаж","Where is my luggage","passport the"]]},
+{t:"Здоровье",w:[["healthy","здоровый"],["medicine","лекарство"],["headache","головная боль"],["advice","совет"],["exercise","упражнение"],["recover","восстановиться"]],s:[["Мне нужен медицинский совет","I need medical advice","doctor the"],["Она быстро восстановилась","She recovered quickly","healthy a"]]},
+{t:"Мнения",w:[["opinion","мнение"],["agree","соглашаться"],["argue","спорить"],["evidence","доказательство"],["however","однако"],["although","хотя"]],s:[["Я не согласен с вами","I disagree with you","agree the"],["Хотя было поздно, мы работали","Although it was late we worked","however the"]]},
+{t:"Общество",w:[["government","правительство"],["society","общество"],["environment","окружающая среда"],["economy","экономика"],["challenge","вызов"],["achievement","достижение"]],s:[["Экономика быстро растёт","The economy is growing fast","society the"],["Это большой вызов","This is a big challenge","government a"]]},
+{t:"Бизнес",w:[["deadline","срок"],["budget","бюджет"],["negotiate","вести переговоры"],["strategy","стратегия"],["profit","прибыль"],["risk","риск"]],s:[["Нам нужна новая стратегия","We need a new strategy","budget the"],["Срок уже близко","The deadline is close","risk a"]]}
+);
+const LV={A1:{s:[{n:"Знакомство",l:[0,1,2]},{n:"Повседневная жизнь",l:[3,4,5]}]},A2:{s:[{n:"Город и быт",l:[6,7,8]},{n:"Повседневное общение",l:[15,16,17]}]},B1:{s:[{n:"Работа и поездки",l:[9,10,11]},{n:"Жизнь и технологии",l:[18,19,20]}]},B2:{s:[{n:"Мнения и общество",l:[12,13,14]},{n:"Культура и карьера",l:[21,22,23]}]}};
+let SEC=[];
+const P=(t,w,s)=>({t,w:w.split(',').map(x=>x.split('=')),s:s.split(';').map(x=>x.split('='))});
+D.push(
+P('Ресторан','restaurant=ресторан,menu=меню,bill=счёт,waiter=официант,delicious=вкусный,hungry=голодный','Принесите счёт, пожалуйста=Bring me the bill please=menu the;Я очень голоден=I am very hungry=waiter a'),
+P('Погода','weather=погода,rainy=дождливый,sunny=солнечный,cold=холодный,wind=ветер,snow=снег','Сегодня солнечно=It is sunny today=rainy the;Зимой идёт снег=It snows in winter=wind a'),
+P('Одежда','jacket=куртка,shoes=обувь,dress=платье,shirt=рубашка,size=размер,wear=носить','Мне нужна куртка=I need a jacket=shoes the;Какой у вас размер=What is your size=dress a'),
+P('Технологии','password=пароль,download=скачивать,screen=экран,battery=батарея,website=сайт,update=обновление','Я забыл пароль=I forgot my password=screen the;Батарея почти разряжена=The battery is almost dead=update a'),
+P('Эмоции','nervous=нервный,proud=гордый,embarrassed=смущённый,disappointed=разочарованный,excited=взволнованный,jealous=завистливый','Я горжусь тобой=I am proud of you=nervous the;Она была разочарована=She was disappointed=excited a'),
+P('Учёба','degree=степень,lecture=лекция,exam=экзамен,subject=предмет,scholarship=стипендия,graduate=окончить','Завтра у меня экзамен=I have an exam tomorrow=lecture the;Это мой любимый предмет=This is my favorite subject=degree a'),
+P('Инновации','innovation=инновация,algorithm=алгоритм,privacy=конфиденциальность,device=устройство,breakthrough=прорыв,reliable=надёжный','Это настоящий прорыв=This is a real breakthrough=device the;Мы ценим конфиденциальность=We value privacy=algorithm a'),
+P('Культура','heritage=наследие,tradition=традиция,exhibition=выставка,ancient=древний,masterpiece=шедевр,influence=влияние','Мы посетили выставку=We visited the exhibition=heritage the;Это настоящий шедевр=It is a true masterpiece=ancient a'),
+P('Карьера','promotion=повышение,colleague=коллега,resign=уволиться,experience=опыт,demanding=требовательный,workload=нагрузка','Я получил повышение=I got a promotion=colleague the;У него большой опыт=He has a lot of experience=workload a')
+);
+const ALL=D.flatMap(l=>l.w);
+const DEF=()=>({xp:0,streak:0,last:"",done:0,lv:"",dn:{A1:0,A2:0,B1:0,B2:0},acc:[0,0],mis:{},days:[],ach:[],wk:{k:"",xp:0},perf:0,tested:0,user:null,set:{snd:1,vol:.7,voice:1,goal:30,mic:1,th:"dark",rem:0,remT:"19:00"},td:{d:"",xp:0,les:0,ok:0,claim:0}});
+let S=DEF(),T=0;
+let KEY="cl2";
+const ls=(k,v)=>{try{return v===undefined?localStorage.getItem(k):localStorage.setItem(k,v)}catch(e){return null}};
+function load(key){KEY=key;S=DEF();try{const j=JSON.parse(ls(key)||"{}");S=Object.assign(DEF(),j);S.set=Object.assign(DEF().set,j.set);S.td=Object.assign(DEF().td,j.td);S.dn=Object.assign(DEF().dn,j.dn);if(!j.dn&&j.done&&j.lv===undefined){S.dn.A1=j.done;S.lv="A1"}if(!["A1","A2","B1","B2"].includes(S.lv))S.lv=""}catch(e){}}
+load(ls("cl2s")?"cl2:"+ls("cl2s"):"cl2");
+let cloudUserId=null,cloudSyncTimer=0,cloudSyncRetry=0,cloudSyncInFlight=null,cloudSyncPending=null,cloudSyncSeq=0,cloudSyncAttempts=0,cloudUpdatedAt=null,cloudSyncPaused=false;
+function mergeCloudProgress(remote,local){
+ const merged={...remote,...local,xp:Number(remote.xp)||0,wk:remote.wk||local.wk};
+ const levels=['A1','A2','B1','B2'];merged.dn={...(remote.dn||{}),...(local.dn||{})};
+ levels.forEach(k=>merged.dn[k]=Math.max(Number(remote.dn?.[k])||0,Number(local.dn?.[k])||0));
+ merged.done=Math.max(Number(remote.done)||0,Number(local.done)||0);
+ merged.ach=[...new Set([...(Array.isArray(remote.ach)?remote.ach:[]),...(Array.isArray(local.ach)?local.ach:[])])];
+ merged.days=[...new Set([...(Array.isArray(remote.days)?remote.days:[]),...(Array.isArray(local.days)?local.days:[])])];
+ if(Array.isArray(remote.acc)||Array.isArray(local.acc))merged.acc=[0,1].map(i=>Math.max(Number(remote.acc?.[i])||0,Number(local.acc?.[i])||0));
+ if(remote.td?.d===local.td?.d&&remote.td&&local.td)merged.td={...remote.td,...local.td,xp:Math.max(Number(remote.td.xp)||0,Number(local.td.xp)||0),les:Math.max(Number(remote.td.les)||0,Number(local.td.les)||0),ok:Math.max(Number(remote.td.ok)||0,Number(local.td.ok)||0)};
+ const validLevel=value=>['A1','A2','B1','B2'].includes(value);
+ merged.lv=validLevel(local.lv)?local.lv:validLevel(remote.lv)?remote.lv:'';
+ merged.tested=Boolean(remote.tested||local.tested);
+ return merged;
+}
+function flushCloudProgress(){
+ if(!cloudUserId||S.user?.guest||!cloudSyncPending||cloudSyncInFlight)return;
+ if(typeof navigator!=='undefined'&&!navigator.onLine)return;
+ const pending=cloudSyncPending;cloudSyncPending=null;cloudSyncInFlight=pending;
+ try{window.parent.postMessage({channel:'cloudy-auth',type:'progress-save',state:pending.state,expectedUpdatedAt:cloudUpdatedAt,syncId:pending.id},location.origin)}
+ catch(e){cloudSyncPending=pending;cloudSyncInFlight=null;scheduleCloudRetry()}
+}
+function scheduleCloudRetry(){
+ if(cloudSyncRetry||!cloudSyncPending)return;
+ const delay=Math.min(30000,1000*Math.pow(2,Math.min(cloudSyncAttempts,5)));
+ cloudSyncAttempts++;cloudSyncRetry=setTimeout(()=>{cloudSyncRetry=0;flushCloudProgress()},delay);
+}
+function queueCloudProgress(){
+ if(!cloudUserId||S.user?.guest||cloudSyncPaused)return;
+ try{cloudSyncPending={id:++cloudSyncSeq,state:JSON.parse(JSON.stringify(S))}}catch(e){return}
+ clearTimeout(cloudSyncTimer);cloudSyncTimer=setTimeout(flushCloudProgress,650);
+}
+window.addEventListener('online',()=>{clearTimeout(cloudSyncRetry);cloudSyncRetry=0;flushCloudProgress()});
+const save=(skipCloudSync=false)=>{try{localStorage.setItem(KEY,JSON.stringify(S));if(!skipCloudSync&&cloudUserId&&!S.user?.guest)ls('cl2dirty:'+S.user.email,String(Date.now()));if(!skipCloudSync)queueCloudProgress()}catch(e){}};
+const roll=()=>{const t=new Date().toDateString();if(S.td.d!=t)S.td={d:t,xp:0,les:0,ok:0,claim:0}};
+const $=s=>document.querySelector(s),sh=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const app=$("#app"),ic=n=>`<svg class="i"><use href="#${n}"/></svg>`;
+let AC,MG;
+function snd(t,c=0){if(!S.set.snd)return;try{if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.connect(AC.destination)}if(AC.state=="suspended")AC.resume();MG.gain.value=S.set.vol;const b=1+Math.min(c,7)*.07;
+const P={tap:[[560,0,.07,"triangle"]],pick:[[420,0,.08,"sine",640],[640,.05,.08]],tab:[[760,0,.07,"sine",520]],sheet:[[300,0,.25,"sine",700]],go:[[330,0,.3,"sine",990]],ok:[[523*b,0,.18],[784*b,.09,.26]],match:[[880,0,.12],[1175,.07,.2]],bad:[[220,0,.18,"sawtooth",140],[150,.14,.22,"sawtooth",100]],win:[[523,0,.2],[659,.12,.2],[784,.24,.2],[1047,.36,.5]],chest:[[392,0,.15],[523,.09,.15],[659,.18,.15],[784,.27,.15],[1047,.36,.15],[1319,.5,.6]],star:[[1200,0,.15],[1600,.07,.25]]}[t];
+P.forEach(([f,d,l,w,e])=>{const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+d;o.type=w||"sine";o.frequency.setValueAtTime(f,s);if(e)o.frequency.exponentialRampToValueAtTime(e,s+l);g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(t=="bad"?.12:.22,s+.02);g.gain.exponentialRampToValueAtTime(.0001,s+l+.05);o.connect(g);g.connect(MG);o.start(s);o.stop(s+l+.1)})}catch(e){}}
+function say(t,f){if(!f&&!S.set.voice)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=.9;speechSynthesis.speak(u)}catch(e){}}
+function conf(n=40){const c=["#fff","#bfe0ff","#4db3ff","#ffd35a","#38d39a"];for(let k=0;k<n;k++){const d=document.createElement("i");d.className="cf";d.style.cssText=`left:${Math.random()*100}%;width:${6+Math.random()*6}px;height:${10+Math.random()*8}px;background:${c[k%5]};--t:${2.4+Math.random()*1.6}s;--dx:${(Math.random()-.5)*160}px;--r:${Math.random()*900}deg;animation-delay:${Math.random()*.5}s`;document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}}
+const mascot=(m="h")=>`<svg class="ms" viewBox="0 0 100 80"><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#gb)"/><g class="eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.800" fill="#fff"/><circle cx="64" cy="43" r="1.800" fill="#fff"/></g><path d="${m=="s"?"M44 60q7-7 14 0":"M44 54q7 8 14 0"}" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg>`;
+function sheet(h){const s=document.createElement("div");s.className="sb";s.innerHTML=`<div class="sh">${h}</div>`;s.onclick=e=>{if(e.target==s)closeSh()};document.body.appendChild(s);snd("sheet")}
+function closeSh(){const s=$(".sb");if(!s)return;s.classList.add("out");setTimeout(()=>s.remove(),300)}
+const nav=()=>`<nav>${["Учёба","Задания","Лига","Профиль"].map((n,k)=>`<button class="${T==k?"on":""}" onclick="tab(${k})">${ic(["home","target","medal","user"][k])}<span>${n}</span></button>`).join("")}</nav>`;
+
+const isAppleMobile=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+const isInstalledCloudy=()=>window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches||window.matchMedia('(display-mode: fullscreen)').matches;
+function renderInstallGate(){
+ const safari=/Safari/i.test(navigator.userAgent)&&!/CriOS|FxiOS|EdgiOS|OPiOS|YaBrowser/i.test(navigator.userAgent);
+ app.innerHTML=`<div class="install-gate"><section class="install-panel"><div class="install-cloud">${mascot()}</div><h1 class="install-title">Давай установим Cloudy!</h1><p class="install-lead">Добавь Cloudy на главный экран iPhone — и открывай его как настоящее приложение. Это займёт всего несколько секунд ☁️</p><div class="install-steps"><div class="install-step"><span class="install-number">1</span><div><strong>Нажми «Поделиться»</strong><small>${safari?'Внизу Safari нажми квадрат со стрелкой вверх.':'Открой этот сайт в Safari, затем нажми квадрат со стрелкой вверх.'}</small></div><span class="install-share-icon" aria-hidden="true">↥</span></div><div class="install-step"><span class="install-number">2</span><div><strong>Выбери «На экран Домой»</strong><small>Прокрути меню вниз, выбери этот пункт и оставь включённым «Открывать как веб-приложение», если появится переключатель.</small></div><span class="install-share-icon">＋</span></div><div class="install-step"><span class="install-number">3</span><div><strong>Нажми «Добавить»</strong><small>Затем вернись на главный экран и открой иконку Cloudy.</small></div><span class="install-share-icon">☁️</span></div></div><p class="install-note" id="installNote">${safari?'После добавления открой Cloudy именно с главного экрана iPhone.':'Для установки потребуется Safari. Встроенный браузер приложения не поддерживает этот способ.'}</p><button class="install-action" onclick="checkCloudyInstall()">Я добавил Cloudy — проверить</button><span class="install-browser">Cloudy English · Твой путь к английскому</span></section></div>`;
+}
+function checkCloudyInstall(){if(isInstalledCloudy()){try{localStorage.setItem('cloudyHomeInstalled','1')}catch(e){}view();return}const note=$('#installNote');if(note)note.textContent='Пока Cloudy открыт во вкладке Safari. Вернись на главный экран iPhone и запусти Cloudy с новой иконки — тогда установка подтвердится.';const panel=$('.install-panel');if(panel){panel.classList.remove('shk');void panel.offsetWidth;panel.classList.add('shk')}}
+function ensureCloudyInstallGate(){if(!isAppleMobile()||isInstalledCloudy())return;if(!document.querySelector('#app .install-gate'))renderInstallGate()}
+function bootCloudy(){if(isAppleMobile()&&!isInstalledCloudy()){renderInstallGate();setInterval(ensureCloudyInstallGate,20000);window.addEventListener('pageshow',ensureCloudyInstallGate);window.addEventListener('focus',ensureCloudyInstallGate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureCloudyInstallGate()});return}view()}
+function view(a=1){roll();amb();if(!S.user){if(!ls('cl2welcomeDone'))return introWelcome();return authV()}if(!S.lv)return welcome();SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}">${[learn,quests,lg,prof][T]()}</div>`+nav()}
+function tab(k){if(k!=T){snd("tab");T=k;view()}}
+const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
+const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
+const pool=()=>LV[S.lv].s.flatMap(x=>x.l).flatMap(j=>D[j].w);
+const TQ={
+ A1:[
+ ["Выбери правильную форму: I ___ from Russia.",["am","is","are","be"],0],
+ ["She ___ a teacher.",["am","is","are","be"],1],
+ ["They ___ two brothers.",["has","have","having","is"],1],
+ ["What ___ your name?",["are","do","is","does"],2],
+ ["I ___ coffee every morning.",["drink","drinks","drinking","to drink"],0],
+ ["There ___ a book on the table.",["are","be","is","have"],2],
+ ["Как образуется множественное число слова “child”?",["childs","children","childes","child"],1],
+ ["Выбери правильное предложение.",["He don't like tea.","He doesn't likes tea.","He doesn't like tea.","He not like tea."],2],
+ ["Does he ___ football every weekend?",["play","plays","playing","played"],0],
+ ["My parents ___ in Bishkek.",["lives","living","live","to live"],2],
+ ["We ___ got a dog.",["has","have","having","are"],1],
+ ["___ you like apples?",["Are","Does","Do","Have"],2]
+ ],
+ A2:[
+ ["We ___ to the museum last Saturday.",["go","went","have go","are going"],1],
+ ["There isn't ___ sugar left.",["many","a few","much","several"],2],
+ ["This exercise is ___ than the last one.",["easy","easier","easiest","more easy"],1],
+ ["I have lived here ___ 2021.",["for","since","during","from"],1],
+ ["If I have time tomorrow, I ___ you.",["called","would call","will call","call yesterday"],2],
+ ["She ___ dinner when I arrived.",["cooks","was cooking","has cooked","is cook"],1],
+ ["You ___ wear a seat belt. It's the law.",["might","must","could","would"],1],
+ ["Выбери правильный вопрос.",["How long you have been here?","How long are you here?","How long have you been here?","How long did you been here?"],2],
+ ["I ___ this film twice.",["see","saw","have seen","am seeing"],2],
+ ["There are ___ apples in the basket than yesterday.",["less","fewer","much","little"],1],
+ ["She is very good ___ playing the piano.",["in","on","at","for"],2],
+ ["When I was a child, I ___ visit my grandparents every summer.",["use to","used to","was used","am used to"],1]
+ ],
+ B1:[
+ ["By the time we arrived, the film ___.",["already started","had already started","has already start","was already start"],1],
+ ["If I had known about the delay, I ___ earlier.",["would leave","will leave","would have left","left"],2],
+ ["The new bridge ___ next year.",["will complete","will be completed","is completing","has completed"],1],
+ ["She asked me where ___.",["did I live","I lived","do I live","I am live"],1],
+ ["I've been waiting ___ two hours.",["since","from","for","during"],2],
+ ["Despite ___ tired, he finished the report.",["be","being","was","to be"],1],
+ ["The company is interested ___ expanding abroad.",["on","at","in","for"],2],
+ ["Выбери подходящее слово-связку: The plan was expensive. ___, it was successful.",["Although","However","Because","Despite"],1],
+ ["I wish I ___ more free time.",["have","had","will have","would have"],1],
+ ["The emails ___ already been sent.",["has","have","was","is"],1],
+ ["He denied ___ the window.",["break","to break","breaking","broke"],2],
+ ["You need to get your car ___.",["repair","repairing","repaired","to repairing"],2]
+ ],
+ B2:[
+ ["Not until the meeting ended ___ the scale of the problem.",["we understood","did we understand","we had understand","understood we"],1],
+ ["Had I been informed earlier, I ___ the necessary arrangements.",["would make","will have made","would have made","had made"],2],
+ ["The proposal, ___ merits were widely debated, was eventually approved.",["which","whose","that","who"],1],
+ ["She speaks as though she ___ the entire incident herself.",["witnesses","has witnessed","had witnessed","would witness"],2],
+ ["The findings are consistent ___ previous research.",["to","with","for","by"],1],
+ ["Little ___ that their decision would cause such controversy.",["they knew","did they know","they had known","had they knew"],1],
+ ["The manager insisted that the report ___ before Friday.",["is submitted","was submitted","be submitted","will submit"],2],
+ ["Выбери наиболее близкое значение слова “to undermine”.",["to strengthen","to gradually weaken","to officially approve","to carefully examine"],1],
+ ["Rarely ___ such a convincing performance.",["I have seen","have I seen","I saw","did I saw"],1],
+ ["Were the company ___ its policy, the results might improve.",["change","to change","changed","changing"],1],
+ ["It was the lack of funding ___ delayed the project.",["what","which","that","who"],2],
+ ["The evidence is far from ___ to support that conclusion.",["conclusive enough","enough conclusive","conclusively","conclusion"],0]
+ ]
+};
+let PT;
+const dk=d=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(),wait=ms=>new Promise(r=>setTimeout(r,ms)),ruOf=en=>((D.flatMap(l=>l.w).find(x=>x[0]==en))||[])[1]||'';
+/* ===== AUTH: verified Supabase session via the same-origin parent bridge ===== */
+const authPending=new Map();
+let authSequence=0;
+function authRequest(action,payload={}){
+ return new Promise((resolve,reject)=>{
+  const id=String(++authSequence)+'-'+Date.now();
+  authPending.set(id,{resolve,reject});
+  window.parent.postMessage({channel:'cloudy-auth',type:'request',id,action,...payload},location.origin);
+  setTimeout(()=>{const pending=authPending.get(id);if(pending){authPending.delete(id);reject(new Error('Сервер не ответил. Проверьте соединение и попробуйте снова.'))}},15000);
+ });
+}
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.source!==window.parent||!event.data||event.data.channel!=='cloudy-auth')return;
+ const msg=event.data;
+ if(msg.type==='session'){
+  if(msg.ok&&msg.user){
+   cloudUserId=msg.user.id;
+   const localKey='cl2:'+msg.user.email,localExists=ls(localKey)!==null,localAt=Number(ls('cl2sync:'+msg.user.email)||0),dirtyAt=Number(ls('cl2dirty:'+msg.user.email)||0),remoteAt=msg.progress?.updated_at?Date.parse(msg.progress.updated_at):0;
+   const guestState=(()=>{try{return JSON.parse(ls('cl2')||'{}')}catch(e){return {}}})();
+   cloudUpdatedAt=msg.progress?.updated_at||null;cloudSyncInFlight=null;cloudSyncPending=null;cloudSyncAttempts=0;cloudSyncPaused=true;
+   Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin,msg.user.age);if(msg.progressLoadFailed)toast('Не удалось загрузить облачный прогресс. Проверьте интернет; данные на этом устройстве не затронуты.',false);
+   if(msg.progress?.state&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(msg.progress.state));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):(Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age):null),isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
+   else if(!localExists&&!msg.progress?.state&&['A1','A2','B1','B2'].includes(guestState.lv)){try{load('cl2');S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save()}catch(e){}}
+   else{queueCloudProgress()}
+   cloudSyncPaused=false;queueCloudProgress();
+   view();
+  }else if(msg.ok===false){toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false)}else{cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
+  return;
+ }
+ if(msg.type==='progress-save-result'){
+  const sent=cloudSyncInFlight;
+  if(!sent||msg.syncId!==sent.id)return;
+  cloudSyncInFlight=null;
+  if(msg.ok&&msg.conflict&&msg.state&&typeof msg.state==='object'){
+   cloudUpdatedAt=msg.updatedAt||null;S=mergeCloudProgress(msg.state,cloudSyncPending?.state||sent.state);
+   try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+   cloudSyncPending={id:++cloudSyncSeq,state:JSON.parse(JSON.stringify(S))};scheduleCloudRetry();return;
+  }
+  if(msg.ok){
+   cloudUpdatedAt=msg.updatedAt||cloudUpdatedAt;cloudSyncAttempts=0;
+   if(msg.state&&typeof msg.state==='object'){S.xp=Number(msg.state.xp)||0;const wk=msg.state.wk&&typeof msg.state.wk==='object'?msg.state.wk:{};S.wk={k:String(wk.k||''),xp:Number(wk.xp)||0};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+   if(S.user?.email)ls('cl2sync:'+S.user.email,String(Date.now()));
+   if(!cloudSyncPending&&S.user?.email)ls('cl2dirty:'+S.user.email,'');
+   if(cloudSyncPending)flushCloudProgress();
+  }else{
+   cloudSyncPending=cloudSyncPending||sent;scheduleCloudRetry();
+   if(cloudSyncAttempts===3)toast(msg.error||'Нет связи с облаком. Прогресс сохранён на устройстве и будет отправлен автоматически.',false);
+  }
+  return;
+ }
+ if(msg.type==='lesson-award-result'){
+  if(!msg.ok){toast(msg.error||'Не удалось начислить XP.',false);return;}
+  const award=msg.result||{};
+  S.xp=Number(award.total_xp)||0;
+  if(Number(award.awarded)>0){S.td.xp+=Number(award.awarded);track(Number(award.awarded));}
+  S.wk={k:String(award.week_key||''),xp:Number(award.week_xp)||0};
+  save();checkAch();
+  const xpLabel=$('#xp');if(xpLabel)xpLabel.textContent='+'+(Number(award.awarded)||0);
+  return;
+ }
+ if(msg.type!=='response'||!authPending.has(String(msg.id)))return;
+ const pending=authPending.get(String(msg.id));authPending.delete(String(msg.id));
+ if(!msg.ok){pending.reject(new Error(msg.error||'Ошибка авторизации'));return}
+ if(msg.user){cloudUserId=msg.user.id;queueCloudProgress()}
+ pending.resolve(msg);
+});
+const Auth={
+ async signUp(name,email,pw){
+  const result=await authRequest('signUp',{name,email,password:pw,age:Number(INTRO.age)||null});
+  if(result.needsConfirmation)throw new Error('Проверьте почту и подтвердите регистрацию, затем войдите.');
+  return this.start(result.user.email,result.user.name||name,false,result.user.age);
+ },
+ async signIn(email,pw){
+  const result=await authRequest('signIn',{email,password:pw});
+  return this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin,result.user.age);
+ },
+ start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);const savedAge=Number(S.user?.age);const validAge=Number.isInteger(Number(age))&&Number(age)>=5&&Number(age)<=120?Number(age):Number.isInteger(savedAge)&&savedAge>=5&&savedAge<=120?savedAge:null;S.user={email,name,age:validAge,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
+ guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:INTRO.name||'Гость',age:Number(INTRO.age)||null};save();window.CloudyAdmin?.setUser(S.user)},
+ async signOut(){await authRequest('signOut');cloudUserId=null;cloudUpdatedAt=null;cloudSyncPending=null;cloudSyncInFlight=null;clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRetry);cloudSyncRetry=0;ls('cl2s','');load('cl2');S.user=null;window.CloudyAdmin?.setUser(null)}
+};
+let INTRO={name:'',age:18,step:0};
+try{const savedIntro=JSON.parse(localStorage.getItem('cl2welcome')||'{}');INTRO={...INTRO,...savedIntro}}catch(e){}
+function escIntro(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function introSave(){try{localStorage.setItem('cl2welcome',JSON.stringify(INTRO))}catch(e){}}
+function introWelcome(){INTRO.step=0;introRender()}
+function introRender(){
+ const cloud=`<div class="welcome-cloud">${mascot()}</div>`;
+ if(INTRO.step===0){
+  app.innerHTML=`<div class="welcome-flow"><div class="welcome-step">${cloud}<div class="welcome-progress"><i class="on"></i><i></i></div><h1 class="welcome-copy">Привет! Как тебя зовут?</h1><p class="welcome-sub">Давай познакомимся — я Клауди, твой помощник в английском ☁️</p><label class="welcome-field"><input id="welcomeName" maxlength="32" autocomplete="given-name" placeholder="Твоё имя" value="${escIntro(INTRO.name)}"></label><div class="welcome-error" id="welcomeError"></div><button class="welcome-next" onclick="introNextName()">Далее <span>→</span></button></div></div>`;
+  const input=$('#welcomeName');input?.addEventListener('keydown',e=>{if(e.key==='Enter')introNextName()});
+ }else{
+  const ages=Array.from({length:83},(_,i)=>i+5);
+  app.innerHTML=`<div class="welcome-flow"><div class="welcome-step">${cloud}<div class="welcome-progress"><i class="on"></i><i class="on"></i></div><h1 class="welcome-copy">Сколько тебе лет?</h1><p class="welcome-sub">Подберу подходящие темы и задания для тебя</p><div class="age-wheel-wrap"><div class="age-highlight"></div><div class="age-wheel" id="ageWheel">${ages.map(age=>`<div class="age-option ${age===Number(INTRO.age)?'selected':''}" data-age="${age}">${age}</div>`).join('')}</div></div><div class="welcome-error" id="welcomeError"></div><button class="welcome-next" onclick="introFinish()">Продолжить <span>→</span></button></div></div>`;
+  const wheel=$('#ageWheel');const initial=wheel?.querySelector('[data-age="'+Number(INTRO.age)+'"]');if(initial)wheel.scrollTop=initial.offsetTop-wheel.offsetTop-88;
+  wheel?.addEventListener('scroll',introAgeScroll,{passive:true});introAgeScroll();
+ }
+}
+function introNextName(){
+ const name=$('#welcomeName')?.value.trim()||'';if(name.length<2){$('#welcomeError').textContent='Напиши имя (минимум 2 символа)';$('#welcomeName')?.focus();return}
+ INTRO.name=name;INTRO.step=1;introSave();snd('go');introRender()
+}
+let introAgeFrame=0;
+function introAgeScroll(){
+ const wheel=$('#ageWheel');if(!wheel)return;
+ if(introAgeFrame)cancelAnimationFrame(introAgeFrame);
+ introAgeFrame=requestAnimationFrame(()=>{
+  const center=wheel.scrollTop+wheel.clientHeight/2;let best=null,dist=Infinity;
+  wheel.querySelectorAll('.age-option').forEach(el=>{const d=Math.abs(el.offsetTop+el.offsetHeight/2-center);if(d<dist){dist=d;best=el}});
+  if(best){const age=Number(best.dataset.age);if(INTRO.age!==age){INTRO.age=age;introSave()}wheel.querySelectorAll('.age-option.selected').forEach(el=>el.classList.remove('selected'));best.classList.add('selected')}
+ })
+}
+function introFinish(){
+ if(!INTRO.name){INTRO.step=0;introRender();return}
+ introSave();try{localStorage.setItem('cl2welcomeDone','1')}catch(e){}
+ AM='up';snd('win');authV()
+}
+let AM='in',busy=0,CH=[],SM=null;
+function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'>${AM=='up'?`<label>Имя<input id='an' autocomplete='name' placeholder='Анна' value='${escIntro(INTRO.name)}'></label>`:''}<label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button></div>`}
+async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap').value,nm=AM=='up'?$('#an').value.trim():'',er=$('#er'),b=$('#ab'),lbl=AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ',bad=m=>{er.textContent=m;er.classList.remove('shk');void er.offsetWidth;er.classList.add('shk');snd('bad')};
+ if(!em.includes('@')||!em.includes('.'))return bad('Введите корректный email');if(pw.length<6)return bad('Пароль: минимум 6 символов');if(AM=='up'&&!nm)return bad('Введите имя');
+ b.classList.add('ld');b.textContent='ПОДОЖДИТЕ...';er.textContent='';
+ try{AM=='up'?await Auth.signUp(nm,em,pw):await Auth.signIn(em,pw);snd('win');view()}catch(x){b.classList.remove('ld');b.textContent=lbl;bad(x.message||'Ошибка входа')}}
+function authG(){Auth.guest();snd('go');view()}
+const ACH=[['first','Первый шаг','Набрать XP','bolt',()=>S.xp>0],['s3','Серия 3','3 дня подряд','flame',()=>S.streak>=3],['s7','Серия 7','7 дней подряд','flame',()=>S.streak>=7],['perf','Без ошибок','Урок без потерь','heart',()=>S.perf>0],['x1','100 XP','Набрать 100 XP','star',()=>S.xp>=100],['x5','500 XP','Набрать 500 XP','star',()=>S.xp>=500],['a1','Уровень A1','Пройти A1','check',()=>S.dn.A1>=6],['tst','Знаток','Пройти тест','target',()=>S.tested>0]];
+const toast=t=>{snd('star');const d=document.createElement('div');d.className='toast';d.textContent='Достижение: '+t;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)};
+function checkAch(){const n=ACH.filter(a=>a[4]()&&!S.ach.includes(a[0]));if(!n.length)return;n.forEach(a=>S.ach.push(a[0]));save();setTimeout(()=>toast(n[0][1]),1200)}
+function wkey(){const d=new Date(),y=new Date(d.getFullYear(),0,1);return d.getFullYear()+'w'+Math.floor(((d-y)/864e5+y.getDay())/7)}
+function track(g){const t=dk(new Date());if(!S.days.includes(t)){S.days.push(t);S.days=S.days.slice(-60)}const w=wkey();if(S.wk.k!=w)S.wk={k:w,xp:0};S.wk.xp+=g;if(hp>=5&&L>=0)S.perf++}
+const LG=[['Бронза',0],['Серебро',200],['Золото',600],['Сапфир',1500],['Бриллиант',3000]],LC=['#cd7f32','#c0c8d8','#ffd35a','#4db3ff','#b9f2ff'],BOTS=['Алекс','Мария','Дима','Лиза','Олег'];
+function lg(){const li=LG.reduce((a,x,k)=>S.xp>=x[1]?k:a,0),c=LG[li],nx=LG[li+1],w=S.wk.k==wkey()?S.wk.xp:0,dow=(new Date().getDay()+6)%7+1,seed=[...wkey()].reduce((a,ch)=>a+ch.charCodeAt(0),0),pr=nx?Math.min((S.xp-c[1])/(nx[1]-c[1]),1):1,
+ rows=BOTS.map((n,k)=>[n,Math.round(((seed*(k+3)*7919)%180+40)*dow/7),0]).concat([['Вы',w,1]]).sort((a,b)=>b[1]-a[1]);
+ return `<h2 style="margin-top:12px">Лига: ${c[0]}</h2><div class="card lgc"><span class="mdl" style="color:${LC[li]}">${ic('medal')}</span><div style="flex:1"><b>${nx?'До лиги '+nx[0]+': '+(nx[1]-S.xp)+' XP':'Максимальная лига'}</b><div class="pb" style="margin-top:8px"><i style="width:${pr*100}%"></i></div></div></div><div class="card"><h3>Рейтинг недели</h3>${rows.map((r,k)=>`<div class="row lr${r[2]?' me':''}" style="animation-delay:${k*70}ms"><span><b style="display:inline-block;width:26px">${k+1}</b>${r[0]}</span><b>${r[1]} XP</b></div>`).join('')}<small style="opacity:.7">Соперники учебные: пример для будущей онлайн-лиги</small></div><div class="card"><h3>Достижения</h3><div class="ag">${ACH.map(a=>`<div class="bd${S.ach.includes(a[0])?' on':''}">${ic(a[3])}<small>${a[1]}</small></div>`).join('')}</div></div>`}
+function cal(){const t=new Date(),c=[];for(let k=27;k>=0;k--){const d=new Date(t);d.setDate(t.getDate()-k);const on=S.days.includes(dk(d));c.push(`<i class="cd${on?' on':''}" style="animation-delay:${(27-k)*25}ms">${on?ic('flame'):d.getDate()}</i>`)}return `<div class="card"><h3>Календарь серии</h3><div class="cal">${c.join('')}</div></div>`}
+const remB=()=>S.set.rem&&S.last!=new Date().toDateString()?`<div class="card rem">${ic('flame')}<div><b>Пора заниматься!</b><br><small>Не потеряйте серию: ${S.streak} дн.</small></div></div>`:'';
+const rvBtn=()=>{const n=Object.keys(S.mis).length;return n?`<button class="chest" onclick="review()">${ic('redo')}<span>Ошибки: ${n}</span></button>`:''};
+const AIcard=()=>`<button class="card ai" onclick="chat()">${mascot()}<div><b>Практика с Клауди</b><br><small style="opacity:.8">Диалог на уровне ${S.lv}</small></div></button>`;
+const addMis=en=>{if(!en)return;S.mis[en]=(S.mis[en]||0)+1;if(!lm.includes(en))lm.push(en);save()};
+const cq=(en,ru,m)=>{const o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice(0,3)]);return m==2?{k:'l',a:en,en,o:o.map(x=>x[0]),title:'Что вы слышите?'}:{k:'c',q:m?en:ru,a:m?ru:en,en,spk:!!m,o:o.map(x=>m?x[1]:x[0]),title:m?'Что это значит?':'Переведите на английский'}};
+function review(){const w=Object.keys(S.mis).slice(0,8).map(en=>[en,ruOf(en)]).filter(x=>x[1]);if(!w.length)return snd('bad');snd('go');rv=1;rt=1;lm=[];L=-1;ex=mk({w,s:[]});i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
+function again(){rv?review():go(L)}
+const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button class="spk" onclick="say('${e.en}',1)">${ic('spk')}</button></div><button class="big" id="mic" onclick="rec()">${ic('mic')}</button><p id="rs" style="text-align:center;opacity:.85">Нажмите и произнесите слово</p><button class="btn ghost" onclick="skipP()">ПРОПУСТИТЬ</button>`;
+function skipP(){if(done)return;fx(true,'Пропущено')}
+let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false,lastVoiceTranscript='';
+function normalizeSpeechText(value){
+ return String(value||"").normalize("NFKD").toLowerCase().replace(/[’']/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
+}
+function speechDistance(a,b){
+ const prev=Array.from({length:b.length+1},(_,i)=>i);
+ for(let i=1;i<=a.length;i++){let diagonal=prev[0];prev[0]=i;for(let j=1;j<=b.length;j++){const above=prev[j];prev[j]=Math.min(prev[j]+1,prev[j-1]+1,diagonal+(a[i-1]===b[j-1]?0:1));diagonal=above;}}
+ return prev[b.length];
+}
+function speechMatches(transcript,target){
+ const heard=normalizeSpeechText(transcript),expected=normalizeSpeechText(target);
+ if(!heard||!expected)return false;
+ // Short English words often differ by a single phoneme (son/sun, ship/sheep).
+ // Browser ASR's fuzzy transcript matching cannot safely distinguish them.
+ if(heard===expected)return true;
+ if(expected.includes(" "))return false;
+ if(expected.length<5)return false;
+ return Math.abs(heard.length-expected.length)<=1&&speechDistance(heard,expected)<=1;
+}
+function clearCloudyRecognition(){
+ clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
+ const active=cloudyRecognition;cloudyRecognition=null;
+ if(active)try{active.onresult=active.onerror=active.onend=null;active.stop()}catch(e){}
+ const mic=$('#mic');if(mic)mic.classList.remove('rec');
+}
+function rec(autoRetry=false){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!SR){toast('Голосовой ввод не поддерживается этим браузером. Можно продолжить упражнение вручную.',false);return;}
+ if(done)return;
+ if(cloudyRecognition){try{cloudyRecognition.stop()}catch(e){}return;}
+ const exercise=ex[i],mic=$('#mic'),status=$('#rs');
+ if(!exercise||!mic)return;
+ if(!autoRetry){cloudyVoiceRetryCount=0;cloudyVoiceHandled=false;snd('pick');}
+ const recognition=new SR();cloudyRecognition=recognition;
+ recognition.lang='en-US';recognition.maxAlternatives=5;recognition.continuous=false;recognition.interimResults=false;
+ if(status)status.textContent=autoRetry?'Слушаю ещё раз…':'Слушаю… Говорите чётко';
+ mic.classList.add('rec');
+ recognition.onstart=()=>{if(status)status.textContent='Слушаю… Говорите чётко';};
+ recognition.onresult=ev=>{
+  if(cloudyVoiceHandled||done)return;
+  const alternatives=[];
+  for(let index=ev.resultIndex||0;index<ev.results.length;index++){
+   const result=ev.results[index];if(!result.isFinal)continue;
+   for(let alt=0;alt<result.length;alt++)alternatives.push({text:result[alt].transcript,confidence:Number(result[alt].confidence)||0});
+  }
+  if(!alternatives.length)return;
+  cloudyVoiceHandled=true;clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
+  const best=alternatives.sort((x,y)=>y.confidence-x.confidence).find(x=>speechMatches(x.text,exercise.en));
+  const heard=alternatives[0].text;
+  lastVoiceTranscript=heard;
+  clearCloudyRecognition();
+  if(best){
+   if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,true,{retry:!!rt});
+   ok++;tot++;cmb++;snd('ok',cmb);fx(true,'Отлично! Распознано: '+best.text);
+  }else{
+   if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,false,{retry:!!rt});
+   addMis(exercise.en);miss();fx(false,'Распознано: '+heard+'. Нужно сказать: '+exercise.en);
+  }
+ };
+ recognition.onerror=ev=>{
+  if(cloudyVoiceHandled)return;
+  const error=ev.error||'unknown';
+  if(error==='no-speech'&&cloudyVoiceRetryCount<1){cloudyVoiceRetryCount++;if(status)status.textContent='Не услышал голос. Повторяю попытку…';return;}
+  if(status){
+   status.textContent=error==='not-allowed'||error==='service-not-allowed'?'Нет доступа к микрофону — разрешите его в настройках браузера.':
+    error==='audio-capture'?'Микрофон не найден или занят другим приложением.':
+    error==='network'?'Проблема с соединением при распознавании. Проверьте интернет.':
+    error==='no-speech'?'Не услышал голос. Нажмите на микрофон и попробуйте ещё раз.':
+    'Не удалось распознать речь. Попробуйте ещё раз.';
+  }
+  if(error!=='no-speech')toast(status?.textContent||'Не удалось распознать речь.',false);
+ };
+ recognition.onend=()=>{
+  if(cloudyRecognition!==recognition)return;
+  cloudyRecognition=null;clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
+  if(cloudyVoiceHandled||done){if(mic)mic.classList.remove('rec');return;}
+  if(cloudyVoiceRetryCount===1){
+   cloudyVoiceRetryCount=2;
+   if(status)status.textContent='Повторная попытка…';
+   setTimeout(()=>{if(!done&&!cloudyRecognition)rec(true)},350);
+   return;
+  }
+  if(mic)mic.classList.remove('rec');
+  if(status&&!status.textContent.includes('Нет доступа')&&!status.textContent.includes('Микрофон не найден')&&!status.textContent.includes('Проблема с соединением'))status.textContent='Готово. Нажмите на микрофон, чтобы попробовать снова.';
+ };
+ try{
+  recognition.start();
+  cloudyRecognitionTimer=setTimeout(()=>{if(cloudyRecognition===recognition){if(status)status.textContent='Время прослушивания истекло. Попробуйте ещё раз.';try{recognition.stop()}catch(e){}}},15000);
+ }catch(error){
+  cloudyRecognition=null;mic.classList.remove('rec');
+  if(status)status.textContent='Не удалось запустить микрофон. Проверьте разрешение и попробуйте снова.';
+  toast('Не удалось запустить распознавание речи.',false);
+ }
+}
+function theme(t){S.set.th=t;save();snd('tab');view(0)}
+async function chat(){app.innerHTML=`<section class="chat-shell"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs" class="chat-messages" aria-live="polite"></div><div class="chat-composer"><input id="ci" placeholder="Напишите по-английски" autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}"><button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button></div></section>`;CH.forEach(m=>bub(m.r,m.t,false));if(!CH.length)await ask();const input=$('#ci');if(input)input.focus()}
+function scrollChat(){const box=$('#msgs');if(box)box.scrollTop=box.scrollHeight}
+function bub(r,t,scroll=true){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);if(scroll)requestAnimationFrame(scrollChat);return d}
+function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
+async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await new Promise(resolve=>setTimeout(resolve,text.length>500?9:16))}el.classList.remove('chat-type-cursor')}
+async function ask(u){if(u){CH.push({r:'u',t:u});bub('u',u)}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}scrollChat()}
+async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('tap');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
+setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
+function amb(){const l=S.lv||"A1",a=$(".amb");document.body.dataset.lv=l;document.body.dataset.th=S.set.th||"dark";if(a.dataset.l==l)return;a.dataset.l=l;a.innerHTML="";const n={A1:5,A2:16,B1:28,B2:4}[l],r=Math.random;for(let k=0;k<n;k++){const u=document.createElement("u"),z={A1:200+r()*220,A2:14+r()*40,B1:3+r()*6,B2:90}[l];u.style.cssText=`left:${r()*100}%;top:${r()*100}%;width:${z}px;height:${z}px;animation-delay:-${r()*12}s;animation-duration:${l=="A2"?7+r()*8:l=="B1"?2+r()*3:l=="B2"?12+r()*8:14+r()*8}s`;a.appendChild(u)}}
+function splash(l){const s=document.createElement("div");s.className="spl "+l;s.innerHTML=`<div class="lc ${l}">${l}</div><h2>${LI[l][0]}</h2>`;document.body.appendChild(s);setTimeout(()=>s.remove(),1800)}
+function setLv(l){if(!LVS.includes(l))return;S.lv=l;S.tested=1;save();T=0;view();splash(l);snd("go")}
+function welcome(){app.innerHTML=`<div class="scr res">${mascot()}<div class="big2">Какой у вас уровень английского?</div><p style="opacity:.85;margin:0 0 18px">Выберите уровень, а затем мы проверим его коротким тестом</p>${LVS.map((l,k)=>`<button class="opt lv" style="--i:${k}" onclick="pt('${l}')"><span class="lc ${l}">${l}</span><span><b>${LI[l][0]}</b><br><small>${LI[l][1]}</small></span></button>`).join("")}<br><button class="btn" onclick="pt('')">НЕ ЗНАЮ, ОПРЕДЕЛИТЬ ТЕСТОМ</button></div>`}
+function pt(c){const start=c?LVS.indexOf(c):0;PT={c,start,level:start,best:0,i:0,sc:[0,0,0,0],lk:0,q:[],total:0,stageSize:2,stageScore:0,stageAnswered:0,seen:[[],[],[],[]]};ptstage();snd("go")}
+function ptstage(){const idx=PT.level,pool=sh(TQ[LVS[idx]].map((x,k)=>k).filter(k=>!PT.seen[idx].includes(k)));const count=Math.min(2,pool.length);PT.stageSize=count;PT.stageScore=0;PT.stageAnswered=0;PT.stageStart=PT.q.length;pool.slice(0,count).forEach(k=>{PT.seen[idx].push(k);const [q,o,a]=TQ[LVS[idx]][k];PT.q.push({l:idx,q,a:o[a],o:sh(o)})});PT.total+=count;PT.stageEnd=PT.q.length;ptq()}
+function ptq(){const q=PT.q[PT.i];app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');${S.lv?"view()":"welcome()"}">${ic("x")}</button><div class="bar"><i style="width:${PT.stageAnswered/PT.stageSize*100}%"></i></div><b>${PT.i+1}</b></div><div class="body"><h2>Проверка уровня ${LVS[PT.level]}</h2><p style="opacity:.8;margin:0 0 14px">Выбери правильный ответ. Вставь подходящее слово или выбери верный вариант.</p><div class="qq" style="font-size:24px">${q.q}</div>${q.o.map((o,k)=>`<button class="opt" style="--i:${k}" onclick="pa(${k})">${o}</button>`).join("")}<button class="opt" style="--i:4;opacity:.75" onclick="pa(-1)">Не знаю</button></div></div>`}
+function ptadvance(){const idx=PT.level,passed=PT.stageScore>=2;if(passed){PT.best=Math.max(PT.best,idx);if(PT.descending||idx===3){ptr();return}PT.level=idx+1;ptstage();return}if(idx>0){PT.descending=1;PT.level=idx-1;ptstage();return}ptr()}
+function pa(k){if(PT.lk)return;PT.lk=1;const q=PT.q[PT.i],g=k>=0&&q.o[k]==q.a;document.querySelectorAll(".opt").forEach((b,j)=>{if(q.o[j]==q.a)b.classList.add("good");else if(j==k)b.classList.add("wrong")});if(g){PT.sc[q.l]++;PT.stageScore++;snd("ok",PT.sc[q.l])}else if(k>=0)snd("bad");else snd("tap");PT.stageAnswered++;$(".bar i").style.width=PT.stageAnswered/PT.stageSize*100+"%";setTimeout(()=>{PT.lk=0;PT.i++;if(PT.i>=PT.stageEnd){if(PT.stageScore==1&&PT.stageSize==2){const pool=sh(TQ[LVS[PT.level]].map((x,k)=>k).filter(k=>!PT.seen[PT.level].includes(k)));if(pool.length){const k=pool[0],[q,o,a]=TQ[LVS[PT.level]][k];PT.seen[PT.level].push(k);PT.q.push({l:PT.level,q,a:o[a],o:sh(o)});PT.total++;PT.stageSize=3;PT.stageEnd++;ptq();return}}ptadvance()}else ptq()},650)}
+function ptr(){const level=LVS[PT.best];S.lv=level;S.tested=1;save();checkAch();const n=PT.sc.reduce((a,b)=>a+b,0),msg=PT.best>PT.start?"Ваш уровень выше ожидаемого":PT.best<PT.start?"Мы нашли ваш комфортный уровень":"Уровень определён";app.innerHTML=`<div class="scr res">${mascot()}<div class="big2">${msg}</div><div style="display:flex;justify-content:center;margin:10px 0"><div class="lc ${level}" style="width:100px;height:100px;font-size:40px;border-radius:30px">${level}</div></div><p style="opacity:.85">${LI[level][0]}. Верных ответов: ${n} из ${PT.total}<br>Проверка адаптировалась к вашим ответам. Уровень сохранён.</p><br><button class="btn" onclick="view()">ПРОДОЛЖИТЬ С ${level}</button>${PT.c&&level!=PT.c?`<br><br><button class="btn" style="background:rgba(255,255,255,.15);color:#fff;box-shadow:none" onclick="setLv('${PT.c}')">ОСТАТЬСЯ НА ${PT.c}</button>`:""}</div>`;snd("win");conf(30)}
+function learn(){
+ const g=S.set.goal,td=S.td,rdy=td.xp>=g&&!td.claim,dn=S.dn[S.lv]||0,tl=SEC.reduce((a,s)=>a+s.l.length,0);let n=0;
+ const secs=SEC.map((s,si)=>{
+  const nodes=s.l.map(li=>{const st=n<dn?"done":n==dn?"cur":"lock",x=Math.round(Math.sin(n*1.15)*60),d=n*70;n++;
+   return `<div class="nw" style="--x:${x}px;--d:${d}ms">${st=="cur"?'<div class="tip">НАЧАТЬ</div>':""}<button class="node ${st}" onclick="${st=="lock"?"snd('bad')":`go(${li})`}">${st=="cur"?'<svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/></svg>':""}${ic(st=="done"?"check":st=="cur"?"star":"lock")}</button><div class="lb">${D[li].t}</div></div>`}).join("");
+  return `<div class="ban"><div><small>РАЗДЕЛ ${si+1}</small><h3>${s.n}</h3></div><button class="gd" onclick="guide(${si})">${ic("book")}</button></div><div class="path">${nodes}<div class="deco">${mascot()}</div></div>`}).join("");
+ return `<div class="stats"><button class="av" onclick="tab(3)">${ic("user")}</button><span class="pill"><b class="en" onclick="tab(3)">${S.lv}</b></span><span class="sp"></span><span class="pill">${ic("flame")}${S.streak}</span><span class="pill">${ic("bolt")}${S.xp}</span></div>
+ <div style="margin-top:18px;display:flex;gap:10px"><button class="chest ${rdy?"rdy":td.claim?"got":""}" onclick="claim()">${ic("chest")}<span>${td.claim?"Получено":rdy?"Забрать":Math.min(td.xp,g)+"/"+g+" XP"}</span></button>${rvBtn()}</div>${remB()}${AIcard()}${secs}${dn>=tl&&nxt(S.lv)?`<div class="card" style="text-align:center"><b>Уровень ${S.lv} пройден!</b><br><br><button class="btn" onclick="setLv('${nxt(S.lv)}')">ПЕРЕЙТИ НА ${nxt(S.lv)}</button></div>`:""}`}
+function claim(){const td=S.td;if(td.xp>=S.set.goal&&!td.claim){td.claim=1;S.xp+=25;save();snd("chest");conf(50);view(0)}else snd("bad")}
+function guide(si){sheet(`<h3>Шпаргалка: ${SEC[si].n}</h3>`+SEC[si].l.map(li=>`<b style="opacity:.8;font-size:13px">${D[li].t.toUpperCase()}</b>`+D[li].w.map(([e,r])=>`<div class="row"><span>${e} <span style="opacity:.65">— ${r}</span></span><button class="spk" onclick="say('${e}',1)">${ic("spk")}</button></div>`).join("")).join("")+`<br><button class="btn" onclick="closeSh()">ЗАКРЫТЬ</button>`)}
+function quests(){const g=S.set.goal,td=S.td,Q=[["Набери "+g+" XP",td.xp,g],["Пройди 2 урока",td.les,2],["Дай 12 верных ответов",td.ok,12]];
+ return `<h2 style="margin-top:12px">Задания дня</h2>${Object.keys(S.mis).length?`<div class="card" style="display:flex;align-items:center;gap:14px"><span style="font-size:40px;display:flex">${ic('redo')}</span><div style="flex:1"><b>Повторение ошибок</b><br><small style="opacity:.8">Слов для повторения: ${Object.keys(S.mis).length}</small></div><button class="btn sm" onclick="review()">ПОВТОРИТЬ</button></div>`:''}<div class="card">${Q.map(([n,v,m])=>`<div class="q"><p><span>${n}</span><span>${Math.min(v,m)}/${m}</span></p><div class="pb"><i style="width:${Math.min(v/m,1)*100}%"></i></div></div>`).join("")}</div><div class="card" style="display:flex;gap:14px;align-items:center"><span style="font-size:48px;display:flex">${ic("chest")}</span><div><b>Сундук дня</b><br><small style="opacity:.8">Достигни цели ${g} XP и забери награду на главном экране</small></div></div>`}
+function prof(){const g=S.set.goal,C=2*Math.PI*40,p=Math.min(S.td.xp/g,1),s=S.set,a=S.acc[1]?Math.round(S.acc[0]/S.acc[1]*100):0;
+ const sw=k=>`<button class="sw ${s[k]?"on":""}" onclick="tg(this,'${k}')"><i></i></button>`;
+ return `<div class="pc">${mascot()}<h2>${S.user.name||'Ученик'}</h2><p>${S.user.email||'Режим гостя'}</p></div>
+ <div class="grid">${[["flame",S.streak,"дней подряд"],["bolt",S.xp,"XP всего"],["check",Object.values(S.dn).reduce((a,b)=>a+b,0),"уроков"],["target",a+"%","точность"]].map(([i,v,l])=>`<div class="card">${ic(i)}<div><b>${v}</b><small>${l}</small></div></div>`).join("")}</div>
+ <div class="card"><div class="goal"><svg class="gr" viewBox="0 0 100 100"><circle class="t" cx="50" cy="50" r="40"/><circle class="p" cx="50" cy="50" r="40" style="--c:${C};stroke-dasharray:${C};stroke-dashoffset:${C*(1-p)}"/></svg><div><b>Цель на сегодня</b><br><small style="opacity:.8">${Math.min(S.td.xp,g)} из ${g} XP</small></div></div><div class="seg">${[10,20,30,50].map(n=>`<button class="${g==n?"on":""}" onclick="goal(${n})">${n}</button>`).join("")}</div></div>
+ ${cal()}<div class="card"><h3>Аккаунт</h3><div class="row"><span>${S.user.guest?'Режим гостя':S.user.email}</span></div><button class="btn ghost" onclick="Auth.signOut().then(()=>view()).catch(e=>toast(e.message||'Не удалось выйти из аккаунта. Попробуйте ещё раз.',false))">${S.user.guest?'ВОЙТИ ИЛИ РЕГИСТРАЦИЯ':'ВЫЙТИ'}</button></div>${(!S.user?.guest&&(S.user?.isAdmin===true||String(S.user?.email||"").trim().toLowerCase()==="lajonlipcik@gmail.com"))?`<div class="card"><h3>Управление приложением</h3><p style="opacity:.8;margin:0 0 14px">Пользователи и AI-провайдеры</p><button class="btn" type="button" onclick="if(window.CloudyAdmin&&typeof window.CloudyAdmin.open==='function'){window.CloudyAdmin.open(S.user)}else{alert('Модуль админ-панели не загрузился. Обновите страницу.')}">⚙ Админ-панель</button></div>`:""}<div class="card"><h3>Уровень английского</h3><div class="seg">${LVS.map(l=>`<button class="${S.lv==l?"on":""}" onclick="setLv('${l}')">${l}</button>`).join("")}</div><br><button class="btn" onclick="pt('${S.lv}')">ПРОЙТИ ТЕСТ УРОВНЯ</button></div><div class="card"><h3>Настройки</h3><div class="row"><span>Звуковые эффекты</span>${sw("snd")}</div><div class="row"><span>Громкость</span><input type="range" min="0.1" max="1" step="0.05" value="${s.vol}" oninput="S.set.vol=+this.value;save()" onchange="snd('ok')"></div><div class="row"><span>Автоозвучка слов</span>${sw("voice")}</div><div class="row"><span>Практика произношения</span>${sw('mic')}</div><div class="row"><span>Напоминание</span>${sw('rem')}</div><div class="row"><span>Время напоминания</span><input type="time" class="ti" value="${s.remT}" onchange="S.set.remT=this.value;save()"></div><div class="row"><span>Тема</span><div class="seg" style="width:180px">${[['dark','Тёмная'],['light','Светлая']].map(([k,n])=>`<button class="${(s.th||'dark')==k?'on':''}" onclick="theme('${k}')">${n}</button>`).join('')}</div></div><div class="row"><span>Сбросить прогресс</span><button class="btn ghost sm" type="button" onclick="rst()">Сброс</button></div></div>`}
+function tg(el,k){S.set[k]=S.set[k]?0:1;el.classList.toggle("on");save();snd("tap");if(k=="rem"&&S.set.rem)try{Notification.requestPermission()}catch(e){}}
+function goal(n){S.set.goal=n;save();snd("pick");view(0)}
+function rst(){sheet(`<h3>Сбросить прогресс?</h3><p style="opacity:.85">Уроки, XP и серия обнулятся. Настройки сохранятся.</p><button class="btn" onclick="doRst()">СБРОСИТЬ</button><br><br><button class="btn" onclick="closeSh()">ОТМЕНА</button>`)}
+function doRst(){const s=S.set;S=DEF();S.set=s;save();closeSh();T=0;view()}
+let ex,i,hp,sel,built,done,ml,mc,cmb,ok,tot,L,rv=0,lm=[],rt=0;
+function mk(l){const r=[],modes=sh([0,0,1,1,2,2]);
+ const titles={
+  ru:["Переведите на английский","Как сказать это по-английски?","Выберите английский перевод"],
+  en:["Что это значит?","Выберите перевод слова","Как переводится это слово?"],
+  listen:["Что вы услышали?","Прослушайте и выберите слово","Какое слово произнесено?"],
+  bank:["Составьте предложение на английском","Переведите фразу на английский","Соберите правильный перевод"]
+ };
+ l.w.forEach(([en,ru])=>{const m=modes.pop(),o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice(0,3)]);
+  if(m==2)r.push({k:"l",a:en,en,o:o.map(x=>x[0]),title:titles.listen[Math.random()*titles.listen.length|0]});
+  else r.push({k:"c",q:m?en:ru,a:m?ru:en,en,spk:!!m,o:o.map(x=>m?x[1]:x[0]),title:(m?titles.en:titles.ru)[Math.random()*(m?titles.en:titles.ru).length|0]})});
+ const p=sh(l.w).slice(0,4);r.push({k:"m",L:sh(p.map(x=>[x[0],x[0]])),R:sh(p.map(x=>[x[1],x[0]])),title:"Найдите пары"});
+ l.s.forEach(([ru,en,d])=>r.push({k:"b",q:ru,a:en,o:sh([...en.split(" "),...d.split(" ")]),title:titles.bank[Math.random()*titles.bank.length|0]}));
+ if(l.w.length&&(window.SpeechRecognition||window.webkitSpeechRecognition)&&S.set.mic)r.push({k:"p",en:sh(l.w)[0][0]});return sh(r)}
+function go(n){snd("go");rv=0;lm=[];rt=0;L=n;ex=window.CloudyLearning?CloudyLearning.prioritize(KEY,mk(D[n])):mk(D[n]);i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
+const opts=e=>e.o.map((o,k)=>`<button class="opt" style="--i:${k}" onclick="pick(${k})">${o}</button>`).join("");
+function draw(){const e=ex[i];sel=null;built=[];done=false;ml=null;mc=0;let b;
+ if(e.k=="c")b=`<h2>${e.title}</h2><div class="qq">${e.q}${e.spk?`<button class="spk" onclick="say('${e.en}',1)">${ic("spk")}</button>`:""}</div>${opts(e)}`;
+ else if(e.k=="l")b=`<h2>${e.title}</h2><button class="big" onclick="say('${e.en}',1)">${ic("spk")}</button>${opts(e)}`;
+ else if(e.k=="b")b=`<h2>${e.title}</h2><div class="qq" style="font-size:24px">${e.q}</div><div class="ans" id="ans"></div><div class="bank">${e.o.map((o,k)=>`<button class="chip" id="c${k}" onclick="tog(${k})">${o}</button>`).join("")}</div>`;
+ else if(e.k=="p")b=PB(e);else b=`<h2>${e.title||"Найдите пары"}</h2><div class="mt"><div>${e.L.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(0,'${id}',this)">${t}</button>`).join("")}</div><div>${e.R.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(1,'${id}',this)">${t}</button>`).join("")}</div></div>`;
+ app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic("x")}</button><div class="bar"><i style="width:${i/ex.length*100}%"></i></div><span class="hp" id="hp">${ic("heart")}${hp}</span></div><div class="body">${b}</div></div>`+(e.k=="m"||e.k=="p"?'<div class="foot" id="ft" style="display:none"></div>':`<div class="foot" id="ft"><button class="btn" id="go" disabled onclick="check()">ПРОВЕРИТЬ</button></div>`);
+ requestAnimationFrame(()=>{const f=$(".bar i");if(f)f.style.width=i/ex.length*100+"%"});
+ if(e.k=="l")setTimeout(()=>say(e.en,1),400);if(e.k=="c"&&e.spk)setTimeout(()=>say(e.en),400)}
+function pick(k){if(done)return;sel=k;snd("pick");document.querySelectorAll(".opt").forEach((b,j)=>b.classList.toggle("sel",j==k));$("#go").disabled=false}
+function tog(k){if(done)return;snd("tap");const p=built.indexOf(k);p>-1?built.splice(p,1):built.push(k);const e=ex[i];$("#ans").innerHTML=built.map(j=>`<button class="chip" onclick="tog(${j})">${e.o[j]}</button>`).join("");e.o.forEach((_,j)=>$("#c"+j).classList.toggle("gone",built.includes(j)));$("#go").disabled=!built.length}
+function miss(){hp--;cmb=0;tot++;snd("bad");const h=$("#hp");h.innerHTML=ic("heart")+hp;h.classList.remove("hit");void h.offsetWidth;h.classList.add("hit");if(navigator.vibrate)try{navigator.vibrate(60)}catch(e){}}
+function fx(good,msg){done=true;const ft=$("#ft");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<p>${msg}</p><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good)$(".bar i").style.width=(i+1)/ex.length*100+"%"}
+async function askExerciseCoach(){
+ const box=$("#exerciseCoachReply"),e=ex[i];if(!box||!e||box.dataset.loading)return;
+ box.dataset.loading="1";box.textContent="Cloudy разбирает задание…";
+ const target=String(e.a??e.en??"");
+ const pairTarget=e.k==="m"?(e.L||[]).map(([left,id])=>String(left)+" → "+String((e.R||[]).find(([,rightId])=>rightId===id)?.[0]??"")).join("; "):"";
+ const response=e.k==="p"?lastVoiceTranscript:e.k==="b"?built.map(j=>e.o[j]).join(" "):e.k==="m"?"Упражнение на сопоставление завершено":e.k==="c"||e.k==="l"?String(e.o?.[sel]??""):"";
+ const exerciseContext={type:e.k==="p"?"pronunciation":e.k==="b"?"sentence-building":e.k==="m"?"matching":e.k==="l"?"listening":"vocabulary",question:String(e.q??e.title??"").slice(0,180),target:(pairTarget||target).slice(0,500),learnerAnswer:String(response).slice(0,160),level:S.lv||"A1"};
+ try{
+  const result=await authRequest("ai-chat",{payload:{message:"Разбери со мной только что выполненное упражнение. Объясни разницу между моим ответом и правильным, если была ошибка. Дай короткую подсказку и одно похожее задание для закрепления. Учитывай мой уровень.",level:S.lv||"A1",history:[],learnerProfile:window.CloudyLearning?.profile(KEY)||null,exerciseContext}});
+  box.textContent=String(result.result?.answer||"Cloudy не смог подготовить разбор. Попробуйте позже.");
+ }catch(error){box.textContent=error?.message||"Не удалось получить разбор от Cloudy."}
+ delete box.dataset.loading;
+}
+function check(){if(done)return;const e=ex[i];
+ const good=e.k=="b"?built.map(j=>e.o[j]).join(" ").toLowerCase()==e.a.toLowerCase():e.o[sel]==e.a;
+ if(window.CloudyLearning)CloudyLearning.record(KEY,e,good,{retry:!!rt});
+ if(e.k!="b")document.querySelectorAll(".opt").forEach((b,j)=>{if(e.o[j]==e.a)b.classList.add("good");else if(j==sel)b.classList.add("wrong")});
+ if(good){ok++;tot++;cmb++;snd("ok",cmb);if(rv&&e.en&&S.mis[e.en]){if(--S.mis[e.en]<=0)delete S.mis[e.en];save()}setTimeout(()=>say(e.en||e.a),300);if(cmb>=3){const t=$(".top");if(!$(".cb"))t.insertAdjacentHTML("beforeend",'<span class="cb"></span>');$(".cb").textContent="x"+cmb}}else{addMis(e.en);miss();$(".cb")&&$(".cb").remove()}
+ fx(good,good?["Отлично!","Верно!","Супер!","Так держать!"][Math.random()*4|0]:"Правильный ответ: "+e.a)}
+function mp(side,id,el){if(done||el.classList.contains("good"))return;
+ if(side==0){snd("pick");ml=[id,el];document.querySelectorAll(".mt .opt").forEach(b=>b.classList.remove("sel"));el.classList.add("sel");return}
+ if(!ml)return;const l=ml[1];
+ if(ml[0]==id){if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:id},true,{retry:!!rt});l.classList.remove("sel");l.classList.add("good");el.classList.add("good");snd("match");ml=null;if(++mc==ex[i].L.length){ok++;tot++;cmb++;setTimeout(()=>{snd("ok",cmb);fx(true,"Все пары найдены!")},350)}}
+ else{if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:ml[0]},false,{retry:!!rt});[l,el].forEach(b=>{b.classList.add("wrong");setTimeout(()=>b.classList.remove("wrong"),500)});l.classList.remove("sel");addMis(ml[0]);ml=null;miss();if(hp<=0)setTimeout(fail,800)}}
+function next(){if(hp<=0)return fail();snd("tap");if(++i>=ex.length&&!rt&&lm.length){rt=1;lm.slice(0,3).forEach(en=>ex.push(cq(en,ruOf(en),Math.random()*2|0)))}if(i>=ex.length)return fin();draw()}
+function fail(){snd("bad");app.innerHTML=`<div class="scr res">${mascot("s")}<div class="big2">Жизни закончились</div><p style="opacity:.85">Ничего страшного, попробуем ещё раз.</p><br><button class="btn" onclick="again()">ПОПРОБОВАТЬ СНОВА</button><br><br><button class="btn" onclick="view()" style="background:rgba(255,255,255,.15);color:#fff;box-shadow:none">НА ГЛАВНУЮ</button></div>`}
+function fin(){roll();const t=new Date().toDateString(),y=new Date(Date.now()-864e5).toDateString(),gain=cloudUserId?24:15+hp*3,st=hp>=5?3:hp>=3?2:1,acc=Math.round(ok/Math.max(tot,1)*100);
+ if(S.last!=t){S.streak=S.last==y?S.streak+1:1;S.last=t}
+ if(!cloudUserId){S.xp+=gain;S.td.xp+=gain;track(gain)}
+ S.td.les++;S.td.ok+=ok;S.acc[0]+=ok;S.acc[1]+=tot;const ps=SEC.flatMap(s=>s.l);if(ps.indexOf(L)==S.dn[S.lv]&&S.dn[S.lv]<ps.length)S.dn[S.lv]++;save();if(!cloudUserId)checkAch();
+ app.innerHTML=`<div class="scr res">${mascot()}<div class="big2">Урок пройден!</div><div class="stars">${[0,1,2].map(k=>`<span style="animation-delay:${.3+k*.3}s;display:block">${ic(k<st?"starg":"stard")}</span>`).join("")}</div><div class="rs"><div style="animation-delay:.2s"><span id="xp">+0</span><small>XP</small></div><div style="animation-delay:.35s">${acc}%<small>точность</small></div><div style="animation-delay:.5s">${S.streak}<small>серия</small></div></div><button class="btn" onclick="snd('tab');T=0;view()">ПРОДОЛЖИТЬ</button></div>`;
+ snd("win");conf();for(let k=0;k<st;k++)setTimeout(()=>snd("star"),300+k*300);
+ if(cloudUserId){window.parent.postMessage({channel:'cloudy-auth',type:'lesson-complete',lessonIndex:L,level:S.lv},location.origin);return}
+ const el=$("#xp"),s0=performance.now();(function f(n){const p=Math.min((n-s0)/1000,1);el.textContent="+"+Math.round(gain*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(s0)}
+bootCloudy();
