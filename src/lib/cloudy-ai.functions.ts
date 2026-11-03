@@ -63,7 +63,8 @@ export const saveAiProvider=createServerFn({method:"POST"}).inputValidator(valid
     updated_at: new Date().toISOString(),},{onConflict:"provider"}).select("*").single();if(error)throw new Error("Не удалось сохранить API: "+error.message);return {provider:safe(r)}});
 export const deleteAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);const {error}=await db.from("ai_provider_secrets").delete().eq("id",String(data.id??""));if(error)throw new Error("Не удалось удалить API.");return {ok:true}});
 export const testAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true),r=(await rows(db)).find((x:any)=>x.id===String(data.id??""));if(!r)throw new Error("Провайдер не найден.");try{const a=await ask(r,[{role:"user",content:"Ответь одним словом: Cloudy работает."}],20);await db.from("ai_provider_secrets").update({last_tested_at:new Date().toISOString(),last_status:"ok"}).eq("id",r.id);return {ok:true,provider:a.provider,model:a.model,response:a.content}}catch(e){await db.from("ai_provider_secrets").update({last_tested_at:new Date().toISOString(),last_status:"error"}).eq("id",r.id);throw e}});
-const safeContextText=(value:unknown,max:number)=>String(value??"").replace(/[\\u0000-\\u001f\\u007f]/g," ").replace(/\\s+/g," ").trim().slice(0,max);\nfunction safeLearnerProfile(value:unknown){
+const safeContextText=(value:unknown,max:number)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
+function safeLearnerProfile(value:unknown){
   if(!value||typeof value!=="object")return null;
   const p=value as any;
   const skills=Array.isArray(p.skills)?p.skills.slice(0,80).map((s:any)=>({
