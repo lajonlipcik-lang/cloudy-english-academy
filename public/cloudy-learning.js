@@ -65,7 +65,7 @@
       attempts: data.events.length,
       skills: skills.sort((a, b) => a.mastery - b.mastery),
       dueCount: skills.filter((skill) => skill.dueAt <= Date.now()).length,
-      recentEvents: data.events.slice(-20).map(({ skillId, exerciseType, correct, retry }) => ({ skillId, exerciseType, correct, retry }))
+      recentEvents: data.events.slice(-20).map(({ at, skillId, exerciseType, correct, retry }) => ({ at, skillId, exerciseType, correct, retry }))
     };
   }
   function prioritize(scope, exercises) {
