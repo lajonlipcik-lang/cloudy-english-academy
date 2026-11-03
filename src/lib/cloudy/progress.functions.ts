@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
-import { isLessonInLevel } from "@/lib/cloudy/progress-policy";
+import { isLessonInLevel, sanitizeCloudyProgress } from "@/lib/cloudy/progress-policy";
 import type { Json } from "@/integrations/supabase/types";
 
 type ProgressInput = { accessToken: string; state?: unknown; expectedUpdatedAt?: string | null; lessonIndex?: number; level?: string };
@@ -26,14 +26,18 @@ export const saveCloudyProgress = createServerFn({ method: "POST" })
   .inputValidator(validate)
   .handler(async ({ data }) => {
     if (!data.state || typeof data.state !== "object" || Array.isArray(data.state)) {
-      throw new Error("Invalid progress payload");
+      throw new Error("Некорректные данные прогресса.");
     }
+    let serialized: string;
+    try { serialized = JSON.stringify(data.state); } catch { throw new Error("Некорректные данные прогресса."); }
+    if (serialized.length > 64_000) throw new Error("Данные прогресса слишком большие. Обновите приложение и попробуйте снова.");
+    const safeState = sanitizeCloudyProgress(data.state);
     const { user, db } = await getUserAndAdmin(data.accessToken);
     const expectedUpdatedAt = data.expectedUpdatedAt == null ? null : new Date(data.expectedUpdatedAt);
     if (expectedUpdatedAt && Number.isNaN(expectedUpdatedAt.getTime())) throw new Error("Некорректная версия прогресса.");
     const { data: saved, error } = await db.rpc("save_cloudy_progress", {
       _user_id: user.id,
-      _state: data.state,
+      _state: safeState,
       _expected_updated_at: expectedUpdatedAt?.toISOString() ?? null,
     });
     if (error) throw new Error("Не удалось сохранить прогресс.");
