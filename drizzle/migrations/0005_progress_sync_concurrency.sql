@@ -31,7 +31,7 @@ BEGIN
   FOR UPDATE;
   v_exists := FOUND;
 
-  IF v_exists AND _expected_updated_at IS DISTINCT FROM v_current.updated_at THEN
+  IF v_exists AND date_trunc('milliseconds', _expected_updated_at) IS DISTINCT FROM date_trunc('milliseconds', v_current.updated_at) THEN
     v_state := jsonb_set(COALESCE(v_current.state, '{}'::jsonb), '{xp}', to_jsonb(v_xp.total_xp), true);
     v_state := jsonb_set(v_state, '{wk}', jsonb_build_object('k', v_xp.week_key, 'xp', v_xp.week_xp), true);
     RETURN jsonb_build_object(
@@ -45,7 +45,7 @@ BEGIN
   v_state := jsonb_set(COALESCE(_state, '{}'::jsonb), '{xp}', to_jsonb(v_xp.total_xp), true);
   v_state := jsonb_set(v_state, '{wk}', jsonb_build_object('k', v_xp.week_key, 'xp', v_xp.week_xp), true);
 
-  v_updated_at := clock_timestamp();
+  v_updated_at := date_trunc('milliseconds', clock_timestamp());
   INSERT INTO public.user_progress (user_id, state, total_xp, week_key, week_xp, updated_at)
   VALUES (_user_id, v_state, v_xp.total_xp, v_xp.week_key, v_xp.week_xp, v_updated_at)
   ON CONFLICT (user_id) DO UPDATE
