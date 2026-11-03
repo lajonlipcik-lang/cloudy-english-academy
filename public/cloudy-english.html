@@ -356,17 +356,28 @@ function rec(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition
  r.onresult=ev=>{got=1;m.classList.remove('rec');const t=[...ev.results[0]].map(x=>x.transcript.toLowerCase()).join(' ');if(t.includes(e.en.toLowerCase())){ok++;tot++;cmb++;snd('ok',cmb);fx(true,'Отлично!')}else{addMis(e.en);miss();fx(false,'Нужно сказать: '+e.en)}};
  r.onerror=r.onend=()=>{m.classList.remove('rec');if(!got&&!done){const s=$('#rs');if(s)s.textContent='Не расслышал, попробуйте ещё раз'}};try{r.start()}catch(x){}}
 function theme(t){S.set.th=t;save();snd('tab');view(0)}
-async function chat(){app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs"></div></div><div class="foot cin"><input id="ci" placeholder="Напишите по-английски" onkeydown="if(event.key=='Enter')csend()"><button class="spk" onclick="csend()">${ic('send')}</button></div>`;CH.forEach(m=>bub(m.r,m.t));
+async function chat(){app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs"></div></div><div class="foot cin"><input id="ci" placeholder="Напишите по-английски" autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}"><button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button></div>`;CH.forEach(m=>bub(m.r,m.t));
  try{SM=SM||await claude.use('sample')}catch(e){SM=null}
- if(!SM){bub('a','Чат доступен при открытии страницы в claude.ai. В Lovable его можно подключить к ИИ.');return}
- if(!CH.length)ask()}
+ if(!CH.length){if(SM)ask();else{const greeting='Hi! I am Cloudy. Let’s practise English together. How are you today?';CH.push({r:'a',t:greeting});bub('a',greeting)}}
+ const input=$('#ci');if(input)input.focus()}
 function bub(r,t){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});return d}
-async function ask(u){if(u){CH.push({r:'u',t:u});bub('u',u)}const el=bub('a','...');el.classList.add('typ');const tr=CH.map(m=>(m.r=='u'?'Ученик: ':'Клауди: ')+m.t).join('\n');
+function localCoachReply(u){
+ const v=u.toLowerCase().trim(),lv=S.lv||'A1';
+ if(/^(hi|hello|hey|привет)/i.test(v))return 'Hello! Nice to meet you. How are you today?\n\nОтветь по-английски: “I am …”';
+ if(/\b(my name is|i am|i'm)\b/.test(v))return 'Great! Хорошее начало. Попробуй добавить ещё одно предложение: “I am from …” или “I like …”.';
+ if(/\b(help|помоги|не понимаю|не знаю)\b/.test(v))return 'Of course! Я помогу. Напиши короткое предложение на английском, а я подскажу, как его улучшить. Например: “I like music.”';
+ if(/\?$/.test(v))return 'Good question! Давай разберём её вместе. Попробуй сначала ответить на английском одним коротким предложением.';
+ if(v.split(/\s+/).length<3)return 'Good try! Попробуй составить полное предложение из 3–6 слов. Например: “I like learning English.”\n\nЧто ты любишь делать?';
+ return 'Thanks for your answer! Попробуй продолжить мысль ещё одним предложением.\n\nНебольшая подсказка: для уровня '+lv+' лучше писать короткими и понятными фразами. What do you think?';
+}
+async function ask(u){if(u){CH.push({r:'u',t:u});bub('u',u)}const el=bub('a','...');el.classList.add('typ');
+ if(!SM){const reply=localCoachReply(u||'');el.classList.remove('typ');el.textContent=reply;CH.push({r:'a',t:reply});snd('pick');window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});return}
+ const tr=CH.map(m=>(m.r=='u'?'Ученик: ':'Клауди: ')+m.t).join('\n');
  const sys='Ты Клауди, дружелюбное облачко-учитель английского для русскоговорящего ученика уровня '+S.lv+'. Говори по-английски простыми фразами этого уровня, коротко (1-3 предложения). Если ученик ошибся, мягко исправь и объясни по-русски в одну строку. Задавай один вопрос за раз. Без эмодзи и разметки.';
  try{const r=await SM(sys+'\n\nДиалог:\n'+(tr||'(пока пусто, начни разговор)')+'\n\nНапиши следующую реплику Клауди.',{cache:false,onText:({text})=>{el.classList.remove('typ');el.textContent=text}});el.classList.remove('typ');el.textContent=r.text;CH.push({r:'a',t:r.text});snd('pick')}
  catch(e){el.classList.remove('typ');el.textContent=e&&e.code=='not_granted'?'Нет разрешения на чат.':'Не получилось ответить, попробуйте ещё раз.'}
  window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}
-async function csend(){const el=$('#ci');if(!el||busy||!SM)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('tap');await ask(v);busy=0}
+async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('tap');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
 setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
 function amb(){const l=S.lv||"A1",a=$(".amb");document.body.dataset.lv=l;document.body.dataset.th=S.set.th||"dark";if(a.dataset.l==l)return;a.dataset.l=l;a.innerHTML="";const n={A1:5,A2:16,B1:28,B2:4}[l],r=Math.random;for(let k=0;k<n;k++){const u=document.createElement("u"),z={A1:200+r()*220,A2:14+r()*40,B1:3+r()*6,B2:90}[l];u.style.cssText=`left:${r()*100}%;top:${r()*100}%;width:${z}px;height:${z}px;animation-delay:-${r()*12}s;animation-duration:${l=="A2"?7+r()*8:l=="B1"?2+r()*3:l=="B2"?12+r()*8:14+r()*8}s`;a.appendChild(u)}}
 function splash(l){const s=document.createElement("div");s.className="spl "+l;s.innerHTML=`<div class="lc ${l}">${l}</div><h2>${LI[l][0]}</h2>`;document.body.appendChild(s);setTimeout(()=>s.remove(),1800)}
