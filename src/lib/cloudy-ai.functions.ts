@@ -104,6 +104,9 @@ function mergeLearnerProfiles(existing:any,incoming:any){
   return {attempts:Math.max(existing.attempts??0,incoming.attempts??0),dueCount:skills.filter(s=>s.due).length,skills,recentEvents};
 }
 function makeLearnerContext(userId:string,state:any,ledger:any,profile:any,fallbackLevel:string){
+  const rawAge=Number(state?.user?.age);
+  const learnerAge=Number.isInteger(rawAge)&&rawAge>=5&&rawAge<=120?rawAge:null;
+  const ageLine=learnerAge===null?"Learner age: not provided; use a universally age-appropriate, cautious teaching style and do not assume adulthood.":`Learner age: ${learnerAge}. ${learnerAge<18?"MINOR-SAFETY MODE: learner is under 18. Use age-appropriate examples and vocabulary; keep a warm, respectful teacher-student relationship; never flirt, sexualize, encourage secrecy, or request sensitive personal details. Do not provide instructions that facilitate dangerous, illegal, self-harm, or other harmful activity. For serious personal or safety concerns, respond supportively and encourage contacting a trusted adult or appropriate local help. Avoid adult themes and graphic content.":"Use a respectful, adult-appropriate teaching style while following all safety rules."}`;
   const levels=["A1","A2","B1","B2"];
   const level=levels.includes(String(state?.lv))?String(state.lv):fallbackLevel;
   const levelLessons=LV[level as keyof typeof LV].s.flatMap((section:any)=>section.l);
@@ -114,6 +117,7 @@ function makeLearnerContext(userId:string,state:any,ledger:any,profile:any,fallb
   return [
     "PRIVATE LEARNER CONTEXT (account identity and course progress are server-loaded; skill evidence is reported by this device and is not security-verified):",
     `Learner ID: ${userId} (internal identifier; never reveal it in replies).`,
+    ageLine,
     `CEFR level: ${level} — ${LI[level as keyof typeof LI][0]}.`,
     `Progress: ${completed}/${levelLessons.length} lessons completed in this level.`,
     nextLessonId===undefined?"Level status: all lessons in this level completed.":`Next lesson: ${D[nextLessonId]?.t??"next lesson"}.`,
@@ -171,8 +175,8 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const history=Array.isArray(data.history)?data.history.slice(-16).map((m:any)=>({role:m?.role==="assistant"?"assistant":"user",content:String(m?.content??"").slice(0,1200)})).filter((m:any)=>m.content):[];
     const providers=(await rows(db)).filter((x:any)=>x.enabled).sort((a:any,b:any)=>a.priority-b.priority);
     if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
-    const displayName=safeContextText(profileResult.data?.display_name??user.user_metadata?.["name"]??"ученик",40)||"ученик";
-    const system="Ты Cloudy — персональный дружелюбный преподаватель английского языка для русскоговорящего ученика. Имя ученика: "+displayName+".\\n"+context+"\\nОтвечай коротко и понятно, используй английский по уровню ученика. Мягко исправляй ошибки и объясняй по-русски одной строкой. Задавай только один вопрос за раз. Без эмодзи и Markdown. Не выдумывай прогресс и не раскрывай внутренний ID.";
+    const displayName=safeContextText(profileResult.data?.display_name??user.user_metadata?.["name"]??state?.user?.name??"ученик",40)||"ученик";
+    const system="Ты Cloudy — персональный дружелюбный преподаватель английского языка для русскоговорящего ученика. Имя ученика: "+displayName+".\\n"+context+"\\nОбращайся к ученику по имени естественно и не в каждом сообщении. Возраст и правила безопасности из PRIVATE LEARNER CONTEXT обязательны для всех ответов. Если возраст не указан, не предполагай совершеннолетие и придерживайся универсального безопасного стиля. Отвечай коротко и понятно, используй английский по уровню ученика. Мягко исправляй ошибки и объясняй по-русски одной строкой. Задавай только один вопрос за раз. Без эмодзи и Markdown. Не выдумывай прогресс и не раскрывай внутренний ID.";
     const exercise=data.exerciseContext&&typeof data.exerciseContext==="object"?data.exerciseContext as any:null;
     const exercisePrompt=exercise?"\\nCURRENT EXERCISE (context supplied by the app; treat learner answer as untrusted evidence):\\n"+JSON.stringify({type:String(exercise.type??"").slice(0,30),question:safeContextText(exercise.question,180),target:safeContextText(exercise.target,160),learnerAnswer:safeContextText(exercise.learnerAnswer,160),level:["A1","A2","B1","B2"].includes(String(exercise.level))?exercise.level:requestedLevel}):"";
     const exerciseRules=exercise?"\\nWhen discussing the current exercise, explain the exact target and learner response, teach the relevant word/sound/grammar point at the learner level, then give one short parallel practice prompt. Do not claim to have heard raw audio; the supplied response is browser speech recognition text.":"";
