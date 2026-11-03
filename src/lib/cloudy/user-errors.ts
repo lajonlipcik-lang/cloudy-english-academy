@@ -30,6 +30,7 @@ export function toUserErrorMessage(error: unknown, context: UserErrorContext = "
   if (/email not confirmed|email_not_confirmed|confirm your email/i.test(text)) {
     return "Сначала подтвердите email по ссылке в письме, затем попробуйте войти снова.";
   }
+  if (/слишком много запросов к ии|лимит обращений к ии|уже выполняются запросы к ии|сервис ии временно недоступен/i.test(text) && error instanceof Error) return error.message;
   if (/rate.?limit|too many requests|over_email_send_rate_limit/i.test(text)) {
     return "Слишком много попыток за короткое время. Подождите немного и повторите.";
   }

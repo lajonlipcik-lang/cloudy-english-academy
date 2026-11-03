@@ -43,6 +43,13 @@
       "when": 1793754600000,
       "tag": "0005_progress_sync_concurrency",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793779200000,
+      "tag": "0006_cloudy_ai_rate_limits",
+      "breakpoints": true
     }
   ]
 }
