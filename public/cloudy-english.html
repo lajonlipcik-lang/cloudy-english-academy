@@ -167,6 +167,31 @@ h2{font-size:21px;margin:0 0 16px}
 .foot.bad .btn{background:var(--bad);color:#fff;box-shadow:0 5px 0 #c23a52}
 .res{text-align:center;padding-top:34px}
 .ms{width:150px;animation:float 3s ease-in-out infinite}
+/* First-run welcome */
+.welcome-flow{min-height:calc(100dvh - env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 22px calc(28px + env(safe-area-inset-bottom,0px));text-align:center;position:relative;z-index:1;overflow:hidden}
+.welcome-cloud{width:142px;height:114px;display:grid;place-items:center;margin:0 auto 18px;filter:drop-shadow(0 12px 22px rgba(0,0,0,.16));animation:welcomeFloat 3.4s ease-in-out infinite}
+.welcome-cloud .ms{width:142px}
+@keyframes welcomeFloat{50%{transform:translateY(-8px)}}
+.welcome-copy{font-size:clamp(27px,7vw,34px);line-height:1.12;letter-spacing:-.8px;font-weight:850;margin:0 auto 10px;max-width:340px}
+.welcome-sub{font-size:15px;line-height:1.45;opacity:.78;margin:0 auto 25px;max-width:290px}
+.welcome-field{width:100%;max-width:360px;border:1px solid rgba(255,255,255,.25);border-radius:22px;background:rgba(255,255,255,.12);box-shadow:0 14px 36px rgba(0,0,0,.12);padding:8px 17px;margin:0 auto 18px;backdrop-filter:blur(14px);transition:border-color .25s,background .25s}
+.welcome-field:focus-within{border-color:rgba(255,255,255,.8);background:rgba(255,255,255,.17)}
+.welcome-field input{width:100%;border:0;outline:0;background:transparent;color:inherit;text-align:center;font:700 21px system-ui;padding:12px 2px}
+.welcome-field input::placeholder{color:rgba(255,255,255,.55)}
+.welcome-next{width:100%;max-width:360px;min-height:58px;border:1px solid rgba(255,255,255,.35);border-radius:19px;background:linear-gradient(110deg,#fff,#d9efff);color:#0a367e;font-weight:850;font-size:16px;letter-spacing:.2px;box-shadow:0 6px 0 rgba(23,83,157,.65),0 14px 28px rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;gap:12px;transition:transform .2s,box-shadow .2s;animation:welcomePulse 2.8s ease-in-out infinite}
+.welcome-next:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(23,83,157,.65)}
+.welcome-next span{font-size:22px;transition:transform .2s}.welcome-next:active span{transform:translateX(4px)}
+@keyframes welcomePulse{50%{box-shadow:0 6px 0 rgba(23,83,157,.65),0 14px 34px rgba(132,205,255,.2)}}
+.welcome-progress{display:flex;gap:7px;margin:0 0 23px}.welcome-progress i{width:22px;height:5px;border-radius:9px;background:rgba(255,255,255,.28);transition:all .3s}.welcome-progress i.on{width:38px;background:#fff}
+.age-wheel-wrap{width:100%;max-width:300px;height:224px;position:relative;margin:0 auto 22px;overflow:hidden;mask-image:linear-gradient(transparent,#000 18%,#000 82%,transparent)}
+.age-wheel{height:224px;overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y mandatory;scrollbar-width:none;touch-action:pan-y}.age-wheel::-webkit-scrollbar{display:none}
+.age-wheel:before,.age-wheel:after{content:"";display:block;height:88px;pointer-events:none}
+.age-option{height:48px;display:grid;place-items:center;scroll-snap-align:center;font-size:22px;font-weight:700;opacity:.38;transform:scale(.88);transition:opacity .18s,transform .18s,color .18s}
+.age-option.selected{opacity:1;transform:scale(1.18);font-size:29px;color:#fff;text-shadow:0 3px 18px rgba(167,220,255,.55)}
+.age-highlight{position:absolute;left:18%;right:18%;top:88px;height:48px;border-top:1px solid rgba(255,255,255,.4);border-bottom:1px solid rgba(255,255,255,.4);border-radius:13px;background:rgba(255,255,255,.08);pointer-events:none}
+.welcome-step{width:100%;animation:welcomeIn .42s cubic-bezier(.2,.8,.2,1) both}@keyframes welcomeIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.welcome-error{min-height:20px;color:#ffe0e7;font-size:13px;font-weight:700;margin:-7px 0 8px}
+@media(prefers-reduced-motion:reduce){.welcome-cloud,.welcome-next,.welcome-step{animation:none!important}}
 @keyframes float{50%{transform:translateY(-9px)}}
 .eyes{transform-box:fill-box;transform-origin:center;animation:blink 4.5s infinite}
 @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
@@ -299,7 +324,7 @@ const mascot=(m="h")=>`<svg class="ms" viewBox="0 0 100 80"><path d="M26 68a18 1
 function sheet(h){const s=document.createElement("div");s.className="sb";s.innerHTML=`<div class="sh">${h}</div>`;s.onclick=e=>{if(e.target==s)closeSh()};document.body.appendChild(s);snd("sheet")}
 function closeSh(){const s=$(".sb");if(!s)return;s.classList.add("out");setTimeout(()=>s.remove(),300)}
 const nav=()=>`<nav>${["Учёба","Задания","Лига","Профиль"].map((n,k)=>`<button class="${T==k?"on":""}" onclick="tab(${k})">${ic(["home","target","medal","user"][k])}<span>${n}</span></button>`).join("")}</nav>`;
-function view(a=1){roll();amb();if(!S.user)return authV();if(!S.lv)return welcome();SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}">${[learn,quests,lg,prof][T]()}</div>`+nav()}
+function view(a=1){roll();amb();if(!S.user){if(!localStorage.getItem('cl2welcomeDone'))return introWelcome();return authV()}if(!S.lv)return welcome();SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}">${[learn,quests,lg,prof][T]()}</div>`+nav()}
 function tab(k){if(k!=T){snd("tab");T=k;view()}}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
@@ -440,12 +465,48 @@ const Auth={
   const result=await authRequest('signIn',{email,password:pw});
   return this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin);
  },
- start(email,name,isAdmin=false){ls('cl2s',email);load('cl2:'+email);S.user={email,name,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
- guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость'};save();window.CloudyAdmin?.setUser(S.user)},
+ start(email,name,isAdmin=false){ls('cl2s',email);load('cl2:'+email);S.user={email,name,age:Number(INTRO.age)||null,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
+ guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:INTRO.name||'Гость',age:Number(INTRO.age)||null};save();window.CloudyAdmin?.setUser(S.user)},
  async signOut(){await authRequest('signOut');cloudUserId=null;cloudUpdatedAt=null;cloudSyncPending=null;cloudSyncInFlight=null;clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRetry);cloudSyncRetry=0;ls('cl2s','');load('cl2');S.user=null;window.CloudyAdmin?.setUser(null)}
 };
+let INTRO={name:'',age:18,step:0};
+try{const savedIntro=JSON.parse(localStorage.getItem('cl2welcome')||'{}');INTRO={...INTRO,...savedIntro}}catch(e){}
+function escIntro(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function introSave(){try{localStorage.setItem('cl2welcome',JSON.stringify(INTRO))}catch(e){}}
+function introWelcome(){INTRO.step=0;introRender()}
+function introRender(){
+ const cloud=`<div class="welcome-cloud">${mascot()}</div>`;
+ if(INTRO.step===0){
+  app.innerHTML=`<div class="welcome-flow"><div class="welcome-step">${cloud}<div class="welcome-progress"><i class="on"></i><i></i></div><h1 class="welcome-copy">Привет! Как тебя зовут?</h1><p class="welcome-sub">Давай познакомимся — я Клауди, твой помощник в английском ☁️</p><label class="welcome-field"><input id="welcomeName" maxlength="32" autocomplete="given-name" placeholder="Твоё имя" value="${escIntro(INTRO.name)}"></label><div class="welcome-error" id="welcomeError"></div><button class="welcome-next" onclick="introNextName()">Далее <span>→</span></button></div></div>`;
+  const input=$('#welcomeName');input?.addEventListener('keydown',e=>{if(e.key==='Enter')introNextName()});
+ }else{
+  const ages=Array.from({length:83},(_,i)=>i+5);
+  app.innerHTML=`<div class="welcome-flow"><div class="welcome-step">${cloud}<div class="welcome-progress"><i class="on"></i><i class="on"></i></div><h1 class="welcome-copy">Сколько тебе лет?</h1><p class="welcome-sub">Подберу подходящие темы и задания для тебя</p><div class="age-wheel-wrap"><div class="age-highlight"></div><div class="age-wheel" id="ageWheel">${ages.map(age=>`<div class="age-option ${age===Number(INTRO.age)?'selected':''}" data-age="${age}">${age}</div>`).join('')}</div></div><div class="welcome-error" id="welcomeError"></div><button class="welcome-next" onclick="introFinish()">Продолжить <span>→</span></button></div></div>`;
+  const wheel=$('#ageWheel');const initial=wheel?.querySelector('[data-age="'+Number(INTRO.age)+'"]');if(initial)wheel.scrollTop=initial.offsetTop-wheel.offsetTop-88;
+  wheel?.addEventListener('scroll',introAgeScroll,{passive:true});introAgeScroll();
+ }
+}
+function introNextName(){
+ const name=$('#welcomeName')?.value.trim()||'';if(name.length<2){$('#welcomeError').textContent='Напиши имя (минимум 2 символа)';$('#welcomeName')?.focus();return}
+ INTRO.name=name;INTRO.step=1;introSave();snd('go');introRender()
+}
+let introAgeFrame=0;
+function introAgeScroll(){
+ const wheel=$('#ageWheel');if(!wheel)return;
+ if(introAgeFrame)cancelAnimationFrame(introAgeFrame);
+ introAgeFrame=requestAnimationFrame(()=>{
+  const center=wheel.scrollTop+wheel.clientHeight/2;let best=null,dist=Infinity;
+  wheel.querySelectorAll('.age-option').forEach(el=>{const d=Math.abs(el.offsetTop+el.offsetHeight/2-center);if(d<dist){dist=d;best=el}});
+  if(best){const age=Number(best.dataset.age);if(INTRO.age!==age){INTRO.age=age;introSave()}wheel.querySelectorAll('.age-option.selected').forEach(el=>el.classList.remove('selected'));best.classList.add('selected')}
+ })
+}
+function introFinish(){
+ if(!INTRO.name){INTRO.step=0;introRender();return}
+ introSave();try{localStorage.setItem('cl2welcomeDone','1')}catch(e){}
+ AM='up';snd('win');authV()
+}
 let AM='in',busy=0,CH=[],SM=null;
-function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'>${AM=='up'?`<label>Имя<input id='an' autocomplete='name' placeholder='Анна'></label>`:''}<label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button></div>`}
+function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'>${AM=='up'?`<label>Имя<input id='an' autocomplete='name' placeholder='Анна' value='${escIntro(INTRO.name)}'></label>`:''}<label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button></div>`}
 async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap').value,nm=AM=='up'?$('#an').value.trim():'',er=$('#er'),b=$('#ab'),lbl=AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ',bad=m=>{er.textContent=m;er.classList.remove('shk');void er.offsetWidth;er.classList.add('shk');snd('bad')};
  if(!em.includes('@')||!em.includes('.'))return bad('Введите корректный email');if(pw.length<6)return bad('Пароль: минимум 6 символов');if(AM=='up'&&!nm)return bad('Введите имя');
  b.classList.add('ld');b.textContent='ПОДОЖДИТЕ...';er.textContent='';
