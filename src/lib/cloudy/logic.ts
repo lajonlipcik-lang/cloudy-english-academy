@@ -104,7 +104,10 @@ export function rollDay(s: CloudyState, now = new Date()): CloudyState {
 
 export const shuffle = <T,>(a: readonly T[], r: Rand = Math.random): T[] => {
   const b = [...a];
-  for (let i = b.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0;\n    const current = b[i]!;\n    b[i] = b[j]!;\n    b[j] = current; }
+  for (let i = b.length - 1; i > 0; i--) { const j = (r() * (i + 1)) | 0;
+    const current = b[i]!;
+    b[i] = b[j]!;
+    b[j] = current; }
   return b;
 };
 
@@ -120,7 +123,8 @@ export function buildExercises(l: Pick<Lesson, "w" | "s">, pool: Pair[], opts: {
   const p = shuffle(l.w, r).slice(0, 4);
   if (p.length) out.push({ k: "m", L: shuffle(p.map((x) => [x[0], x[0]] as Pair), r), R: shuffle(p.map((x) => [x[1], x[0]] as Pair), r) });
   l.s.forEach(([ru, en, d]) => out.push({ k: "b", q: ru, a: en, o: shuffle([...en.split(" "), ...d.split(" ")], r), title: "Переведите на английский" }));
-  const pronunciation = shuffle(l.w, r)[0];\n  if (pronunciation && opts.mic) out.push({ k: "p", en: pronunciation[0] });
+  const pronunciation = shuffle(l.w, r)[0];
+  if (pronunciation && opts.mic) out.push({ k: "p", en: pronunciation[0] });
   return shuffle(out, r);
 }
 
