@@ -45,7 +45,8 @@ function CloudyOriginalApp() {
             .eq("user_id", user.id)
             .maybeSingle();
           if (progressError) {
-            send({ type: "session", ok: false, error: "Не удалось загрузить облачный прогресс. Локальные данные сохранены." });
+            // Keep the authenticated session even when the optional cloud snapshot is unavailable.
+            send({ type: "session", ok: true, user: { id: user.id, email: user.email ?? "", name: String(user.user_metadata?.name ?? user.user_metadata?.display_name ?? ""), isAdmin: user.app_metadata?.role === "admin" }, progress: null, progressWarning: "Не удалось загрузить облачный прогресс. Локальные данные сохранены." });
             return;
           }
           progress = saved;
@@ -58,6 +59,7 @@ function CloudyOriginalApp() {
                 id: user.id,
                 email: user.email ?? "",
                 name: String(user.user_metadata?.name ?? user.user_metadata?.display_name ?? ""),
+                isAdmin: user.app_metadata?.role === "admin",
               }
             : null,
           progress,
@@ -129,6 +131,7 @@ function CloudyOriginalApp() {
               id: data.user.id,
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.name ?? data.user.user_metadata?.display_name ?? ""),
+              isAdmin: data.user.app_metadata?.role === "admin",
             },
           });
           return;
