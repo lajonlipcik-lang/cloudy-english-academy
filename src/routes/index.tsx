@@ -16,6 +16,7 @@ type AuthRequest = {
 
 function CloudyOriginalApp() {
   const frameRef = useRef<HTMLIFrameElement>(null);
+  const accessTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -38,6 +39,8 @@ function CloudyOriginalApp() {
           return;
         }
         const user = data.session?.user;
+        accessTokenRef.current = data.session?.access_token ?? null;
+        if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) { try { await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } }); } catch { console.error("[cloudy-admin] owner role refresh failed"); } }
         let progress: { state: Record<string, unknown>; updated_at: string } | null = null;
         if (user) {
           const { data: saved, error: progressError } = await supabase
@@ -98,6 +101,20 @@ function CloudyOriginalApp() {
       const reply = (result: Record<string, unknown>) => send({ type: "response", id: message.id, ...result });
 
       try {
+        const accessToken = accessTokenRef.current;
+        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","ai-chat"].includes(String(message.action))) {
+          if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
+          const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
+          const api = await import("@/lib/cloudy-ai.functions");
+          let result: unknown;
+          if (message.action === "admin-users") result = await api.listCloudyUsers({ data: payload });
+          else if (message.action === "admin-providers") result = await api.listAiProviders({ data: payload });
+          else if (message.action === "admin-provider-save") result = await api.saveAiProvider({ data: payload as never });
+          else if (message.action === "admin-provider-delete") result = await api.deleteAiProvider({ data: payload as never });
+          else if (message.action === "admin-provider-test") result = await api.testAiProvider({ data: payload as never });
+          else result = await api.cloudyTutorChat({ data: payload as never });
+          reply({ ok: true, result }); return;
+        }
         if (message.action === "signUp") {
           const { data, error } = await supabase.auth.signUp({
             email: String(message.email ?? "").trim().toLowerCase(),
@@ -109,6 +126,7 @@ function CloudyOriginalApp() {
             reply({ ok: true, needsConfirmation: true });
             return;
           }
+          accessTokenRef.current = data.session.access_token;
           const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
           reply({
             ok: true,
@@ -142,6 +160,7 @@ function CloudyOriginalApp() {
         }
 
         if (message.action === "signOut") {
+          accessTokenRef.current = null;
           const { error } = await supabase.auth.signOut();
           if (error) throw error;
           reply({ ok: true });
@@ -154,7 +173,7 @@ function CloudyOriginalApp() {
     };
 
     window.addEventListener("message", onMessage);
-    const initialize = () => send({ type: "init" });
+    const initialize = () => { const doc = frame.contentDocument; if (doc && !doc.getElementById("cloudy-admin-runtime")) { const script = doc.createElement("script"); script.id = "cloudy-admin-runtime"; script.src = "/cloudy-admin.js"; script.onload = () => send({ type: "init" }); doc.body.appendChild(script); } else send({ type: "init" }); };
     if (frame.contentDocument?.readyState === "complete") initialize();
     else frame.addEventListener("load", initialize, { once: true });
 
