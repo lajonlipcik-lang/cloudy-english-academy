@@ -8,7 +8,8 @@ const ls=(k,v)=>{try{return v===undefined?localStorage.getItem(k):localStorage.s
 function load(key){KEY=key;S=DEF();try{const j=JSON.parse(ls(key)||"{}");S=Object.assign(DEF(),j);S.set=Object.assign(DEF().set,j.set);S.td=Object.assign(DEF().td,j.td);S.dn=Object.assign(DEF().dn,j.dn);if(!j.dn&&j.done&&j.lv===undefined){S.dn.A1=j.done;S.lv="A1"}if(!["A1","A2","B1","B2"].includes(S.lv))S.lv=""}catch(e){}}
 load(ls("cl2s")?"cl2:"+ls("cl2s"):"cl2");
 let cloudUserId=null,cloudSyncTimer=0,cloudSyncRetry=0,cloudSyncInFlight=null,cloudSyncPending=null,cloudSyncSeq=0,cloudLocalRevision=0,cloudSyncAttempts=0,cloudUpdatedAt=null,cloudSyncPaused=false,cloudBaseState=null;
-let sessionHydrating=!!ls('cl2s');
+// Always wait for the bridge's real Supabase session + progress/profile response before rendering the learner screen.
+let sessionHydrating=true;
 const cloneProgressState=state=>JSON.parse(JSON.stringify(state||{}));
 const progressNumber=value=>Number.isFinite(Number(value))?Number(value):0;
 const mergeCounter=(remoteValue,localValue,baseValue)=>Math.max(0,progressNumber(remoteValue)+progressNumber(localValue)-progressNumber(baseValue));
