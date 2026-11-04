@@ -181,6 +181,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
             email: String(message.email ?? "").trim().toLowerCase(),
             password: String(message.password ?? ""),
           });
+          if (!data.user) throw new Error("Не удалось загрузить аккаунт.");
           const existingAge = Number(data.user.user_metadata?.["age"]);
           if (Number.isInteger(existingAge) && existingAge < 13) {
             await supabase.auth.signOut();
