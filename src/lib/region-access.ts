@@ -48,7 +48,7 @@ export function createCloudyRegionBlockedResponse(): Response {
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#071b49">
   <meta name="robots" content="noindex,nofollow">
-  <title>Доступ ограничен — Cloudy English</title>
+  <title>Cloudy English — доступность сервиса</title>
   <style>
     :root {
       color-scheme: dark;
@@ -84,13 +84,11 @@ export function createCloudyRegionBlockedResponse(): Response {
       display: flex; flex-direction: column; align-items: center;
       padding: 8px 0; animation: appear .55s ease-out both;
     }
-    .logo {
-      display: block; width: clamp(148px, 43vw, 190px); height: clamp(148px, 43vw, 190px);
-      object-fit: contain; margin: 0 auto 14px;
-      filter: drop-shadow(0 14px 30px rgba(104,190,255,.27));
-    }
+    .cloud-mascot { display:block; width:116px; height:94px; margin:0 auto 4px; overflow:visible; filter:drop-shadow(0 9px 20px rgba(104,190,255,.28)); }
+    .cloud-mascot .eyes { transform-box:fill-box; transform-origin:center; animation:cloudBlink 4.2s infinite; }
+    @keyframes cloudBlink { 0%,44%,48%,100% { transform:scaleY(1); } 46% { transform:scaleY(.08); } }
     .brand {
-      margin: 0 0 30px; color: #d9efff; font-size: 19px;
+      margin: 0 0 12px; color: #d9efff; font-size: 19px;
       line-height: 1.25; font-weight: 750; letter-spacing: -.45px;
     }
     .status {
@@ -102,16 +100,16 @@ export function createCloudyRegionBlockedResponse(): Response {
       line-height: 1.16; font-weight: 800; letter-spacing: -.85px;
     }
     .lead {
-      max-width: 355px; margin: 17px auto 0; color: #d1e2f7;
-      font-size: 15px; line-height: 1.7; font-weight: 400;
+      max-width: 355px; margin: 10px auto 0; color: #d1e2f7;
+      font-size: 14px; line-height: 1.5; font-weight: 400;
     }
     .details {
-      max-width: 360px; margin: 24px auto 0; color: #b9d1eb;
-      font-size: 13px; line-height: 1.7;
+      max-width: 360px; margin: 12px auto 0; color: #b9d1eb;
+      font-size: 12px; line-height: 1.5;
     }
     .links {
       display: flex; flex-wrap: wrap; justify-content: center; gap: 9px 18px;
-      margin-top: 28px;
+      margin-top: 16px;
     }
     a {
       color: #91d8ff; font-size: 13px; font-weight: 650;
@@ -120,16 +118,16 @@ export function createCloudyRegionBlockedResponse(): Response {
     a:hover, a:focus-visible { text-decoration: underline; }
     .support {
       display: inline-flex; align-items: center; justify-content: center;
-      min-height: 46px; margin-top: 24px; padding: 0 23px;
+      min-height: 44px; margin-top: 16px; padding: 0 23px;
       border-radius: 14px; color: #fff; font-size: 14px; font-weight: 750;
       background: linear-gradient(100deg, #55baff, #2879e8);
       box-shadow: 0 8px 24px rgba(26,112,224,.28);
     }
-    .footer { margin: 32px 0 0; color: rgba(202,222,246,.58); font-size: 11px; }
+    .footer { margin: 16px 0 0; color: rgba(202,222,246,.58); font-size: 11px; }
     @keyframes appear { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 360px) {
-      .logo { width: 142px; height: 142px; }
-      .brand { margin-bottom: 25px; }
+      .cloud-mascot { width:104px; height:84px; }
+      .brand { margin-bottom: 10px; }
       .lead { font-size: 14px; }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -141,9 +139,8 @@ export function createCloudyRegionBlockedResponse(): Response {
   <div class="glow one" aria-hidden="true"></div>
   <div class="glow two" aria-hidden="true"></div>
   <main>
-    <img class="logo" src="/cloudy-icon.png" alt="Облачко Cloudy English">
+    <svg class="cloud-mascot" viewBox="0 0 100 80" role="img" aria-label="Облачко Cloudy English"><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="#dff1ff"/><g class="eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.8" fill="#fff"/><circle cx="64" cy="43" r="1.8" fill="#fff"/></g><path d="M44 54q7 8 14 0" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg>
     <p class="brand">Cloudy English Academy</p>
-    <p class="status">ДОСТУП ОГРАНИЧЕН</p>
     <h1>Сейчас мы недоступны в вашем регионе</h1>
     <p class="lead">К сожалению, Cloudy English Academy пока не может предоставить доступ из страны, определённой для вашего подключения.</p>
     <p class="details">Это связано с региональными ограничениями и доступностью технических поставщиков сервиса. Если вы считаете, что страна определена неверно, пожалуйста, свяжитесь с нашей поддержкой.</p>
