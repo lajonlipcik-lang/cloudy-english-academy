@@ -205,7 +205,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
               id: data.user.id,
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.["name"] ?? data.user.user_metadata?.["display_name"] ?? ""),
-              age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 5 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
+              age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 13 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
               isAdmin: role.isAdmin,
             },
             progress,
