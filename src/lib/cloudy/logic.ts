@@ -217,7 +217,7 @@ export const ACH: [string, string, string, string, (s: CloudyState) => boolean][
   ["perf", "Без ошибок", "Урок без потерь", "heart", (s) => s.perf > 0],
   ["x1", "100 XP", "Набрать 100 XP", "star", (s) => s.xp >= 100],
   ["x5", "500 XP", "Набрать 500 XP", "star", (s) => s.xp >= 500],
-  ["a1", "Уровень A1", "Пройти A1", "check", (s) => s.dn.A1 >= 6],
+  ["a1", "Уровень A1", "Пройти A1", "check", (s) => s.dn.A1 >= 21],
   ["tst", "Знаток", "Пройти тест", "target", (s) => s.tested > 0],
 ];
 export const newAchievements = (s: CloudyState) => ACH.filter((a) => a[4](s) && !s.ach.includes(a[0]));
