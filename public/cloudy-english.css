@@ -223,3 +223,87 @@ h2{font-size:21px;margin:0 0 16px}
 .install-action{width:100%;min-height:55px;border:1px solid rgba(255,255,255,.55);border-radius:17px;background:linear-gradient(110deg,#fff,#d9efff);color:#0a367e;font-weight:900;font-size:15px;box-shadow:0 5px 0 rgba(23,83,157,.65),0 12px 25px rgba(0,0,0,.16)}
 .install-action:active{transform:translateY(2px)}
 .install-browser{display:inline-block;margin-top:13px;font-size:12px;opacity:.75}
+
+
+/* Animated flag in the chat header */
+.chat-flag {
+  width: 32px;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  animation: flagWave 3s ease-in-out infinite alternate;
+  transform-origin: left center;
+  flex: none;
+}
+@keyframes flagWave {
+  0% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.04) rotate(-2deg); }
+  100% { transform: scale(1) rotate(2deg); }
+}
+
+/* Cloudy centered in the chat header */
+.chat-top-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.chat-top-center .ms {
+  width: 48px;
+  height: 38px;
+  margin: 0;
+  animation: float 2.8s ease-in-out infinite;
+}
+
+/* Moving dark-blue outline around the message input */
+.chat-composer-box {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  border-radius: 18px;
+  padding: 2px;
+  background: rgba(255,255,255,0.08);
+  overflow: hidden;
+  display: flex;
+}
+.chat-composer-box::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    transparent,
+    transparent 65%,
+    #0f2b6e 80%,
+    #1f6fe0 92%,
+    #6cc6ff 97%,
+    transparent 100%
+  );
+  animation: rotateBorder 3.5s linear infinite;
+  pointer-events: none;
+}
+@keyframes rotateBorder {
+  to { transform: rotate(360deg); }
+}
+.chat-composer-box input {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin: 0;
+  padding: 13px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(4, 13, 40, 0.92);
+  color: inherit;
+  font: inherit;
+  font-size: 16px;
+  outline: 0;
+  backdrop-filter: blur(12px);
+}
+.chat-composer-box input:focus {
+  border-color: rgba(108, 198, 255, 0.5);
+}
