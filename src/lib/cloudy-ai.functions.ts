@@ -136,7 +136,7 @@ function makeLearnerContext(userId:string,state:any,ledger:any,profile:any,fallb
 }
 export const cloudyTextToSpeech=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
-  const input=String(data.message??"").replace(/[\\u0000-\\u001f\\u007f]/g," ").replace(/\\s+/g," ").trim();
+  const input=String(data.message??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim();
   if(!input)throw new Error("Нет текста для озвучки.");
   if(input.length>200)throw new Error("Текст для озвучки слишком длинный.");
   const providers=(await rows(db)).filter((r:any)=>r.enabled&&r.provider==="groq").sort((a:any,b:any)=>a.priority-b.priority);
@@ -155,7 +155,7 @@ export const cloudyTextToSpeech=createServerFn({method:"POST"}).inputValidator(v
   if(!audio.length||audio.length>5_000_000)throw new Error("Не удалось получить аудио.");
   let binary="";
   for(let i=0;i<audio.length;i+=0x8000)binary+=String.fromCharCode(...audio.subarray(i,Math.min(i+0x8000,audio.length)));
-  return {audioBase64:btoa(binary),mimeType:"audio/wav",voice:"troy",provider:"groq",userId:user.id};
+  return {audioBase64:btoa(binary),mimeType:"audio/wav",voice:"troy",provider:"groq"};
 });
 export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
