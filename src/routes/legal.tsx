@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, BookOpen, FileCheck2, FileText, HeartHandshake, LockKeyhole, MessageCircle, ShieldCheck, Users } from "lucide-react";
 
 const documents = [
@@ -107,3 +107,6 @@ export function LegalPage() {
     </div>
   </main>;
 }
+
+
+export const Route = createFileRoute("/legal")({ component: LegalPage });
