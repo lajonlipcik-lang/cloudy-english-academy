@@ -35,7 +35,7 @@ function mergeCloudProgress(remote,local){
 function flushCloudProgress(){
  if(!cloudUserId||S.user?.guest||!cloudSyncPending||cloudSyncInFlight)return;
  if(typeof navigator!=='undefined'&&!navigator.onLine)return;
- const pending=cloudSyncPending;cloudSyncPending=null;cloudSyncInFlight=pending;
+ const pending=cloudSyncPending;clearTimeout(cloudSyncTimer);cloudSyncTimer=0;cloudSyncPending=null;cloudSyncInFlight=pending;
  try{window.parent.postMessage({channel:'cloudy-auth',type:'progress-save',state:pending.state,expectedUpdatedAt:cloudUpdatedAt,syncId:pending.id},location.origin)}
  catch(e){cloudSyncPending=pending;cloudSyncInFlight=null;scheduleCloudRetry()}
 }
