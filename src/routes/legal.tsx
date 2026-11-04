@@ -145,63 +145,63 @@ export function LegalPage() {
   const active = LEGAL_DOCUMENTS.find((document) => document.id === activeId);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[radial-gradient(ellipse_at_top,_#164d91_0%,_#0a2a73_38%,_#050d2b_100%)] px-4 pb-10 pt-[max(18px,env(safe-area-inset-top))] text-white">
-      <div className="mx-auto max-w-2xl space-y-4">
-        <header className="overflow-hidden rounded-[28px] border border-white/15 bg-gradient-to-br from-[#55baff]/25 via-[#1e63b6]/55 to-[#0a235c]/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,.2)] backdrop-blur-xl">
+    <main className="min-h-screen overflow-x-hidden bg-[#f7f8fa] px-4 pb-10 pt-[max(18px,env(safe-area-inset-top))] text-[#202833]">
+      <div className="mx-auto max-w-3xl">
+        <header className="border-b border-[#dfe3e8] pb-6 pt-3">
           <div className="flex items-center gap-3">
             <CloudyMascot />
             <div>
-              <p className="text-sm font-extrabold tracking-wide text-white">Cloudy English Academy</p>
-              <p className="text-xs text-blue-100/75">LEGAL CENTER · ЮРИДИЧЕСКИЙ ЦЕНТР</p>
+              <p className="text-sm font-bold tracking-wide text-[#344354]">Cloudy English Academy</p>
+              <p className="text-xs tracking-[.12em] text-[#788391]">ЮРИДИЧЕСКИЙ ЦЕНТР</p>
             </div>
           </div>
-          <h1 className="mt-4 text-3xl font-extrabold tracking-tight">{active ? active.title : "Правила и документы"}</h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-blue-100/85">
+          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#202833]">{active ? active.title : "Правила и документы"}</h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#647180]">
             {active ? active.description : "Всё важное об использовании Cloudy English Academy, конфиденциальности и безопасности обучения."}
           </p>
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-blue-100/75">
-            <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1">Версия 1.0</span>
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#788391]">
+            <span>Версия 1.0</span>
             <span>Редакция от 4 ноября 2026 года</span>
           </div>
         </header>
 
         {active ? (
-          <section className="rounded-[26px] border border-white/15 bg-white/[0.96] p-5 text-[#174d87] shadow-[0_12px_38px_rgba(0,0,0,.18)] sm:p-7" aria-labelledby="legal-document-title">
+          <section className="pt-5 text-[#263443]" aria-labelledby="legal-document-title">
             <button
               type="button"
               onClick={() => { setActiveId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-full bg-[#eaf4ff] px-4 py-2 text-sm font-bold text-[#2675c5] transition hover:bg-[#dceeff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3988d8]"
+              className="mb-5 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-[#526579] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526579]"
             >
               <ArrowLeft size={16} aria-hidden="true" /> Все документы
             </button>
-            <div className="mb-6 border-b border-[#dceaf7] pb-4">
-              <h2 id="legal-document-title" className="text-xl font-extrabold text-[#174d87]">{active.title}</h2>
-              <p className="mt-1 text-xs text-[#6d8aa7]">Версия 1.0 · 4 ноября 2026 года</p>
+            <div className="mb-6 border-b border-[#dfe3e8] pb-4">
+              <h2 id="legal-document-title" className="text-xl font-bold text-[#202833]">{active.title}</h2>
+              <p className="mt-1 text-xs text-[#788391]">Версия 1.0 · 4 ноября 2026 года</p>
             </div>
-            <div className="space-y-6">
+            <div className="space-y-0">
               {active.sections.map(([heading, body]) => (
-                <article key={heading}>
-                  <h3 className="text-base font-extrabold text-[#174d87]">{heading}</h3>
-                  <p className="mt-2 whitespace-pre-line text-[14px] leading-7 text-[#476783]">{body}</p>
+                <article key={heading} className="border-b border-[#e5e8ec] py-5 last:border-b-0">
+                  <h3 className="text-base font-semibold text-[#263443]">{heading}</h3>
+                  <p className="mt-2 whitespace-pre-line text-[15px] leading-7 text-[#465363]">{body}</p>
                 </article>
               ))}
             </div>
             <button
               type="button"
               onClick={() => { setActiveId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="mt-8 inline-flex min-h-11 items-center gap-2 rounded-full bg-[#eaf4ff] px-4 py-3 text-sm font-bold text-[#2675c5] transition hover:bg-[#dceeff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3988d8]"
+              className="mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#526579] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526579]"
             >
               <ArrowLeft size={16} aria-hidden="true" /> Назад к документам
             </button>
           </section>
         ) : (
           <>
-            <section className="rounded-[26px] border border-white/15 bg-white/[0.96] p-4 text-[#174d87] shadow-[0_12px_38px_rgba(0,0,0,.18)] sm:p-5">
-              <div className="mb-3 flex items-center gap-2 px-1">
-                <ShieldCheck className="text-[#3988d8]" size={21} aria-hidden="true" />
+            <section className="border-b border-[#dfe3e8] py-6 text-[#263443]">
+              <div className="mb-3 flex items-center gap-2">
+                <ShieldCheck className="text-[#667789]" size={20} aria-hidden="true" />
                 <h2 className="text-lg font-extrabold">Юридическая информация</h2>
               </div>
-              <div className="space-y-2">
+              <div className="divide-y divide-[#e5e8ec]">
                 {LEGAL_DOCUMENTS.map((document, index) => {
                   const Icon = document.icon;
                   return (
@@ -210,15 +210,15 @@ export function LegalPage() {
                       type="button"
                       onClick={() => { setActiveId(document.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                       aria-label={`Открыть документ: ${document.title}`}
-                      className="flex min-h-[68px] w-full items-center gap-3 rounded-2xl border border-[#e5f0fb] bg-[#f4f9ff] p-3 text-left transition hover:-translate-y-0.5 hover:border-[#b8d9f7] hover:bg-[#eaf4ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3988d8]"
+                      className="flex min-h-[68px] w-full items-center gap-3 py-4 text-left transition hover:bg-[#f0f2f5] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]"
                     >
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#dceeff] to-[#c4e2ff] text-sm font-extrabold text-[#2675c5]">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="w-7 shrink-0 text-sm tabular-nums text-[#8993a0]">{String(index + 1).padStart(2, "0")}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-bold text-[#174d87]">{document.title}</span>
-                        <span className="mt-0.5 block text-xs leading-5 text-[#64809c]">{document.description}</span>
+                        <span className="block text-[15px] font-semibold text-[#263443]">{document.title}</span>
+                        <span className="mt-1 block text-sm leading-5 text-[#6c7886]">{document.description}</span>
                       </span>
-                      <Icon className="hidden h-5 w-5 shrink-0 text-[#5593ce] sm:block" aria-hidden="true" />
-                      <ArrowRight className="h-4 w-4 shrink-0 text-[#4b83b8]" aria-hidden="true" />
+                      <Icon className="hidden h-5 w-5 shrink-0 text-[#8793a1] sm:block" aria-hidden="true" />
+                      <ArrowRight className="h-4 w-4 shrink-0 text-[#8793a1]" aria-hidden="true" />
                     </button>
                   );
                 })}
@@ -228,18 +228,18 @@ export function LegalPage() {
           </>
         )}
 
-        <section className="rounded-[26px] border border-white/15 bg-white/[0.10] p-5 text-center shadow-lg backdrop-blur-xl">
-          <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-blue-100"><MessageCircle size={22} aria-hidden="true" /></div>
-          <h2 className="mt-3 font-extrabold text-white">Нужна помощь?</h2>
-          <p className="mt-1 text-sm text-blue-100/80">Поддержка Cloudy English доступна в Telegram.</p>
-          <a href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#48a8f5] to-[#2874d5] px-4 py-3 font-extrabold text-white shadow-md shadow-blue-950/30 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+        <section className="py-7 text-center">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center text-[#788391]"><MessageCircle size={21} aria-hidden="true" /></div>
+          <h2 className="mt-2 font-semibold text-[#263443]">Нужна помощь?</h2>
+          <p className="mt-1 text-sm text-[#6c7886]">Поддержка Cloudy English доступна в Telegram.</p>
+          <a href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 px-2 py-2 text-sm font-semibold text-[#344e68] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]">
             Написать в поддержку <ArrowRight size={17} aria-hidden="true" />
           </a>
-          <p className="mt-2 text-xs text-blue-100/70">@cloudysupportt_bot</p>
+          <p className="mt-1 text-xs text-[#8993a0]">@cloudysupportt_bot</p>
         </section>
 
-        <footer className="pb-3 text-center text-xs text-blue-100/65">Cloudy English Academy · Юридический центр</footer>
-        <Link to="/" className="block min-h-10 pb-2 text-center text-sm font-bold text-blue-100 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Вернуться к обучению</Link>
+        <footer className="border-t border-[#dfe3e8] py-5 text-center text-xs text-[#8993a0]">Cloudy English Academy · Юридический центр</footer>
+        <Link to="/" className="block min-h-10 pb-2 text-center text-sm font-semibold text-[#526579] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]">Вернуться к обучению</Link>
       </div>
     </main>
   );
