@@ -63,5 +63,5 @@ export const awardCloudyLessonXp = createServerFn({ method: "POST" })
       if (/Lesson does not belong/i.test(error.message)) throw new Error("Урок не соответствует выбранному уровню.");
       throw new Error("Не удалось подтвердить завершение урока.");
     }
-    return result as { awarded: number; total_xp: number; week_key: string; week_xp: number; daily_lessons: number };
+    return result as { awarded: number; total_xp: number; week_key: string; week_xp: number; daily_lessons: number; updated_at: string | null };
   });
