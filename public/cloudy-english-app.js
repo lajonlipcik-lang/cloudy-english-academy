@@ -226,7 +226,7 @@ function applyCloudSnapshot(msg){
  Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin,msg.user.age);
  if(msg.progressLoadFailed){cloudSyncPaused=true;toast('Не удалось загрузить облачный прогресс. Локальные данные сохранены; синхронизация повторится после восстановления связи.',false);return false}
  cloudBaseState=cloneProgressState(remoteState||{});
- if(remoteState&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(remoteState));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):(Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age):null),isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
+ if(remoteState&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(remoteState));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=13&&Number(msg.user.age)<=120?Number(msg.user.age):(Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=13&&Number(S.user.age)<=120?Number(S.user.age):null),isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
  else if(!localExists&&!remoteState&&['A1','A2','B1','B2'].includes(guestState.lv)){try{load('cl2');S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save()}catch(e){}}
  else{queueCloudProgress()}
  if(profileLevel){S.lv=profileLevel;S.tested=profileTested||S.tested?1:0;save(true)}
