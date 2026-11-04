@@ -145,7 +145,7 @@ export function LegalPage() {
   const active = LEGAL_DOCUMENTS.find((document) => document.id === activeId);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#06152b] px-4 pb-10 pt-[max(18px,env(safe-area-inset-top))] text-[#e7f4ff]">
+    <main className="min-h-screen overflow-x-hidden bg-[#06152b] px-4 pb-10 pt-[max(18px,env(safe-area-inset-top))] text-[#e7f4ff]" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       <div className="mx-auto max-w-3xl">
         <header className="border-b border-[#17456d] pb-6 pt-3">
           <div className="flex items-center gap-3">
@@ -180,7 +180,7 @@ export function LegalPage() {
             </div>
             <div className="space-y-0">
               {active.sections.map(([heading, body]) => (
-                <article key={heading} className="border-b border-[#173b5c] py-5 last:border-b-0">
+                <article key={heading} className="py-5">
                   <h3 className="text-base font-semibold text-[#d8edff]">{heading}</h3>
                   <p className="mt-2 whitespace-pre-line text-[15px] leading-7 text-[#b6cde2]">{body}</p>
                 </article>
