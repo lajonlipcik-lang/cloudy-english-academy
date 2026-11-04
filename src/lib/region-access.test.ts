@@ -33,15 +33,17 @@ describe("Cloudy regional access gate", () => {
     expect(isCloudyRegionBlocked(new Request("https://cloudy.example/"))).toBe(true);
   });
 
-  it("keeps the legal center and brand assets available on the blocked screen", () => {
+  it("keeps the legal center, country availability page and brand assets available on the blocked screen", () => {
     const imageRequest = new Request("https://cloudy.example/cloudy-icon.png");
     const legalRequest = new Request("https://cloudy.example/legal", {
       headers: { ...edgeHeaders, "cf-ipcountry": "RU" },
     });
     const legalWithoutCountry = new Request("https://cloudy.example/legal");
+    const availabilityRequest = new Request("https://cloudy.example/availability", { headers: { ...edgeHeaders, "cf-ipcountry": "RU" } });
     expect(isCloudyRegionBlocked(imageRequest)).toBe(false);
     expect(isCloudyRegionBlocked(legalRequest)).toBe(false);
     expect(isCloudyRegionBlocked(legalWithoutCountry)).toBe(false);
+    expect(isCloudyRegionBlocked(availabilityRequest)).toBe(false);
   });
 
   it("blocks the standalone learning page and its root-level scripts and styles in Russia", () => {
@@ -83,7 +85,8 @@ describe("Cloudy regional access gate", () => {
     expect(html).toContain("@keyframes cloudBlink");
     expect(html).not.toContain("ДОСТУП ОГРАНИЧЕН");
     expect(html).not.toContain('class="logo"');
-    expect(html).toContain('href="/legal">Документы и доступность по странам</a>');
+    expect(html).toContain('href="/availability">Доступность по странам</a>');
+    expect(html).toContain('href="/legal">Юридические документы</a>');
     expect(html).toContain("https://t.me/cloudysupportt_bot");
     expect(html).not.toContain("border: 1px solid");
     expect(html).not.toContain("<hr");
