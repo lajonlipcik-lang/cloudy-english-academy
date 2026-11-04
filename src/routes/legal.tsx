@@ -145,7 +145,7 @@ export function LegalPage() {
   const active = LEGAL_DOCUMENTS.find((document) => document.id === activeId);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-[#06152b] px-4 pb-10 pt-[max(18px,env(safe-area-inset-top))] text-[#e7f4ff]" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+    <main className="min-h-screen overflow-x-hidden px-4 pb-10 pt-[max(18px,env(safe-area-inset-top))] text-white" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', background: "linear-gradient(165deg, #050d2b 0%, #0a2a73 48%, #3aa0ff 100%) fixed" }}>
       <div className="mx-auto max-w-3xl">
         <header className="pb-6 pt-3">
           <div className="flex items-center gap-3">
@@ -229,7 +229,7 @@ export function LegalPage() {
         )}
 
         <section className="py-8">
-          <div className="relative overflow-hidden rounded-2xl border border-[#1b6594] bg-gradient-to-br from-[#0c2d52] via-[#0b3c62] to-[#07506a] p-5 shadow-[0_12px_34px_rgba(0,0,0,0.28)] sm:p-6">
+          <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-[rgba(6,20,58,0.48)] p-5 shadow-[0_12px_34px_rgba(0,0,0,0.28)] sm:p-6">
             <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-[#36bdf2]/20 blur-2xl" aria-hidden="true" />
             <div className="relative flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#4b9dcc]/40 bg-[#0a2543] text-[#62c9f5] shadow-sm">
@@ -240,7 +240,7 @@ export function LegalPage() {
                 <h2 className="mt-1 text-lg font-extrabold text-[#e7f6ff]">Нужна помощь?</h2>
                 <p className="mt-2 text-sm leading-6 text-[#c0d9eb]">Свяжитесь с командой Cloudy English. Поможем с аккаунтом, обучением, прогрессом и любыми вопросами о работе приложения.</p>
                 <p className="mt-3 text-sm font-semibold text-[#8cdbfa]">Поддержка в Telegram</p>
-                <a href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1479c9] to-[#08a8c9] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-[#258bd7]/20 transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#258bd7] focus-visible:ring-offset-2">
+                <a href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#63c1ff] to-[#2c7bef] px-5 py-2.5 text-sm font-bold text-white shadow-[0_5px_0_#1a58b5,0_12px_24px_rgba(0,0,0,0.18)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#258bd7] focus-visible:ring-offset-2">
                   Связаться <ArrowRight size={17} aria-hidden="true" />
                 </a>
               </div>
