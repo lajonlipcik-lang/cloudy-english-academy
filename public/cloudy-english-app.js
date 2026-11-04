@@ -308,7 +308,7 @@ const Auth={
   }catch(e){cloudSyncPaused=false;throw e}
   finally{cloudProgressPending=false}
  },
- start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);const savedAge=Number(S.user?.age);const validAge=Number.isInteger(Number(age))&&Number(age)>=5&&Number(age)<=120?Number(age):Number.isInteger(savedAge)&&savedAge>=5&&savedAge<=120?savedAge:null;S.user={email,name,age:validAge,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
+ start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);const savedAge=Number(S.user?.age);const validAge=Number.isInteger(Number(age))&&Number(age)>=13&&Number(age)<=120?Number(age):Number.isInteger(savedAge)&&savedAge>=13&&savedAge<=120?savedAge:null;S.user={email,name,age:validAge,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
  guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость',age:null};save();window.CloudyAdmin?.setUser(S.user)},
  async signOut(){await authRequest('signOut');cloudUserId=null;cloudUpdatedAt=null;cloudSyncPending=null;cloudSyncInFlight=null;clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRetry);cloudSyncRetry=0;ls('cl2s','');load('cl2');S.user=null;window.CloudyAdmin?.setUser(null)}
 };
@@ -323,7 +323,7 @@ function introRender(){
   app.innerHTML=`<div class="welcome-flow"><div class="welcome-step">${cloud}<div class="welcome-progress"><i class="on"></i><i></i></div><h1 class="welcome-copy">Привет! Как тебя зовут?</h1><p class="welcome-sub">Давай познакомимся — я Клауди, твой помощник в английском ☁️</p><label class="welcome-field"><input id="welcomeName" maxlength="32" autocomplete="given-name" placeholder="Твоё имя" value="${escIntro(INTRO.name)}"></label><div class="welcome-error" id="welcomeError"></div><button class="welcome-next" onclick="introNextName()">Далее <span>→</span></button></div></div>`;
   const input=$('#welcomeName');input?.addEventListener('keydown',e=>{if(e.key==='Enter')introNextName()});
  }else{
-  const ages=Array.from({length:83},(_,i)=>i+5);
+  const ages=Array.from({length:108},(_,i)=>i+13);
   app.innerHTML=`<div class="welcome-flow"><div class="welcome-step">${cloud}<div class="welcome-progress"><i class="on"></i><i class="on"></i></div><h1 class="welcome-copy">Сколько тебе лет?</h1><p class="welcome-sub">Подберу подходящие темы и задания для тебя</p><div class="age-wheel-wrap"><div class="age-highlight"></div><div class="age-wheel" id="ageWheel">${ages.map(age=>`<div class="age-option ${age===Number(INTRO.age)?'selected':''}" data-age="${age}">${age}</div>`).join('')}</div></div><div class="welcome-error" id="welcomeError"></div><button class="welcome-next" onclick="introFinish()">Продолжить <span>→</span></button></div></div>`;
   const wheel=$('#ageWheel');const initial=wheel?.querySelector('[data-age="'+Number(INTRO.age)+'"]');if(initial)wheel.scrollTop=initial.offsetTop-wheel.offsetTop-88;
   wheel?.addEventListener('scroll',introAgeScroll,{passive:true});introAgeScroll();
@@ -346,10 +346,11 @@ function introAgeScroll(){
 async function introFinish(){
  if(!INTRO.name){INTRO.step=0;introRender();return}
  const error=$('#welcomeError');
+ if(!Number.isInteger(Number(INTRO.age))||Number(INTRO.age)<13||Number(INTRO.age)>120){if(error)error.textContent='Регистрация доступна с 13 лет.';return}
  try{
   if(S.user?.guest){S.user.name=INTRO.name;S.user.age=Number(INTRO.age);save();}
   else{
-   const result=await authRequest('updateProfile',{name:INTRO.name,age:Number(INTRO.age)});
+   const profileUpdate={name:INTRO.name};if(!Number.isInteger(Number(S.user?.age)))profileUpdate.age=Number(INTRO.age);const result=await authRequest('updateProfile',profileUpdate);
    S.user={...S.user,name:result.user?.name||INTRO.name,age:result.user?.age??Number(INTRO.age)};
    save();
   }
@@ -364,7 +365,7 @@ async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap')
  b.classList.add('ld');b.textContent='ПОДОЖДИТЕ...';er.textContent='';
  try{
   if(AM=='up'){await Auth.signUp(em,pw);INTRO={name:'',age:18,step:0};introSave();introWelcome();}
-  else{await Auth.signIn(em,pw);if(!S.user?.name||!Number.isInteger(Number(S.user?.age))||Number(S.user.age)<5||Number(S.user.age)>120){INTRO={name:S.user?.name||'',age:18,step:0};introWelcome()}else view()}
+  else{await Auth.signIn(em,pw);if(!S.user?.name||!Number.isInteger(Number(S.user?.age))||Number(S.user.age)<13||Number(S.user.age)>120){INTRO={name:S.user?.name||'',age:18,step:0};introWelcome()}else view()}
   snd('win');
  }catch(x){b.classList.remove('ld');b.textContent=lbl;bad(x.message||'Ошибка входа')}
 }
@@ -447,19 +448,8 @@ function prof(){const g=S.set.goal,C=2*Math.PI*40,p=Math.min(S.td.xp/g,1),s=S.se
  return `<div class="pc">${mascot()}<h2>${S.user.name||'Ученик'}</h2><p>${S.user.email||'Режим гостя'}</p></div>
  <div class="grid">${[["flame",S.streak,"дней подряд"],["bolt",S.xp,"XP всего"],["check",Object.values(S.dn).reduce((a,b)=>a+b,0),"уроков"],["target",a+"%","точность"]].map(([i,v,l])=>`<div class="card">${ic(i)}<div><b>${v}</b><small>${l}</small></div></div>`).join("")}</div>
  <div class="card"><div class="goal"><svg class="gr" viewBox="0 0 100 100"><circle class="t" cx="50" cy="50" r="40"/><circle class="p" cx="50" cy="50" r="40" style="--c:${C};stroke-dasharray:${C};stroke-dashoffset:${C*(1-p)}"/></svg><div><b>Цель на сегодня</b><br><small style="opacity:.8">${Math.min(S.td.xp,g)} из ${g} XP</small></div></div><div class="seg">${[10,20,30,50].map(n=>`<button class="${g==n?"on":""}" onclick="goal(${n})">${n}</button>`).join("")}</div></div>
- ${cal()}<div class="card"><h3>Аккаунт</h3><div class="row"><span>${S.user.guest?'Режим гостя':S.user.email}</span></div><div class="row"><span>Возраст</span><button class="btn ghost sm" type="button" onclick="editAge()">${Number.isInteger(Number(S.user.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age)+' лет':'Указать'}</button></div><button class="btn ghost" onclick="Auth.signOut().then(()=>view()).catch(e=>toast(e.message||'Не удалось выйти из аккаунта. Попробуйте ещё раз.',false))">${S.user.guest?'ВОЙТИ ИЛИ РЕГИСТРАЦИЯ':'ВЫЙТИ'}</button></div>${(!S.user?.guest&&(S.user?.isAdmin===true||String(S.user?.email||"").trim().toLowerCase()==="lajonlipcik@gmail.com"))?`<div class="card"><h3>Управление приложением</h3><p style="opacity:.8;margin:0 0 14px">Пользователи и AI-провайдеры</p><button class="btn" type="button" onclick="if(window.CloudyAdmin&&typeof window.CloudyAdmin.open==='function'){window.CloudyAdmin.open(S.user)}else{alert('Модуль админ-панели не загрузился. Обновите страницу.')}">⚙ Админ-панель</button></div>`:""}<div class="card"><h3>Уровень английского</h3><div class="seg">${LVS.map(l=>`<button class="${S.lv==l?"on":""}" onclick="setLv('${l}')">${l}</button>`).join("")}</div><br><button class="btn" onclick="pt('${S.lv}')">ПРОЙТИ ТЕСТ УРОВНЯ</button></div><div class="card"><h3>Настройки</h3><div class="row"><span>Звуковые эффекты</span>${sw("snd")}</div><div class="row"><span>Громкость</span><input type="range" min="0.1" max="1" step="0.05" value="${s.vol}" oninput="S.set.vol=+this.value;save()" onchange="snd('ok')"></div><div class="row"><span>Автоозвучка слов</span>${sw("voice")}</div><div class="row"><span>Практика произношения</span>${sw('mic')}</div><div class="row"><span>Напоминание</span>${sw('rem')}</div><div class="row"><span>Время напоминания</span><input type="time" class="ti" value="${s.remT}" onchange="S.set.remT=this.value;save()"></div><div class="row"><span>Тема</span><div class="seg" style="width:180px">${[['dark','Тёмная'],['light','Светлая']].map(([k,n])=>`<button class="${(s.th||'dark')==k?'on':''}" onclick="theme('${k}')">${n}</button>`).join('')}</div></div><div class="row"><span>Сбросить прогресс</span><button class="btn ghost sm" type="button" onclick="rst()">Сброс</button></div></div><div class="card"><h3>Помощь и документы</h3><p style="opacity:.8;margin:0 0 14px">Правила, конфиденциальность и поддержка Cloudy English</p><button class="btn ghost" type="button" onclick="window.parent.location.href='/legal'">ДОКУМЕНТЫ И ПОДДЕРЖКА</button></div>`}
-function editAge(){
- const current=Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age):18;
- sheet(`<h3>Возраст</h3><p style="opacity:.8">Выбери свой возраст</p><select id="profileAge" class="ti" style="width:100%;padding:14px">${Array.from({length:116},(_,i)=>i+5).map(age=>`<option value="${age}" ${age===current?'selected':''}>${age} лет</option>`).join('')}</select><br><br><button class="btn" onclick="saveProfileAge()">СОХРАНИТЬ</button><br><br><button class="btn ghost" onclick="closeSh()">ОТМЕНА</button>`);
-}
-async function saveProfileAge(){
- const age=Number($('#profileAge')?.value);if(!Number.isInteger(age)||age<5||age>120)return;
- try{
-  if(S.user?.guest){S.user.age=age;save();}
-  else{const result=await authRequest('updateProfile',{age});S.user={...S.user,age:result.user?.age??age,name:result.user?.name||S.user.name};save();}
-  closeSh();view(0);
- }catch(e){toast(e.message||'Не удалось сохранить возраст.',false)}
-}
+ ${cal()}<div class="card"><h3>Аккаунт</h3><div class="row"><span>${S.user.guest?'Режим гостя':S.user.email}</span></div><div class="row"><span>Возраст</span><span>${Number.isInteger(Number(S.user.age))&&Number(S.user.age)>=13&&Number(S.user.age)<=120?Number(S.user.age)+' лет':'Не указан'}</span><button class="btn ghost sm" type="button" onclick="window.open('https://t.me/cloudysupportt_bot','_blank','noopener')">ИЗМЕНИТЬ</button></div><button class="btn ghost" onclick="Auth.signOut().then(()=>view()).catch(e=>toast(e.message||'Не удалось выйти из аккаунта. Попробуйте ещё раз.',false))">${S.user.guest?'ВОЙТИ ИЛИ РЕГИСТРАЦИЯ':'ВЫЙТИ'}</button></div>${(!S.user?.guest&&(S.user?.isAdmin===true||String(S.user?.email||"").trim().toLowerCase()==="lajonlipcik@gmail.com"))?`<div class="card"><h3>Управление приложением</h3><p style="opacity:.8;margin:0 0 14px">Пользователи и AI-провайдеры</p><button class="btn" type="button" onclick="if(window.CloudyAdmin&&typeof window.CloudyAdmin.open==='function'){window.CloudyAdmin.open(S.user)}else{alert('Модуль админ-панели не загрузился. Обновите страницу.')}">⚙ Админ-панель</button></div>`:""}<div class="card"><h3>Уровень английского</h3><div class="seg">${LVS.map(l=>`<button class="${S.lv==l?"on":""}" onclick="setLv('${l}')">${l}</button>`).join("")}</div><br><button class="btn" onclick="pt('${S.lv}')">ПРОЙТИ ТЕСТ УРОВНЯ</button></div><div class="card"><h3>Настройки</h3><div class="row"><span>Звуковые эффекты</span>${sw("snd")}</div><div class="row"><span>Громкость</span><input type="range" min="0.1" max="1" step="0.05" value="${s.vol}" oninput="S.set.vol=+this.value;save()" onchange="snd('ok')"></div><div class="row"><span>Автоозвучка слов</span>${sw("voice")}</div><div class="row"><span>Практика произношения</span>${sw('mic')}</div><div class="row"><span>Напоминание</span>${sw('rem')}</div><div class="row"><span>Время напоминания</span><input type="time" class="ti" value="${s.remT}" onchange="S.set.remT=this.value;save()"></div><div class="row"><span>Тема</span><div class="seg" style="width:180px">${[['dark','Тёмная'],['light','Светлая']].map(([k,n])=>`<button class="${(s.th||'dark')==k?'on':''}" onclick="theme('${k}')">${n}</button>`).join('')}</div></div><div class="row"><span>Сбросить прогресс</span><button class="btn ghost sm" type="button" onclick="rst()">Сброс</button></div></div><div class="card"><h3>Помощь и документы</h3><p style="opacity:.8;margin:0 0 14px">Правила, конфиденциальность и поддержка Cloudy English</p><button class="btn ghost" type="button" onclick="window.parent.location.href='/legal'">ДОКУМЕНТЫ И ПОДДЕРЖКА</button></div>`}
+function requestAgeChange(){window.open('https://t.me/cloudysupportt_bot','_blank','noopener')}
 function tg(el,k){S.set[k]=S.set[k]?0:1;el.classList.toggle("on");save();snd("tap");if(k=="rem"&&S.set.rem)try{Notification.requestPermission()}catch(e){}}
 function goal(n){S.set.goal=n;save();snd("pick");view(0)}
 function rst(){sheet(`<h3>Сбросить прогресс?</h3><p style="opacity:.85">Уроки, XP и серия обнулятся. Настройки сохранятся.</p><button class="btn" onclick="doRst()">СБРОСИТЬ</button><br><br><button class="btn" onclick="closeSh()">ОТМЕНА</button>`)}
