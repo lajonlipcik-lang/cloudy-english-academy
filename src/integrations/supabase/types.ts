@@ -14,27 +14,141 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_provider_secrets: {
+        Row: {
+          api_key: string | null
+          ciphertext: string | null
+          enabled: boolean
+          id: string
+          iv: string | null
+          key_hint: string | null
+          label: string | null
+          last_status: string | null
+          last_tested_at: string | null
+          model: string | null
+          priority: number
+          provider: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          api_key?: string | null
+          ciphertext?: string | null
+          enabled?: boolean
+          id?: string
+          iv?: string | null
+          key_hint?: string | null
+          label?: string | null
+          last_status?: string | null
+          last_tested_at?: string | null
+          model?: string | null
+          priority?: number
+          provider: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          api_key?: string | null
+          ciphertext?: string | null
+          enabled?: boolean
+          id?: string
+          iv?: string | null
+          key_hint?: string | null
+          label?: string | null
+          last_status?: string | null
+          last_tested_at?: string | null
+          model?: string | null
+          priority?: number
+          provider?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      cloudy_ai_rate_limits: {
+        Row: {
+          daily_count: number
+          daily_key: string
+          minute_count: number
+          minute_started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          daily_count?: number
+          daily_key?: string
+          minute_count?: number
+          minute_started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          daily_count?: number
+          daily_key?: string
+          minute_count?: number
+          minute_started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cloudy_ai_request_leases: {
+        Row: {
+          expires_at: string
+          request_id: string
+          user_id: string
+        }
+        Insert: {
+          expires_at: string
+          request_id: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          request_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           display_name: string
           english_level: string | null
-          placement_test_completed: boolean
           id: string
+          placement_test_completed: boolean
         }
         Insert: {
           created_at?: string
           display_name?: string
           english_level?: string | null
-          placement_test_completed?: boolean
           id: string
+          placement_test_completed?: boolean
         }
         Update: {
           created_at?: string
           display_name?: string
           english_level?: string | null
-          placement_test_completed?: boolean
           id?: string
+          placement_test_completed?: boolean
+        }
+        Relationships: []
+      }
+      user_learning_profiles: {
+        Row: {
+          profile: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          profile?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          profile?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -65,11 +179,76 @@ export type Database = {
         }
         Relationships: []
       }
+      user_progress_awards: {
+        Row: {
+          award_day: string
+          created_at: string
+          id: number
+          lesson_index: number
+          level: string
+          user_id: string
+          xp_awarded: number
+        }
+        Insert: {
+          award_day?: string
+          created_at?: string
+          id?: never
+          lesson_index: number
+          level: string
+          user_id: string
+          xp_awarded?: number
+        }
+        Update: {
+          award_day?: string
+          created_at?: string
+          id?: never
+          lesson_index?: number
+          level?: string
+          user_id?: string
+          xp_awarded?: number
+        }
+        Relationships: []
+      }
+      user_progress_xp: {
+        Row: {
+          daily_key: string
+          daily_lessons: number
+          total_xp: number
+          user_id: string
+          week_key: string
+          week_xp: number
+        }
+        Insert: {
+          daily_key?: string
+          daily_lessons?: number
+          total_xp?: number
+          user_id: string
+          week_key?: string
+          week_xp?: number
+        }
+        Update: {
+          daily_key?: string
+          daily_lessons?: number
+          total_xp?: number
+          user_id?: string
+          week_key?: string
+          week_xp?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      acquire_cloudy_ai_request: {
+        Args: { _request_id: string; _user_id: string }
+        Returns: Json
+      }
+      award_cloudy_lesson_xp: {
+        Args: { _lesson_index: number; _level: string; _user_id: string }
+        Returns: Json
+      }
       get_weekly_league: {
         Args: { _week: string }
         Returns: {
@@ -78,6 +257,20 @@ export type Database = {
           week_xp: number
         }[]
       }
+      release_cloudy_ai_request: {
+        Args: { _request_id: string; _user_id: string }
+        Returns: boolean
+      }
+      save_cloudy_progress:
+        | { Args: { _state: Json; _user_id: string }; Returns: Json }
+        | {
+            Args: {
+              _expected_updated_at?: string
+              _state: Json
+              _user_id: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       [_ in never]: never

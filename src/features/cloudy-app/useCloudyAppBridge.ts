@@ -185,6 +185,15 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           accessTokenRef.current = data.session.access_token;
           userIdRef.current = data.user.id;
           const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
+          let progress: { state: unknown; updated_at: string } | null = null;
+          let learnerProfile: { english_level: string | null; placement_test_completed: boolean } | null = null;
+          let progressLoadFailed = false;
+          const { data: saved, error: progressError } = await supabase.from("user_progress").select("state, updated_at").eq("user_id", data.user.id).maybeSingle();
+          if (progressError) progressLoadFailed = true;
+          else progress = saved;
+          const { data: profile, error: profileError } = await supabase.from("profiles").select("english_level, placement_test_completed").eq("id", data.user.id).maybeSingle();
+          if (profileError) progressLoadFailed = true;
+          else learnerProfile = profile;
           reply({
             ok: true,
             user: {
@@ -194,6 +203,9 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
               age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 5 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
               isAdmin: role.isAdmin,
             },
+            progress,
+            learnerProfile,
+            progressLoadFailed,
           });
           return;
         }
