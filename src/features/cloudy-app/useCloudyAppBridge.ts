@@ -191,6 +191,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           });
           if (error) throw error;
           accessTokenRef.current = data.session.access_token;
+          userIdRef.current = data.user.id;
           const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
           reply({
             ok: true,
