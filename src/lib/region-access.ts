@@ -96,7 +96,8 @@ export function createCloudyRegionBlockedResponse(): Response {
     }
     .reason h2 { margin: 0 0 7px; font-size: 14px; font-weight: 800; }
     .reason p { margin: 0; color: #b9cde6; font-size: 13px; line-height: 1.55; }
-    .legal-link { display: block; margin-top: 18px; color: #8bd5ff; font-size: 13px; line-height: 1.5; text-decoration: underline; text-underline-offset: 3px; }\n    button {
+    .legal-link { display: block; margin-top: 18px; color: #8bd5ff; font-size: 13px; line-height: 1.5; text-decoration: underline; text-underline-offset: 3px; }
+    button {
       width: 100%; margin-top: 21px; padding: 15px 18px; border: 0; border-radius: 15px;
       color: #fff; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
       background: linear-gradient(100deg, #55baff, #2879e8); box-shadow: 0 7px 20px rgba(26,112,224,.27);
@@ -124,7 +125,8 @@ export function createCloudyRegionBlockedResponse(): Response {
         <h2>Почему я вижу это сообщение?</h2>
         <p>Доступ к Cloudy English зависит от страны подключения, доступности необходимых технических поставщиков и применимых правовых ограничений. Если вы считаете, что регион определён неверно, обратитесь в поддержку.</p>
       </div>
-      <a class="legal-link" href="/legal">Пользовательское соглашение · Доступность по странам</a>\n      <button type="button" id="understood">Понятно</button>
+      <a class="legal-link" href="/legal">Пользовательское соглашение · Доступность по странам</a>
+      <button type="button" id="understood">Понятно</button>
     </section>
     <p class="footer">Cloudy English · © 2026</p>
   </main>
