@@ -1,5 +1,10 @@
 const BLOCKED_COUNTRIES = new Set(["RU"]);
-const BRAND_ASSETS = new Set(["/cloudy-icon.png", "/apple-touch-icon.png", "/favicon.ico"]);
+const PUBLIC_PATHS = new Set([
+  "/legal",
+  "/cloudy-icon.png",
+  "/apple-touch-icon.png",
+  "/favicon.ico",
+]);
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 function isLocalRequest(request: Request): boolean {
@@ -17,25 +22,18 @@ function getTrustedCountry(request: Request): string | null {
   return value;
 }
 
-function hasCloudflareEdgeMetadata(request: Request): boolean {
-  return Boolean(
-    request.headers.get("cf-ray")?.trim() &&
-    request.headers.get("cf-connecting-ip")?.trim()
-  );
-}
-
 export function isCloudyRegionBlocked(request: Request): boolean {
   const url = new URL(request.url);
-  const isBrandAsset = BRAND_ASSETS.has(url.pathname) &&
+  const isPublicGet = PUBLIC_PATHS.has(url.pathname) &&
     (request.method === "GET" || request.method === "HEAD");
 
-  if (isBrandAsset) return false;
+  // Keep the legal center reachable from blocked regions and from users
+  // whose country cannot be resolved, so the restriction can be explained.
+  if (isPublicGet) return false;
   if (isLocalRequest(request)) return false;
 
   // Fail closed: missing/unknown location or missing edge metadata is not
   // silently treated as an allowed country.
-  if (!hasCloudflareEdgeMetadata(request)) return true;
-
   const country = getTrustedCountry(request);
   if (!country) return true;
 
