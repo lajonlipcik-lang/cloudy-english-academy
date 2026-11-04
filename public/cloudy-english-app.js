@@ -93,40 +93,42 @@ function cloudySelectMaleAmericanVoice(voices){
   ||null;
 }
 let cloudySpeechRequest=0;
-function say(t,f){
- if(!f&&!S.set.voice)return;
- if(!t||typeof speechSynthesis==="undefined"||typeof SpeechSynthesisUtterance==="undefined")return;
+const cloudyAudioCache=new Map();
+let cloudyCurrentAudio=null;
+function cloudyLocalSpeechFallback(text,request){
  try{
-  const request=++cloudySpeechRequest;
+  if(request!==cloudySpeechRequest||typeof speechSynthesis==="undefined"||typeof SpeechSynthesisUtterance==="undefined")return;
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(String(t));
-  u.lang="en-US";u.rate=.92;
-  const speakWithAvailableVoice=()=>{
-   if(request!==cloudySpeechRequest)return;
-   const voices=speechSynthesis.getVoices();
-   const maleVoice=cloudySelectMaleAmericanVoice(voices);
-   if(maleVoice)u.voice=maleVoice;
-   speechSynthesis.speak(u);
-  };
-  const voices=speechSynthesis.getVoices();
-  if(voices.length)speakWithAvailableVoice();
-  else{
-   let started=false;
-   const onVoicesChanged=()=>{
-    if(started)return;
-    started=true;
-    speechSynthesis.removeEventListener?.("voiceschanged",onVoicesChanged);
-    speakWithAvailableVoice();
-   };
-   speechSynthesis.addEventListener?.("voiceschanged",onVoicesChanged,{once:true});
-   setTimeout(()=>{
-    if(started)return;
-    started=true;
-    speechSynthesis.removeEventListener?.("voiceschanged",onVoicesChanged);
-    speakWithAvailableVoice();
-   },1200);
-  }
+  const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=.92;
+  const voices=speechSynthesis.getVoices(),male=cloudySelectMaleAmericanVoice(voices);if(male)u.voice=male;
+  speechSynthesis.speak(u);
  }catch(e){}
+}
+async function say(t,f){
+ if(!f&&!S.set.voice)return;
+ const text=String(t||"").replace(/\\s+/g," ").trim();if(!text)return;
+ const request=++cloudySpeechRequest;
+ try{
+  if(cloudyCurrentAudio){cloudyCurrentAudio.pause();cloudyCurrentAudio=null}
+  if(typeof speechSynthesis!=="undefined")speechSynthesis.cancel();
+  let audioUrl=cloudyAudioCache.get(text);
+  if(!audioUrl){
+   const response=await authRequest("tts",{payload:{text:text.slice(0,200)}});
+   if(request!==cloudySpeechRequest)return;
+   const result=response?.result;
+   if(!result?.audioBase64)throw new Error("Сервер не вернул аудио");
+   const raw=atob(result.audioBase64),bytes=new Uint8Array(raw.length);
+   for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+   audioUrl=URL.createObjectURL(new Blob([bytes],{type:result.mimeType||"audio/wav"}));
+   cloudyAudioCache.set(text,audioUrl);
+   while(cloudyAudioCache.size>30){const first=cloudyAudioCache.keys().next().value;const old=cloudyAudioCache.get(first);if(old)URL.revokeObjectURL(old);cloudyAudioCache.delete(first)}
+  }
+  if(request!==cloudySpeechRequest)return;
+  const audio=new Audio(audioUrl);cloudyCurrentAudio=audio;audio.play().catch(()=>cloudyLocalSpeechFallback(text,request));
+  audio.onended=()=>{if(cloudyCurrentAudio===audio)cloudyCurrentAudio=null};
+ }catch(error){
+  if(request===cloudySpeechRequest)cloudyLocalSpeechFallback(text,request);
+ }
 }
 function conf(n=40){const c=["#fff","#bfe0ff","#4db3ff","#ffd35a","#38d39a"];for(let k=0;k<n;k++){const d=document.createElement("i");d.className="cf";d.style.cssText=`left:${Math.random()*100}%;width:${6+Math.random()*6}px;height:${10+Math.random()*8}px;background:${c[k%5]};--t:${2.4+Math.random()*1.6}s;--dx:${(Math.random()-.5)*160}px;--r:${Math.random()*900}deg;animation-delay:${Math.random()*.5}s`;document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}}
 const mascot=(m="h")=>`<svg class="ms" viewBox="0 0 100 80"><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#gb)"/><g class="eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.800" fill="#fff"/><circle cx="64" cy="43" r="1.800" fill="#fff"/></g><path d="${m=="s"?"M44 60q7-7 14 0":"M44 54q7 8 14 0"}" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg>`;
