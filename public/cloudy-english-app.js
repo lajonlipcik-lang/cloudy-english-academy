@@ -299,8 +299,14 @@ const Auth={
   return this.start(result.user.email,result.user.name||'',!!result.user.isAdmin,result.user.age);
  },
  async signIn(email,pw){
-  const result=await authRequest('signIn',{email,password:pw});
-  return this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin,result.user.age);
+  cloudSyncPaused=true;cloudProgressPending=true;
+  try{
+   const result=await authRequest('signIn',{email,password:pw});
+   if(result.user&&(result.progress!==undefined||result.learnerProfile||result.progressLoadFailed))applyCloudSnapshot(result);
+   else{this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin,result.user.age);cloudSyncPaused=false}
+   return S.user;
+  }catch(e){cloudSyncPaused=false;throw e}
+  finally{cloudProgressPending=false}
  },
  start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);const savedAge=Number(S.user?.age);const validAge=Number.isInteger(Number(age))&&Number(age)>=5&&Number(age)<=120?Number(age):Number.isInteger(savedAge)&&savedAge>=5&&savedAge<=120?savedAge:null;S.user={email,name,age:validAge,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
  guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость',age:null};save();window.CloudyAdmin?.setUser(S.user)},
