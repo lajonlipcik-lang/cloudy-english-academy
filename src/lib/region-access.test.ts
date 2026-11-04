@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCloudyRegionBlocked } from "./region-access";
+import { createCloudyRegionBlockedResponse, isCloudyRegionBlocked } from "./region-access";
 
 const edgeHeaders = {
   "cf-ipcountry": "KG",
@@ -15,7 +15,7 @@ describe("Cloudy regional access gate", () => {
     expect(isCloudyRegionBlocked(request)).toBe(true);
   });
 
-  it("allows requests from another country when Cloudflare edge metadata is present", () => {
+  it("allows requests from another country when the Cloudflare country header is present", () => {
     const request = new Request("https://cloudy.example/", { headers: edgeHeaders });
     expect(isCloudyRegionBlocked(request)).toBe(false);
   });
@@ -49,6 +49,18 @@ describe("Cloudy regional access gate", () => {
       headers: { ...edgeHeaders, "cf-ipcountry": "RU" },
     });
     expect(isCloudyRegionBlocked(request)).toBe(true);
+  });
+
+  it("renders the branded blocked page with the real app icon and a working legal link", async () => {
+    const response = createCloudyRegionBlockedResponse();
+    const html = await response.text();
+    expect(response.status).toBe(403);
+    expect(response.headers.get("content-type")).toContain("text/html");
+    expect(html).toContain('src="/cloudy-icon.png"');
+    expect(html).toContain('href="/legal">Документы и доступность по странам</a>');
+    expect(html).toContain("https://t.me/cloudysupportt_bot");
+    expect(html).not.toContain("border: 1px solid");
+    expect(html).not.toContain("<hr");
   });
 
   it("allows local development without edge headers", () => {
