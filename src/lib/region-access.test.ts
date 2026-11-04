@@ -51,12 +51,15 @@ describe("Cloudy regional access gate", () => {
     expect(isCloudyRegionBlocked(request)).toBe(true);
   });
 
-  it("renders the branded blocked page with the real app icon and a working legal link", async () => {
+  it("renders the animated Cloudy mascot without the old status badge and with a working legal link", async () => {
     const response = createCloudyRegionBlockedResponse();
     const html = await response.text();
     expect(response.status).toBe(403);
     expect(response.headers.get("content-type")).toContain("text/html");
-    expect(html).toContain('src="/cloudy-icon.png"');
+    expect(html).toContain('class="cloud-mascot"');
+    expect(html).toContain("@keyframes cloudBlink");
+    expect(html).not.toContain("ДОСТУП ОГРАНИЧЕН");
+    expect(html).not.toContain('class="logo"');
     expect(html).toContain('href="/legal">Документы и доступность по странам</a>');
     expect(html).toContain("https://t.me/cloudysupportt_bot");
     expect(html).not.toContain("border: 1px solid");
