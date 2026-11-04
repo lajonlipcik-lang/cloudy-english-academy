@@ -27,7 +27,7 @@ export function isCloudyRegionBlocked(request: Request): boolean {
   const isReadOnlyRequest = request.method === "GET" || request.method === "HEAD";
   const isPublicGet = isReadOnlyRequest && (
     PUBLIC_PATHS.has(url.pathname) ||
-    /\\.(?:css|js|mjs|map|png|jpe?g|webp|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname)
+    /\.(?:css|js|mjs|map|png|jpe?g|webp|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname)
   );
 
   // Keep the legal center reachable from blocked regions and from users
