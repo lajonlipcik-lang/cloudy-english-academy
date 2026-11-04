@@ -295,7 +295,7 @@ if(sessionHydrating){sessionHydrationTimer=setTimeout(()=>{if(!sessionHydrating)
 const Auth={
  async signUp(email,pw){
   const result=await authRequest('signUp',{email,password:pw});
-  if(result.needsConfirmation)throw new Error('Аккаунт создан. Подтвердите email, затем войдите — Cloudy предложит заполнить профиль.');
+  if(result.needsConfirmation)return {needsConfirmation:true};
   return this.start(result.user.email,result.user.name||'',!!result.user.isAdmin,result.user.age);
  },
  async signIn(email,pw){
