@@ -16,14 +16,17 @@ function mergeCloudProgress(remote,local){
  merged.streak=Math.max(Number(remote.streak)||0,Number(local.streak)||0);
  merged.perf=Math.max(Number(remote.perf)||0,Number(local.perf)||0);
  merged.ach=[...new Set([...(Array.isArray(remote.ach)?remote.ach:[]),...(Array.isArray(local.ach)?local.ach:[])])];
- merged.days=[...new Set([...(Array.isArray(remote.days)?remote.days:[]),...(Array.isArray(local.days)?local.days:[])])].slice(-60);
+ merged.days=[...new Set([...(Array.isArray(remote.days)?remote.days:[]),...(Array.isArray(local.days)?local.days:[])])].sort((a,b)=>(Date.parse(a)||0)-(Date.parse(b)||0)).slice(-60);
  merged.mis={...(remote.mis||{})};Object.entries(local.mis||{}).forEach(([word,count])=>merged.mis[word]=Math.max(Number(merged.mis[word])||0,Number(count)||0));
  if(Array.isArray(remote.acc)||Array.isArray(local.acc))merged.acc=[0,1].map(i=>Math.max(Number(remote.acc?.[i])||0,Number(local.acc?.[i])||0));
  if(remote.td&&local.td){
   if(remote.td.d===local.td.d)merged.td={...remote.td,...local.td,xp:Math.max(Number(remote.td.xp)||0,Number(local.td.xp)||0),les:Math.max(Number(remote.td.les)||0,Number(local.td.les)||0),ok:Math.max(Number(remote.td.ok)||0,Number(local.td.ok)||0),claim:Number(remote.td.claim)||Number(local.td.claim)?1:0};
   else merged.td=(Date.parse(local.td.d||'')||0)>(Date.parse(remote.td.d||'')||0)?local.td:remote.td;
  }
- if((Date.parse(local.last||'')||0)>(Date.parse(remote.last||'')||0)){merged.last=local.last;merged.streak=Math.max(Number(local.streak)||0,Number(remote.streak)||0)}
+ const localLast=Date.parse(local.last||'')||0,remoteLast=Date.parse(remote.last||'')||0;
+ if(localLast>remoteLast){merged.last=local.last;merged.streak=Number(local.streak)||0}
+ else if(remoteLast>localLast){merged.last=remote.last;merged.streak=Number(remote.streak)||0}
+ else merged.streak=Math.max(Number(remote.streak)||0,Number(local.streak)||0);
  const validLevel=value=>['A1','A2','B1','B2'].includes(value);
  merged.lv=validLevel(local.lv)?local.lv:validLevel(remote.lv)?remote.lv:'';
  merged.tested=Boolean(remote.tested||local.tested);
