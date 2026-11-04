@@ -208,8 +208,8 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const newName = typeof message.name === "string" && message.name.trim() ? message.name.trim().slice(0, 40) : undefined;
           if (validAge === null && !newName) throw new Error("Укажите корректное имя или возраст.");
           const updateData: Record<string, unknown> = { ...(currentUser.user_metadata ?? {}) };
-          if (validAge !== null) updateData.age = validAge;
-          if (newName) updateData.name = newName;
+          if (validAge !== null) updateData["age"] = validAge;
+          if (newName) updateData["name"] = newName;
           const { data, error } = await supabase.auth.updateUser({ data: updateData });
           if (error) throw error;
           if (!data.user) throw new Error("Не удалось обновить профиль.");
