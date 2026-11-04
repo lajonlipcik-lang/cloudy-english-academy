@@ -370,7 +370,35 @@ const rvBtn=()=>{const n=Object.keys(S.mis).length;return n?`<button class="ches
 const AIcard=()=>`<button class="card ai" onclick="chat()">${mascot()}<div><b>Практика с Клауди</b><br><small style="opacity:.8">Диалог на уровне ${S.lv}</small></div></button>`;
 
 function theme(t){S.set.th=t;save();snd('tab');view(0)}
-async function chat(){app.innerHTML=`<section class="chat-shell"><div class="top"><button class="x" onclick="snd('tab');view()">${ic('x')}</button><b style="flex:1;font-size:18px">Практика с Клауди (${S.lv})</b></div><div id="msgs" class="chat-messages" aria-live="polite"></div><div class="chat-composer"><input id="ci" placeholder="Напишите по-английски" autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}"><button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button></div></section>`;CH.forEach(m=>bub(m.r,m.t,false));if(!CH.length)await ask();const input=$('#ci');if(input)input.focus()}
+async function chat(){app.innerHTML=`
+<section class="chat-shell">
+  <div class="top" style="display:flex;align-items:center;justify-content:space-between">
+    <button class="x" onclick="snd('tab');view()">${ic('x')}</button>
+    <div class="chat-top-center">
+      ${mascot()}
+      <span class="pill" style="padding:4px 9px;font-size:12px;opacity:.9">${S.lv||'A1'}</span>
+    </div>
+    <div class="chat-flag" title="English" aria-label="Flag of the United Kingdom">
+      <svg viewBox="0 0 60 40" width="100%" height="100%" role="img" aria-hidden="true">
+        <clipPath id="chat-flag-clip"><rect width="60" height="40" rx="3"/></clipPath>
+        <g clip-path="url(#chat-flag-clip)">
+          <rect width="60" height="40" fill="#012169"/>
+          <path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="8"/>
+          <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="4"/>
+          <path d="M30,0 v40 M0,20 h60" stroke="#fff" stroke-width="12"/>
+          <path d="M30,0 v40 M0,20 h60" stroke="#C8102E" stroke-width="7"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div id="msgs" class="chat-messages" aria-live="polite"></div>
+  <div class="chat-composer">
+    <div class="chat-composer-box">
+      <input id="ci" placeholder="Напишите по-английски..." autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}">
+    </div>
+    <button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button>
+  </div>
+</section>`;CH.forEach(m=>bub(m.r,m.t,false));if(!CH.length)await ask();const input=$('#ci');if(input)input.focus()}
 function scrollChat(){const box=$('#msgs');if(box)box.scrollTop=box.scrollHeight}
 function bub(r,t,scroll=true){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);if(scroll)requestAnimationFrame(scrollChat);return d}
 function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
