@@ -106,7 +106,7 @@ function cloudyLocalSpeechFallback(text,request){
 }
 async function say(t,f){
  if(!f&&!S.set.voice)return;
- const text=String(t||"").replace(/\\s+/g," ").trim();if(!text)return;
+ const text=String(t||"").replace(/\s+/g," ").trim();if(!text)return;
  const request=++cloudySpeechRequest;
  try{
   if(cloudyCurrentAudio){cloudyCurrentAudio.pause();cloudyCurrentAudio=null}
