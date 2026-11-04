@@ -44,6 +44,29 @@ describe("Cloudy regional access gate", () => {
     expect(isCloudyRegionBlocked(legalWithoutCountry)).toBe(false);
   });
 
+  it("blocks the standalone learning page and its root-level scripts and styles in Russia", () => {
+    for (const path of [
+      "/cloudy-english.html",
+      "/cloudy-english.css",
+      "/cloudy-learning.js",
+      "/cloudy-english-app.js",
+      "/cloudy-admin.js",
+      "/api/account",
+    ]) {
+      expect(isCloudyRegionBlocked(new Request(`https://cloudy.example${path}`, {
+        headers: { ...edgeHeaders, "cf-ipcountry": "RU" },
+      }))).toBe(true);
+    }
+  });
+
+  it("keeps only generated legal-page bundles public", () => {
+    const headers = { ...edgeHeaders, "cf-ipcountry": "RU" };
+    expect(isCloudyRegionBlocked(new Request("https://cloudy.example/assets/index-AbCd1234.js", { headers }))).toBe(false);
+    expect(isCloudyRegionBlocked(new Request("https://cloudy.example/assets/index-AbCd1234.css", { headers }))).toBe(false);
+    expect(isCloudyRegionBlocked(new Request("https://cloudy.example/cloudy-english-app.js", { headers }))).toBe(true);
+    expect(isCloudyRegionBlocked(new Request("https://cloudy.example/other.js", { headers }))).toBe(true);
+  });
+
   it("blocks application routes and APIs for the restricted region", () => {
     const request = new Request("https://cloudy.example/api/account", {
       headers: { ...edgeHeaders, "cf-ipcountry": "RU" },
