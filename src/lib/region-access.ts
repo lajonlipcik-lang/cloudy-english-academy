@@ -55,7 +55,7 @@ export function createCloudyRegionBlockedResponse(): Response {
     .glow.two { right: -120px; bottom: -130px; background: #287de5; }
     main { position: relative; width: min(100%, 440px); text-align: center; }
     .brand { display: flex; align-items: center; justify-content: center; gap: 11px; margin-bottom: 24px; }
-    .brand img { width: 42px; height: 42px; object-fit: contain; filter: drop-shadow(0 5px 14px rgba(85,180,255,.25)); }
+    .brand img { width: 42px; height: 42px; display: block; object-fit: cover; border-radius: 50%; clip-path: circle(50%); background: rgba(117,202,255,.18); filter: drop-shadow(0 5px 14px rgba(85,180,255,.25)); }
     .brand span { font-size: 19px; font-weight: 800; letter-spacing: -.45px; }
     .panel {
       padding: clamp(25px, 7vw, 36px) clamp(20px, 6vw, 32px) 25px;
@@ -69,13 +69,13 @@ export function createCloudyRegionBlockedResponse(): Response {
       border-radius: 50%; background: linear-gradient(145deg, rgba(117,202,255,.25), rgba(41,112,205,.2));
       border: 1px solid rgba(197,231,255,.2); box-shadow: 0 12px 35px rgba(0,0,0,.18);
     }
-    .mascot img { width: 76px; height: 76px; object-fit: contain; }
+    .mascot img { width: 76px; height: 76px; display: block; object-fit: cover; border-radius: 50%; clip-path: circle(50%); background: rgba(117,202,255,.12); }
     .status {
       display: inline-flex; align-items: center; gap: 8px; margin-bottom: 18px; padding: 7px 12px;
-      border-radius: 999px; color: #ffd99a; background: rgba(255,190,91,.12);
-      border: 1px solid rgba(255,205,130,.18); font-size: 12px; font-weight: 750; letter-spacing: .2px;
+      border-radius: 999px; color: #ffe5e5; background: rgba(220,38,38,.2);
+      border: 1px solid rgba(248,113,113,.42); font-size: 12px; font-weight: 800; letter-spacing: .2px;
     }
-    .status i { width: 6px; height: 6px; border-radius: 50%; background: #ffbd62; box-shadow: 0 0 10px #ffbd62; }
+    .status i { width: 6px; height: 6px; border-radius: 50%; background: #fb7185; box-shadow: 0 0 10px #ef4444; }
     h1 { margin: 0; font-size: clamp(25px, 6vw, 31px); line-height: 1.18; letter-spacing: -.8px; }
     .lead { margin: 14px auto 0; max-width: 330px; color: #d1e2f7; font-size: 15px; line-height: 1.65; }
     .reason {
