@@ -72,7 +72,7 @@ const $=s=>document.querySelector(s),sh=a=>{a=[...a];for(let i=a.length-1;i>0;i-
 const app=$("#app"),ic=n=>`<svg class="i"><use href="#${n}"/></svg>`;
 let AC,MG;
 function snd(t,c=0){if(!S.set.snd)return;try{if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.connect(AC.destination)}if(AC.state=="suspended")AC.resume();MG.gain.value=S.set.vol;const b=1+Math.min(c,7)*.07;
-const P={tap:[[560,0,.07,"triangle"]],pick:[[420,0,.08,"sine",640],[640,.05,.08]],tab:[[760,0,.07,"sine",520]],sheet:[[300,0,.25,"sine",700]],go:[[330,0,.3,"sine",990]],ok:[[523*b,0,.18],[784*b,.09,.26]],match:[[880,0,.12],[1175,.07,.2]],bad:[[220,0,.18,"sawtooth",140],[150,.14,.22,"sawtooth",100]],win:[[523,0,.2],[659,.12,.2],[784,.24,.2],[1047,.36,.5]],chest:[[392,0,.15],[523,.09,.15],[659,.18,.15],[784,.27,.15],[1047,.36,.15],[1319,.5,.6]],star:[[1200,0,.15],[1600,.07,.25]]}[t];
+const P={tap:[[560,0,.07,"triangle"]],send:[[520,0,.05,"sine",720],[720,.025,.07,"sine",960]],pick:[[420,0,.08,"sine",640],[640,.05,.08]],tab:[[760,0,.07,"sine",520]],sheet:[[300,0,.25,"sine",700]],go:[[330,0,.3,"sine",990]],ok:[[523*b,0,.18],[784*b,.09,.26]],match:[[880,0,.12],[1175,.07,.2]],bad:[[220,0,.18,"sawtooth",140],[150,.14,.22,"sawtooth",100]],win:[[523,0,.2],[659,.12,.2],[784,.24,.2],[1047,.36,.5]],chest:[[392,0,.15],[523,.09,.15],[659,.18,.15],[784,.27,.15],[1047,.36,.15],[1319,.5,.6]],star:[[1200,0,.15],[1600,.07,.25]]}[t];
 P.forEach(([f,d,l,w,e])=>{const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+d;o.type=w||"sine";o.frequency.setValueAtTime(f,s);if(e)o.frequency.exponentialRampToValueAtTime(e,s+l);g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(t=="bad"?.12:.22,s+.02);g.gain.exponentialRampToValueAtTime(.0001,s+l+.05);o.connect(g);g.connect(MG);o.start(s);o.stop(s+l+.1)})}catch(e){}}
 const cloudyMaleVoiceNames=/^(alex|aaron|fred|eddy|reed|tom|bruce|daniel|arthur|ralph)(\s|$)/i;
 function cloudySelectMaleAmericanVoice(voices){
@@ -132,7 +132,7 @@ function renderInstallGate(){
 function checkCloudyInstall(){if(isInstalledCloudy()){try{localStorage.setItem('cloudyHomeInstalled','1')}catch(e){}view();return}const note=$('#installNote');if(note)note.textContent='Пока Cloudy открыт во вкладке Safari. Вернись на главный экран iPhone и запусти Cloudy с новой иконки — тогда установка подтвердится.';const panel=$('.install-panel');if(panel){panel.classList.remove('shk');void panel.offsetWidth;panel.classList.add('shk')}}
 function ensureCloudyInstallGate(){if(!isAppleMobile()||isInstalledCloudy())return;if(!document.querySelector('#app .install-gate'))renderInstallGate()}
 function bootCloudy(){if(isAppleMobile()&&!isInstalledCloudy()){renderInstallGate();setInterval(ensureCloudyInstallGate,20000);window.addEventListener('pageshow',ensureCloudyInstallGate);window.addEventListener('focus',ensureCloudyInstallGate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureCloudyInstallGate()});return}if(sessionHydrating){app.innerHTML=`<div style="min-height:100svh;display:grid;place-items:center;background:var(--bg,#0b1020);color:var(--text,#fff);font:600 15px system-ui"><div style="text-align:center"><div style="font-size:42px;margin-bottom:12px">☁️</div>Загружаем твой прогресс…</div></div>`;return}view()}
-function view(a=1){roll();amb();if(!S.user)return authV();if(!S.lv)return welcome();SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}">${[learn,quests,lg,prof][T]()}</div>`+nav()}
+function view(a=1){roll();amb();if(!S.user)return authV();if(!S.lv&&sessionHydrating){app.innerHTML=`<div style="min-height:100svh;display:grid;place-items:center;background:var(--bg,#0b1020);color:var(--text,#fff);font:600 15px system-ui"><div style="text-align:center"><div style="font-size:42px;margin-bottom:12px">☁️</div>Загружаем твой прогресс…</div></div>`;return}if(!S.lv)return welcome();SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}">${[learn,quests,lg,prof][T]()}</div>`+nav()}
 function tab(k){if(k!=T){snd("tab");T=k;view()}}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
@@ -291,8 +291,29 @@ const Auth={
   return this.start(result.user.email,result.user.name||'',!!result.user.isAdmin,result.user.age);
  },
  async signIn(email,pw){
-  const result=await authRequest('signIn',{email,password:pw});
-  return this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin,result.user.age);
+  sessionHydrating=true;
+  try{
+   const result=await authRequest('signIn',{email,password:pw});
+   this.start(result.user.email,result.user.name||'Ученик',!!result.user.isAdmin,result.user.age);
+   const profileLevel=['A1','A2','B1','B2'].includes(result.learnerProfile?.english_level)?result.learnerProfile.english_level:'';
+   const profileTested=Boolean(result.learnerProfile?.placement_test_completed);
+   const remoteState=result.progress?.state&&typeof result.progress.state==='object'
+    ?{...result.progress.state,lv:profileLevel||result.progress.state.lv||'',tested:profileTested||result.progress.state.tested?1:0}
+    :profileLevel?{lv:profileLevel,tested:profileTested?1:0}:null;
+   if(remoteState){
+    S=mergeCloudProgress(remoteState,S,remoteState);
+    if(profileLevel)S.lv=profileLevel;
+    S.tested=profileTested||S.tested?1:0;
+    save(true);
+   }
+   cloudUserId=result.user.id;
+   cloudUpdatedAt=result.progress?.updated_at||null;
+   cloudBaseState=cloneProgressState(remoteState||{});
+   cloudSyncPaused=Boolean(result.progressLoadFailed);
+   sessionHydrating=false;
+   if(!cloudSyncPaused)queueCloudProgress();
+   return S.user;
+  }catch(error){sessionHydrating=false;throw error}
  },
  start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);const savedAge=Number(S.user?.age);const validAge=Number.isInteger(Number(age))&&Number(age)>=5&&Number(age)<=120?Number(age):Number.isInteger(savedAge)&&savedAge>=5&&savedAge<=120?savedAge:null;S.user={email,name,age:validAge,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
  guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость',age:null};save();window.CloudyAdmin?.setUser(S.user)},
@@ -404,7 +425,7 @@ function bub(r,t,scroll=true){const d=document.createElement('div');d.className=
 function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
 async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await new Promise(resolve=>setTimeout(resolve,text.length>500?9:16))}el.classList.remove('chat-type-cursor')}
 async function ask(u){if(u){CH.push({r:'u',t:u});bub('u',u)}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}scrollChat()}
-async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('tap');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
+async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('send');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
 setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
 function amb(){const l=S.lv||"A1",a=$(".amb");document.body.dataset.lv=l;document.body.dataset.th=S.set.th||"dark";if(a.dataset.l==l)return;a.dataset.l=l;a.innerHTML="";const n={A1:5,A2:16,B1:28,B2:4}[l],r=Math.random;for(let k=0;k<n;k++){const u=document.createElement("u"),z={A1:200+r()*220,A2:14+r()*40,B1:3+r()*6,B2:90}[l];u.style.cssText=`left:${r()*100}%;top:${r()*100}%;width:${z}px;height:${z}px;animation-delay:-${r()*12}s;animation-duration:${l=="A2"?7+r()*8:l=="B1"?2+r()*3:l=="B2"?12+r()*8:14+r()*8}s`;a.appendChild(u)}}
 function splash(l){const s=document.createElement("div");s.className="spl "+l;s.innerHTML=`<div class="lc ${l}">${l}</div><h2>${LI[l][0]}</h2>`;document.body.appendChild(s);setTimeout(()=>s.remove(),1800)}
