@@ -5,6 +5,8 @@ const PUBLIC_PATHS = new Set([
   "/apple-touch-icon.png",
   "/favicon.ico",
 ]);
+const LEGAL_BUNDLE_PREFIXES = ["/assets/", "/_build/"];
+const LEGAL_BUNDLE_EXTENSIONS = /\.(?:css|js|mjs|woff2?|ttf|otf)$/i;
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 function isLocalRequest(request: Request): boolean {
