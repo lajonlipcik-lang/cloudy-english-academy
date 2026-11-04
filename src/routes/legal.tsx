@@ -1,16 +1,12 @@
 import { useState } from "react";
-import { Link, createFileRoute } from "@tanstack/react-router";
-import {
-  ArrowLeft, ArrowRight, BookOpen, FileCheck2, FileText,
-  HeartHandshake, LockKeyhole, MessageCircle, ShieldCheck, Users,
-} from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 
 type LegalSection = readonly [string, string];
 type LegalDocument = {
   id: string;
   title: string;
   description: string;
-  icon: typeof FileText;
   sections: readonly LegalSection[];
 };
 
@@ -19,7 +15,6 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
     id: "terms",
     title: "Пользовательское соглашение",
     description: "Условия использования Cloudy English Academy",
-    icon: FileText,
     sections: [
       ["1. О сервисе", "Cloudy English Academy — образовательная платформа для самостоятельного изучения английского языка. В приложении доступны учебные материалы, упражнения, проверка ответов, отслеживание прогресса и фирменный помощник Cloudy AI. Cloudy AI анализирует ошибки, учитывает предыдущие диалоги и учебный прогресс, подбирает задания и может самостоятельно инициировать разговор или предложить продолжить урок. Он общается на русском языке, обучает английскому и отвечает на вопросы о приложении; посторонние темы не входят в его специализацию. Помощник адаптирует объяснения к возрасту и уровню, сохраняет дружелюбный и терпеливый характер и честно сообщает, что является ИИ, а не человеком."],
       ["2. Возраст и регистрация", "Регистрация доступна пользователям с 13 лет. Пользователям от 13 до 17 лет необходимо получить согласие родителя или законного представителя в случаях, когда этого требует применимое законодательство. Возраст указывается в полных годах; полная дата рождения для этой цели не запрашивается. Нельзя указывать заведомо неверный возраст или обходить возрастные ограничения."],
@@ -40,7 +35,6 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
     id: "privacy",
     title: "Политика конфиденциальности",
     description: "Какие данные обрабатываются, зачем и с кем могут передаваться",
-    icon: ShieldCheck,
     sections: [
       ["1. Кто отвечает за обработку", "За работу Cloudy English Academy и обработку данных отвечает Администрация Cloudy English Academy. По вопросам обработки персональных данных можно обратиться в официальную поддержку."],
       ["2. Какие данные могут обрабатываться", "В зависимости от использования сервиса это могут быть: адрес электронной почты и технический идентификатор аккаунта; имя и возраст в полных годах; выбранный уровень английского; ответы, результаты тестов, ошибки, уроки, XP, достижения и прогресс; сообщения и контекст диалогов с Cloudy AI; сведения о настройках; технические данные устройства, браузера, подключения и журналы ошибок. Полная дата рождения не запрашивается для указания возраста."],
@@ -60,7 +54,6 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
     id: "consent",
     title: "Согласие на обработку персональных данных",
     description: "Объяснение целей обработки и отдельного согласия на улучшение ИИ",
-    icon: LockKeyhole,
     sections: [
       ["1. Основная обработка для работы сервиса", "Для создания аккаунта, входа, сохранения прогресса, предоставления уроков, поддержки и защиты платформы Cloudy English Academy обрабатывает необходимые данные пользователя на соответствующих законных основаниях. "],
       ["2. Отдельное согласие на дополнительное использование диалогов", "Использование сообщений и переписок для улучшения или обучения ИИ — отдельная необязательная цель. Для неё требуется отдельное активное согласие пользователя или родителя/представителя, когда это предусмотрено законом. Отметка не должна быть включена заранее. Отказ не должен ограничивать обычное обучение и работу Cloudy AI."],
@@ -72,7 +65,6 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
     id: "community",
     title: "Правила сообщества",
     description: "Безопасность, уважение и модерация",
-    icon: Users,
     sections: [
       ["1. Уважительное общение", "Запрещены травля, угрозы, преследование, унижение, оскорбления, дискриминация и намеренное запугивание других пользователей."],
       ["2. Защита личной информации", "Не публикуйте пароли, домашние адреса, номера документов, финансовые сведения, личные контакты и чужие персональные данные. Не просите других пользователей раскрывать такую информацию."],
@@ -86,7 +78,6 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
     id: "payments",
     title: "Оплата и возвраты",
     description: "Правила для платных функций без выдуманных условий",
-    icon: FileCheck2,
     sections: [
       ["1. Информация о платных функциях", "Платные функции, если они доступны, должны сопровождаться ясным указанием цены, валюты, состава услуги и срока доступа до подтверждения оплаты. Этот документ сам по себе не означает, что платёжный процесс уже подключён."],
       ["2. Подтверждение платежа", "Перед подтверждением оплаты пользователю показываются цена, валюта, состав услуги и срок доступа, если платная функция доступна."],
@@ -98,7 +89,6 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
     id: "parents",
     title: "Правила для родителей",
     description: "Информация для родителей и законных представителей",
-    icon: HeartHandshake,
     sections: [
       ["1. Возраст", "Минимальный возраст регистрации в Cloudy English Academy — 13 лет. Пользователям 13–17 лет необходимо согласие родителя или законного представителя в случаях, установленных применимым законодательством."],
       ["2. Безопасное обучение", "Обсудите с ребёнком правила безопасного общения с цифровыми сервисами. Не размещайте в профиле и чатах домашний адрес, телефон, документы, пароли, сведения о школе или другие данные, не нужные для обучения."],
@@ -111,7 +101,6 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
     id: "guide",
     title: "Памятка пользователя",
     description: "Коротко о правилах и безопасном обучении",
-    icon: BookOpen,
     sections: [
       ["Аккаунт", "Для полноценного обучения и синхронизации прогресса используй личный аккаунт. Защищай данные входа и не передавай пароли другим людям."],
       ["Профиль", "Имя можно менять в настройках. Для изменения возраста или email обратись в официальную поддержку Cloudy English через Telegram."],
@@ -146,13 +135,20 @@ export function LegalPage() {
   const active = LEGAL_DOCUMENTS.find((document) => document.id === activeId);
 
   return (
-    <main className="min-h-screen overflow-x-hidden px-4 pb-10 pt-[max(18px,env(safe-area-inset-top))] text-white" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', background: "linear-gradient(165deg, #050d2b 0%, #0a2a73 48%, #3aa0ff 100%) fixed" }}>
-      <div className="mx-auto max-w-3xl">
+    <main className="relative min-h-screen overflow-x-hidden px-4 pb-8 pt-[max(18px,env(safe-area-inset-top))] text-white" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', background: "linear-gradient(165deg, #050d2b 0%, #0a2a73 48%, #3aa0ff 100%) fixed" }}>
+      <style>{`@keyframes legalCloudFloat { 0%,100% { transform: translate3d(0,0,0) rotate(-3deg); } 50% { transform: translate3d(12px,-15px,0) rotate(3deg); } } @media (prefers-reduced-motion: reduce) { .legal-cloud-float { animation: none !important; } }`}</style>
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+        <div className="legal-cloud-float absolute left-[5%] top-[17%] opacity-[0.10]" style={{ animation: "legalCloudFloat 8s ease-in-out infinite" }}><CloudyMascot /></div>
+        <div className="legal-cloud-float absolute right-[4%] top-[43%] scale-[0.72] opacity-[0.09]" style={{ animation: "legalCloudFloat 10s ease-in-out -3s infinite" }}><CloudyMascot /></div>
+        <div className="legal-cloud-float absolute bottom-[9%] left-[16%] scale-[0.58] opacity-[0.08]" style={{ animation: "legalCloudFloat 9s ease-in-out -5s infinite" }}><CloudyMascot /></div>
+        <div className="legal-cloud-float absolute right-[20%] top-[76%] scale-[0.48] opacity-[0.07]" style={{ animation: "legalCloudFloat 11s ease-in-out -2s infinite" }}><CloudyMascot /></div>
+      </div>
+      <div className="relative z-10 mx-auto max-w-3xl">
         <header className="pb-6 pt-3">
           <div className="flex items-center gap-3">
             <CloudyMascot />
             <div>
-              <p className="text-sm font-bold tracking-wide text-[#69baff]">Cloudy English Academy</p>
+              <p className="text-sm font-extrabold tracking-wide text-white">Cloudy English Academy</p>
               <p className="text-xs tracking-[.12em] text-[#55c9f2]">ЮРИДИЧЕСКИЙ ЦЕНТР</p>
             </div>
           </div>
@@ -197,59 +193,49 @@ export function LegalPage() {
           </section>
         ) : (
           <>
-            <section className="py-6 text-[#d8edff]">
-              <div className="mb-3 flex items-center gap-2">
-                <ShieldCheck className="text-[#268dcc]" size={20} aria-hidden="true" />
+            <section className="py-4 text-[#d8edff]">
+              <div className="mb-2">
                 <h2 className="text-lg font-extrabold">Юридическая информация</h2>
               </div>
               <div className="space-y-1">
-                {LEGAL_DOCUMENTS.map((document, index) => {
-                  const Icon = document.icon;
-                  return (
+                {LEGAL_DOCUMENTS.map((document) => (
                     <button
                       key={document.id}
                       type="button"
                       onClick={() => { setActiveId(document.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                       aria-label={`Открыть документ: ${document.title}`}
-                      className="flex min-h-[76px] w-full items-center gap-3 rounded-xl px-3 py-4 text-left transition hover:bg-[#102d4b]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62c6f3]"
+                      className="flex min-h-[68px] w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-[#102d4b]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62c6f3]"
                     >
-                      
                       <span className="min-w-0 flex-1">
                         <span className="block text-[15px] font-semibold text-[#d8edff]">{document.title}</span>
                         <span className="mt-1 block text-sm leading-5 text-[#91b0cc]">{document.description}</span>
                       </span>
-                      <Icon className="h-5 w-5 shrink-0 text-[#62c6f3]" aria-hidden="true" />
-                      <ArrowRight className="h-4 w-4 shrink-0 text-[#62c6f3]" aria-hidden="true" />
                     </button>
-                  );
-                })}
+                ))}
               </div>
             </section>
 
           </>
         )}
 
-        <section className="py-8">
-          <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-[rgba(6,20,58,0.48)] p-5 shadow-[0_12px_34px_rgba(0,0,0,0.28)] sm:p-6">
+        <section className="py-5">
+          <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-[rgba(6,20,58,0.48)] p-4 shadow-[0_12px_34px_rgba(0,0,0,0.28)] sm:p-5">
             <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-[#36bdf2]/20 blur-2xl" aria-hidden="true" />
-            <div className="relative flex items-start gap-4">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#4b9dcc]/40 bg-[#0a2543] text-[#62c9f5] shadow-sm">
-                <MessageCircle size={25} aria-hidden="true" />
-              </div>
+            <div className="relative flex items-start gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold uppercase tracking-[.14em] text-[#70d7f5]">Мы на связи</p>
                 <h2 className="mt-1 text-lg font-extrabold text-[#e7f6ff]">Нужна помощь?</h2>
-                <p className="mt-2 text-sm leading-6 text-[#c0d9eb]">Свяжитесь с командой Cloudy English. Поможем с аккаунтом, обучением, прогрессом и любыми вопросами о работе приложения.</p>
-                <p className="mt-3 text-sm font-semibold text-[#8cdbfa]">Поддержка в Telegram</p>
-                <a href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#63c1ff] to-[#2c7bef] px-5 py-2.5 text-sm font-bold text-white shadow-[0_5px_0_#1a58b5,0_12px_24px_rgba(0,0,0,0.18)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#258bd7] focus-visible:ring-offset-2">
-                  Связаться <ArrowRight size={17} aria-hidden="true" />
+                <p className="mt-1 text-sm font-semibold text-[#8cdbfa]">Поддержка в Telegram</p>
+                <p className="mt-1 text-sm leading-6 text-[#c0d9eb]">Свяжитесь с командой Cloudy English. Поможем с аккаунтом, обучением, прогрессом и любыми вопросами о работе приложения.</p>
+                <a href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#63c1ff] to-[#2c7bef] px-5 py-2.5 text-sm font-bold text-white shadow-[0_5px_0_#1a58b5,0_12px_24px_rgba(0,0,0,0.18)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#258bd7] focus-visible:ring-offset-2">
+                  Связаться
                 </a>
               </div>
             </div>
           </div>
         </section>
 
-        <footer className="py-5 text-center text-xs text-[#78a9d0]">Cloudy English Academy · Юридический центр</footer>
+        <footer className="py-3 text-center text-xs text-[#78a9d0]">Cloudy English Academy · Юридический центр</footer>
         <a href="/" className="block min-h-10 pb-2 text-center text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]">Вернуться к обучению</a>
       </div>
     </main>
