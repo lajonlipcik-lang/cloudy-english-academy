@@ -21,7 +21,7 @@ describe("server XP policy", () => {
       ach: ["first", "not allowed!"], set: { vol: 4, goal: 9999, remT: "not-time" },
       unknownSecret: "must not survive", user: { id: "attacker" },
     });
-    expect(safe.dn).toEqual({ A1: 6, A2: 0, B1: 2, B2: 0 });
+    expect(safe.dn).toEqual({ A1: 21, A2: 0, B1: 2, B2: 0 });
     expect(safe.streak).toBe(3650);
     expect(safe.acc).toEqual([1_000_000, 0]);
     expect(safe.mis["hello"]).toBe(10_000);
@@ -41,7 +41,10 @@ describe("server XP policy", () => {
     expect(isLessonInLevel(20, "B1")).toBe(true);
     expect(isLessonInLevel(23, "B2")).toBe(true);
     expect(isLessonInLevel(0, "B2")).toBe(false);
-    expect(isLessonInLevel(24, "A1")).toBe(false);
+    expect(isLessonInLevel(24, "A1")).toBe(true);
+    expect(isLessonInLevel(38, "A1")).toBe(true);
+    expect(isLessonInLevel(39, "A1")).toBe(false);
+    expect(isLessonInLevel(6, "A1")).toBe(false);
     expect(isLessonInLevel(1.5, "A1")).toBe(false);
     expect(isLessonInLevel(1, "unknown")).toBe(false);
   });
