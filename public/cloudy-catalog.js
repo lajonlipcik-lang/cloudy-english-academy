@@ -445,7 +445,7 @@ const A1_EXTRA = [
       [
         "В небе облако",
         "There is a cloud in the sky",
-        "are a"
+        "are an"
       ],
       [
         "Это высокое дерево",
