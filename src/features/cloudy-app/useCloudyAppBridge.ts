@@ -181,13 +181,13 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
             email: String(message.email ?? "").trim().toLowerCase(),
             password: String(message.password ?? ""),
           });
-          if (!data.user) throw new Error("Не удалось загрузить аккаунт.");
+          if (error) throw error;
+          if (!data.user || !data.session) throw new Error("Не удалось загрузить аккаунт.");
           const existingAge = Number(data.user.user_metadata?.["age"]);
           if (Number.isInteger(existingAge) && existingAge < 13) {
             await supabase.auth.signOut();
             throw new Error("Регистрация в Cloudy English Academy доступна с 13 лет. Если возраст указан неверно, обратитесь в поддержку.");
           }
-          if (error) throw error;
           accessTokenRef.current = data.session.access_token;
           userIdRef.current = data.user.id;
           const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
@@ -227,14 +227,16 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
             throw new Error("Возраст должен быть указан в полных годах и составлять не менее 13 лет.");
           }
           const currentAge = Number(currentUser.user_metadata?.["age"]);
-          if (hasAgeUpdate && Number.isInteger(currentAge) && currentAge !== rawAge) {
+          const newName = typeof message.name === "string" && message.name.trim() ? message.name.trim().slice(0, 40) : undefined;
+          const hasStoredAge = Number.isInteger(currentAge) && currentAge >= 13 && currentAge <= 120;
+          if (hasAgeUpdate && hasStoredAge && currentAge !== rawAge && !newName) {
             throw new Error("Изменение возраста доступно только через поддержку @cloudysupportt_bot.");
           }
-          const validAge = hasAgeUpdate ? rawAge : null;
-          const newName = typeof message.name === "string" && message.name.trim() ? message.name.trim().slice(0, 40) : undefined;
+          const validAge = hasAgeUpdate && !hasStoredAge ? rawAge : null;
           if (validAge === null && !newName) throw new Error("Укажите корректное имя или возраст.");
           const updateData: Record<string, unknown> = { ...(currentUser.user_metadata ?? {}) };
-          if (validAge !== null) updateData["age"] = validAge;
+          if (hasStoredAge) updateData["age"] = currentAge;
+          else if (validAge !== null) updateData["age"] = validAge;
           if (newName) updateData["name"] = newName;
           const { data, error } = await supabase.auth.updateUser({ data: updateData });
           if (error) throw error;
