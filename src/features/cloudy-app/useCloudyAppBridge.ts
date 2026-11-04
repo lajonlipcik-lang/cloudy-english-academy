@@ -136,7 +136,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
 
       try {
         const accessToken = accessTokenRef.current;
-        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","ai-chat"].includes(String(message.action))) {
+        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","ai-chat","tts"].includes(String(message.action))) {
           if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
           const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
           const api = await import("@/lib/cloudy-ai.functions");
@@ -146,6 +146,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           else if (message.action === "admin-provider-save") result = await api.saveAiProvider({ data: payload as never });
           else if (message.action === "admin-provider-delete") result = await api.deleteAiProvider({ data: payload as never });
           else if (message.action === "admin-provider-test") result = await api.testAiProvider({ data: payload as never });
+          else if (message.action === "tts") result = await api.cloudyTextToSpeech({ data: { accessToken, message: String((payload as any).text ?? "") } });
           else result = await api.cloudyTutorChat({ data: payload as never });
           reply({ ok: true, result }); return;
         }
