@@ -250,7 +250,7 @@ export function LegalPage() {
         </section>
 
         <footer className="py-5 text-center text-xs text-[#78a9d0]">Cloudy English Academy · Юридический центр</footer>
-        <Link to="/" className="block min-h-10 pb-2 text-center text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]">Вернуться к обучению</Link>
+        <a href="/" className="block min-h-10 pb-2 text-center text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]">Вернуться к обучению</a>
       </div>
     </main>
   );
