@@ -211,6 +211,28 @@ function authRequest(action,payload={}){
   setTimeout(()=>{const pending=authPending.get(id);if(pending){authPending.delete(id);reject(new Error('Сервер не ответил. Проверьте соединение и попробуйте снова.'))}},15000);
  });
 }
+// Applies an authenticated cloud snapshot (session message or signIn reply) exactly once per payload;
+// idempotent when the same updated_at arrives twice (signIn reply + onAuthStateChange session message).
+function applyCloudSnapshot(msg){
+ cloudUserId=msg.user.id;
+ const localKey='cl2:'+msg.user.email,localExists=ls(localKey)!==null,localAt=Number(ls('cl2sync:'+msg.user.email)||0),dirtyAt=Number(ls('cl2dirty:'+msg.user.email)||0),remoteAt=msg.progress?.updated_at?Date.parse(msg.progress.updated_at):0;
+ const guestState=(()=>{try{return JSON.parse(ls('cl2')||'{}')}catch(e){return {}}})();
+ const profileLevel=['A1','A2','B1','B2'].includes(msg.learnerProfile?.english_level)?msg.learnerProfile.english_level:'';
+ const profileTested=Boolean(msg.learnerProfile?.placement_test_completed);
+ const remoteState=msg.progress?.state&&typeof msg.progress.state==='object'
+  ?{...msg.progress.state,lv:profileLevel||msg.progress.state.lv||'',tested:profileTested||msg.progress.state.tested?1:0}
+  :profileLevel?{lv:profileLevel,tested:profileTested?1:0}:null;
+ cloudUpdatedAt=msg.progress?.updated_at||null;cloudSyncInFlight=null;cloudSyncPending=null;cloudSyncAttempts=0;cloudSyncPaused=true;
+ Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin,msg.user.age);
+ if(msg.progressLoadFailed){cloudSyncPaused=true;toast('Не удалось загрузить облачный прогресс. Локальные данные сохранены; синхронизация повторится после восстановления связи.',false);return false}
+ cloudBaseState=cloneProgressState(remoteState||{});
+ if(remoteState&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(remoteState));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):(Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age):null),isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
+ else if(!localExists&&!remoteState&&['A1','A2','B1','B2'].includes(guestState.lv)){try{load('cl2');S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save()}catch(e){}}
+ else{queueCloudProgress()}
+ if(profileLevel){S.lv=profileLevel;S.tested=profileTested||S.tested?1:0;save(true)}
+ cloudSyncPaused=false;queueCloudProgress();
+ return true;
+}
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==window.parent||!event.data||event.data.channel!=='cloudy-auth')return;
  const msg=event.data;
@@ -218,23 +240,7 @@ window.addEventListener('message',event=>{
   sessionHydrating=false;
   if(sessionHydrationTimer){clearTimeout(sessionHydrationTimer);sessionHydrationTimer=0;}
   if(msg.ok&&msg.user){
-   cloudUserId=msg.user.id;
-   const localKey='cl2:'+msg.user.email,localExists=ls(localKey)!==null,localAt=Number(ls('cl2sync:'+msg.user.email)||0),dirtyAt=Number(ls('cl2dirty:'+msg.user.email)||0),remoteAt=msg.progress?.updated_at?Date.parse(msg.progress.updated_at):0;
-   const guestState=(()=>{try{return JSON.parse(ls('cl2')||'{}')}catch(e){return {}}})();
-   const profileLevel=['A1','A2','B1','B2'].includes(msg.learnerProfile?.english_level)?msg.learnerProfile.english_level:'';
-   const profileTested=Boolean(msg.learnerProfile?.placement_test_completed);
-   const remoteState=msg.progress?.state&&typeof msg.progress.state==='object'
-    ?{...msg.progress.state,lv:profileLevel||msg.progress.state.lv||'',tested:profileTested||msg.progress.state.tested?1:0}
-    :profileLevel?{lv:profileLevel,tested:profileTested?1:0}:null;
-   cloudUpdatedAt=msg.progress?.updated_at||null;cloudSyncInFlight=null;cloudSyncPending=null;cloudSyncAttempts=0;cloudSyncPaused=true;
-   Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin,msg.user.age);
-   if(msg.progressLoadFailed){cloudSyncPaused=true;toast('Не удалось загрузить облачный прогресс. Локальные данные сохранены; синхронизация повторится после восстановления связи.',false);view();return}
-   cloudBaseState=cloneProgressState(remoteState||{});
-   if(remoteState&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(remoteState));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):(Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age):null),isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
-   else if(!localExists&&!remoteState&&['A1','A2','B1','B2'].includes(guestState.lv)){try{load('cl2');S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save()}catch(e){}}
-   else{queueCloudProgress()}
-   if(profileLevel){S.lv=profileLevel;S.tested=profileTested||S.tested?1:0;save(true)}
-   cloudSyncPaused=false;queueCloudProgress();
+   applyCloudSnapshot(msg);
    view();
   }else if(msg.ok===false){cloudSyncPaused=true;cloudUserId=null;toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false);view()}else{cloudSyncPaused=false;cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
   return;
