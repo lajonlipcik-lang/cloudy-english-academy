@@ -26,12 +26,14 @@ function getTrustedCountry(request: Request): string | null {
 export function isCloudyRegionBlocked(request: Request): boolean {
   const url = new URL(request.url);
   const isReadOnlyRequest = request.method === "GET" || request.method === "HEAD";
+  const isLegalBundleAsset = LEGAL_BUNDLE_PREFIXES.some((prefix) => url.pathname.startsWith(prefix))
+    && LEGAL_BUNDLE_EXTENSIONS.test(url.pathname);
   const isPublicGet = isReadOnlyRequest && (
-    PUBLIC_PATHS.has(url.pathname) ||
-    /\.(?:css|js|mjs|map|png|jpe?g|webp|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname)
+    PUBLIC_PATHS.has(url.pathname) || isLegalBundleAsset
   );
 
-  // The legal center and its static assets remain reachable from every region.
+  // Keep the legal center and only its generated application bundles public.
+  // Root-level learning HTML, scripts, styles and APIs must pass the region gate.
   if (isPublicGet) return false;
   if (isLocalRequest(request)) return false;
 
