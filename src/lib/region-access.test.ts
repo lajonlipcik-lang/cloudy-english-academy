@@ -3,9 +3,8 @@ import { isCloudyRegionBlocked } from "./region-access";
 
 describe("Cloudy regional access gate", () => {
   it("blocks requests identified as coming from Russia", () => {
-    const request = new Request("https://cloudy.example/");
-    Object.defineProperty(request, "headers", {
-      value: new Headers({ "cf-ipcountry": "RU" }),
+    const request = new Request("https://cloudy.example/", {
+      headers: { "cf-ipcountry": "RU" },
     });
     expect(isCloudyRegionBlocked(request)).toBe(true);
   });
