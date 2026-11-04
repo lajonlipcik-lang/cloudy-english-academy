@@ -8,6 +8,7 @@ const ls=(k,v)=>{try{return v===undefined?localStorage.getItem(k):localStorage.s
 function load(key){KEY=key;S=DEF();try{const j=JSON.parse(ls(key)||"{}");S=Object.assign(DEF(),j);S.set=Object.assign(DEF().set,j.set);S.td=Object.assign(DEF().td,j.td);S.dn=Object.assign(DEF().dn,j.dn);if(!j.dn&&j.done&&j.lv===undefined){S.dn.A1=j.done;S.lv="A1"}if(!["A1","A2","B1","B2"].includes(S.lv))S.lv=""}catch(e){}}
 load(ls("cl2s")?"cl2:"+ls("cl2s"):"cl2");
 let cloudUserId=null,cloudSyncTimer=0,cloudSyncRetry=0,cloudSyncInFlight=null,cloudSyncPending=null,cloudSyncSeq=0,cloudLocalRevision=0,cloudSyncAttempts=0,cloudUpdatedAt=null,cloudSyncPaused=false;
+let sessionHydrating=!!ls('cl2s');
 function mergeCloudProgress(remote,local){
  const merged={...remote,...local,xp:Number(remote.xp)||0,wk:remote.wk||local.wk};
  const levels=['A1','A2','B1','B2'];merged.dn={...(remote.dn||{}),...(local.dn||{})};
@@ -80,7 +81,7 @@ function renderInstallGate(){
 }
 function checkCloudyInstall(){if(isInstalledCloudy()){try{localStorage.setItem('cloudyHomeInstalled','1')}catch(e){}view();return}const note=$('#installNote');if(note)note.textContent='Пока Cloudy открыт во вкладке Safari. Вернись на главный экран iPhone и запусти Cloudy с новой иконки — тогда установка подтвердится.';const panel=$('.install-panel');if(panel){panel.classList.remove('shk');void panel.offsetWidth;panel.classList.add('shk')}}
 function ensureCloudyInstallGate(){if(!isAppleMobile()||isInstalledCloudy())return;if(!document.querySelector('#app .install-gate'))renderInstallGate()}
-function bootCloudy(){if(isAppleMobile()&&!isInstalledCloudy()){renderInstallGate();setInterval(ensureCloudyInstallGate,20000);window.addEventListener('pageshow',ensureCloudyInstallGate);window.addEventListener('focus',ensureCloudyInstallGate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureCloudyInstallGate()});return}view()}
+function bootCloudy(){if(isAppleMobile()&&!isInstalledCloudy()){renderInstallGate();setInterval(ensureCloudyInstallGate,20000);window.addEventListener('pageshow',ensureCloudyInstallGate);window.addEventListener('focus',ensureCloudyInstallGate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureCloudyInstallGate()});return}if(sessionHydrating){app.innerHTML=`<div style="min-height:100svh;display:grid;place-items:center;background:var(--bg,#0b1020);color:var(--text,#fff);font:600 15px system-ui"><div style="text-align:center"><div style="font-size:42px;margin-bottom:12px">☁️</div>Загружаем твой прогресс…</div></div>`;return}view()}
 function view(a=1){roll();amb();if(!S.user){if(!ls('cl2welcomeDone'))return introWelcome();return authV()}if(!S.lv)return welcome();SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}">${[learn,quests,lg,prof][T]()}</div>`+nav()}
 function tab(k){if(k!=T){snd("tab");T=k;view()}}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
@@ -161,6 +162,7 @@ window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==window.parent||!event.data||event.data.channel!=='cloudy-auth')return;
  const msg=event.data;
  if(msg.type==='session'){
+  sessionHydrating=false;
   if(msg.ok&&msg.user){
    cloudUserId=msg.user.id;
    const localKey='cl2:'+msg.user.email,localExists=ls(localKey)!==null,localAt=Number(ls('cl2sync:'+msg.user.email)||0),dirtyAt=Number(ls('cl2dirty:'+msg.user.email)||0),remoteAt=msg.progress?.updated_at?Date.parse(msg.progress.updated_at):0;
@@ -178,7 +180,7 @@ window.addEventListener('message',event=>{
    if(profileLevel){S.lv=profileLevel;S.tested=profileTested||S.tested?1:0;save(true)}
    cloudSyncPaused=false;queueCloudProgress();
    view();
-  }else if(msg.ok===false){toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false)}else{cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
+  }else if(msg.ok===false){toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false);view()}else{cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
   return;
  }
  if(msg.type==='progress-save-result'){
