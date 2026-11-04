@@ -7,40 +7,53 @@ function review(){const w=Object.keys(S.mis).slice(0,8).map(en=>[en,ruOf(en)]).f
 function again(){rv?review():go(L)}
 const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button class="spk" onclick="say('${e.en}',1)">${ic('spk')}</button></div><button class="big" id="mic" onclick="rec()">${ic('mic')}</button><p id="rs" style="text-align:center;opacity:.85">Нажмите и произнесите слово</p><button class="btn ghost" onclick="skipP()">ПРОПУСТИТЬ</button>`;
 function skipP(){if(done)return;fx(true,'Пропущено')}
-let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false,lastVoiceTranscript='';
+let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false,lastVoiceTranscript='';
 const { normalizeSpeechText, speechDistance, speechMatches } = window.CloudySpeech;
-function clearCloudyRecognition(){
+function clearCloudyRecognition(active=cloudyRecognition){
  clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
- const active=cloudyRecognition;cloudyRecognition=null;
- if(active)try{active.onresult=active.onerror=active.onend=null;active.stop()}catch(e){}
+ if(active&&cloudyRecognition===active)cloudyRecognition=null;
+ if(active){
+  active.onresult=active.onerror=active.onend=active.onstart=null;
+  try{if(typeof active.abort==='function')active.abort();else active.stop()}catch(e){}
+ }
  const mic=$('#mic');if(mic)mic.classList.remove('rec');
+}
+function finishCloudyRecognition(active,message){
+ if(!active||cloudyRecognition!==active)return;
+ clearCloudyRecognition(active);
+ if(message){const status=$('#rs');if(status)status.textContent=message;}
 }
 function rec(autoRetry=false){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!SR){toast('Голосовой ввод не поддерживается этим браузером. Можно продолжить упражнение вручную.',false);return;}
  if(done)return;
- if(cloudyRecognition){try{cloudyRecognition.stop()}catch(e){}return;}
+ if(cloudyRecognition){
+  const active=cloudyRecognition;
+  cloudyVoiceHandled=true;cloudyVoiceRetryCount=0;clearTimeout(cloudyVoiceRetryTimer);cloudyVoiceRetryTimer=0;
+  finishCloudyRecognition(active,'Прослушивание остановлено. Нажмите на микрофон, чтобы попробовать снова.');
+  return;
+ }
  const exercise=ex[i],mic=$('#mic'),status=$('#rs');
  if(!exercise||!mic)return;
  if(!autoRetry){cloudyVoiceRetryCount=0;cloudyVoiceHandled=false;snd('pick');}
+ clearTimeout(cloudyVoiceRetryTimer);cloudyVoiceRetryTimer=0;
  const recognition=new SR();cloudyRecognition=recognition;
  recognition.lang='en-US';recognition.maxAlternatives=5;recognition.continuous=false;recognition.interimResults=false;
  if(status)status.textContent=autoRetry?'Слушаю ещё раз…':'Слушаю… Говорите чётко';
  mic.classList.add('rec');
- recognition.onstart=()=>{if(status)status.textContent='Слушаю… Говорите чётко';};
+ recognition.onstart=()=>{if(cloudyRecognition===recognition&&status)status.textContent='Слушаю… Говорите чётко';};
  recognition.onresult=ev=>{
-  if(cloudyVoiceHandled||done)return;
+  if(cloudyRecognition!==recognition||cloudyVoiceHandled||done)return;
   const alternatives=[];
   for(let index=ev.resultIndex||0;index<ev.results.length;index++){
    const result=ev.results[index];if(!result.isFinal)continue;
    for(let alt=0;alt<result.length;alt++)alternatives.push({text:result[alt].transcript,confidence:Number(result[alt].confidence)||0});
   }
   if(!alternatives.length)return;
-  cloudyVoiceHandled=true;clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
+  cloudyVoiceHandled=true;
   const best=alternatives.sort((x,y)=>y.confidence-x.confidence).find(x=>speechMatches(x.text,exercise.en));
-  const heard=alternatives[0].text;
-  lastVoiceTranscript=heard;
-  clearCloudyRecognition();
+  const heard=alternatives[0].text;lastVoiceTranscript=heard;
+  clearCloudyRecognition(recognition);
   if(best){
    if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,true,{retry:!!rt});
    ok++;tot++;cmb++;snd('ok',cmb);fx(true,'Отлично! Распознано: '+best.text);
@@ -50,37 +63,44 @@ function rec(autoRetry=false){
   }
  };
  recognition.onerror=ev=>{
-  if(cloudyVoiceHandled)return;
+  if(cloudyRecognition!==recognition||cloudyVoiceHandled)return;
   const error=ev.error||'unknown';
-  if(error==='no-speech'&&cloudyVoiceRetryCount<1){cloudyVoiceRetryCount++;if(status)status.textContent='Не услышал голос. Повторяю попытку…';return;}
-  if(status){
-   status.textContent=error==='not-allowed'||error==='service-not-allowed'?'Нет доступа к микрофону — разрешите его в настройках браузера.':
-    error==='audio-capture'?'Микрофон не найден или занят другим приложением.':
-    error==='network'?'Проблема с соединением при распознавании. Проверьте интернет.':
-    error==='no-speech'?'Не услышал голос. Нажмите на микрофон и попробуйте ещё раз.':
-    'Не удалось распознать речь. Попробуйте ещё раз.';
+  if(error==='no-speech'&&cloudyVoiceRetryCount<1){
+   cloudyVoiceRetryCount++;if(status)status.textContent='Не услышал голос. Повторяю попытку…';return;
   }
-  if(error!=='no-speech')toast(status?.textContent||'Не удалось распознать речь.',false);
+  const message=error==='not-allowed'||error==='service-not-allowed'?'Нет доступа к микрофону — разрешите его в настройках браузера.':
+   error==='audio-capture'?'Микрофон не найден или занят другим приложением.':
+   error==='network'?'Проблема с соединением при распознавании. Проверьте интернет.':
+   error==='no-speech'?'Не услышал голос. Нажмите на микрофон и попробуйте ещё раз.':
+   'Не удалось распознать речь. Попробуйте ещё раз.';
+  cloudyVoiceHandled=true;finishCloudyRecognition(recognition,message);
+  if(error!=='aborted')toast(message,false);
  };
  recognition.onend=()=>{
   if(cloudyRecognition!==recognition)return;
-  cloudyRecognition=null;clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;
-  if(cloudyVoiceHandled||done){if(mic)mic.classList.remove('rec');return;}
+  clearTimeout(cloudyRecognitionTimer);cloudyRecognitionTimer=0;cloudyRecognition=null;
+  if(mic)mic.classList.remove('rec');
+  if(cloudyVoiceHandled||done)return;
   if(cloudyVoiceRetryCount===1){
    cloudyVoiceRetryCount=2;
    if(status)status.textContent='Повторная попытка…';
-   setTimeout(()=>{if(!done&&!cloudyRecognition)rec(true)},350);
+   cloudyVoiceRetryTimer=setTimeout(()=>{
+    cloudyVoiceRetryTimer=0;
+    if(!done&&!cloudyRecognition&&ex[i]===exercise)rec(true);
+   },350);
    return;
   }
-  if(mic)mic.classList.remove('rec');
-  if(status&&!status.textContent.includes('Нет доступа')&&!status.textContent.includes('Микрофон не найден')&&!status.textContent.includes('Проблема с соединением'))status.textContent='Готово. Нажмите на микрофон, чтобы попробовать снова.';
+  if(status)status.textContent='Готово. Нажмите на микрофон, чтобы попробовать снова.';
  };
  try{
   recognition.start();
-  cloudyRecognitionTimer=setTimeout(()=>{if(cloudyRecognition===recognition){if(status)status.textContent='Время прослушивания истекло. Попробуйте ещё раз.';try{recognition.stop()}catch(e){}}},15000);
+  cloudyRecognitionTimer=setTimeout(()=>{
+   if(cloudyRecognition!==recognition)return;
+   cloudyVoiceHandled=true;
+   finishCloudyRecognition(recognition,'Время прослушивания истекло. Нажмите на микрофон и попробуйте ещё раз.');
+  },15000);
  }catch(error){
-  cloudyRecognition=null;mic.classList.remove('rec');
-  if(status)status.textContent='Не удалось запустить микрофон. Проверьте разрешение и попробуйте снова.';
+  cloudyVoiceHandled=true;finishCloudyRecognition(recognition,'Не удалось запустить микрофон. Проверьте разрешение и попробуйте снова.');
   toast('Не удалось запустить распознавание речи.',false);
  }
 }
