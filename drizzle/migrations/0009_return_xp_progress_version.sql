@@ -14,12 +14,12 @@ DECLARE
   v_award integer := 24;
   v_updated_at timestamptz;
 BEGIN
-  IF _user_id IS NULL OR _level NOT IN ('A1', 'A2', 'B1', 'B2') OR _lesson_index NOT BETWEEN 0 AND 23 THEN
+  IF _user_id IS NULL OR _level NOT IN ('A1', 'A2', 'B1', 'B2') OR _lesson_index NOT BETWEEN 0 AND 38 THEN
     RAISE EXCEPTION 'Invalid lesson completion';
   END IF;
 
   IF NOT (
-    (_level = 'A1' AND _lesson_index BETWEEN 0 AND 5) OR
+    (_level = 'A1' AND (_lesson_index BETWEEN 0 AND 5 OR _lesson_index BETWEEN 24 AND 38)) OR
     (_level = 'A2' AND (_lesson_index BETWEEN 6 AND 8 OR _lesson_index BETWEEN 15 AND 17)) OR
     (_level = 'B1' AND (_lesson_index BETWEEN 9 AND 11 OR _lesson_index BETWEEN 18 AND 20)) OR
     (_level = 'B2' AND (_lesson_index BETWEEN 12 AND 14 OR _lesson_index BETWEEN 21 AND 23))
