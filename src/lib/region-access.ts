@@ -148,8 +148,7 @@ export function createCloudyRegionBlockedResponse(): Response {
     <p class="lead">К сожалению, Cloudy English Academy пока не может предоставить доступ из страны, определённой для вашего подключения.</p>
     <p class="details">Это связано с региональными ограничениями и доступностью технических поставщиков сервиса. Если вы считаете, что страна определена неверно, пожалуйста, свяжитесь с нашей поддержкой.</p>
     <nav class="links" aria-label="Документы">
-      <a href="/legal">Пользовательское соглашение</a>
-      <a href="/legal">Доступность по странам</a>
+      <a href="/legal">Документы и доступность по странам</a>
     </nav>
     <a class="support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">Связаться с поддержкой</a>
     <p class="footer">Cloudy English Academy · © 2026</p>
