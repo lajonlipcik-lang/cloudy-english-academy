@@ -24,8 +24,11 @@ function getTrustedCountry(request: Request): string | null {
 
 export function isCloudyRegionBlocked(request: Request): boolean {
   const url = new URL(request.url);
-  const isPublicGet = PUBLIC_PATHS.has(url.pathname) &&
-    (request.method === "GET" || request.method === "HEAD");
+  const isReadOnlyRequest = request.method === "GET" || request.method === "HEAD";
+  const isPublicGet = isReadOnlyRequest && (
+    PUBLIC_PATHS.has(url.pathname) ||
+    /\\.(?:css|js|mjs|map|png|jpe?g|webp|svg|ico|woff2?|ttf|otf)$/i.test(url.pathname)
+  );
 
   // Keep the legal center reachable from blocked regions and from users
   // whose country cannot be resolved, so the restriction can be explained.
