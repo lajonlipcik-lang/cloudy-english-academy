@@ -5,7 +5,7 @@ export const CLOUDY_LESSON_XP = 24;
 export const CLOUDY_MAX_DAILY_LESSON_AWARDS = 5;
 
 const LESSONS_BY_LEVEL: Record<string, readonly number[]> = {
-  A1: [0, 1, 2, 3, 4, 5],
+  A1: [0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38],
   A2: [6, 7, 8, 15, 16, 17],
   B1: [9, 10, 11, 18, 19, 20],
   B2: [12, 13, 14, 21, 22, 23],
@@ -28,7 +28,7 @@ export function sanitizeCloudyProgress(raw: unknown): CloudyState {
   state.streak = clampInt(state.streak, 0, 3650);
   state.last = state.last.slice(0, 40);
   state.dn = {
-    A1: clampInt(state.dn.A1, 0, 6),
+    A1: clampInt(state.dn.A1, 0, 21),
     A2: clampInt(state.dn.A2, 0, 6),
     B1: clampInt(state.dn.B1, 0, 6),
     B2: clampInt(state.dn.B2, 0, 6),
