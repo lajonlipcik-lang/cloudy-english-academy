@@ -147,7 +147,7 @@ export function LegalPage() {
   return (
     <main className="min-h-screen overflow-x-hidden bg-[#06152b] px-4 pb-10 pt-[max(18px,env(safe-area-inset-top))] text-[#e7f4ff]" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       <div className="mx-auto max-w-3xl">
-        <header className="border-b border-[#17456d] pb-6 pt-3">
+        <header className="pb-6 pt-3">
           <div className="flex items-center gap-3">
             <CloudyMascot />
             <div>
@@ -174,7 +174,7 @@ export function LegalPage() {
             >
               <ArrowLeft size={16} aria-hidden="true" /> Все документы
             </button>
-            <div className="mb-6 border-b border-[#17456d] pb-4">
+            <div className="mb-6">
               <h2 id="legal-document-title" className="text-xl font-bold text-[#e8f5ff]">{active.title}</h2>
               <p className="mt-1 text-xs text-[#55c9f2]">Версия 1.0 · 4 ноября 2026 года</p>
             </div>
@@ -196,12 +196,12 @@ export function LegalPage() {
           </section>
         ) : (
           <>
-            <section className="border-b border-[#17456d] py-6 text-[#d8edff]">
+            <section className="py-6 text-[#d8edff]">
               <div className="mb-3 flex items-center gap-2">
                 <ShieldCheck className="text-[#268dcc]" size={20} aria-hidden="true" />
                 <h2 className="text-lg font-extrabold">Юридическая информация</h2>
               </div>
-              <div className="divide-y divide-[#173b5c]">
+              <div className="space-y-1">
                 {LEGAL_DOCUMENTS.map((document, index) => {
                   const Icon = document.icon;
                   return (
@@ -210,14 +210,14 @@ export function LegalPage() {
                       type="button"
                       onClick={() => { setActiveId(document.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                       aria-label={`Открыть документ: ${document.title}`}
-                      className="flex min-h-[68px] w-full items-center gap-3 py-4 text-left transition hover:bg-[#102d4b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]"
+                      className="flex min-h-[76px] w-full items-center gap-3 rounded-xl px-3 py-4 text-left transition hover:bg-[#102d4b]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62c6f3]"
                     >
-                      <span className="w-7 shrink-0 text-sm tabular-nums text-[#78a9d0]">{String(index + 1).padStart(2, "0")}</span>
+                      
                       <span className="min-w-0 flex-1">
                         <span className="block text-[15px] font-semibold text-[#d8edff]">{document.title}</span>
                         <span className="mt-1 block text-sm leading-5 text-[#91b0cc]">{document.description}</span>
                       </span>
-                      <Icon className="hidden h-5 w-5 shrink-0 text-[#62c6f3] sm:block" aria-hidden="true" />
+                      <Icon className="h-5 w-5 shrink-0 text-[#62c6f3]" aria-hidden="true" />
                       <ArrowRight className="h-4 w-4 shrink-0 text-[#62c6f3]" aria-hidden="true" />
                     </button>
                   );
@@ -248,7 +248,7 @@ export function LegalPage() {
           </div>
         </section>
 
-        <footer className="border-t border-[#d2e4f7] py-5 text-center text-xs text-[#78a9d0]">Cloudy English Academy · Юридический центр</footer>
+        <footer className="py-5 text-center text-xs text-[#78a9d0]">Cloudy English Academy · Юридический центр</footer>
         <Link to="/" className="block min-h-10 pb-2 text-center text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]">Вернуться к обучению</Link>
       </div>
     </main>
