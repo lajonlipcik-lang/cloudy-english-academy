@@ -18,16 +18,22 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string
+          english_level: string | null
+          placement_test_completed: boolean
           id: string
         }
         Insert: {
           created_at?: string
           display_name?: string
+          english_level?: string | null
+          placement_test_completed?: boolean
           id: string
         }
         Update: {
           created_at?: string
           display_name?: string
+          english_level?: string | null
+          placement_test_completed?: boolean
           id?: string
         }
         Relationships: []
