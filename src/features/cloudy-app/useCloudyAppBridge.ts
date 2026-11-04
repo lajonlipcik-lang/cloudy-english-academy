@@ -20,64 +20,56 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
     const syncSession = async () => {
       const currentFrame = frameRef.current;
       if (!currentFrame?.contentWindow) return;
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        send({ type: "session", ok: false, error: toUserErrorMessage(error, "auth") });
-        return;
-      }
-      const user = data.session?.user;
-      accessTokenRef.current = data.session?.access_token ?? null;
-      userIdRef.current = user?.id ?? null;
-      let ownerIsAdmin = user?.app_metadata?.["role"] === "admin";
-      if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) {
-        try {
-          const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
-          ownerIsAdmin = role.isAdmin;
-        } catch {
-          console.error("[cloudy-admin] owner role refresh failed");
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        const user = data.session?.user;
+        accessTokenRef.current = data.session?.access_token ?? null;
+        userIdRef.current = user?.id ?? null;
+        let ownerIsAdmin = user?.app_metadata?.["role"] === "admin";
+        if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) {
+          try {
+            const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
+            ownerIsAdmin = role.isAdmin;
+          } catch {
+            console.error("[cloudy-admin] owner role refresh failed");
+          }
         }
-      }
-      let progress: { state: unknown; updated_at: string } | null = null;
-      let learnerProfile: { english_level: string | null; placement_test_completed: boolean } | null = null;
-      let progressLoadFailed = false;
-      if (user) {
-        const { data: saved, error: progressError } = await supabase
-          .from("user_progress")
-          .select("state, updated_at")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        progress = saved;
-        if (progressError) {
-          progressLoadFailed = true;
-          console.warn("[cloudy-progress] cloud progress could not be loaded");
+        let progress: { state: unknown; updated_at: string } | null = null;
+        let learnerProfile: { english_level: string | null; placement_test_completed: boolean } | null = null;
+        let progressLoadFailed = false;
+        if (user) {
+          const { data: saved, error: progressError } = await supabase.from("user_progress").select("state, updated_at").eq("user_id", user.id).maybeSingle();
+          progress = saved;
+          if (progressError) {
+            progressLoadFailed = true;
+            console.warn("[cloudy-progress] cloud progress could not be loaded");
+          }
+          const { data: profile, error: profileError } = await supabase.from("profiles").select("english_level, placement_test_completed").eq("id", user.id).maybeSingle();
+          if (profileError) console.warn("[cloudy-progress] learner profile could not be loaded");
+          else learnerProfile = profile;
         }
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("english_level, placement_test_completed")
-          .eq("id", user.id)
-          .maybeSingle();
-        if (profileError) {
-          console.warn("[cloudy-progress] learner profile could not be loaded");
-        } else {
-          learnerProfile = profile;
-        }
+        const rawAge = Number(user?.user_metadata?.["age"]);
+        send({
+          type: "session",
+          ok: true,
+          user: user ? {
+            id: user.id,
+            email: user.email ?? "",
+            name: String(user.user_metadata?.["name"] ?? user.user_metadata?.["display_name"] ?? ""),
+            age: Number.isInteger(rawAge) && rawAge >= 5 && rawAge <= 120 ? rawAge : null,
+            isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com",
+          } : null,
+          progress,
+          learnerProfile,
+          progressLoadFailed,
+        });
+      } catch (err) {
+        accessTokenRef.current = null;
+        userIdRef.current = null;
+        console.error("[cloudy-auth] syncSession failed:", err);
+        send({ type: "session", ok: false, error: toUserErrorMessage(err, "auth") });
       }
-      send({
-        type: "session",
-        ok: true,
-        user: user
-          ? {
-              id: user.id,
-              email: user.email ?? "",
-              name: String(user.user_metadata?.["name"] ?? user.user_metadata?.["display_name"] ?? ""),
-              age: Number.isInteger(Number(user.user_metadata?.["age"])) && Number(user.user_metadata?.["age"]) >= 5 && Number(user.user_metadata?.["age"]) <= 120 ? Number(user.user_metadata?.["age"]) : null,
-              isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com",
-            }
-          : null,
-        progress,
-        learnerProfile,
-        progressLoadFailed,
-      });
     };
 
     const onMessage = async (event: MessageEvent<unknown>) => {
@@ -161,7 +153,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const { data, error } = await supabase.auth.signUp({
             email: String(message.email ?? "").trim().toLowerCase(),
             password: String(message.password ?? ""),
-            options: { data: { name: String(message.name ?? "").trim(), age: Number.isInteger(Number(message.age)) && Number(message.age) >= 5 && Number(message.age) <= 120 ? Number(message.age) : null } },
+            options: { data: {} },
           });
           if (error) throw error;
           if (!data.session || !data.user) {
@@ -201,6 +193,41 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
               name: String(data.user.user_metadata?.["name"] ?? data.user.user_metadata?.["display_name"] ?? ""),
               age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 5 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
               isAdmin: role.isAdmin,
+            },
+          });
+          return;
+        }
+
+        if (message.action === "updateProfile") {
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) throw sessionError;
+          const currentUser = sessionData.session?.user;
+          if (!currentUser) throw new Error("Сначала войдите в аккаунт.");
+          const rawAge = Number(message.age);
+          const validAge = Number.isInteger(rawAge) && rawAge >= 5 && rawAge <= 120 ? rawAge : null;
+          const newName = typeof message.name === "string" && message.name.trim() ? message.name.trim().slice(0, 40) : undefined;
+          if (validAge === null && !newName) throw new Error("Укажите корректное имя или возраст.");
+          const updateData: Record<string, unknown> = { ...(currentUser.user_metadata ?? {}) };
+          if (validAge !== null) updateData.age = validAge;
+          if (newName) updateData.name = newName;
+          const { data, error } = await supabase.auth.updateUser({ data: updateData });
+          if (error) throw error;
+          if (!data.user) throw new Error("Не удалось обновить профиль.");
+          if (newName) {
+            const { error: profileError } = await supabase.from("profiles").update({ display_name: newName }).eq("id", data.user.id);
+            if (profileError) throw profileError;
+          }
+          accessTokenRef.current = sessionData.session?.access_token ?? accessTokenRef.current;
+          userIdRef.current = data.user.id;
+          const updatedAge = Number(data.user.user_metadata?.["age"]);
+          reply({
+            ok: true,
+            user: {
+              id: data.user.id,
+              email: data.user.email ?? "",
+              name: String(data.user.user_metadata?.["name"] ?? data.user.user_metadata?.["display_name"] ?? newName ?? "Ученик"),
+              age: Number.isInteger(updatedAge) && updatedAge >= 5 && updatedAge <= 120 ? updatedAge : null,
+              isAdmin: data.user.email?.toLowerCase() === "lajonlipcik@gmail.com",
             },
           });
           return;
