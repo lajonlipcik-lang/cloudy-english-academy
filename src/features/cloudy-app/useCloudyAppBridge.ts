@@ -3,10 +3,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { ensureOwnerAdmin } from "@/lib/admin-role.functions";
 import { toUserErrorMessage } from "@/lib/cloudy/user-errors";
 
-type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; age?: unknown; email?: unknown; password?: unknown; state?: unknown; payload?: unknown; lessonIndex?: unknown; level?: unknown; expectedUpdatedAt?: unknown; syncId?: unknown };
+type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; age?: unknown; email?: unknown; password?: unknown; state?: unknown; userId?: unknown; payload?: unknown; lessonIndex?: unknown; level?: unknown; expectedUpdatedAt?: unknown; syncId?: unknown };
 
 export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>) {
   const accessTokenRef = useRef<string | null>(null);
+  const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -26,6 +27,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
       }
       const user = data.session?.user;
       accessTokenRef.current = data.session?.access_token ?? null;
+      userIdRef.current = user?.id ?? null;
       let ownerIsAdmin = user?.app_metadata?.["role"] === "admin";
       if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) {
         try {
@@ -92,7 +94,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
       if (message.type === "progress-save") {
         const state = message.state;
         const accessToken = accessTokenRef.current;
-        if (!state || typeof state !== "object" || Array.isArray(state) || !accessToken) {
+        if (!state || typeof state !== "object" || Array.isArray(state) || !accessToken || typeof message.userId !== "string" || message.userId !== userIdRef.current) {
           send({ type: "progress-save-result", ok: false, error: "Сессия истекла. Войдите снова.", syncId: message.syncId });
           return;
         }
@@ -167,6 +169,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
             return;
           }
           accessTokenRef.current = data.session.access_token;
+          userIdRef.current = data.user.id;
           const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
           reply({
             ok: true,
@@ -204,6 +207,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
 
         if (message.action === "signOut") {
           accessTokenRef.current = null;
+          userIdRef.current = null;
           const { error } = await supabase.auth.signOut();
           if (error) throw error;
           reply({ ok: true });
