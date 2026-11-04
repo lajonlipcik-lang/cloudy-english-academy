@@ -72,7 +72,49 @@ let AC,MG;
 function snd(t,c=0){if(!S.set.snd)return;try{if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();MG=AC.createGain();MG.connect(AC.destination)}if(AC.state=="suspended")AC.resume();MG.gain.value=S.set.vol;const b=1+Math.min(c,7)*.07;
 const P={tap:[[560,0,.07,"triangle"]],pick:[[420,0,.08,"sine",640],[640,.05,.08]],tab:[[760,0,.07,"sine",520]],sheet:[[300,0,.25,"sine",700]],go:[[330,0,.3,"sine",990]],ok:[[523*b,0,.18],[784*b,.09,.26]],match:[[880,0,.12],[1175,.07,.2]],bad:[[220,0,.18,"sawtooth",140],[150,.14,.22,"sawtooth",100]],win:[[523,0,.2],[659,.12,.2],[784,.24,.2],[1047,.36,.5]],chest:[[392,0,.15],[523,.09,.15],[659,.18,.15],[784,.27,.15],[1047,.36,.15],[1319,.5,.6]],star:[[1200,0,.15],[1600,.07,.25]]}[t];
 P.forEach(([f,d,l,w,e])=>{const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+d;o.type=w||"sine";o.frequency.setValueAtTime(f,s);if(e)o.frequency.exponentialRampToValueAtTime(e,s+l);g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(t=="bad"?.12:.22,s+.02);g.gain.exponentialRampToValueAtTime(.0001,s+l+.05);o.connect(g);g.connect(MG);o.start(s);o.stop(s+l+.1)})}catch(e){}}
-function say(t,f){if(!f&&!S.set.voice)return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-US";u.rate=.9;speechSynthesis.speak(u)}catch(e){}}
+const cloudyMaleVoiceNames=/^(alex|aaron|fred|eddy|reed|tom|bruce|daniel|arthur|ralph)(\s|$)/i;
+function cloudySelectMaleAmericanVoice(voices){
+ const american=voices.filter(v=>/^en-US$/i.test(v.lang||""));
+ return american.find(v=>cloudyMaleVoiceNames.test(v.name||""))
+  ||american.find(v=>/\b(male|masculine)\b/i.test(v.name||""))
+  ||null;
+}
+let cloudySpeechRequest=0;
+function say(t,f){
+ if(!f&&!S.set.voice)return;
+ if(!t||typeof speechSynthesis==="undefined"||typeof SpeechSynthesisUtterance==="undefined")return;
+ try{
+  const request=++cloudySpeechRequest;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(String(t));
+  u.lang="en-US";u.rate=.92;
+  const speakWithAvailableVoice=()=>{
+   if(request!==cloudySpeechRequest)return;
+   const voices=speechSynthesis.getVoices();
+   const maleVoice=cloudySelectMaleAmericanVoice(voices);
+   if(maleVoice)u.voice=maleVoice;
+   speechSynthesis.speak(u);
+  };
+  const voices=speechSynthesis.getVoices();
+  if(voices.length)speakWithAvailableVoice();
+  else{
+   let started=false;
+   const onVoicesChanged=()=>{
+    if(started)return;
+    started=true;
+    speechSynthesis.removeEventListener?.("voiceschanged",onVoicesChanged);
+    speakWithAvailableVoice();
+   };
+   speechSynthesis.addEventListener?.("voiceschanged",onVoicesChanged,{once:true});
+   setTimeout(()=>{
+    if(started)return;
+    started=true;
+    speechSynthesis.removeEventListener?.("voiceschanged",onVoicesChanged);
+    speakWithAvailableVoice();
+   },1200);
+  }
+ }catch(e){}
+}
 function conf(n=40){const c=["#fff","#bfe0ff","#4db3ff","#ffd35a","#38d39a"];for(let k=0;k<n;k++){const d=document.createElement("i");d.className="cf";d.style.cssText=`left:${Math.random()*100}%;width:${6+Math.random()*6}px;height:${10+Math.random()*8}px;background:${c[k%5]};--t:${2.4+Math.random()*1.6}s;--dx:${(Math.random()-.5)*160}px;--r:${Math.random()*900}deg;animation-delay:${Math.random()*.5}s`;document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}}
 const mascot=(m="h")=>`<svg class="ms" viewBox="0 0 100 80"><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#gb)"/><g class="eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.800" fill="#fff"/><circle cx="64" cy="43" r="1.800" fill="#fff"/></g><path d="${m=="s"?"M44 60q7-7 14 0":"M44 54q7 8 14 0"}" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg>`;
 function sheet(h){const s=document.createElement("div");s.className="sb";s.innerHTML=`<div class="sh">${h}</div>`;s.onclick=e=>{if(e.target==s)closeSh()};document.body.appendChild(s);snd("sheet")}

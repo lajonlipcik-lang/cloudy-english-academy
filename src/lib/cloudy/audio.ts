@@ -41,15 +41,54 @@ export function snd(t: SoundName, c = 0) {
 }
 
 export const ttsSupported = () => typeof window !== "undefined" && "speechSynthesis" in window;
+
+const maleAmericanVoiceName = /^(alex|aaron|fred|eddy|reed|tom|bruce|daniel|arthur|ralph)(\s|$)/i;
+
+function selectMaleAmericanVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
+  const american = voices.filter((voice) => /^en-US$/i.test(voice.lang || ""));
+  return american.find((voice) => maleAmericanVoiceName.test(voice.name || ""))
+    || american.find((voice) => /\b(male|masculine)\b/i.test(voice.name || ""))
+    || null;
+}
+
+let speechRequestId = 0;
+
 export function say(t: string, force = false) {
   if (!force && !cfg.voice) return;
-  if (!ttsSupported()) return;
+  if (!ttsSupported() || !t) return;
   try {
+    const requestId = ++speechRequestId;
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(t);
-    u.lang = "en-US"; u.rate = 0.9;
-    speechSynthesis.speak(u);
-  } catch { /* ignore */ }
+    const utterance = new SpeechSynthesisUtterance(t);
+    utterance.lang = "en-US";
+    utterance.rate = 0.92;
+
+    const speakWithAvailableVoice = () => {
+      if (requestId !== speechRequestId) return;
+      const voice = selectMaleAmericanVoice(speechSynthesis.getVoices());
+      if (voice) utterance.voice = voice;
+      speechSynthesis.speak(utterance);
+    };
+
+    if (speechSynthesis.getVoices().length) {
+      speakWithAvailableVoice();
+    } else {
+      let started = false;
+      const onVoicesChanged = () => {
+        if (started) return;
+        started = true;
+        speechSynthesis.removeEventListener?.("voiceschanged", onVoicesChanged);
+        speakWithAvailableVoice();
+      };
+      speechSynthesis.addEventListener?.("voiceschanged", onVoicesChanged, { once: true });
+      window.setTimeout(() => {
+        if (started) return;
+        started = true;
+        speechSynthesis.removeEventListener?.("voiceschanged", onVoicesChanged);
+        speakWithAvailableVoice();
+      }, 1200);
+    }
+  } catch { /* speech synthesis unavailable */ }
 }
 
 export const getSR = (): any =>
