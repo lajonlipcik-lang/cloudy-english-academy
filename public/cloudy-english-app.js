@@ -18,6 +18,15 @@ const progressNumber=value=>Number.isFinite(Number(value))?Number(value):0;
 const mergeCounter=(remoteValue,localValue,baseValue)=>Math.max(0,progressNumber(remoteValue)+progressNumber(localValue)-progressNumber(baseValue));
 function mergeCloudProgress(remote,local,base={}){
  const merged={...remote,...local,xp:progressNumber(remote.xp),wk:remote.wk||local.wk};
+ // Merge each preference independently. A stale device must not overwrite
+ // unrelated settings changed on another device (voice, volume, theme, etc.).
+ const settingKeys=new Set([...Object.keys(remote.set||{}),...Object.keys(local.set||{}),...Object.keys(base.set||{})]);
+ merged.set={};
+ settingKeys.forEach(key=>{
+  const localValue=local.set?.[key],remoteValue=remote.set?.[key],baseValue=base.set?.[key];
+  const localChanged=JSON.stringify(localValue)!==JSON.stringify(baseValue);
+  merged.set[key]=localChanged&&localValue!==undefined?localValue:remoteValue!==undefined?remoteValue:localValue;
+ });
  const levels=['A1','A2','B1','B2'];merged.dn={...(remote.dn||{}),...(local.dn||{})};
  levels.forEach(k=>merged.dn[k]=Math.max(progressNumber(remote.dn?.[k]),progressNumber(local.dn?.[k])));
  merged.done=Math.max(progressNumber(remote.done),progressNumber(local.done));
