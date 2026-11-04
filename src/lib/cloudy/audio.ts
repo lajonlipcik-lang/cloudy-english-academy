@@ -42,12 +42,12 @@ export function snd(t: SoundName, c = 0) {
 
 export const ttsSupported = () => typeof window !== "undefined" && "speechSynthesis" in window;
 
-const maleAmericanVoiceName = /^(alex|aaron|fred|eddy|reed|tom|bruce|daniel|arthur|ralph)(\\s|$)/i;
+const maleAmericanVoiceName = /^(alex|aaron|fred|eddy|reed|tom|bruce|daniel|arthur|ralph)(\s|$)/i;
 
 function selectMaleAmericanVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
   const american = voices.filter((voice) => /^en-US$/i.test(voice.lang || ""));
   return american.find((voice) => maleAmericanVoiceName.test(voice.name || ""))
-    || american.find((voice) => /\\b(male|masculine)\\b/i.test(voice.name || ""))
+    || american.find((voice) => /\b(male|masculine)\b/i.test(voice.name || ""))
     || null;
 }
 
