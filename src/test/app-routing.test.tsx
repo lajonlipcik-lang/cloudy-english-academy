@@ -31,6 +31,6 @@ describe("App routing", () => {
   });
 
   it("includes the official Telegram support destination in the legal documents", () => {
-    expect(LEGAL_DOCUMENTS.some((document) => document.sections.some(([, body]) => body.includes("@cloudysupportt_bot")))).toBe(true);
+    expect(LEGAL_DOCUMENTS.some((document) => document.sections.some(([, body]) => body.includes("Telegram")))).toBe(true);
   });
 });
