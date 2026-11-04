@@ -127,7 +127,12 @@ function draw(){const e=ex[i];sel=null;built=[];done=false;ml=null;mc=0;let b;
  else if(e.k=="b")b=`<h2>${e.title}</h2><div class="qq" style="font-size:24px">${e.q}</div><div class="ans" id="ans"></div><div class="bank">${e.o.map((o,k)=>`<button class="chip" id="c${k}" onclick="tog(${k})">${o}</button>`).join("")}</div>`;
  else if(e.k=="p")b=PB(e);else b=`<h2>${e.title||"Найдите пары"}</h2><div class="mt"><div>${e.L.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(0,'${id}',this)">${t}</button>`).join("")}</div><div>${e.R.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(1,'${id}',this)">${t}</button>`).join("")}</div></div>`;
  app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic("x")}</button><div class="bar"><i style="width:${i/ex.length*100}%"></i></div><span class="hp" id="hp">${ic("heart")}${hp}</span></div><div class="body">${b}</div></div>`+(e.k=="m"||e.k=="p"?'<div class="foot" id="ft" style="display:none"></div>':`<div class="foot" id="ft"><button class="btn" id="go" disabled onclick="check()">ПРОВЕРИТЬ</button></div>`);
- requestAnimationFrame(()=>{const f=$(".bar i");if(f)f.style.width=i/ex.length*100+"%"});
+ requestAnimationFrame(()=>{const f=$(".bar i");if(f)f.style.width=i/ex.length*100+"%";
+  const target=$(".body");if(!target)return;const rect=target.getBoundingClientRect();
+  const footer=$(".foot"),visibleBottom=window.innerHeight-(footer&&footer.style.display!=="none"?footer.getBoundingClientRect().height:0)-12;
+  let delta=0;if(rect.top<8)delta=rect.top-8;else if(rect.bottom>visibleBottom)delta=rect.bottom-visibleBottom;
+  if(Math.abs(delta)>24){const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;window.scrollTo({top:Math.max(0,window.scrollY+delta),behavior:reduce?"auto":"smooth"});}
+ });
  if(e.k=="l")setTimeout(()=>say(e.en,1),400);if(e.k=="c"&&e.spk)setTimeout(()=>say(e.en),400)}
 function pick(k){if(done)return;sel=k;snd("pick");document.querySelectorAll(".opt").forEach((b,j)=>b.classList.toggle("sel",j==k));$("#go").disabled=false}
 function tog(k){if(done)return;snd("tap");const p=built.indexOf(k);p>-1?built.splice(p,1):built.push(k);const e=ex[i];$("#ans").innerHTML=built.map(j=>`<button class="chip" onclick="tog(${j})">${e.o[j]}</button>`).join("");e.o.forEach((_,j)=>$("#c"+j).classList.toggle("gone",built.includes(j)));$("#go").disabled=!built.length}

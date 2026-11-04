@@ -33,6 +33,724 @@ P('Инновации','innovation=инновация,algorithm=алгоритм
 P('Культура','heritage=наследие,tradition=традиция,exhibition=выставка,ancient=древний,masterpiece=шедевр,influence=влияние','Мы посетили выставку=We visited the exhibition=heritage the;Это настоящий шедевр=It is a true masterpiece=ancient a'),
 P('Карьера','promotion=повышение,colleague=коллега,resign=уволиться,experience=опыт,demanding=требовательный,workload=нагрузка','Я получил повышение=I got a promotion=colleague the;У него большой опыт=He has a lot of experience=workload a')
 );
+
+// 150 curated A1 practice items: 15 new lessons × (5 vocabulary + 1 matching + 4 sentence-building).
+const A1_EXTRA = [
+  {
+    "t": "Люди и друзья",
+    "w": [
+      [
+        "friend",
+        "друг"
+      ],
+      [
+        "boy",
+        "мальчик"
+      ],
+      [
+        "girl",
+        "девочка"
+      ],
+      [
+        "person",
+        "человек"
+      ],
+      [
+        "people",
+        "люди"
+      ]
+    ],
+    "s": [
+      [
+        "Это мой друг",
+        "This is my friend",
+        "are the"
+      ],
+      [
+        "Она хорошая девочка",
+        "She is a good girl",
+        "am the"
+      ],
+      [
+        "У меня два друга",
+        "I have two friends",
+        "has a"
+      ],
+      [
+        "Они мои друзья",
+        "They are my friends",
+        "is the"
+      ]
+    ]
+  },
+  {
+    "t": "Мой день",
+    "w": [
+      [
+        "wake up",
+        "просыпаться"
+      ],
+      [
+        "get up",
+        "вставать"
+      ],
+      [
+        "breakfast",
+        "завтрак"
+      ],
+      [
+        "lunch",
+        "обед"
+      ],
+      [
+        "dinner",
+        "ужин"
+      ]
+    ],
+    "s": [
+      [
+        "Я встаю в семь",
+        "I get up at seven",
+        "is the"
+      ],
+      [
+        "Мы завтракаем дома",
+        "We have breakfast at home",
+        "has a"
+      ],
+      [
+        "Она обедает в школе",
+        "She has lunch at school",
+        "have the"
+      ],
+      [
+        "Я ужинаю с семьёй",
+        "I have dinner with my family",
+        "is a"
+      ]
+    ]
+  },
+  {
+    "t": "В школе",
+    "w": [
+      [
+        "teacher",
+        "учитель"
+      ],
+      [
+        "student",
+        "ученик"
+      ],
+      [
+        "pencil",
+        "карандаш"
+      ],
+      [
+        "pen",
+        "ручка"
+      ],
+      [
+        "classroom",
+        "класс"
+      ]
+    ],
+    "s": [
+      [
+        "Мой учитель добрый",
+        "My teacher is kind",
+        "are the"
+      ],
+      [
+        "Я ученик",
+        "I am a student",
+        "is the"
+      ],
+      [
+        "Это твоя ручка",
+        "This is your pen",
+        "are a"
+      ],
+      [
+        "У меня есть карандаш",
+        "I have a pencil",
+        "has the"
+      ]
+    ]
+  },
+  {
+    "t": "Части тела",
+    "w": [
+      [
+        "head",
+        "голова"
+      ],
+      [
+        "hand",
+        "рука"
+      ],
+      [
+        "eye",
+        "глаз"
+      ],
+      [
+        "nose",
+        "нос"
+      ],
+      [
+        "mouth",
+        "рот"
+      ]
+    ],
+    "s": [
+      [
+        "У меня две руки",
+        "I have two hands",
+        "has a"
+      ],
+      [
+        "У неё голубые глаза",
+        "She has blue eyes",
+        "have the"
+      ],
+      [
+        "Это мой нос",
+        "This is my nose",
+        "are a"
+      ],
+      [
+        "Открой рот",
+        "Open your mouth",
+        "opens the"
+      ]
+    ]
+  },
+  {
+    "t": "Животные",
+    "w": [
+      [
+        "dog",
+        "собака"
+      ],
+      [
+        "cat",
+        "кошка"
+      ],
+      [
+        "bird",
+        "птица"
+      ],
+      [
+        "fish",
+        "рыба"
+      ],
+      [
+        "horse",
+        "лошадь"
+      ]
+    ],
+    "s": [
+      [
+        "У меня есть собака",
+        "I have a dog",
+        "has the"
+      ],
+      [
+        "Кошка маленькая",
+        "The cat is small",
+        "are a"
+      ],
+      [
+        "Птица умеет летать",
+        "A bird can fly",
+        "is the"
+      ],
+      [
+        "Лошади быстрые",
+        "Horses are fast",
+        "is a"
+      ]
+    ]
+  },
+  {
+    "t": "Еда и напитки",
+    "w": [
+      [
+        "banana",
+        "банан"
+      ],
+      [
+        "orange",
+        "апельсин"
+      ],
+      [
+        "egg",
+        "яйцо"
+      ],
+      [
+        "rice",
+        "рис"
+      ],
+      [
+        "tea",
+        "чай"
+      ]
+    ],
+    "s": [
+      [
+        "Я ем банан",
+        "I eat a banana",
+        "drinks the"
+      ],
+      [
+        "Она любит апельсины",
+        "She likes oranges",
+        "like a"
+      ],
+      [
+        "На завтрак я ем яйцо",
+        "I eat an egg for breakfast",
+        "a the"
+      ],
+      [
+        "Мы пьём чай",
+        "We drink tea",
+        "drinks an"
+      ]
+    ]
+  },
+  {
+    "t": "Места вокруг нас",
+    "w": [
+      [
+        "school",
+        "школа"
+      ],
+      [
+        "hospital",
+        "больница"
+      ],
+      [
+        "supermarket",
+        "супермаркет"
+      ],
+      [
+        "library",
+        "библиотека"
+      ],
+      [
+        "cinema",
+        "кинотеатр"
+      ]
+    ],
+    "s": [
+      [
+        "Моя школа рядом",
+        "My school is near",
+        "are the"
+      ],
+      [
+        "Больница большая",
+        "The hospital is big",
+        "are a"
+      ],
+      [
+        "Я иду в библиотеку",
+        "I go to the library",
+        "goes a"
+      ],
+      [
+        "Кинотеатр рядом с домом",
+        "The cinema is near my home",
+        "are a"
+      ]
+    ]
+  },
+  {
+    "t": "Транспорт",
+    "w": [
+      [
+        "bus",
+        "автобус"
+      ],
+      [
+        "train",
+        "поезд"
+      ],
+      [
+        "car",
+        "машина"
+      ],
+      [
+        "bicycle",
+        "велосипед"
+      ],
+      [
+        "taxi",
+        "такси"
+      ]
+    ],
+    "s": [
+      [
+        "Я еду на автобусе",
+        "I go by bus",
+        "goes the"
+      ],
+      [
+        "Поезд быстрый",
+        "The train is fast",
+        "are a"
+      ],
+      [
+        "У моего папы есть машина",
+        "My father has a car",
+        "have the"
+      ],
+      [
+        "Она едет на велосипеде",
+        "She rides a bicycle",
+        "ride the"
+      ]
+    ]
+  },
+  {
+    "t": "Природа",
+    "w": [
+      [
+        "sun",
+        "солнце"
+      ],
+      [
+        "cloud",
+        "облако"
+      ],
+      [
+        "tree",
+        "дерево"
+      ],
+      [
+        "flower",
+        "цветок"
+      ],
+      [
+        "river",
+        "река"
+      ]
+    ],
+    "s": [
+      [
+        "Солнце жёлтое",
+        "The sun is yellow",
+        "are a"
+      ],
+      [
+        "В небе облако",
+        "There is a cloud in the sky",
+        "are an"
+      ],
+      [
+        "Это высокое дерево",
+        "This is a tall tree",
+        "are the"
+      ],
+      [
+        "Цветок красивый",
+        "The flower is beautiful",
+        "are a"
+      ]
+    ]
+  },
+  {
+    "t": "Свободное время",
+    "w": [
+      [
+        "music",
+        "музыка"
+      ],
+      [
+        "sport",
+        "спорт"
+      ],
+      [
+        "game",
+        "игра"
+      ],
+      [
+        "swim",
+        "плавать"
+      ],
+      [
+        "dance",
+        "танцевать"
+      ]
+    ],
+    "s": [
+      [
+        "Я люблю музыку",
+        "I like music",
+        "likes the"
+      ],
+      [
+        "Мы играем в игру",
+        "We play a game",
+        "plays the"
+      ],
+      [
+        "Я умею плавать",
+        "I can swim",
+        "am the"
+      ],
+      [
+        "Она любит танцевать",
+        "She likes to dance",
+        "like a"
+      ]
+    ]
+  },
+  {
+    "t": "Мои вещи",
+    "w": [
+      [
+        "phone",
+        "телефон"
+      ],
+      [
+        "key",
+        "ключ"
+      ],
+      [
+        "bag",
+        "сумка"
+      ],
+      [
+        "cup",
+        "чашка"
+      ],
+      [
+        "clock",
+        "часы"
+      ]
+    ],
+    "s": [
+      [
+        "Где мой телефон",
+        "Where is my phone",
+        "are the"
+      ],
+      [
+        "Это твой ключ",
+        "This is your key",
+        "are a"
+      ],
+      [
+        "У меня новая сумка",
+        "I have a new bag",
+        "has the"
+      ],
+      [
+        "Чашка на столе",
+        "The cup is on the table",
+        "are a"
+      ]
+    ]
+  },
+  {
+    "t": "Дни и время",
+    "w": [
+      [
+        "Monday",
+        "понедельник"
+      ],
+      [
+        "Tuesday",
+        "вторник"
+      ],
+      [
+        "Friday",
+        "пятница"
+      ],
+      [
+        "weekend",
+        "выходные"
+      ],
+      [
+        "hour",
+        "час"
+      ]
+    ],
+    "s": [
+      [
+        "Сегодня понедельник",
+        "Today is Monday",
+        "are the"
+      ],
+      [
+        "Во вторник я учусь",
+        "I study on Tuesday",
+        "studies a"
+      ],
+      [
+        "В пятницу мы дома",
+        "We are at home on Friday",
+        "is the"
+      ],
+      [
+        "У меня есть один час",
+        "I have one hour",
+        "has a"
+      ]
+    ]
+  },
+  {
+    "t": "Простые описания",
+    "w": [
+      [
+        "big",
+        "большой"
+      ],
+      [
+        "small",
+        "маленький"
+      ],
+      [
+        "new",
+        "новый"
+      ],
+      [
+        "old",
+        "старый"
+      ],
+      [
+        "happy",
+        "счастливый"
+      ]
+    ],
+    "s": [
+      [
+        "Мой дом большой",
+        "My house is big",
+        "are the"
+      ],
+      [
+        "Это маленькая кошка",
+        "This is a small cat",
+        "are the"
+      ],
+      [
+        "У меня новый телефон",
+        "I have a new phone",
+        "has the"
+      ],
+      [
+        "Моя бабушка счастлива",
+        "My grandmother is happy",
+        "are a"
+      ]
+    ]
+  },
+  {
+    "t": "Действия",
+    "w": [
+      [
+        "open",
+        "открывать"
+      ],
+      [
+        "close",
+        "закрывать"
+      ],
+      [
+        "sit",
+        "сидеть"
+      ],
+      [
+        "stand",
+        "стоять"
+      ],
+      [
+        "help",
+        "помогать"
+      ]
+    ],
+    "s": [
+      [
+        "Открой дверь",
+        "Open the door",
+        "opens a"
+      ],
+      [
+        "Закрой окно",
+        "Close the window",
+        "closes a"
+      ],
+      [
+        "Садись здесь",
+        "Sit here",
+        "sits the"
+      ],
+      [
+        "Помоги мне пожалуйста",
+        "Please help me",
+        "helps the"
+      ]
+    ]
+  },
+  {
+    "t": "Одежда",
+    "w": [
+      [
+        "hat",
+        "шапка"
+      ],
+      [
+        "coat",
+        "пальто"
+      ],
+      [
+        "socks",
+        "носки"
+      ],
+      [
+        "trousers",
+        "брюки"
+      ],
+      [
+        "skirt",
+        "юбка"
+      ]
+    ],
+    "s": [
+      [
+        "Моя шапка синяя",
+        "My hat is blue",
+        "are the"
+      ],
+      [
+        "Надень пальто",
+        "Put on your coat",
+        "puts a"
+      ],
+      [
+        "Мои носки белые",
+        "My socks are white",
+        "is the"
+      ],
+      [
+        "Её юбка новая",
+        "Her skirt is new",
+        "are a"
+      ]
+    ]
+  }
+];
+D.push(...A1_EXTRA);
+LV.A1.s.push(
+  {n:"Люди и школа",l:[24,25,26]},
+  {n:"Тело и окружающий мир",l:[27,28,29]},
+  {n:"Город и транспорт",l:[30,31,32]},
+  {n:"Досуг и повседневность",l:[33,34,35]},
+  {n:"Время и практика",l:[36,37,38]}
+);
+
 const ALL=D.flatMap(l=>l.w);
 
   window.CloudyCatalog = Object.freeze({ D, LV, ALL, P });
