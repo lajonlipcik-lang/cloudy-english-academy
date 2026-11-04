@@ -361,7 +361,7 @@ const A1_EXTRA = [
       [
         "Кинотеатр рядом с домом",
         "The cinema is near my home",
-        "are the"
+        "are a"
       ]
     ]
   },
@@ -445,7 +445,7 @@ const A1_EXTRA = [
       [
         "В небе облако",
         "There is a cloud in the sky",
-        "are the"
+        "are a"
       ],
       [
         "Это высокое дерево",
