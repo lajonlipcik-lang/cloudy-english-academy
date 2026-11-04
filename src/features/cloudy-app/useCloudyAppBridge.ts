@@ -57,7 +57,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
             id: user.id,
             email: user.email ?? "",
             name: String(user.user_metadata?.["name"] ?? user.user_metadata?.["display_name"] ?? ""),
-            age: Number.isInteger(rawAge) && rawAge >= 5 && rawAge <= 120 ? rawAge : null,
+            age: Number.isInteger(rawAge) && rawAge >= 13 && rawAge <= 120 ? rawAge : null,
             isAdmin: ownerIsAdmin || user.email?.toLowerCase() === "lajonlipcik@gmail.com",
           } : null,
           progress,
@@ -169,7 +169,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
               id: data.user.id,
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.["name"] ?? ""),
-              age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 5 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
+              age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 13 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
               isAdmin: role.isAdmin,
             },
           });
@@ -181,6 +181,11 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
             email: String(message.email ?? "").trim().toLowerCase(),
             password: String(message.password ?? ""),
           });
+          const existingAge = Number(data.user.user_metadata?.["age"]);
+          if (Number.isInteger(existingAge) && existingAge < 13) {
+            await supabase.auth.signOut();
+            throw new Error("Регистрация в Cloudy English Academy доступна с 13 лет. Если возраст указан неверно, обратитесь в поддержку.");
+          }
           if (error) throw error;
           accessTokenRef.current = data.session.access_token;
           userIdRef.current = data.user.id;
@@ -215,8 +220,16 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           if (sessionError) throw sessionError;
           const currentUser = sessionData.session?.user;
           if (!currentUser) throw new Error("Сначала войдите в аккаунт.");
+          const hasAgeUpdate = message.age !== undefined && message.age !== null;
           const rawAge = Number(message.age);
-          const validAge = Number.isInteger(rawAge) && rawAge >= 5 && rawAge <= 120 ? rawAge : null;
+          if (hasAgeUpdate && (!Number.isInteger(rawAge) || rawAge < 13 || rawAge > 120)) {
+            throw new Error("Возраст должен быть указан в полных годах и составлять не менее 13 лет.");
+          }
+          const currentAge = Number(currentUser.user_metadata?.["age"]);
+          if (hasAgeUpdate && Number.isInteger(currentAge) && currentAge !== rawAge) {
+            throw new Error("Изменение возраста доступно только через поддержку @cloudysupportt_bot.");
+          }
+          const validAge = hasAgeUpdate ? rawAge : null;
           const newName = typeof message.name === "string" && message.name.trim() ? message.name.trim().slice(0, 40) : undefined;
           if (validAge === null && !newName) throw new Error("Укажите корректное имя или возраст.");
           const updateData: Record<string, unknown> = { ...(currentUser.user_metadata ?? {}) };
@@ -238,7 +251,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
               id: data.user.id,
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.["name"] ?? data.user.user_metadata?.["display_name"] ?? newName ?? "Ученик"),
-              age: Number.isInteger(updatedAge) && updatedAge >= 5 && updatedAge <= 120 ? updatedAge : null,
+              age: Number.isInteger(updatedAge) && updatedAge >= 13 && updatedAge <= 120 ? updatedAge : null,
               isAdmin: data.user.email?.toLowerCase() === "lajonlipcik@gmail.com",
             },
           });
