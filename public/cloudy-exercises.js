@@ -162,7 +162,7 @@ function mp(side,id,el){if(done||el.classList.contains("good"))return;
  if(!ml)return;const l=ml[1];
  if(ml[0]==id){if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:id},true,{retry:!!rt});l.classList.remove("sel");l.classList.add("good");el.classList.add("good");snd("match");ml=null;if(++mc==ex[i].L.length){ok++;tot++;cmb++;setTimeout(()=>{snd("ok",cmb);fx(true,"Все пары найдены!")},350)}}
  else{if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:ml[0]},false,{retry:!!rt});[l,el].forEach(b=>{b.classList.add("wrong");setTimeout(()=>b.classList.remove("wrong"),500)});l.classList.remove("sel");addMis(ml[0]);ml=null;miss();if(hp<=0)setTimeout(fail,800)}}
-function next(){if(hp<=0)return fail();snd("flip");if(++i>=ex.length&&!rt&&lm.length){rt=1;lm.slice(0,3).forEach(en=>ex.push(cq(en,ruOf(en),Math.random()*2|0)))}if(i>=ex.length)return fin();draw()}
+function next(){if(hp<=0)return fail();snd("flip");if(++i>=ex.length&&!rt&&lm.length){rt=1;lm.slice(0,3).forEach(en=>ex.push(cq(en,ruOf(en),Math.random()*2|0)))}if(i>=ex.length)return fin();window.scrollTo({top:0,behavior:"instant"});draw()}
 function fail(){snd("bad");app.innerHTML=`<div class="scr res">${mascot("s")}<div class="big2">Жизни закончились</div><p style="opacity:.85">Ничего страшного, попробуем ещё раз.</p><br><button class="btn" onclick="again()">ПОПРОБОВАТЬ СНОВА</button><br><br><button class="btn" onclick="view()" style="background:rgba(255,255,255,.15);color:#fff;box-shadow:none">НА ГЛАВНУЮ</button></div>`}
 function fin(){roll();const t=new Date().toDateString(),y=new Date(Date.now()-864e5).toDateString(),gain=cloudUserId?24:15+hp*3,st=hp>=5?3:hp>=3?2:1,acc=Math.round(ok/Math.max(tot,1)*100);
  if(S.last!=t){S.streak=S.last==y?S.streak+1:1;S.last=t}
