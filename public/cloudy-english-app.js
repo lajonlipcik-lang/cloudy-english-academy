@@ -325,8 +325,19 @@ function introRender(){
  }else{
   const ages=Array.from({length:108},(_,i)=>i+13);
   app.innerHTML=`<div class="welcome-flow"><div class="welcome-step">${cloud}<div class="welcome-progress"><i class="on"></i><i class="on"></i></div><h1 class="welcome-copy">Сколько тебе лет?</h1><p class="welcome-sub">Подберу подходящие темы и задания для тебя</p><div class="age-wheel-wrap"><div class="age-highlight"></div><div class="age-wheel" id="ageWheel">${ages.map(age=>`<div class="age-option ${age===Number(INTRO.age)?'selected':''}" data-age="${age}">${age}</div>`).join('')}</div></div><div class="welcome-error" id="welcomeError"></div><button class="welcome-next" onclick="introFinish()">Продолжить <span>→</span></button></div></div>`;
-  const wheel=$('#ageWheel');const initial=wheel?.querySelector('[data-age="'+Number(INTRO.age)+'"]');if(initial)wheel.scrollTop=initial.offsetTop-wheel.offsetTop-88;
-  wheel?.addEventListener('scroll',introAgeScroll,{passive:true});introAgeScroll();
+  const wheel=$('#ageWheel');
+  wheel?.addEventListener('scroll',introAgeScroll,{passive:true});
+  wheel?.querySelectorAll('.age-option').forEach(el=>el.addEventListener('click',()=>{
+   const age=Number(el.dataset.age);if(!Number.isInteger(age))return;
+   INTRO.age=age;introSave();wheel.querySelectorAll('.age-option.selected').forEach(option=>option.classList.remove('selected'));el.classList.add('selected');
+   wheel.scrollTo({top:el.offsetTop-wheel.offsetTop-wheel.clientHeight/2+el.offsetHeight/2,behavior:'smooth'});
+  }));
+  requestAnimationFrame(()=>setTimeout(()=>{
+   if(!wheel.isConnected||wheel.clientHeight===0)return;
+   const initial=wheel.querySelector('[data-age="'+Number(INTRO.age)+'"]');
+   if(initial)wheel.scrollTop=initial.offsetTop-wheel.offsetTop-wheel.clientHeight/2+initial.offsetHeight/2;
+   introAgeScroll();
+  },50));
  }
 }
 function introNextName(){
@@ -335,7 +346,7 @@ function introNextName(){
 }
 let introAgeFrame=0;
 function introAgeScroll(){
- const wheel=$('#ageWheel');if(!wheel)return;
+ const wheel=$('#ageWheel');if(!wheel||wheel.clientHeight===0)return;
  if(introAgeFrame)cancelAnimationFrame(introAgeFrame);
  introAgeFrame=requestAnimationFrame(()=>{
   const center=wheel.scrollTop+wheel.clientHeight/2;let best=null,dist=Infinity;
@@ -364,8 +375,14 @@ async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap')
  if(!em.includes('@')||!em.includes('.'))return bad('Введите корректный email');if(pw.length<6)return bad('Пароль: минимум 6 символов');
  b.classList.add('ld');b.textContent='ПОДОЖДИТЕ...';er.textContent='';
  try{
-  if(AM=='up'){await Auth.signUp(em,pw);INTRO={name:'',age:18,step:0};introSave();introWelcome();}
-  else{await Auth.signIn(em,pw);if(!S.user?.name||!Number.isInteger(Number(S.user?.age))||Number(S.user.age)<13||Number(S.user.age)>120){INTRO={name:S.user?.name||'',age:18,step:0};introWelcome()}else view()}
+  if(AM=='up'){
+   const result=await Auth.signUp(em,pw);
+   if(result?.needsConfirmation){b.classList.remove('ld');b.textContent=lbl;er.classList.remove('shk');er.style.color='var(--good,#55c98a)';er.textContent='На вашу почту отправлено письмо. Подтвердите email по ссылке из письма, затем войдите в аккаунт.';return}
+   INTRO={name:'',age:18,step:0};introSave();introWelcome();
+  }else{
+   await Auth.signIn(em,pw);
+   if(!S.user?.name||S.user?.name==='Ученик'||!Number.isInteger(Number(S.user?.age))||Number(S.user.age)<13||Number(S.user.age)>120){INTRO={name:S.user?.name==='Ученик'?'':(S.user?.name||''),age:18,step:0};introWelcome()}else view()
+  }
   snd('win');
  }catch(x){b.classList.remove('ld');b.textContent=lbl;bad(x.message||'Ошибка входа')}
 }
@@ -448,7 +465,7 @@ function prof(){const g=S.set.goal,C=2*Math.PI*40,p=Math.min(S.td.xp/g,1),s=S.se
  return `<div class="pc">${mascot()}<h2>${S.user.name||'Ученик'}</h2><p>${S.user.email||'Режим гостя'}</p></div>
  <div class="grid">${[["flame",S.streak,"дней подряд"],["bolt",S.xp,"XP всего"],["check",Object.values(S.dn).reduce((a,b)=>a+b,0),"уроков"],["target",a+"%","точность"]].map(([i,v,l])=>`<div class="card">${ic(i)}<div><b>${v}</b><small>${l}</small></div></div>`).join("")}</div>
  <div class="card"><div class="goal"><svg class="gr" viewBox="0 0 100 100"><circle class="t" cx="50" cy="50" r="40"/><circle class="p" cx="50" cy="50" r="40" style="--c:${C};stroke-dasharray:${C};stroke-dashoffset:${C*(1-p)}"/></svg><div><b>Цель на сегодня</b><br><small style="opacity:.8">${Math.min(S.td.xp,g)} из ${g} XP</small></div></div><div class="seg">${[10,20,30,50].map(n=>`<button class="${g==n?"on":""}" onclick="goal(${n})">${n}</button>`).join("")}</div></div>
- ${cal()}<div class="card"><h3>Аккаунт</h3><div class="row"><span>${S.user.guest?'Режим гостя':S.user.email}</span></div><div class="row"><span>Возраст</span><span>${Number.isInteger(Number(S.user.age))&&Number(S.user.age)>=13&&Number(S.user.age)<=120?Number(S.user.age)+' лет':'Не указан'}</span><button class="btn ghost sm" type="button" onclick="window.open('https://t.me/cloudysupportt_bot','_blank','noopener')">ИЗМЕНИТЬ</button></div><button class="btn ghost" onclick="Auth.signOut().then(()=>view()).catch(e=>toast(e.message||'Не удалось выйти из аккаунта. Попробуйте ещё раз.',false))">${S.user.guest?'ВОЙТИ ИЛИ РЕГИСТРАЦИЯ':'ВЫЙТИ'}</button></div>${(!S.user?.guest&&(S.user?.isAdmin===true||String(S.user?.email||"").trim().toLowerCase()==="lajonlipcik@gmail.com"))?`<div class="card"><h3>Управление приложением</h3><p style="opacity:.8;margin:0 0 14px">Пользователи и AI-провайдеры</p><button class="btn" type="button" onclick="if(window.CloudyAdmin&&typeof window.CloudyAdmin.open==='function'){window.CloudyAdmin.open(S.user)}else{alert('Модуль админ-панели не загрузился. Обновите страницу.')}">⚙ Админ-панель</button></div>`:""}<div class="card"><h3>Уровень английского</h3><div class="seg">${LVS.map(l=>`<button class="${S.lv==l?"on":""}" onclick="setLv('${l}')">${l}</button>`).join("")}</div><br><button class="btn" onclick="pt('${S.lv}')">ПРОЙТИ ТЕСТ УРОВНЯ</button></div><div class="card"><h3>Настройки</h3><div class="row"><span>Звуковые эффекты</span>${sw("snd")}</div><div class="row"><span>Громкость</span><input type="range" min="0.1" max="1" step="0.05" value="${s.vol}" oninput="S.set.vol=+this.value;save()" onchange="snd('ok')"></div><div class="row"><span>Автоозвучка слов</span>${sw("voice")}</div><div class="row"><span>Практика произношения</span>${sw('mic')}</div><div class="row"><span>Напоминание</span>${sw('rem')}</div><div class="row"><span>Время напоминания</span><input type="time" class="ti" value="${s.remT}" onchange="S.set.remT=this.value;save()"></div><div class="row"><span>Тема</span><div class="seg" style="width:180px">${[['dark','Тёмная'],['light','Светлая']].map(([k,n])=>`<button class="${(s.th||'dark')==k?'on':''}" onclick="theme('${k}')">${n}</button>`).join('')}</div></div><div class="row"><span>Сбросить прогресс</span><button class="btn ghost sm" type="button" onclick="rst()">Сброс</button></div></div><div class="card"><h3>Помощь и документы</h3><p style="opacity:.8;margin:0 0 14px">Правила, конфиденциальность и поддержка Cloudy English</p><button class="btn ghost" type="button" onclick="window.parent.location.href='/legal'">ДОКУМЕНТЫ И ПОДДЕРЖКА</button></div>`}
+ ${cal()}<div class="card"><h3>Аккаунт</h3><div class="row"><span>${S.user.guest?'Режим гостя':S.user.email}</span></div><div class="row"><span>Возраст</span><span>${Number.isInteger(Number(S.user.age))&&Number(S.user.age)>=13&&Number(S.user.age)<=120?Number(S.user.age)+' лет':'Не указан'}</span><a class="btn ghost sm" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">ИЗМЕНИТЬ</a></div><button class="btn ghost" onclick="Auth.signOut().then(()=>view()).catch(e=>toast(e.message||'Не удалось выйти из аккаунта. Попробуйте ещё раз.',false))">${S.user.guest?'ВОЙТИ ИЛИ РЕГИСТРАЦИЯ':'ВЫЙТИ'}</button></div>${(!S.user?.guest&&(S.user?.isAdmin===true||String(S.user?.email||"").trim().toLowerCase()==="lajonlipcik@gmail.com"))?`<div class="card"><h3>Управление приложением</h3><p style="opacity:.8;margin:0 0 14px">Пользователи и AI-провайдеры</p><button class="btn" type="button" onclick="if(window.CloudyAdmin&&typeof window.CloudyAdmin.open==='function'){window.CloudyAdmin.open(S.user)}else{alert('Модуль админ-панели не загрузился. Обновите страницу.')}">⚙ Админ-панель</button></div>`:""}<div class="card"><h3>Уровень английского</h3><div class="seg">${LVS.map(l=>`<button class="${S.lv==l?"on":""}" onclick="setLv('${l}')">${l}</button>`).join("")}</div><br><button class="btn" onclick="pt('${S.lv}')">ПРОЙТИ ТЕСТ УРОВНЯ</button></div><div class="card"><h3>Настройки</h3><div class="row"><span>Звуковые эффекты</span>${sw("snd")}</div><div class="row"><span>Громкость</span><input type="range" min="0.1" max="1" step="0.05" value="${s.vol}" oninput="S.set.vol=+this.value;save()" onchange="snd('ok')"></div><div class="row"><span>Автоозвучка слов</span>${sw("voice")}</div><div class="row"><span>Практика произношения</span>${sw('mic')}</div><div class="row"><span>Напоминание</span>${sw('rem')}</div><div class="row"><span>Время напоминания</span><input type="time" class="ti" value="${s.remT}" onchange="S.set.remT=this.value;save()"></div><div class="row"><span>Тема</span><div class="seg" style="width:180px">${[['dark','Тёмная'],['light','Светлая']].map(([k,n])=>`<button class="${(s.th||'dark')==k?'on':''}" onclick="theme('${k}')">${n}</button>`).join('')}</div></div><div class="row"><span>Сбросить прогресс</span><button class="btn ghost sm" type="button" onclick="rst()">Сброс</button></div></div><div class="card"><h3>Помощь и документы</h3><p style="opacity:.8;margin:0 0 14px">Правила, конфиденциальность и поддержка Cloudy English</p><button class="btn ghost" type="button" onclick="window.parent.location.href='/legal'">ДОКУМЕНТЫ И ПОДДЕРЖКА</button></div>`}
 function requestAgeChange(){window.open('https://t.me/cloudysupportt_bot','_blank','noopener')}
 function tg(el,k){S.set[k]=S.set[k]?0:1;el.classList.toggle("on");save();snd("tap");if(k=="rem"&&S.set.rem)try{Notification.requestPermission()}catch(e){}}
 function goal(n){S.set.goal=n;save();snd("pick");view(0)}
