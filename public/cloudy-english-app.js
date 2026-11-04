@@ -21,9 +21,9 @@ function mergeCloudProgress(remote,local){
  if(Array.isArray(remote.acc)||Array.isArray(local.acc))merged.acc=[0,1].map(i=>Math.max(Number(remote.acc?.[i])||0,Number(local.acc?.[i])||0));
  if(remote.td&&local.td){
   if(remote.td.d===local.td.d)merged.td={...remote.td,...local.td,xp:Math.max(Number(remote.td.xp)||0,Number(local.td.xp)||0),les:Math.max(Number(remote.td.les)||0,Number(local.td.les)||0),ok:Math.max(Number(remote.td.ok)||0,Number(local.td.ok)||0),claim:Number(remote.td.claim)||Number(local.td.claim)?1:0};
-  else merged.td=String(local.td.d||'')>String(remote.td.d||'')?local.td:remote.td;
+  else merged.td=(Date.parse(local.td.d||'')||0)>(Date.parse(remote.td.d||'')||0)?local.td:remote.td;
  }
- if(String(local.last||'')>String(remote.last||'')){merged.last=local.last;merged.streak=Math.max(Number(local.streak)||0,Number(remote.streak)||0)}
+ if((Date.parse(local.last||'')||0)>(Date.parse(remote.last||'')||0)){merged.last=local.last;merged.streak=Math.max(Number(local.streak)||0,Number(remote.streak)||0)}
  const validLevel=value=>['A1','A2','B1','B2'].includes(value);
  merged.lv=validLevel(local.lv)?local.lv:validLevel(remote.lv)?remote.lv:'';
  merged.tested=Boolean(remote.tested||local.tested);
