@@ -1,31 +1,45 @@
 const BLOCKED_COUNTRIES = new Set(["RU"]);
 const BRAND_ASSETS = new Set(["/cloudy-icon.png", "/apple-touch-icon.png", "/favicon.ico"]);
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
+function isLocalRequest(request: Request): boolean {
+  return LOCAL_HOSTS.has(new URL(request.url).hostname);
+}
+
+/**
+ * The production app is deployed through Cloudflare's Nitro target.
+ * Only Cloudflare's edge-generated country header is accepted. Do not fall
+ * back to arbitrary client-supplied Vercel/CloudFront headers.
+ */
 function getTrustedCountry(request: Request): string | null {
-  const headers = [
-    "cf-ipcountry",
-    "x-vercel-ip-country",
-    "cloudfront-viewer-country",
-  ];
+  const value = request.headers.get("cf-ipcountry")?.trim().toUpperCase();
+  if (!value || !/^[A-Z]{2}$/.test(value) || value === "XX" || value === "T1") return null;
+  return value;
+}
 
-  for (const header of headers) {
-    const value = request.headers.get(header)?.trim().toUpperCase();
-    if (value && /^[A-Z]{2}$/.test(value) && value !== "XX" && value !== "T1") {
-      return value;
-    }
-  }
-
-  return null;
+function hasCloudflareEdgeMetadata(request: Request): boolean {
+  return Boolean(
+    request.headers.get("cf-ray")?.trim() &&
+    request.headers.get("cf-connecting-ip")?.trim()
+  );
 }
 
 export function isCloudyRegionBlocked(request: Request): boolean {
-  if (!BLOCKED_COUNTRIES.has(getTrustedCountry(request) ?? "")) return false;
-
   const url = new URL(request.url);
   const isBrandAsset = BRAND_ASSETS.has(url.pathname) &&
     (request.method === "GET" || request.method === "HEAD");
 
-  return !isBrandAsset;
+  if (isBrandAsset) return false;
+  if (isLocalRequest(request)) return false;
+
+  // Fail closed: missing/unknown location or missing edge metadata is not
+  // silently treated as an allowed country.
+  if (!hasCloudflareEdgeMetadata(request)) return true;
+
+  const country = getTrustedCountry(request);
+  if (!country) return true;
+
+  return BLOCKED_COUNTRIES.has(country);
 }
 
 export function createCloudyRegionBlockedResponse(): Response {
@@ -84,7 +98,7 @@ export function createCloudyRegionBlockedResponse(): Response {
     }
     .reason h2 { margin: 0 0 7px; font-size: 14px; font-weight: 800; }
     .reason p { margin: 0; color: #b9cde6; font-size: 13px; line-height: 1.55; }
-    button {
+    .legal-link { display: block; margin-top: 18px; color: #8bd5ff; font-size: 13px; line-height: 1.5; text-decoration: underline; text-underline-offset: 3px; }\n    button {
       width: 100%; margin-top: 21px; padding: 15px 18px; border: 0; border-radius: 15px;
       color: #fff; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
       background: linear-gradient(100deg, #55baff, #2879e8); box-shadow: 0 7px 20px rgba(26,112,224,.27);
@@ -107,12 +121,12 @@ export function createCloudyRegionBlockedResponse(): Response {
       <div class="mascot"><img src="/cloudy-icon.png" alt="Облачко Cloudy"></div>
       <div class="status"><i></i> ДОСТУП ОГРАНИЧЕН</div>
       <h1 id="blocked-title">К сожалению, доступ закрыт</h1>
-      <p class="lead">Сервис сейчас недоступен для пользователей из вашего региона.</p>
+      <p class="lead">Сервис недоступен в этом регионе либо не удалось надёжно подтвердить страну подключения.</p>
       <div class="reason" id="region-reason">
         <h2>Почему я вижу это сообщение?</h2>
-        <p>Cloudy English пока не может предоставить доступ к обучению с территории России в соответствии с региональными правилами доступности сервиса.</p>
+        <p>Доступ к Cloudy English зависит от страны подключения, доступности необходимых технических поставщиков и применимых правовых ограничений. Если вы считаете, что регион определён неверно, обратитесь в поддержку.</p>
       </div>
-      <button type="button" id="understood">Понятно</button>
+      <a class="legal-link" href="/legal">Пользовательское соглашение · Доступность по странам</a>\n      <button type="button" id="understood">Понятно</button>
     </section>
     <p class="footer">Cloudy English · © 2026</p>
   </main>
