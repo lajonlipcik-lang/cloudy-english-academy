@@ -29,16 +29,19 @@ describe("Cloudy regional access gate", () => {
     }))).toBe(true);
   });
 
-  it("fails closed when Cloudflare edge metadata is missing", () => {
-    expect(isCloudyRegionBlocked(new Request("https://cloudy.example/", {
-      headers: { "cf-ipcountry": "KG" },
-    }))).toBe(true);
+  it("fails closed when country metadata is missing", () => {
     expect(isCloudyRegionBlocked(new Request("https://cloudy.example/"))).toBe(true);
   });
 
-  it("keeps brand assets available on the blocked screen", () => {
+  it("keeps the legal center and brand assets available on the blocked screen", () => {
     const imageRequest = new Request("https://cloudy.example/cloudy-icon.png");
+    const legalRequest = new Request("https://cloudy.example/legal", {
+      headers: { ...edgeHeaders, "cf-ipcountry": "RU" },
+    });
+    const legalWithoutCountry = new Request("https://cloudy.example/legal");
     expect(isCloudyRegionBlocked(imageRequest)).toBe(false);
+    expect(isCloudyRegionBlocked(legalRequest)).toBe(false);
+    expect(isCloudyRegionBlocked(legalWithoutCountry)).toBe(false);
   });
 
   it("blocks application routes and APIs for the restricted region", () => {
