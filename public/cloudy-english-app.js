@@ -7,27 +7,32 @@ let KEY="cl2";
 const ls=(k,v)=>{try{return v===undefined?localStorage.getItem(k):localStorage.setItem(k,v)}catch(e){return null}};
 function load(key){KEY=key;S=DEF();try{const j=JSON.parse(ls(key)||"{}");S=Object.assign(DEF(),j);S.set=Object.assign(DEF().set,j.set);S.td=Object.assign(DEF().td,j.td);S.dn=Object.assign(DEF().dn,j.dn);if(!j.dn&&j.done&&j.lv===undefined){S.dn.A1=j.done;S.lv="A1"}if(!["A1","A2","B1","B2"].includes(S.lv))S.lv=""}catch(e){}}
 load(ls("cl2s")?"cl2:"+ls("cl2s"):"cl2");
-let cloudUserId=null,cloudSyncTimer=0,cloudSyncRetry=0,cloudSyncInFlight=null,cloudSyncPending=null,cloudSyncSeq=0,cloudLocalRevision=0,cloudSyncAttempts=0,cloudUpdatedAt=null,cloudSyncPaused=false;
+let cloudUserId=null,cloudSyncTimer=0,cloudSyncRetry=0,cloudSyncInFlight=null,cloudSyncPending=null,cloudSyncSeq=0,cloudLocalRevision=0,cloudSyncAttempts=0,cloudUpdatedAt=null,cloudSyncPaused=false,cloudBaseState=null;
 let sessionHydrating=!!ls('cl2s');
-function mergeCloudProgress(remote,local){
- const merged={...remote,...local,xp:Number(remote.xp)||0,wk:remote.wk||local.wk};
+const cloneProgressState=state=>JSON.parse(JSON.stringify(state||{}));
+const progressNumber=value=>Number.isFinite(Number(value))?Number(value):0;
+const mergeCounter=(remoteValue,localValue,baseValue)=>Math.max(0,progressNumber(remoteValue)+progressNumber(localValue)-progressNumber(baseValue));
+function mergeCloudProgress(remote,local,base={}){
+ const merged={...remote,...local,xp:progressNumber(remote.xp),wk:remote.wk||local.wk};
  const levels=['A1','A2','B1','B2'];merged.dn={...(remote.dn||{}),...(local.dn||{})};
- levels.forEach(k=>merged.dn[k]=Math.max(Number(remote.dn?.[k])||0,Number(local.dn?.[k])||0));
- merged.done=Math.max(Number(remote.done)||0,Number(local.done)||0);
- merged.streak=Math.max(Number(remote.streak)||0,Number(local.streak)||0);
- merged.perf=Math.max(Number(remote.perf)||0,Number(local.perf)||0);
+ levels.forEach(k=>merged.dn[k]=Math.max(progressNumber(remote.dn?.[k]),progressNumber(local.dn?.[k])));
+ merged.done=Math.max(progressNumber(remote.done),progressNumber(local.done));
+ merged.streak=Math.max(progressNumber(remote.streak),progressNumber(local.streak));
+ merged.perf=mergeCounter(remote.perf,local.perf,base.perf);
  merged.ach=[...new Set([...(Array.isArray(remote.ach)?remote.ach:[]),...(Array.isArray(local.ach)?local.ach:[])])];
  merged.days=[...new Set([...(Array.isArray(remote.days)?remote.days:[]),...(Array.isArray(local.days)?local.days:[])])].sort((a,b)=>(Date.parse(a)||0)-(Date.parse(b)||0)).slice(-60);
- merged.mis={...(remote.mis||{})};Object.entries(local.mis||{}).forEach(([word,count])=>merged.mis[word]=Math.max(Number(merged.mis[word])||0,Number(count)||0));
- if(Array.isArray(remote.acc)||Array.isArray(local.acc))merged.acc=[0,1].map(i=>Math.max(Number(remote.acc?.[i])||0,Number(local.acc?.[i])||0));
+ const words=new Set([...Object.keys(remote.mis||{}),...Object.keys(local.mis||{}),...Object.keys(base.mis||{})]);
+ merged.mis={};words.forEach(word=>{const count=mergeCounter(remote.mis?.[word],local.mis?.[word],base.mis?.[word]);if(count>0)merged.mis[word]=count});
+ if(Array.isArray(remote.acc)||Array.isArray(local.acc))merged.acc=[0,1].map(i=>mergeCounter(remote.acc?.[i],local.acc?.[i],base.acc?.[i]));
  if(remote.td&&local.td){
-  if(remote.td.d===local.td.d)merged.td={...remote.td,...local.td,xp:Math.max(Number(remote.td.xp)||0,Number(local.td.xp)||0),les:Math.max(Number(remote.td.les)||0,Number(local.td.les)||0),ok:Math.max(Number(remote.td.ok)||0,Number(local.td.ok)||0),claim:Number(remote.td.claim)||Number(local.td.claim)?1:0};
+  if(remote.td.d===local.td.d&&remote.td.d===base.td?.d)merged.td={...remote.td,...local.td,xp:mergeCounter(remote.td.xp,local.td.xp,base.td.xp),les:mergeCounter(remote.td.les,local.td.les,base.td.les),ok:mergeCounter(remote.td.ok,local.td.ok,base.td.ok),claim:Number(remote.td.claim)||Number(local.td.claim)?1:0};
+  else if(remote.td.d===local.td.d)merged.td={...remote.td,...local.td,xp:Math.max(progressNumber(remote.td.xp),progressNumber(local.td.xp)),les:Math.max(progressNumber(remote.td.les),progressNumber(local.td.les)),ok:Math.max(progressNumber(remote.td.ok),progressNumber(local.td.ok)),claim:Number(remote.td.claim)||Number(local.td.claim)?1:0};
   else merged.td=(Date.parse(local.td.d||'')||0)>(Date.parse(remote.td.d||'')||0)?local.td:remote.td;
  }
  const localLast=Date.parse(local.last||'')||0,remoteLast=Date.parse(remote.last||'')||0;
- if(localLast>remoteLast){merged.last=local.last;merged.streak=Number(local.streak)||0}
- else if(remoteLast>localLast){merged.last=remote.last;merged.streak=Number(remote.streak)||0}
- else merged.streak=Math.max(Number(remote.streak)||0,Number(local.streak)||0);
+ if(localLast>remoteLast){merged.last=local.last;merged.streak=progressNumber(local.streak)}
+ else if(remoteLast>localLast){merged.last=remote.last;merged.streak=progressNumber(remote.streak)}
+ else merged.streak=Math.max(progressNumber(remote.streak),progressNumber(local.streak));
  const validLevel=value=>['A1','A2','B1','B2'].includes(value);
  merged.lv=validLevel(local.lv)?local.lv:validLevel(remote.lv)?remote.lv:'';
  merged.tested=Boolean(remote.tested||local.tested);
@@ -37,7 +42,7 @@ function flushCloudProgress(){
  if(!cloudUserId||S.user?.guest||!cloudSyncPending||cloudSyncInFlight)return;
  if(typeof navigator!=='undefined'&&!navigator.onLine)return;
  const pending=cloudSyncPending;clearTimeout(cloudSyncTimer);cloudSyncTimer=0;cloudSyncPending=null;cloudSyncInFlight=pending;
- try{window.parent.postMessage({channel:'cloudy-auth',type:'progress-save',state:pending.state,expectedUpdatedAt:cloudUpdatedAt,syncId:pending.id},location.origin)}
+ try{window.parent.postMessage({channel:'cloudy-auth',type:'progress-save',state:pending.state,userId:cloudUserId,expectedUpdatedAt:cloudUpdatedAt,syncId:pending.id},location.origin)}
  catch(e){cloudSyncPending=pending;cloudSyncInFlight=null;scheduleCloudRetry()}
 }
 function scheduleCloudRetry(){
@@ -47,13 +52,14 @@ function scheduleCloudRetry(){
 }
 function queueCloudProgress(){
  if(!cloudUserId||S.user?.guest||cloudSyncPaused)return;
- try{cloudSyncPending={id:++cloudSyncSeq,revision:++cloudLocalRevision,state:JSON.parse(JSON.stringify(S))}}catch(e){return}
+ try{cloudSyncPending={id:++cloudSyncSeq,revision:++cloudLocalRevision,state:cloneProgressState(S),baseState:cloneProgressState(cloudBaseState||{})}}catch(e){return}
  clearTimeout(cloudSyncTimer);cloudSyncTimer=setTimeout(()=>{cloudSyncTimer=0;flushCloudProgress()},650);
 }
-window.addEventListener('online',()=>{clearTimeout(cloudSyncRetry);cloudSyncRetry=0;flushCloudProgress()});
-window.addEventListener('pageshow',()=>{if(cloudUserId&&!S.user?.guest)flushCloudProgress()});
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&cloudUserId&&!S.user?.guest)flushCloudProgress()});
-window.addEventListener('pagehide',()=>{if(cloudUserId&&!S.user?.guest){if(cloudSyncPending)flushCloudProgress();}});
+const requestCloudSession=()=>{if(cloudUserId&&!S.user?.guest&&cloudSyncPaused)window.parent.postMessage({channel:'cloudy-auth',type:'init'},location.origin)};
+window.addEventListener('online',()=>{clearTimeout(cloudSyncRetry);cloudSyncRetry=0;if(cloudSyncPaused)requestCloudSession();else flushCloudProgress()});
+window.addEventListener('pageshow',()=>{if(cloudUserId&&!S.user?.guest){if(cloudSyncPaused)requestCloudSession();else flushCloudProgress()}});
+document.addEventListener('visibilitychange',()=>{if(cloudUserId&&!S.user?.guest){if(document.hidden)flushCloudProgress();else if(cloudSyncPaused)requestCloudSession();else flushCloudProgress()}});
+window.addEventListener('pagehide',()=>{if(cloudUserId&&!S.user?.guest&&cloudSyncPending)flushCloudProgress()});
 const save=(skipCloudSync=false)=>{
  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){console.warn('[cloudy-progress] local backup could not be written')}
  if(!skipCloudSync&&cloudUserId&&!S.user?.guest)ls('cl2dirty:'+S.user.email,String(Date.now()));
@@ -173,7 +179,9 @@ window.addEventListener('message',event=>{
     ?{...msg.progress.state,lv:profileLevel||msg.progress.state.lv||'',tested:profileTested||msg.progress.state.tested?1:0}
     :profileLevel?{lv:profileLevel,tested:profileTested?1:0}:null;
    cloudUpdatedAt=msg.progress?.updated_at||null;cloudSyncInFlight=null;cloudSyncPending=null;cloudSyncAttempts=0;cloudSyncPaused=true;
-   Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin,msg.user.age);if(msg.progressLoadFailed)toast('Не удалось загрузить облачный прогресс. Проверьте интернет; данные на этом устройстве не затронуты.',false);
+   Auth.start(msg.user.email,msg.user.name||'Ученик',!!msg.user.isAdmin,msg.user.age);
+   if(msg.progressLoadFailed){cloudSyncPaused=true;toast('Не удалось загрузить облачный прогресс. Локальные данные сохранены; синхронизация повторится после восстановления связи.',false);view();return}
+   cloudBaseState=cloneProgressState(remoteState||{});
    if(remoteState&&(!localExists||(dirtyAt<=0&&remoteAt>localAt)||remoteAt>=dirtyAt&&dirtyAt>0)){try{clearTimeout(cloudSyncTimer);localStorage.setItem(localKey,JSON.stringify(remoteState));load(localKey);S.user={email:msg.user.email,name:msg.user.name||'Ученик',age:Number.isInteger(Number(msg.user.age))&&Number(msg.user.age)>=5&&Number(msg.user.age)<=120?Number(msg.user.age):(Number.isInteger(Number(S.user?.age))&&Number(S.user.age)>=5&&Number(S.user.age)<=120?Number(S.user.age):null),isAdmin:!!msg.user.isAdmin};save(true)}catch(e){}}
    else if(!localExists&&!remoteState&&['A1','A2','B1','B2'].includes(guestState.lv)){try{load('cl2');S.user={email:msg.user.email,name:msg.user.name||'Ученик',isAdmin:!!msg.user.isAdmin};save()}catch(e){}}
    else{queueCloudProgress()}
@@ -188,15 +196,17 @@ window.addEventListener('message',event=>{
   if(!sent||msg.syncId!==sent.id)return;
   cloudSyncInFlight=null;
   if(msg.ok&&msg.conflict&&msg.state&&typeof msg.state==='object'){
-   cloudUpdatedAt=msg.updatedAt||null;S=mergeCloudProgress(msg.state,cloudSyncPending?.state||sent.state);
+   cloudUpdatedAt=msg.updatedAt||null;const latestLocal=cloudSyncPending?.state||S;S=mergeCloudProgress(msg.state,latestLocal,cloudSyncPending?.baseState||sent.baseState||cloudBaseState||{});
+   cloudBaseState=cloneProgressState(msg.state);
    try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
-   cloudSyncPending={id:++cloudSyncSeq,revision:++cloudLocalRevision,state:JSON.parse(JSON.stringify(S))};
+   cloudSyncPending={id:++cloudSyncSeq,revision:++cloudLocalRevision,state:cloneProgressState(S),baseState:cloneProgressState(cloudBaseState)};
    if(S.user?.email)ls('cl2dirty:'+S.user.email,String(Date.now()));
    scheduleCloudRetry();return;
   }
   if(msg.ok){
    cloudUpdatedAt=msg.updatedAt||cloudUpdatedAt;cloudSyncAttempts=0;
-   if(msg.state&&typeof msg.state==='object'){S.xp=Number(msg.state.xp)||0;const wk=msg.state.wk&&typeof msg.state.wk==='object'?msg.state.wk:{};S.wk={k:String(wk.k||''),xp:Number(wk.xp)||0};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+   if(msg.state&&typeof msg.state==='object'){cloudBaseState=cloneProgressState(msg.state);S.xp=Number(msg.state.xp)||0;const wk=msg.state.wk&&typeof msg.state.wk==='object'?msg.state.wk:{};S.wk={k:String(wk.k||''),xp:Number(wk.xp)||0};try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+   if(cloudSyncPending)cloudSyncPending.baseState=cloneProgressState(cloudBaseState||sent.state);
    if(S.user?.email)ls('cl2sync:'+S.user.email,String(Date.now()));
    if(cloudLocalRevision===sent.revision&&!cloudSyncPending&&!cloudSyncTimer&&S.user?.email)ls('cl2dirty:'+S.user.email,'');
    if(cloudSyncPending)flushCloudProgress();
