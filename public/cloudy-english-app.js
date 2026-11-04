@@ -217,9 +217,21 @@ function authRequest(action,payload={}){
  if(window.parent===window)return Promise.reject(new Error('Авторизация доступна при открытии Cloudy через основное приложение.'));
  return new Promise((resolve,reject)=>{
   const id=String(++authSequence)+'-'+Date.now();
-  authPending.set(id,{resolve,reject});
-  window.parent.postMessage({channel:'cloudy-auth',type:'request',id,action,...payload},location.origin);
-  setTimeout(()=>{const pending=authPending.get(id);if(pending){authPending.delete(id);reject(new Error('Сервер не ответил. Проверьте соединение и попробуйте снова.'))}},15000);
+  const timeoutMs=action==='ai-chat'?95000:action==='tts'?40000:30000;
+  const timer=setTimeout(()=>{
+   const pending=authPending.get(id);
+   if(!pending)return;
+   authPending.delete(id);
+   reject(new Error(action==='ai-chat'?'ИИ отвечает дольше обычного. Проверьте соединение и попробуйте ещё раз.':'Сервер не ответил. Проверьте соединение и попробуйте снова.'));
+  },timeoutMs);
+  authPending.set(id,{resolve,reject,timer});
+  try{
+   window.parent.postMessage({channel:'cloudy-auth',type:'request',id,action,...payload},location.origin);
+  }catch(error){
+   clearTimeout(timer);
+   authPending.delete(id);
+   reject(error instanceof Error?error:new Error('Не удалось отправить запрос серверу.'));
+  }
  });
 }
 // Applies an authenticated cloud snapshot (session message or signIn reply) exactly once per payload;
@@ -294,6 +306,7 @@ window.addEventListener('message',event=>{
  }
  if(msg.type!=='response'||!authPending.has(String(msg.id)))return;
  const pending=authPending.get(String(msg.id));authPending.delete(String(msg.id));
+ if(pending.timer)clearTimeout(pending.timer);
  if(!msg.ok){pending.reject(new Error(msg.error||'Ошибка авторизации'));return}
  if(msg.user){cloudUserId=msg.user.id;queueCloudProgress()}
  pending.resolve(msg);
