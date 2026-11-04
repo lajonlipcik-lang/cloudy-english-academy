@@ -307,3 +307,23 @@ h2{font-size:21px;margin:0 0 16px}
 .chat-composer-box input:focus {
   border-color: rgba(108, 198, 255, 0.5);
 }
+
+
+/* Compact answer feedback header and optional pronunciation control */
+.ft-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 12px;
+}
+.ft-head p {
+  margin: 0;
+  min-width: 0;
+}
+.spk.sm {
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  flex: none;
+}
