@@ -141,4 +141,24 @@ describe("Cloudy learning progress", () => {
     expect(state.dn.A2).toBe(21);
   });
 
+  it("normalizes punctuation and never uses multiword vocabulary as builder tiles", () => {
+    const lesson: Pick<Lesson, "w" | "s"> = {
+      w: [["hello", "привет"], ["a little", "немного"], ["water", "вода"], ["bottle", "бутылка"]],
+      s: [
+        ["Привет, в бутылке немного воды", "Hello, there is a little water in the bottle", "hello the"],
+        ["У меня есть вода", "I have water", "bottle a"],
+      ],
+    };
+    const builders = buildExercises(lesson, lesson.w, { mic: false }, () => 0)
+      .filter((exercise) => exercise.k === "b");
+    expect(builders).toHaveLength(2);
+    const first = builders.find((exercise) => exercise.a.startsWith("Hello,"))!;
+    expect(first.o).not.toContain("hello");
+    expect(first.o).not.toContain("a little");
+    expect(first.o?.every((token) => !token.includes(" "))).toBe(true);
+    const normalized = (first.o ?? []).map((token) => token.toLocaleLowerCase().replace(/[.,!?]/g, ""));
+    expect(new Set(normalized).size).toBe(normalized.length);
+  });
+
+
 });
