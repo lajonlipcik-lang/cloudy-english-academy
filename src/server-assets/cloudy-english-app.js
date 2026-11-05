@@ -421,13 +421,15 @@ function lg(){const li=LG.reduce((a,x,k)=>S.xp>=x[1]?k:a,0),c=LG[li],nx=LG[li+1]
  rows=BOTS.map((n,k)=>[n,Math.round(((seed*(k+3)*7919)%180+40)*dow/7),0]).concat([['Вы',w,1]]).sort((a,b)=>b[1]-a[1]);
  return `<h2 style="margin-top:12px">Лига: ${c[0]}</h2><div class="card lgc"><span class="mdl" style="color:${LC[li]}">${ic('medal')}</span><div style="flex:1"><b>${nx?'До лиги '+nx[0]+': '+(nx[1]-S.xp)+' XP':'Максимальная лига'}</b><div class="pb" style="margin-top:8px"><i style="width:${pr*100}%"></i></div></div></div><div class="card"><h3>Рейтинг недели</h3>${rows.map((r,k)=>`<div class="row lr${r[2]?' me':''}" style="animation-delay:${k*70}ms"><span><b style="display:inline-block;width:26px">${k+1}</b>${r[0]}</span><b>${r[1]} XP</b></div>`).join('')}<small style="opacity:.7">Соперники учебные: пример для будущей онлайн-лиги</small></div><div class="card"><h3>Достижения</h3><div class="ag">${ACH.map(a=>`<div class="bd${S.ach.includes(a[0])?' on':''}">${ic(a[3])}<small>${a[1]}</small></div>`).join('')}</div></div>`}
 function cal(){const t=new Date(),c=[];for(let k=27;k>=0;k--){const d=new Date(t);d.setDate(t.getDate()-k);const on=S.days.includes(dk(d));c.push(`<i class="cd${on?' on':''}" style="animation-delay:${(27-k)*25}ms">${on?ic('flame'):d.getDate()}</i>`)}return `<div class="card"><h3>Календарь серии</h3><div class="cal">${c.join('')}</div></div>`}
-let personalExamBusy=false,PERSONAL_EXAM=null,learningSyncTimer=0;
+let personalExamBusy=false,PERSONAL_EXAM=null,learningSyncTimer=0,learningSyncInFlight=null;
 const examEscape=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 async function syncLearningEvidence(){
  if(!S.user||S.user.guest||!window.CloudyLearning)return;
+ if(learningSyncInFlight)return learningSyncInFlight;
  const profile=CloudyLearning.profile(KEY);
  if(!profile||!profile.attempts)return;
- try{await authRequest("learning-exam-sync",{payload:{learnerProfile:profile}})}catch(error){console.warn("[cloudy-learning] profile sync deferred")}
+ learningSyncInFlight=authRequest("learning-exam-sync",{payload:{learnerProfile:profile}}).catch(()=>{console.warn("[cloudy-learning] profile sync deferred")}).finally(()=>{learningSyncInFlight=null});
+ return learningSyncInFlight;
 }
 window.addEventListener("cloudy:learning-updated",()=>{
  if(!S.user||S.user.guest)return;
@@ -438,7 +440,7 @@ const examCard=()=>{
  if(!S.user||S.user.guest)return "";
  const profile=window.CloudyLearning?.profile(KEY),ready=(S.dn[S.lv]||0)>0&&(profile?.attempts||0)>0;
  const caption=ready?"Экзамен составлен ИИ по твоим урокам, ответам и ошибкам.":"Пройди урок и ответь на задания — Cloudy подготовит твой экзамен.";
- return '<div class="exam-home"><div class="exam-cloud">'+mascot()+'</div><div class="exam-copy"><b>Персональный экзамен</b><small>'+caption+'</small></div><button class="exam-start" '+(ready?'':'disabled')+' onclick="startPersonalExam()">'+(ready?'Начать':'После урока')+'</button></div>';
+ return '<div class="exam-home"><div class="exam-cloud">'+mascot()+'</div><div class="exam-copy"><b>Персональный экзамен</b><small>'+caption+'</small></div><button class="exam-start" '+(ready?'':'disabled')+' onclick="startPersonalExam()">'+(ready?'Начать':'Пройди урок')+'</button></div>';
 };
 async function startPersonalExam(){
  if(personalExamBusy)return;
