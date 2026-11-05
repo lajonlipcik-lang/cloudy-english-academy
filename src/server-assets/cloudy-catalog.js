@@ -1043,7 +1043,7 @@ extendLesson(5, [], [
 ]);
 extendLesson(25, [], [
   ["Я обычно иду на работу в восемь", "I usually go to work at eight", "I usually goes to work"],
-  ["Я читаю перед сном ночью", "I read before bed at night", "I reads before bed"],
+  ["Я читаю перед сном", "I read before bed", "I reads before bed"],
 ]);
 extendLesson(26, [], [
   ["Моя книга на парте", "My book is on the desk", "My book are on desk"],
