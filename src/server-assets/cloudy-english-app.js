@@ -100,8 +100,8 @@ function cloudyLocalSpeechFallback(text,request){
  try{
   if(request!==cloudySpeechRequest||typeof speechSynthesis==="undefined"||typeof SpeechSynthesisUtterance==="undefined")return;
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=.92;
-  const voices=speechSynthesis.getVoices(),male=cloudySelectMaleAmericanVoice(voices);if(male)u.voice=male;
+  const u=new SpeechSynthesisUtterance(text);const russian=/[А-Яа-яЁё]/.test(text);u.lang=russian?"ru-RU":"en-US";u.rate=russian ? 0.96 : 0.92;
+  const voices=speechSynthesis.getVoices(),voice=russian?voices.find(v=>/^ru([_-]|$)/i.test(v.lang||"")):cloudySelectMaleAmericanVoice(voices);if(voice)u.voice=voice;
   speechSynthesis.speak(u);
  }catch(e){}
 }
@@ -109,6 +109,7 @@ async function say(t,f){
  if(!f&&!S.set.voice)return;
  const text=String(t||"").replace(/\s+/g," ").trim();if(!text)return;
  const request=++cloudySpeechRequest;
+ if(/[А-Яа-яЁё]/.test(text)){cloudyLocalSpeechFallback(text,request);return}
  try{
   if(cloudyCurrentAudio){cloudyCurrentAudio.pause();cloudyCurrentAudio=null}
   if(typeof speechSynthesis!=="undefined")speechSynthesis.cancel();
@@ -545,7 +546,7 @@ async function examNext(){
   const stage=document.querySelector(".exam-question-stage"),reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if(stage&&!reduce){
    exam.transitioning=true;stage.classList.add("is-leaving");
-   setTimeout(()=>{if(PERSONAL_EXAM!==exam)return;exam.index++;exam.selected=null;exam.transitioning=false;renderPersonalExam();snd("flip")},270);
+   setTimeout(()=>{if(PERSONAL_EXAM!==exam)return;exam.index++;exam.selected=null;exam.transitioning=false;renderPersonalExam();snd("flip")},220);
   }else{exam.index++;exam.selected=null;renderPersonalExam();snd("flip")}
   return;
  }
