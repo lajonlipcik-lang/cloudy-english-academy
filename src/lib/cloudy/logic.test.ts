@@ -231,4 +231,18 @@ describe("Cloudy learning progress", () => {
   });
 
 
+  it("keeps American usage and contextual A2 vocabulary examples accurate", () => {
+    expect(D[15]!.w.some(([word, translation]) => word === "appetizer" && translation === "закуска")).toBe(true);
+    expect(D[15]!.s.some(([, en]) => en === "I'd like an appetizer.")).toBe(true);
+    expect(D[39]!.w.some(([word, translation]) => word === "commute" && translation.includes("дорога на работу"))).toBe(true);
+    expect(D[39]!.s.some(([, en]) => en === "My commute takes half an hour.")).toBe(true);
+    expect(D[48]!.w.some(([word]) => word === "available")).toBe(true);
+    expect(D[48]!.s.some(([, en]) => en === "Are you available tomorrow evening?")).toBe(true);
+    expect(D[44]!.s.some(([ru, en]) => ru === "Мы прибываем в десять часов." && en === "We arrive at ten o'clock.")).toBe(true);
+    expect(D[45]!.s.some(([ru, en]) => ru === "У меня сегодня повышенная температура." && en === "I have a fever today.")).toBe(true);
+    expect(D[41]!.w.some(([word, translation]) => word === "appointment" && translation.includes("запись на приём"))).toBe(true);
+    expect(D[48]!.w.some(([word, translation]) => word === "available" && translation.includes("доступен"))).toBe(true);
+  });
+
+
 });
