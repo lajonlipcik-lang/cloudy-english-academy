@@ -6,7 +6,7 @@ body{background:linear-gradient(165deg,#050d2b 0%,#0a2a73 48%,#3aa0ff 100%) fixe
 button{font:inherit;color:inherit;cursor:pointer}
 .i{width:1em;height:1em;display:block;flex:none}
 .amb{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}
-.amb b{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(207,233,255,.35),transparent 70%);animation:drift 16s ease-in-out infinite alternate}
+.amb b{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(207,233,255,.35),transparent 70%);animation:drift 20s ease-in-out infinite alternate}
 .amb b:nth-child(1){width:360px;height:360px;left:-120px;top:10%}
 .amb b:nth-child(2){width:300px;height:300px;right:-100px;top:45%;animation-delay:-5s}
 .amb b:nth-child(3){width:420px;height:420px;left:20%;bottom:-160px;animation-delay:-9s}
