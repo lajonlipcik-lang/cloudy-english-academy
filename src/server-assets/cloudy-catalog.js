@@ -870,10 +870,10 @@ extendLesson(38, [["shoes", "обувь"], ["shirt", "рубашка"], ["dress"
 ]);
 
 // A2 foundations: add practical vocabulary and complete sentence practice.
-extendLesson(6, [["pharmacy", "аптека"], ["traffic", "дорожное движение"], ["crossroads", "перекрёсток"]], [
+extendLesson(6, [["pharmacy", "аптека"], ["traffic", "дорожное движение"], ["intersection", "перекрёсток"]], [
   ["Аптека находится рядом с банком", "The pharmacy is near the bank", "near the"],
-  ["На этой улице много машин", "There is a lot of traffic on this street", "are many"],
-  ["Поверните направо на перекрёстке", "Turn right at the crossroads", "turn left"],
+  ["На этой улице интенсивное движение", "There is a lot of traffic on this street", "are many"],
+  ["Поверните направо на перекрёстке", "Turn right at the intersection", "turn left"],
 ]);
 extendLesson(7, [["receipt", "чек"], ["cash", "наличные"], ["change", "сдача"]], [
   ["Можно получить чек?", "Could I have a receipt?", "Could I get"],
@@ -881,7 +881,7 @@ extendLesson(7, [["receipt", "чек"], ["cash", "наличные"], ["change",
   ["Оставьте сдачу себе", "Keep the change", "take the"],
 ]);
 extendLesson(8, [["midnight", "полночь"], ["noon", "полдень"], ["on time", "вовремя"]], [
-  ["Поезд отправляется в половине девятого", "The train leaves at half past eight", "leave tomorrow"],
+  ["Поезд отправляется в половине девятого", "The train leaves at eight thirty", "leave tomorrow"],
   ["У меня встреча в полдень", "I have an appointment at noon", "at midnight"],
   ["Мы приехали вовремя", "We arrived on time", "arrive late"],
   ["Мы вернулись домой до полуночи", "We got home before midnight", "We get home at noon"],
@@ -978,7 +978,7 @@ extendLesson(6, [["neighborhood", "район"]], [
 extendLesson(7, [["refund", "возврат денег"]], [
   ["Могу я вернуть эту вещь?", "Can I return this item?", "Can I returned this item"],
 ]);
-extendLesson(8, [["quarter past", "четверть после"]], [
+extendLesson(8, [["quarter past", "четверть часа после (указанного часа)"]], [
   ["Сейчас четверть шестого", "It's a quarter past five", "It's five past a quarter"],
 ]);
 extendLesson(15, [["dessert", "десерт"]], [
