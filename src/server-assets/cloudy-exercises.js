@@ -106,14 +106,14 @@ function rec(autoRetry=false){
 }
 
 let ex,i,hp,sel,built,done,ml,mc,cmb,ok,tot,L,rv=0,lm=[],rt=0;
-function mk(l){const r=[],modes=sh([0,0,1,1,2,2]);
+function mk(l){const r=[];
  const titles={
   ru:["Переведите на английский","Как сказать это по-английски?","Выберите английский перевод"],
   en:["Что это значит?","Выберите перевод слова","Как переводится это слово?"],
   listen:["Что вы услышали?","Прослушайте и выберите слово","Какое слово произнесено?"],
   bank:["Составьте предложение на английском","Переведите фразу на английский","Соберите правильный перевод"]
  };
- l.w.forEach(([en,ru])=>{const m=modes.pop(),o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice(0,3)]);
+ l.w.forEach(([en,ru],k)=>{const m=k%3,o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice(0,3)]);
   if(m==2)r.push({k:"l",a:en,en,o:o.map(x=>x[0]),title:titles.listen[Math.random()*titles.listen.length|0]});
   else r.push({k:"c",q:m?en:ru,a:m?ru:en,en,spk:!!m,o:o.map(x=>m?x[1]:x[0]),title:(m?titles.en:titles.ru)[Math.random()*(m?titles.en:titles.ru).length|0]})});
  const p=sh(l.w).slice(0,4);r.push({k:"m",L:sh(p.map(x=>[x[0],x[0]])),R:sh(p.map(x=>[x[1],x[0]])),title:"Найдите пары"});
