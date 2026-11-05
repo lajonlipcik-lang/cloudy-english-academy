@@ -173,6 +173,14 @@ describe("Cloudy learning progress", () => {
     expect(JSON.stringify(browserWindow.CloudyCatalog?.F)).toBe(JSON.stringify(A1_FOUNDATIONS));
   });
 
+  it("introduces lesson vocabulary before graded practice", () => {
+    const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
+    expect(runtime).toContain('const vocabulary={k:"v",words:D[n].w};');
+    expect(runtime).toContain('ex=intro?[{k:"t",...intro},vocabulary,...practice]:[vocabulary,...practice];');
+    expect(runtime).toContain('if(e.k=="v")b=');
+    expect(runtime).toContain('e.k=="t"||e.k=="v"');
+  });
+
   it("provides a teach-before-test foundation note for every A1 lesson", () => {
     expect(Object.keys(A1_FOUNDATIONS).map(Number)).toEqual(levelLessons("A1"));
     for (const index of levelLessons("A1")) {
