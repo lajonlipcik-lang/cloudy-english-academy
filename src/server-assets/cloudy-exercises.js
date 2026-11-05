@@ -252,7 +252,7 @@ function showCloudySkipReaction(){
  const reaction=document.createElement("div");reaction.className="cloudy-skip-reaction";reaction.setAttribute("aria-live","polite");
  reaction.innerHTML='<div class="cloudy-skip-cloud">'+mascot()+'</div><strong>'+message+'</strong>';
  document.body.appendChild(reaction);
- say(message,true);
+
  setTimeout(()=>{if(reaction.isConnected){reaction.classList.add("is-leaving");setTimeout(()=>reaction.remove(),360)}},1850);
 }
 function fx(good,msg){done=true;const ft=$("#ft"),e=ex[i];const speechWord=String(e?.en||(/[A-Za-z]/.test(String(e?.a??""))&&!/[А-Яа-яЁё]/.test(String(e?.a??""))?e.a:"")).trim();const safeSpeech=speechWord.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\r?\n/g,"\\n").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<div class="ft-head"><p>${msg}</p>${speechWord?`<button class="spk sm" aria-label="Озвучить" onclick="say('${safeSpeech}', 1)">${ic("spk")}</button>`:""}</div><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good){$(".bar i").style.width=(i+1)/ex.length*100+"%";showCloudySuccess();clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=setTimeout(()=>{if(done&&ft.isConnected)next()},1650)}}
