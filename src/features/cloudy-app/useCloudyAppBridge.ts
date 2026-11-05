@@ -137,7 +137,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
 
       try {
         const accessToken = accessTokenRef.current;
-        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events"].includes(String(message.action))) {
+        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events"].includes(String(message.action))) {
           if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
           const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
           const api = await import("@/lib/cloudy-ai.functions");
@@ -147,6 +147,8 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           else if (message.action === "admin-provider-save") result = await api.saveAiProvider({ data: payload as never });
           else if (message.action === "admin-provider-delete") result = await api.deleteAiProvider({ data: payload as never });
           else if (message.action === "admin-provider-test") result = await api.testAiProvider({ data: payload as never });
+          else if (message.action === "admin-community-reports") result = await api.listCommunityReports({ data: payload as never });
+          else if (message.action === "admin-community-moderate") result = await api.moderateCommunityReport({ data: payload as never });
           else if (message.action === "tts") result = await api.cloudyTextToSpeech({ data: { accessToken, message: String((payload as any).text ?? "") } });
           else if (message.action === "learning-events") result = await api.syncCloudyLearningEvents({ data: payload as never });
           else if (String(message.action).startsWith("learning-exam-")) result = await api.cloudyPersonalExam({ data: { ...payload, accessToken, examAction: String(message.action).replace("learning-exam-", "") } as never });
