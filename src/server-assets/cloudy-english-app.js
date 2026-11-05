@@ -145,7 +145,7 @@ function renderInstallGate(){
 function checkCloudyInstall(){if(isInstalledCloudy()){try{localStorage.setItem('cloudyHomeInstalled','1')}catch(e){}view();return}const note=$('#installNote');if(note)note.textContent='Пока Cloudy открыт во вкладке Safari. Вернись на главный экран iPhone и запусти Cloudy с новой иконки — тогда установка подтвердится.';const panel=$('.install-panel');if(panel){panel.classList.remove('shk');void panel.offsetWidth;panel.classList.add('shk')}}
 function ensureCloudyInstallGate(){if(!isAppleMobile()||isInstalledCloudy())return;if(!document.querySelector('#app .install-gate'))renderInstallGate()}
 function bootCloudy(){if(isAppleMobile()&&!isInstalledCloudy()){renderInstallGate();setInterval(ensureCloudyInstallGate,20000);window.addEventListener('pageshow',ensureCloudyInstallGate);window.addEventListener('focus',ensureCloudyInstallGate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureCloudyInstallGate()});return}if(sessionHydrating){cloudLoader();return}view()}
-function view(a=1){roll();amb();if(!S.user)return authV();if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}">${[learn,quests,lg,prof][T]()}</div>`+nav()}
+function view(a=1){roll();amb();if(!S.user)return authV();if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}">${[learn,quests,lg,prof][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile()}
 function tab(k){if(k!=T){snd("tab");T=k;view()}}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
@@ -421,10 +421,13 @@ function lg(){const li=LG.reduce((a,x,k)=>S.xp>=x[1]?k:a,0),c=LG[li],nx=LG[li+1]
  rows=BOTS.map((n,k)=>[n,Math.round(((seed*(k+3)*7919)%180+40)*dow/7),0]).concat([['Вы',w,1]]).sort((a,b)=>b[1]-a[1]);
  return `<h2 style="margin-top:12px">Лига: ${c[0]}</h2><div class="card lgc"><span class="mdl" style="color:${LC[li]}">${ic('medal')}</span><div style="flex:1"><b>${nx?'До лиги '+nx[0]+': '+(nx[1]-S.xp)+' XP':'Максимальная лига'}</b><div class="pb" style="margin-top:8px"><i style="width:${pr*100}%"></i></div></div></div><div class="card"><h3>Рейтинг недели</h3>${rows.map((r,k)=>`<div class="row lr${r[2]?' me':''}" style="animation-delay:${k*70}ms"><span><b style="display:inline-block;width:26px">${k+1}</b>${r[0]}</span><b>${r[1]} XP</b></div>`).join('')}<small style="opacity:.7">Соперники учебные: пример для будущей онлайн-лиги</small></div><div class="card"><h3>Достижения</h3><div class="ag">${ACH.map(a=>`<div class="bd${S.ach.includes(a[0])?' on':''}">${ic(a[3])}<small>${a[1]}</small></div>`).join('')}</div></div>`}
 function cal(){const t=new Date(),c=[];for(let k=27;k>=0;k--){const d=new Date(t);d.setDate(t.getDate()-k);const on=S.days.includes(dk(d));c.push(`<i class="cd${on?' on':''}" style="animation-delay:${(27-k)*25}ms">${on?ic('flame'):d.getDate()}</i>`)}return `<div class="card"><h3>Календарь серии</h3><div class="cal">${c.join('')}</div></div>`}
-let personalExamBusy=false,PERSONAL_EXAM=null,learningSyncTimer=0,learningSyncInFlight=null;
+let personalExamBusy=false,PERSONAL_EXAM=null,learningSyncTimer=0,learningSyncInFlight=null,remoteLearningProfile=null,remoteLearningProfileUser=null,remoteLearningProfileLoading=false;
 const examEscape=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 function examLearnerProfile(){
- const profile=window.CloudyLearning?.profile(KEY)||{version:1,attempts:0,dueCount:0,skills:[],recentEvents:[]};
+ const local=window.CloudyLearning?.profile(KEY)||{version:1,attempts:0,dueCount:0,skills:[],recentEvents:[]};
+ const remote=remoteLearningProfile||{attempts:0,dueCount:0,skills:[],recentEvents:[]};
+ const skills=new Map((remote.skills||[]).map(skill=>[skill.id,skill]));
+ for(const skill of local.skills||[]){const prior=skills.get(skill.id);if(!prior||skill.evidence>prior.evidence||(skill.evidence===prior.evidence&&skill.lastPracticed>prior.lastPracticed))skills.set(skill.id,skill)}
  // Bring forward the learner's existing mistake counter so the first exam
  // can already focus on errors made before detailed evidence was introduced.
  const legacy=Object.entries(S.mis||{}).filter(([word,count])=>String(word).trim()&&Number(count)>0).map(([word,count])=>({
@@ -432,9 +435,8 @@ function examLearnerProfile(){
   mastery:0.2,evidence:Math.min(1000,Number(count)||1),correct:0,
   incorrect:Math.min(10000,Number(count)||1),due:true,lastPracticed:Date.now()
  }));
- const skills=new Map((profile.skills||[]).map(skill=>[skill.id,skill]));
  for(const skill of legacy){const prior=skills.get(skill.id);if(!prior||skill.evidence>prior.evidence)skills.set(skill.id,skill)}
- return {...profile,attempts:Math.max(Number(profile.attempts)||0,legacy.length),skills:[...skills.values()]};
+ return {...local,attempts:Math.max(Number(local.attempts)||0,Number(remote.attempts)||0,legacy.length),dueCount:Math.max(Number(local.dueCount)||0,Number(remote.dueCount)||0),skills:[...skills.values()]};
 }
 async function syncLearningEvidence(){
  if(!S.user||S.user.guest||!window.CloudyLearning)return;
@@ -443,6 +445,15 @@ async function syncLearningEvidence(){
  if(!profile.attempts)return;
  learningSyncInFlight=authRequest("learning-exam-sync",{payload:{learnerProfile:profile}}).catch(()=>{console.warn("[cloudy-learning] profile sync deferred")}).finally(()=>{learningSyncInFlight=null});
  return learningSyncInFlight;
+}
+async function loadRemoteLearningProfile(){
+ if(!S.user||S.user.guest||remoteLearningProfileLoading||remoteLearningProfileUser===S.user.id)return;
+ const userId=S.user.id;remoteLearningProfileLoading=true;
+ try{
+  const response=await authRequest("learning-exam-profile");
+  if(S.user?.id===userId){remoteLearningProfile=response?.profile||null;remoteLearningProfileUser=userId;if(T===0)view(0)}
+ }catch(error){remoteLearningProfileUser=userId;console.warn("[cloudy-learning] remote profile unavailable")}
+ finally{remoteLearningProfileLoading=false}
 }
 window.addEventListener("cloudy:learning-updated",()=>{
  if(!S.user||S.user.guest)return;
