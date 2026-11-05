@@ -110,6 +110,24 @@ export type Database = {
         }
         Relationships: []
       }
+      community_comments: {
+        Row: { author_id: string; body: string; created_at: string; id: string; post_id: string; status: string; updated_at: string }
+        Insert: { author_id: string; body: string; created_at?: string; id?: string; post_id: string; status?: string; updated_at?: string }
+        Update: { author_id?: string; body?: string; created_at?: string; id?: string; post_id?: string; status?: string; updated_at?: string }
+        Relationships: []
+      }
+      community_reactions: {
+        Row: { created_at: string; post_id: string; reaction: string; user_id: string }
+        Insert: { created_at?: string; post_id: string; reaction?: string; user_id: string }
+        Update: { created_at?: string; post_id?: string; reaction?: string; user_id?: string }
+        Relationships: []
+      }
+      community_reports: {
+        Row: { comment_id: string | null; created_at: string; details: string; id: string; post_id: string | null; reason: string; reporter_id: string; status: string }
+        Insert: { comment_id?: string | null; created_at?: string; details?: string; id?: string; post_id?: string | null; reason: string; reporter_id: string; status?: string }
+        Update: { comment_id?: string | null; created_at?: string; details?: string; id?: string; post_id?: string | null; reason?: string; reporter_id?: string; status?: string }
+        Relationships: []
+      }
       community_posts: {
         Row: {
           author_id: string
