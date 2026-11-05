@@ -1,5 +1,5 @@
 /* Cloudy English exercise runtime.
- * Extracted without changing exercise logic, scoring, progress, or UI markup.
+ * Browser-side exercise generation mirrors the typed Cloudy learning logic.
  */
 const addMis=en=>{if(!en)return;S.mis[en]=(S.mis[en]||0)+1;if(!lm.includes(en))lm.push(en);save()};
 const cq=(en,ru,m)=>{const o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice(0,3)]);return m==2?{k:'l',a:en,en,o:o.map(x=>x[0]),title:'Что вы слышите?'}:{k:'c',q:m?en:ru,a:m?ru:en,en,spk:!!m,o:o.map(x=>m?x[1]:x[0]),title:m?'Что это значит?':'Переведите на английский'}};
