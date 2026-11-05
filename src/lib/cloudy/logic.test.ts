@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, normalizeState } from "./logic";
-import type { Exercise } from "./types";
+import type { Exercise, Lesson } from "./types";
 
 describe("Cloudy learning progress", () => {
   it("normalizes damaged or empty saved data without throwing", () => {
@@ -40,7 +40,7 @@ describe("Cloudy learning progress", () => {
     expect(result.state.dn.A1).toBe(1);
   });
   it("uses single-word lesson vocabulary as sentence-builder distractors", () => {
-    const lesson = {
+    const lesson: Pick<Lesson, "w" | "s"> = {
       w: [["hello", "привет"], ["friend", "друг"], ["school", "школа"]],
       s: [
         ["Привет, мой друг", "Hello my friend", "you the"],
