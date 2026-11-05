@@ -341,17 +341,24 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       const sentences=sentencePairs.map((pair)=>pair.en);
       if(!words.length&&!sentences.length)throw new Error("В пройденных уроках пока нет материала для экзамена.");
       const evidence=new Map((baseProfile.skills??[]).map((skill:any)=>[skill.id,skill]));
-      const candidates=words.map(word=>{
+      const knownGrammar=buildKnownGrammar(lessonIds,A1_FOUNDATIONS);
+      const candidates:Array<{id:string;mastery:number;evidence:number;incorrect:number;correct:number}> = words.map(word=>{
         const id="vocabulary:"+word.toLowerCase();
         const skill:any=evidence.get(id);
         return {id,mastery:skill?Math.round(skill.mastery*100):50,evidence:skill?.evidence??0,incorrect:skill?.incorrect??0,correct:skill?.correct??0};
       });
       if(sentences.length)candidates.push({id:"grammar:sentence-building",mastery:Math.round((evidence.get("grammar:sentence-building") as any)?.mastery*100)||50,evidence:(evidence.get("grammar:sentence-building") as any)?.evidence??0,incorrect:(evidence.get("grammar:sentence-building") as any)?.incorrect??0,correct:(evidence.get("grammar:sentence-building") as any)?.correct??0});
+      for(const skillId of [...new Set(knownGrammar.map((pair)=>pair.skillId))]){
+        const skill:any=evidence.get(skillId);
+        candidates.push({id:skillId,mastery:skill?Math.round(skill.mastery*100):50,evidence:skill?.evidence??0,incorrect:skill?.incorrect??0,correct:skill?.correct??0});
+      }
       const weak=candidates.filter(skill=>skill.evidence>0).sort((a,b)=>a.mastery-b.mastery||b.incorrect-a.incorrect);
       const weakIds=new Set(weak.map(skill=>skill.id));
       const remaining=candidates.filter(skill=>!weakIds.has(skill.id)).sort((a,b)=>a.mastery-b.mastery||b.evidence-a.evidence);
-      const focus=[...weak,...remaining].slice(0,16);
-      const material={level,completedLessons:lessons.map((lesson:any)=>lesson.t),knownVocabulary:wordPairs,knownSentences:sentencePairs,focusSkills:focus};
+      const grammarWeak=weak.filter((skill)=>skill.id.startsWith("grammar:"));
+      const grammarNew=remaining.filter((skill)=>skill.id.startsWith("grammar:"));
+      const focus=[...grammarWeak,...weak.filter((skill)=>!skill.id.startsWith("grammar:")),...grammarNew,...remaining.filter((skill)=>!skill.id.startsWith("grammar:"))].slice(0,20);
+      const material={level,completedLessons:lessons.map((lesson:any)=>lesson.t),knownVocabulary:wordPairs,knownSentences:sentencePairs,knownGrammar,focusSkills:focus};
       const providers=(await rows(db)).filter((provider:any)=>provider.enabled).sort((a:any,b:any)=>a.priority-b.priority);
       if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
       const prompt="Составь персональный экзамен по английскому для уровня "+level+". Используй ТОЛЬКО слова, фразы, предложения и темы из пройденного материала ниже. Не добавляй новую лексику и грамматику. В первую очередь проверяй focusSkills с низким mastery и большим incorrect; это реальные слабые места ученика. Сделай ровно 6 разных вопросов с четырьмя вариантами ответа. Вопросы и инструкции пиши по-русски, варианты могут быть на английском или русском. Не повторяй один и тот же вопрос. Для каждого вопроса выбери skillId строго из списка focusSkills и target строго из соответствующего изученного слова или предложения. Для vocabulary:<слово> target должен быть ровно этим английским словом, вопрос должен просить выбрать его русский перевод, а правильный вариант обязан дословно совпадать с ru-переводом из knownVocabulary. Для grammar:sentence-building target должен точно совпадать с knownSentences[].en, prompt должен спрашивать перевод соответствующего knownSentences[].ru на английский, а правильный вариант обязан дословно совпадать с knownSentences[].en. Если focusSkills недостаточно, повторно проверь разные элементы известных слов и предложений, не вводя новый материал. Верни только валидный JSON без Markdown: {\"questions\":[{\"id\":\"q1\",\"skillId\":\"...\",\"target\":\"...\",\"prompt\":\"...\",\"options\":[\"...\",\"...\",\"...\",\"...\"],\"correctIndex\":0,\"explanation\":\"Короткое объяснение на русском\"}]}. Материал: "+JSON.stringify(material);
