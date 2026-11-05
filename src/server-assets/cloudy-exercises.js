@@ -138,28 +138,51 @@ function pick(k){if(done)return;sel=k;snd("pick");document.querySelectorAll(".op
 function tog(k){if(done)return;snd("tap");const p=built.indexOf(k);p>-1?built.splice(p,1):built.push(k);const e=ex[i];$("#ans").innerHTML=built.map(j=>`<button class="chip" onclick="tog(${j})">${e.o[j]}</button>`).join("");e.o.forEach((_,j)=>$("#c"+j).classList.toggle("gone",built.includes(j)));$("#go").disabled=!built.length}
 function miss(){hp--;cmb=0;tot++;snd("bad");const h=$("#hp");h.innerHTML=ic("heart")+hp;h.classList.remove("hit");void h.offsetWidth;h.classList.add("hit");if(navigator.vibrate)try{navigator.vibrate(60)}catch(e){}}
 let cloudySuccessAdvanceTimer=0;
+function cloudyPlaySwoosh(){
+ if(!S.set.snd)return;
+ try{
+  const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
+  if(!AC){AC=new C();MG=AC.createGain();MG.connect(AC.destination)}
+  if(AC.state==="suspended")AC.resume();
+  const now=AC.currentTime,duration=.72,length=Math.floor(AC.sampleRate*duration);
+  const buffer=AC.createBuffer(1,length,AC.sampleRate),data=buffer.getChannelData(0);
+  for(let n=0;n<length;n++){const fade= Math.pow(1-n/length,1.8);data[n]=(Math.random()*2-1)*fade}
+  const source=AC.createBufferSource(),filter=AC.createBiquadFilter(),gain=AC.createGain();
+  source.buffer=buffer;filter.type="bandpass";filter.Q.value=.65;
+  filter.frequency.setValueAtTime(420,now);filter.frequency.exponentialRampToValueAtTime(2600,now+.38);filter.frequency.exponentialRampToValueAtTime(780,now+duration);
+  gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(.24*S.set.vol,now+.1);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  source.connect(filter);filter.connect(gain);gain.connect(AC.destination);source.start(now);source.stop(now+duration);
+ }catch(e){}
+}
 function showCloudySuccess(){
  const styleId="cloudy-success-reaction-style";
  if(!document.getElementById(styleId)){
   const style=document.createElement("style");style.id=styleId;style.textContent=`
-   .cloudy-success-reaction{position:fixed;inset:0;z-index:10050;display:grid;place-content:center;justify-items:center;gap:10px;pointer-events:none;background:radial-gradient(ellipse at center,rgba(38,160,230,.13),transparent 58%);animation:cloudy-success-backdrop .28s ease-out both}
-   .cloudy-success-reaction .ms{width:min(42vw,174px);height:auto;filter:drop-shadow(0 10px 22px rgba(63,174,255,.25));animation:cloudy-success-cloud-in .72s cubic-bezier(.18,.82,.25,1.2) both,cloudy-success-float 1.05s .72s ease-in-out infinite}
-   .cloudy-success-reaction .eyes{transform-box:fill-box;transform-origin:center;animation:cloudy-success-blink 2.1s .8s infinite}
-   .cloudy-success-reaction strong{font:800 clamp(27px,7vw,38px)/1.1 system-ui,sans-serif;letter-spacing:.01em;color:#42baff;text-shadow:0 2px 14px rgba(46,171,255,.25);animation:cloudy-success-text .55s .3s cubic-bezier(.2,.8,.2,1) both}
+   .cloudy-success-reaction{position:fixed;inset:0;z-index:10050;display:grid;place-content:center;justify-items:center;gap:10px;pointer-events:none;background:radial-gradient(ellipse at center,rgba(38,160,230,.13),transparent 58%);animation:cloudy-success-backdrop .3s ease-out both}
+   .cloudy-success-cloud{position:relative;width:min(44vw,184px);animation:cloudy-success-cloud-in .8s cubic-bezier(.18,.82,.25,1.2) both,cloudy-success-float 1.15s .8s ease-in-out infinite}
+   .cloudy-success-cloud .ms{display:block;width:100%;height:auto;filter:drop-shadow(0 10px 22px rgba(63,174,255,.25))}
+   .cloudy-success-smile{position:absolute;left:50%;top:57%;width:31%;height:19%;transform:translateX(-50%);overflow:visible}
+   .cloudy-success-smile path{fill:none;stroke:#55718b;stroke-width:4.2;stroke-linecap:round;stroke-dasharray:42;stroke-dashoffset:42;animation:cloudy-success-smile-draw .55s .38s ease-out forwards}
+   .cloudy-success-reaction strong{font:800 clamp(27px,7vw,38px)/1.1 system-ui,sans-serif;letter-spacing:.01em;color:#42baff;text-shadow:0 2px 14px rgba(46,171,255,.25);animation:cloudy-success-text .6s .35s cubic-bezier(.2,.8,.2,1) both}
    @keyframes cloudy-success-backdrop{from{opacity:0}to{opacity:1}}
-   @keyframes cloudy-success-cloud-in{0%{opacity:0;transform:translateY(55px) scale(.62)}65%{opacity:1;transform:translateY(-7px) scale(1.06)}100%{opacity:1;transform:translateY(0) scale(1)}}
-   @keyframes cloudy-success-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
-   @keyframes cloudy-success-blink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.08)}}
-   @keyframes cloudy-success-text{from{opacity:0;transform:translateY(13px) scale(.88)}to{opacity:1;transform:translateY(0) scale(1)}}
+   @keyframes cloudy-success-cloud-in{0%{opacity:0;transform:translateY(65px) scale(.58)}65%{opacity:1;transform:translateY(-9px) scale(1.07)}100%{opacity:1;transform:translateY(0) scale(1)}}
+   @keyframes cloudy-success-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
+   @keyframes cloudy-success-smile-draw{to{stroke-dashoffset:0}}
+   @keyframes cloudy-success-text{from{opacity:0;transform:translateY(16px) scale(.86)}to{opacity:1;transform:translateY(0) scale(1)}}
+   .cloudy-success-reaction.is-leaving .cloudy-success-cloud{animation:cloudy-success-fly-away .78s cubic-bezier(.45,0,.9,.45) forwards}
+   .cloudy-success-reaction.is-leaving strong{animation:cloudy-success-text-away .35s ease-in forwards}
+   @keyframes cloudy-success-fly-away{0%{opacity:1;transform:translateY(0) scale(1) rotate(0)}35%{transform:translateY(-24px) scale(1.06) rotate(-5deg)}100%{opacity:0;transform:translateY(-115vh) scale(.48) rotate(12deg)}}
+   @keyframes cloudy-success-text-away{to{opacity:0;transform:translateY(-18px)}}
    @media(prefers-reduced-motion:reduce){.cloudy-success-reaction,.cloudy-success-reaction *{animation:none!important}}
   `;document.head.appendChild(style);
  }
  document.querySelector(".cloudy-success-reaction")?.remove();
- const reaction=document.createElement("div");reaction.className="cloudy-success-reaction";reaction.setAttribute("aria-live","polite");reaction.innerHTML=mascot("s")+'<strong>Молодец!</strong>';
+ const reaction=document.createElement("div");reaction.className="cloudy-success-reaction";reaction.setAttribute("aria-live","polite");
+ reaction.innerHTML='<div class="cloudy-success-cloud">'+mascot("s")+'<svg class="cloudy-success-smile" viewBox="0 0 100 55" aria-hidden="true"><path d="M12 8 Q50 53 88 8"/></svg></div><strong>Молодец!</strong>';
  document.body.appendChild(reaction);
- setTimeout(()=>{if(reaction.isConnected){reaction.style.transition="opacity .28s ease,transform .28s ease";reaction.style.opacity="0";reaction.style.transform="translateY(-55px)";setTimeout(()=>reaction.remove(),300)}},1450);
+ setTimeout(()=>{if(reaction.isConnected){reaction.classList.add("is-leaving");cloudyPlaySwoosh();setTimeout(()=>reaction.remove(),820)}},2050);
 }
-function fx(good,msg){done=true;const ft=$("#ft"),e=ex[i];const speechWord=String(e?.en||(/[A-Za-z]/.test(String(e?.a??""))&&!/[А-Яа-яЁё]/.test(String(e?.a??""))?e.a:"")).trim();const safeSpeech=speechWord.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\r?\n/g,"\\n").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<div class="ft-head"><p>${msg}</p>${speechWord?`<button class="spk sm" aria-label="Озвучить" onclick="say('${safeSpeech}', 1)">${ic("spk")}</button>`:""}</div><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good){$(".bar i").style.width=(i+1)/ex.length*100+"%";showCloudySuccess();clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=setTimeout(()=>{if(done&&ft.isConnected)next()},2050)}}
+function fx(good,msg){done=true;const ft=$("#ft"),e=ex[i];const speechWord=String(e?.en||(/[A-Za-z]/.test(String(e?.a??""))&&!/[А-Яа-яЁё]/.test(String(e?.a??""))?e.a:"")).trim();const safeSpeech=speechWord.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\r?\n/g,"\\n").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<div class="ft-head"><p>${msg}</p>${speechWord?`<button class="spk sm" aria-label="Озвучить" onclick="say('${safeSpeech}', 1)">${ic("spk")}</button>`:""}</div><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good){$(".bar i").style.width=(i+1)/ex.length*100+"%";showCloudySuccess();clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=setTimeout(()=>{if(done&&ft.isConnected)next()},2950)}}
 async function askExerciseCoach(){
  clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=0;
  const box=$("#exerciseCoachReply"),e=ex[i];if(!box||!e||box.dataset.loading)return;
