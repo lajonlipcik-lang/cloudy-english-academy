@@ -159,15 +159,15 @@ function showCloudySuccess(){
  if(!document.getElementById(styleId)){
   const style=document.createElement("style");style.id=styleId;style.textContent=`
    .cloudy-success-reaction{position:fixed;inset:0;z-index:10050;display:grid;place-content:center;justify-items:center;gap:10px;pointer-events:none;background:radial-gradient(ellipse at center,rgba(38,160,230,.13),transparent 58%);animation:cloudy-success-backdrop .3s ease-out both}
-   .cloudy-success-cloud{position:relative;width:min(44vw,184px);animation:cloudy-success-cloud-in .8s cubic-bezier(.18,.82,.25,1.2) both,cloudy-success-float 1.15s .8s ease-in-out infinite}
+   .cloudy-success-cloud{position:relative;width:min(62vw,250px);animation:cloudy-success-cloud-in .48s cubic-bezier(.18,.82,.25,1.2) both,cloudy-success-float .55s .48s ease-in-out infinite}
    .cloudy-success-cloud .ms{display:block;width:100%;height:auto;filter:drop-shadow(0 10px 22px rgba(63,174,255,.25))}
    .cloudy-success-reaction strong{font:800 clamp(27px,7vw,38px)/1.1 system-ui,sans-serif;letter-spacing:.01em;color:#42baff;text-shadow:0 2px 14px rgba(46,171,255,.25);animation:cloudy-success-text .6s .35s cubic-bezier(.2,.8,.2,1) both}
    @keyframes cloudy-success-backdrop{from{opacity:0}to{opacity:1}}
-   @keyframes cloudy-success-cloud-in{0%{opacity:0;transform:translateY(65px) scale(.58)}65%{opacity:1;transform:translateY(-9px) scale(1.07)}100%{opacity:1;transform:translateY(0) scale(1)}}
-   @keyframes cloudy-success-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
+   @keyframes cloudy-success-cloud-in{0%{opacity:0;transform:translateY(38px) scale(.72)}65%{opacity:1;transform:translateY(-6px) scale(1.04)}100%{opacity:1;transform:translateY(0) scale(1)}}
+   @keyframes cloudy-success-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-7px) rotate(1deg)}}
    }
    @keyframes cloudy-success-text{from{opacity:0;transform:translateY(16px) scale(.86)}to{opacity:1;transform:translateY(0) scale(1)}}
-   .cloudy-success-reaction.is-leaving .cloudy-success-cloud{animation:cloudy-success-fly-away .78s cubic-bezier(.45,0,.9,.45) forwards}
+   .cloudy-success-reaction.is-leaving .cloudy-success-cloud{animation:cloudy-success-fly-away .52s cubic-bezier(.45,0,.9,.45) forwards}
    .cloudy-success-reaction.is-leaving strong{animation:cloudy-success-text-away .35s ease-in forwards}
    @keyframes cloudy-success-fly-away{0%{opacity:1;transform:translateY(0) scale(1) rotate(0)}35%{transform:translateY(-24px) scale(1.06) rotate(-5deg)}100%{opacity:0;transform:translateY(-115vh) scale(.48) rotate(12deg)}}
    @keyframes cloudy-success-text-away{to{opacity:0;transform:translateY(-18px)}}
@@ -178,9 +178,9 @@ function showCloudySuccess(){
  const reaction=document.createElement("div");reaction.className="cloudy-success-reaction";reaction.setAttribute("aria-live","polite");
  reaction.innerHTML='<div class="cloudy-success-cloud">'+mascot()+'</div><strong>Молодец!</strong>';
  document.body.appendChild(reaction);
- setTimeout(()=>{if(reaction.isConnected){reaction.classList.add("is-leaving");cloudyPlaySwoosh();setTimeout(()=>reaction.remove(),820)}},2050);
+ setTimeout(()=>{if(reaction.isConnected){reaction.classList.add("is-leaving");cloudyPlaySwoosh();setTimeout(()=>reaction.remove(),820)}},1050);
 }
-function fx(good,msg){done=true;const ft=$("#ft"),e=ex[i];const speechWord=String(e?.en||(/[A-Za-z]/.test(String(e?.a??""))&&!/[А-Яа-яЁё]/.test(String(e?.a??""))?e.a:"")).trim();const safeSpeech=speechWord.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\r?\n/g,"\\n").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<div class="ft-head"><p>${msg}</p>${speechWord?`<button class="spk sm" aria-label="Озвучить" onclick="say('${safeSpeech}', 1)">${ic("spk")}</button>`:""}</div><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good){$(".bar i").style.width=(i+1)/ex.length*100+"%";showCloudySuccess();clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=setTimeout(()=>{if(done&&ft.isConnected)next()},2950)}}
+function fx(good,msg){done=true;const ft=$("#ft"),e=ex[i];const speechWord=String(e?.en||(/[A-Za-z]/.test(String(e?.a??""))&&!/[А-Яа-яЁё]/.test(String(e?.a??""))?e.a:"")).trim();const safeSpeech=speechWord.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\r?\n/g,"\\n").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<div class="ft-head"><p>${msg}</p>${speechWord?`<button class="spk sm" aria-label="Озвучить" onclick="say('${safeSpeech}', 1)">${ic("spk")}</button>`:""}</div><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good){$(".bar i").style.width=(i+1)/ex.length*100+"%";showCloudySuccess();clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=setTimeout(()=>{if(done&&ft.isConnected)next()},1650)}}
 async function askExerciseCoach(){
  clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=0;
  const box=$("#exerciseCoachReply"),e=ex[i];if(!box||!e||box.dataset.loading)return;
