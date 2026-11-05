@@ -305,7 +305,9 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
         const expectedAnswer=skillId.startsWith("vocabulary:")?wordPairs.find((pair:any)=>pair.en.toLowerCase()===normalizedTarget)?.ru:target;
         const normalizeAnswer=(value:string)=>value.toLowerCase().replace(/[.!?]+$/,"").replace(/\s+/g," ").trim();
         const correctMatches=!!expectedAnswer&&options[correctIndex]!==undefined&&normalizeAnswer(options[correctIndex])===normalizeAnswer(expectedAnswer);
-        if(!allowed.has(skillId)||!targetValid||!correctMatches||!promptText||options.length!==4||options.some((option:string)=>!option)||new Set(options.map((option:string)=>option.toLowerCase())).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
+        const knownChoices=new Set([...wordPairs.flatMap((pair:any)=>[pair.en,pair.ru]),...sentences].map(normalizeAnswer));
+        const choicesKnown=options.length===4&&options.every((option:string)=>knownChoices.has(normalizeAnswer(option)));
+        if(!allowed.has(skillId)||!targetValid||!correctMatches||!choicesKnown||!promptText||options.some((option:string)=>!option)||new Set(options.map((option:string)=>normalizeAnswer(option))).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
         return {id,skillId,target,prompt:promptText,options,correctIndex,explanation};
       });
       if(questions.length!==6)throw new Error("Не удалось подготовить полный экзамен. Попробуй ещё раз.");
