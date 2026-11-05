@@ -273,9 +273,21 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
   if(storedError)throw new Error("Не удалось загрузить историю обучения.");
   const storedRaw=storedRow?.profile&&typeof storedRow.profile==="object"?storedRow.profile:{};
   const incoming=safeLearnerProfile(data.learnerProfile);
-  const merged=mergeLearnerProfiles(safeLearnerProfile(storedRaw),incoming);
-  const baseProfile={...(merged??{attempts:0,dueCount:0,skills:[],recentEvents:[]}),activeExam:storedRaw.activeExam??null,lastExam:storedRaw.lastExam??null};
+  const journalProfile=await loadJournalLearnerProfile(db,user.id);
+  const merged=mergeLearnerProfiles(mergeLearnerProfiles(safeLearnerProfile(storedRaw),incoming),journalProfile);
+  const baseProfile={...(merged??{attempts:0,dueCount:0,skills:[],recentEvents:[]}),attempts:Math.max(merged?.attempts??0,journalProfile.attempts),activeExam:storedRaw.activeExam??null,lastExam:storedRaw.lastExam??null};
   if(action==="profile")return {profile:merged??null};
+  if(action==="status"){
+    const {data:progressRow,error:progressError}=await db.from("user_progress").select("state").eq("user_id",user.id).maybeSingle();
+    if(progressError)throw new Error("Не удалось проверить прогресс для экзамена.");
+    const state=progressRow?.state&&typeof progressRow.state==="object"?progressRow.state as any:{};
+    const level=["A1","A2","B1","B2"].includes(String(state.lv))?String(state.lv):"A1";
+    const lessons=LV[level as keyof typeof LV].s.flatMap((section:any)=>section.l);
+    const completed=Math.max(0,Math.min(lessons.length,Number(state.dn?.[level])||0));
+    const providers=(await rows(db)).filter((provider:any)=>provider.enabled);
+    const ready=completed>0&&journalProfile.attempts>0&&providers.length>0;
+    return {ready,level,completed,attempts:journalProfile.attempts,reason:!providers.length?"ИИ временно недоступен":completed<1?"Сначала пройди хотя бы один урок":journalProfile.attempts<1?"Ответь на задания в уроках — тогда экзамен сможет учитывать твои ошибки.":""};
+  }
   if(action==="sync"){
     if(!merged)return {ok:true,synced:false};
     const {error}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:baseProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
