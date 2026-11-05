@@ -795,7 +795,8 @@ extendLesson(15, [["order", "заказывать"], ["starter", "закуска
 ]);
 extendLesson(16, [["forecast", "прогноз погоды"], ["cloudy", "облачный"], ["temperature", "температура"]], [
   ["По прогнозу будет дождь", "The forecast says it will rain", "The forecast say"],
-  ["Сегодня десять градусов", "It is ten degrees today", "It are ten"],
+  ["Сегодня температура десять градусов", "The temperature is ten degrees today", "The temperature are ten"],
+  ["Завтра будет облачно", "It will be cloudy tomorrow", "It will cloudy yesterday"],
   ["Возьми с собой зонт", "Take an umbrella with you", "Takes umbrella"],
 ]);
 extendLesson(17, [["boots", "ботинки"], ["tight", "тесный"], ["comfortable", "удобный"]], [
@@ -826,6 +827,8 @@ extendLesson(42, [["cheaper", "дешевле"], ["noisy", "шумный"]], [
 extendLesson(43, [["price", "цена"], ["cash", "наличные"]], [
   ["Сколько стоит эта бутылка?", "How much does this bottle cost?", "How much this cost"],
   ["Осталось не так много яиц", "There aren't many eggs left", "There isn't many"],
+  ["Цена включает доставку", "The price includes delivery", "The price include delivery"],
+  ["Я предпочитаю платить наличными", "I prefer to pay in cash", "I prefer paying cashless"],
 ]);
 extendLesson(44, [["departure", "отправление"], ["arrival", "прибытие"]], [
   ["Поезд отправляется с платформы номер два", "The train leaves from platform two", "The train leave"],
