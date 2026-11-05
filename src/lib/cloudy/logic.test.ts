@@ -97,6 +97,8 @@ describe("Cloudy learning progress", () => {
         expect(distractors.every((token) => availableWords.has(token))).toBe(true);
         expect(distractors.every((token) => !/\s/.test(token) && !/[.,!?]/.test(token))).toBe(true);
         expect(distractors.every((token) => !correctTokens.includes(token))).toBe(true);
+        const normalizedCorrect = new Set(correctTokens.map((token) => token.toLocaleLowerCase().replace(/[.,!?]/g, "")));
+        expect(distractors.every((token) => !normalizedCorrect.has(token.toLocaleLowerCase().replace(/[.,!?]/g, "")))).toBe(true);
       }
     }
   });
