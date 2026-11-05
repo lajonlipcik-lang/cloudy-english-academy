@@ -164,9 +164,10 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           for (const post of [...(posts ?? []), ...(own.data ?? [])]) merged.set(post.id, post);
           const rows = [...merged.values()].sort((x, y) => Date.parse(y.created_at) - Date.parse(x.created_at)).slice(0, 50);
           const authorIds = [...new Set(rows.map(post => post.author_id))];
-          const profiles = authorIds.length ? await supabase.from("community_public_profiles" as any).select("id, display_name").in("id", authorIds) : { data: [], error: null };
+          const profiles: any = authorIds.length ? await supabase.from("community_public_profiles" as any).select("id, display_name").in("id", authorIds) : { data: [], error: null };
           if (profiles.error) throw profiles.error;
-          const names = new Map((profiles.data ?? []).map((profile: { id: string; display_name: string | null }) => [profile.id, profile.display_name || "Участник"]));
+          const profileRows = (profiles.data ?? []) as { id: string; display_name: string | null }[];
+          const names = new Map(profileRows.map(profile => [profile.id, profile.display_name || "Участник"]));
           reply({ ok: true, result: rows.map(post => ({ ...post, author_name: post.author_id === uid ? "Вы" : names.get(post.author_id) || "Участник", is_own: post.author_id === uid })) });
           return;
         }
@@ -174,7 +175,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const uid = userIdRef.current;
           if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
           const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
-          const body = typeof payload.body === "string" ? payload.body.trim() : "";
+          const body = typeof payload["body"] === "string" ? payload.body.trim() : "";
           if (body.length < 1 || body.length > 2000) throw new Error("Текст публикации должен содержать от 1 до 2000 символов.");
           const { data, error } = await supabase.from("community_posts").insert({ author_id: uid, body }).select("id").single();
           if (error) throw error;
@@ -185,7 +186,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const uid = userIdRef.current;
           if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
           const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
-          const postId = typeof payload.postId === "string" ? payload.postId : "";
+          const postId = typeof payload["postId"] === "string" ? payload.postId : "";
           if (!/^[0-9a-f-]{36}$/i.test(postId)) throw new Error("Некорректная публикация.");
           const { data, error } = await supabase.from("community_posts").delete().eq("id", postId).eq("author_id", uid).select("id").maybeSingle();
           if (error) throw error;
@@ -204,8 +205,8 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
         if (message.action === "community-profile-update") {
           if (!accessTokenRef.current || !userIdRef.current) throw new Error("Сначала войдите в аккаунт.");
           const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
-          if (typeof payload.is_public !== "boolean") throw new Error("Некорректная настройка публичности.");
-          const bio = typeof payload.bio === "string" ? payload.bio.trim() : "";
+          if (typeof payload["is_public"] !== "boolean") throw new Error("Некорректная настройка публичности.");
+          const bio = typeof payload["bio"] === "string" ? payload.bio.trim() : "";
           if (bio.length > 240) throw new Error("Описание слишком длинное.");
           const { data, error } = await supabase.from("profiles").update({ is_public: payload.is_public, bio }).eq("id", userIdRef.current).select("is_public, bio").single();
           if (error) throw error;
