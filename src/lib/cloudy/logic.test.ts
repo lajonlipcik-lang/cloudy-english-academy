@@ -66,7 +66,7 @@ describe("Cloudy learning progress", () => {
   it("uses safe single-word distractors in the legacy browser exercise runtime", () => {
     const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
     const start = runtime.indexOf("function mk(l){");
-    const end = runtime.indexOf("\\n function go", start);
+    const end = runtime.indexOf("\n function go", start);
     expect(start).toBeGreaterThanOrEqual(0);
     expect(end).toBeGreaterThan(start);
     const legacyMk = runInNewContext(`${runtime.slice(start, end)}; mk`, {
@@ -85,12 +85,12 @@ describe("Cloudy learning progress", () => {
         const correctTokens = exercise.a.split(" ");
         const distractors = exercise.o.slice(correctTokens.length);
         const availableWords = new Set([
-          ...lesson.w.map(([word]) => word).filter((word) => !/\\s/.test(word)),
+          ...lesson.w.map(([word]) => word).filter((word) => !/\s/.test(word)),
           ...lesson.s.flatMap(([, sentence]) => sentence.split(" ")),
         ]);
         expect(exercise.o.slice(0, correctTokens.length)).toEqual(correctTokens);
         expect(distractors.every((token) => availableWords.has(token))).toBe(true);
-        expect(distractors.every((token) => !/\\s/.test(token) && !/[.,!?]/.test(token))).toBe(true);
+        expect(distractors.every((token) => !/\s/.test(token) && !/[.,!?]/.test(token))).toBe(true);
         expect(distractors.every((token) => !correctTokens.includes(token))).toBe(true);
       }
     }
