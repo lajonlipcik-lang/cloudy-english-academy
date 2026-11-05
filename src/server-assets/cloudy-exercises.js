@@ -137,8 +137,31 @@ function draw(){const e=ex[i];sel=null;built=[];done=false;ml=null;mc=0;let b;
 function pick(k){if(done)return;sel=k;snd("pick");document.querySelectorAll(".opt").forEach((b,j)=>b.classList.toggle("sel",j==k));$("#go").disabled=false}
 function tog(k){if(done)return;snd("tap");const p=built.indexOf(k);p>-1?built.splice(p,1):built.push(k);const e=ex[i];$("#ans").innerHTML=built.map(j=>`<button class="chip" onclick="tog(${j})">${e.o[j]}</button>`).join("");e.o.forEach((_,j)=>$("#c"+j).classList.toggle("gone",built.includes(j)));$("#go").disabled=!built.length}
 function miss(){hp--;cmb=0;tot++;snd("bad");const h=$("#hp");h.innerHTML=ic("heart")+hp;h.classList.remove("hit");void h.offsetWidth;h.classList.add("hit");if(navigator.vibrate)try{navigator.vibrate(60)}catch(e){}}
-function fx(good,msg){done=true;const ft=$("#ft"),e=ex[i];const speechWord=String(e?.en||(/[A-Za-z]/.test(String(e?.a??""))&&!/[А-Яа-яЁё]/.test(String(e?.a??""))?e.a:"")).trim();const safeSpeech=speechWord.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\r?\n/g,"\\n").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<div class="ft-head"><p>${msg}</p>${speechWord?`<button class="spk sm" aria-label="Озвучить" onclick="say('${safeSpeech}', 1)">${ic("spk")}</button>`:""}</div><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good)$(".bar i").style.width=(i+1)/ex.length*100+"%"}
+let cloudySuccessAdvanceTimer=0;
+function showCloudySuccess(){
+ const styleId="cloudy-success-reaction-style";
+ if(!document.getElementById(styleId)){
+  const style=document.createElement("style");style.id=styleId;style.textContent=`
+   .cloudy-success-reaction{position:fixed;inset:0;z-index:10050;display:grid;place-content:center;justify-items:center;gap:10px;pointer-events:none;background:radial-gradient(ellipse at center,rgba(38,160,230,.13),transparent 58%);animation:cloudy-success-backdrop .28s ease-out both}
+   .cloudy-success-reaction .ms{width:min(42vw,174px);height:auto;filter:drop-shadow(0 10px 22px rgba(63,174,255,.25));animation:cloudy-success-cloud-in .72s cubic-bezier(.18,.82,.25,1.2) both,cloudy-success-float 1.05s .72s ease-in-out infinite}
+   .cloudy-success-reaction .eyes{transform-box:fill-box;transform-origin:center;animation:cloudy-success-blink 2.1s .8s infinite}
+   .cloudy-success-reaction strong{font:800 clamp(27px,7vw,38px)/1.1 system-ui,sans-serif;letter-spacing:.01em;color:#42baff;text-shadow:0 2px 14px rgba(46,171,255,.25);animation:cloudy-success-text .55s .3s cubic-bezier(.2,.8,.2,1) both}
+   @keyframes cloudy-success-backdrop{from{opacity:0}to{opacity:1}}
+   @keyframes cloudy-success-cloud-in{0%{opacity:0;transform:translateY(55px) scale(.62)}65%{opacity:1;transform:translateY(-7px) scale(1.06)}100%{opacity:1;transform:translateY(0) scale(1)}}
+   @keyframes cloudy-success-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+   @keyframes cloudy-success-blink{0%,43%,47%,100%{transform:scaleY(1)}45%{transform:scaleY(.08)}}
+   @keyframes cloudy-success-text{from{opacity:0;transform:translateY(13px) scale(.88)}to{opacity:1;transform:translateY(0) scale(1)}}
+   @media(prefers-reduced-motion:reduce){.cloudy-success-reaction,.cloudy-success-reaction *{animation:none!important}}
+  `;document.head.appendChild(style);
+ }
+ document.querySelector(".cloudy-success-reaction")?.remove();
+ const reaction=document.createElement("div");reaction.className="cloudy-success-reaction";reaction.setAttribute("aria-live","polite");reaction.innerHTML=mascot("s")+'<strong>Молодец!</strong>';
+ document.body.appendChild(reaction);
+ setTimeout(()=>{if(reaction.isConnected){reaction.style.transition="opacity .28s ease,transform .28s ease";reaction.style.opacity="0";reaction.style.transform="translateY(-55px)";setTimeout(()=>reaction.remove(),300)}},1450);
+}
+function fx(good,msg){done=true;const ft=$("#ft"),e=ex[i];const speechWord=String(e?.en||(/[A-Za-z]/.test(String(e?.a??""))&&!/[А-Яа-яЁё]/.test(String(e?.a??""))?e.a:"")).trim();const safeSpeech=speechWord.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\r?\n/g,"\\n").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<div class="ft-head"><p>${msg}</p>${speechWord?`<button class="spk sm" aria-label="Озвучить" onclick="say('${safeSpeech}', 1)">${ic("spk")}</button>`:""}</div><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good){$(".bar i").style.width=(i+1)/ex.length*100+"%";showCloudySuccess();clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=setTimeout(()=>{if(done&&ft.isConnected)next()},2050)}}
 async function askExerciseCoach(){
+ clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=0;
  const box=$("#exerciseCoachReply"),e=ex[i];if(!box||!e||box.dataset.loading)return;
  box.dataset.loading="1";box.textContent="Cloudy разбирает задание…";
  const target=String(e.a??e.en??"");
@@ -162,7 +185,7 @@ function mp(side,id,el){if(done||el.classList.contains("good"))return;
  if(!ml)return;const l=ml[1];
  if(ml[0]==id){if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:id},true,{retry:!!rt});l.classList.remove("sel");l.classList.add("good");el.classList.add("good");snd("match");ml=null;if(++mc==ex[i].L.length){ok++;tot++;cmb++;setTimeout(()=>{snd("ok",cmb);fx(true,"Все пары найдены!")},350)}}
  else{if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:ml[0]},false,{retry:!!rt});[l,el].forEach(b=>{b.classList.add("wrong");setTimeout(()=>b.classList.remove("wrong"),500)});l.classList.remove("sel");addMis(ml[0]);ml=null;miss();if(hp<=0)setTimeout(fail,800)}}
-function next(){if(hp<=0)return fail();snd("flip");if(++i>=ex.length&&!rt&&lm.length){rt=1;lm.slice(0,3).forEach(en=>ex.push(cq(en,ruOf(en),Math.random()*2|0)))}if(i>=ex.length)return fin();window.scrollTo({top:0,behavior:"instant"});draw()}
+function next(){clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=0;document.querySelector(".cloudy-success-reaction")?.remove();if(hp<=0)return fail();snd("flip");if(++i>=ex.length&&!rt&&lm.length){rt=1;lm.slice(0,3).forEach(en=>ex.push(cq(en,ruOf(en),Math.random()*2|0)))}if(i>=ex.length)return fin();window.scrollTo({top:0,behavior:"instant"});draw()}
 function fail(){snd("bad");app.innerHTML=`<div class="scr res">${mascot("s")}<div class="big2">Жизни закончились</div><p style="opacity:.85">Ничего страшного, попробуем ещё раз.</p><br><button class="btn" onclick="again()">ПОПРОБОВАТЬ СНОВА</button><br><br><button class="btn" onclick="view()" style="background:rgba(255,255,255,.15);color:#fff;box-shadow:none">НА ГЛАВНУЮ</button></div>`}
 function fin(){roll();const t=new Date().toDateString(),y=new Date(Date.now()-864e5).toDateString(),gain=cloudUserId?24:15+hp*3,st=hp>=5?3:hp>=3?2:1,acc=Math.round(ok/Math.max(tot,1)*100);
  if(S.last!=t){S.streak=S.last==y?S.streak+1:1;S.last=t}
