@@ -153,6 +153,46 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           else result = await api.cloudyTutorChat({ data: payload as never });
           reply({ ok: true, result }); return;
         }
+        if (message.action === "community-feed-get") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const { data: posts, error } = await supabase.from("community_posts").select("id, author_id, body, status, created_at").eq("status", "published").order("created_at", { ascending: false }).limit(50);
+          if (error) throw error;
+          const own = await supabase.from("community_posts").select("id, author_id, body, status, created_at").eq("author_id", uid).order("created_at", { ascending: false }).limit(30);
+          if (own.error) throw own.error;
+          const merged = new Map<string, { id: string; author_id: string; body: string; status: string; created_at: string }>();
+          for (const post of [...(posts ?? []), ...(own.data ?? [])]) merged.set(post.id, post);
+          const rows = [...merged.values()].sort((x, y) => Date.parse(y.created_at) - Date.parse(x.created_at)).slice(0, 50);
+          const authorIds = [...new Set(rows.map(post => post.author_id))];
+          const profiles = authorIds.length ? await supabase.from("community_public_profiles" as any).select("id, display_name").in("id", authorIds) : { data: [], error: null };
+          if (profiles.error) throw profiles.error;
+          const names = new Map((profiles.data ?? []).map((profile: { id: string; display_name: string | null }) => [profile.id, profile.display_name || "Участник"]));
+          reply({ ok: true, result: rows.map(post => ({ ...post, author_name: post.author_id === uid ? "Вы" : names.get(post.author_id) || "Участник", is_own: post.author_id === uid })) });
+          return;
+        }
+        if (message.action === "community-post-create") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          const body = typeof payload.body === "string" ? payload.body.trim() : "";
+          if (body.length < 1 || body.length > 2000) throw new Error("Текст публикации должен содержать от 1 до 2000 символов.");
+          const { data, error } = await supabase.from("community_posts").insert({ author_id: uid, body }).select("id").single();
+          if (error) throw error;
+          reply({ ok: true, result: { id: data.id } });
+          return;
+        }
+        if (message.action === "community-post-delete") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          const postId = typeof payload.postId === "string" ? payload.postId : "";
+          if (!/^[0-9a-f-]{36}$/i.test(postId)) throw new Error("Некорректная публикация.");
+          const { data, error } = await supabase.from("community_posts").delete().eq("id", postId).eq("author_id", uid).select("id").maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error("Публикация не найдена или уже удалена.");
+          reply({ ok: true, result: { id: data.id } });
+          return;
+        }
         if (message.action === "community-profile-get") {
           if (!accessTokenRef.current || !userIdRef.current) throw new Error("Сначала войдите в аккаунт.");
           const { data, error } = await supabase.from("profiles").select("is_public, bio").eq("id", userIdRef.current).maybeSingle();
