@@ -443,9 +443,10 @@ async function syncLearningEvents(){
  if(learningEventSyncInFlight)return learningEventSyncInFlight;
  const events=window.CloudyLearning.pending(KEY,50);
  if(!events.length)return;
- const userId=S.user.id;
+ const userId=cloudUserId;
+ if(!userId)return;
  learningEventSyncInFlight=authRequest("learning-events",{payload:{events}}).then(response=>{
-  if(S.user?.id!==userId)return;
+  if(cloudUserId!==userId)return;
   const accepted=response?.result?.acceptedEventIds;
   if(Array.isArray(accepted))window.CloudyLearning.acknowledge(KEY,accepted);
   if(window.CloudyLearning.pending(KEY,1).length){clearTimeout(learningEventSyncTimer);learningEventSyncTimer=setTimeout(()=>void syncLearningEvents(),250);}
