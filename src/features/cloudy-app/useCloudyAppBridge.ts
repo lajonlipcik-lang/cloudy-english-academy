@@ -175,7 +175,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const uid = userIdRef.current;
           if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
           const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
-          const body = typeof payload["body"] === "string" ? payload.body.trim() : "";
+          const body = typeof payload["body"] === "string" ? (payload["body"] as string).trim() : "";
           if (body.length < 1 || body.length > 2000) throw new Error("Текст публикации должен содержать от 1 до 2000 символов.");
           const { data, error } = await supabase.from("community_posts").insert({ author_id: uid, body }).select("id").single();
           if (error) throw error;
@@ -186,7 +186,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const uid = userIdRef.current;
           if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
           const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
-          const postId = typeof payload["postId"] === "string" ? payload.postId : "";
+          const postId = typeof payload["postId"] === "string" ? payload["postId"] : "";
           if (!/^[0-9a-f-]{36}$/i.test(postId)) throw new Error("Некорректная публикация.");
           const { data, error } = await supabase.from("community_posts").delete().eq("id", postId).eq("author_id", uid).select("id").maybeSingle();
           if (error) throw error;
@@ -206,9 +206,9 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           if (!accessTokenRef.current || !userIdRef.current) throw new Error("Сначала войдите в аккаунт.");
           const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
           if (typeof payload["is_public"] !== "boolean") throw new Error("Некорректная настройка публичности.");
-          const bio = typeof payload["bio"] === "string" ? payload.bio.trim() : "";
+          const bio = typeof payload["bio"] === "string" ? (payload["bio"] as string).trim() : "";
           if (bio.length > 240) throw new Error("Описание слишком длинное.");
-          const { data, error } = await supabase.from("profiles").update({ is_public: payload.is_public, bio }).eq("id", userIdRef.current).select("is_public, bio").single();
+          const { data, error } = await supabase.from("profiles").update({ is_public: payload["is_public"] as boolean, bio }).eq("id", userIdRef.current).select("is_public, bio").single();
           if (error) throw error;
           reply({ ok: true, result: { is_public: data.is_public === true, bio: String(data.bio ?? "").slice(0, 240) } });
           return;
