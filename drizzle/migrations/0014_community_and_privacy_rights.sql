@@ -132,8 +132,6 @@ CREATE POLICY community_posts_owner_insert ON public.community_posts
   FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND EXISTS (
     SELECT 1 FROM public.community_public_profiles p WHERE p.id = auth.uid()
   ));
-CREATE POLICY community_posts_owner_update ON public.community_posts
-  FOR UPDATE TO authenticated USING (author_id = auth.uid()) WITH CHECK (author_id = auth.uid());
 CREATE POLICY community_posts_owner_delete ON public.community_posts
   FOR DELETE TO authenticated USING (author_id = auth.uid());
 
@@ -155,8 +153,6 @@ CREATE POLICY community_comments_owner_insert ON public.community_comments
       WHERE cp.id = post_id AND cp.status = 'published'
     )
   );
-CREATE POLICY community_comments_owner_update ON public.community_comments
-  FOR UPDATE TO authenticated USING (author_id = auth.uid()) WITH CHECK (author_id = auth.uid());
 CREATE POLICY community_comments_owner_delete ON public.community_comments
   FOR DELETE TO authenticated USING (author_id = auth.uid());
 
