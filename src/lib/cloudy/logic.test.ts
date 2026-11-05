@@ -181,6 +181,15 @@ describe("Cloudy learning progress", () => {
     expect(runtime).toContain('e.k=="t"||e.k=="v"');
   });
 
+  it("adds three typed vocabulary-recall prompts before multiple-choice practice", () => {
+    const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
+    expect(runtime).toContain('const recall=sh(D[n].w).slice(0,Math.min(3,D[n].w.length)).map(([en,ru])=>({k:"r",q:ru,a:en,en,title:"Вспомни слово без подсказок"}));');
+    expect(runtime).toContain("vocabulary,...recall,...practice");
+    expect(runtime).toContain('else if(e.k=="r")b=');
+    expect(runtime).toContain('typed===String(e.a).toLocaleLowerCase()');
+    expect(runtime).toContain('selectedAnswer:e.k==="r"?typed');
+    expect(runtime).toContain('e.k!=="b"&&e.k!=="r"');
+  });
   it("provides a teach-before-test foundation note for every A1 lesson", () => {
     expect(Object.keys(A1_FOUNDATIONS).map(Number)).toEqual(levelLessons("A1"));
     for (const index of levelLessons("A1")) {
