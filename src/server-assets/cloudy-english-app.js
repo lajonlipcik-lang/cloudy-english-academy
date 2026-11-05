@@ -677,11 +677,11 @@ function shortsChooseFile(input){
   video.onloadedmetadata=()=>{const ratio=video.videoWidth/video.videoHeight,vertical=ratio>0&&ratio<0.9;shortsUploadMeta={duration:video.duration,width:video.videoWidth,height:video.videoHeight,vertical};if(info)info.innerHTML='<span>'+shortsFormatSize(f.size)+'</span><span>'+video.videoWidth+' × '+video.videoHeight+'</span><span>'+shortsFormatDuration(video.duration)+'</span><span class="shorts-file-name">'+String(f.name).replace(/[&<>"']/g,"")+'</span>';if(!vertical&&p){const note=document.createElement("small");note.className="shorts-upload-ratio-note";note.textContent="Видео не вертикальное. Его можно выбрать, но формат 9:16 лучше подходит для Shorts.";p.appendChild(note);}};
   video.onerror=()=>{shortsUploadError("Не удалось открыть этот файл для предпросмотра. Попробуй другое видео.");};
  }
- const b=$("#shorts-upload-submit");if(b){b.disabled=false;b.textContent="Проверить оформление";}
+ const b=$("#shorts-upload-submit");if(b){b.disabled=false;b.textContent="Проверить видео и описание";}
  const drop=$("#shorts-upload-drop");if(drop)drop.classList.add("has-file");
 }
 function shortsRemoveFile(){if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;const input=$("#shorts-upload-file");if(input)input.value="";const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-upload-placeholder">'+mascot("h")+'<b>Здесь появится предпросмотр</b><small>Лучше всего смотрится вертикальное видео 9:16</small></div>';const info=$("#shorts-upload-file-info");if(info){info.hidden=true;info.innerHTML="";}const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Выбрать видео, чтобы продолжить";}const d=$("#shorts-upload-drop");if(d)d.classList.remove("has-file");}
-function shortsSubmitUpload(){if(!shortsSelectedFile){toast("Сначала выбери видео.",false);return;}if(!$("#shorts-upload-caption")?.value.trim()){toast("Добавь описание видео.",false);$("#shorts-upload-caption")?.focus();return;}toast("Оформление готово. Публикация станет доступна после подключения загрузки и модерации.");}
+function shortsSubmitUpload(){if(!shortsSelectedFile){toast("Сначала выбери видео.",false);return;}if(!$("#shorts-upload-caption")?.value.trim()){toast("Добавь описание видео.",false);$("#shorts-upload-caption")?.focus();return;}toast("Проверка оформления завершена. Это черновик: отправка и публикация пока недоступны.");}
 
 
 let communityProfile=null,communityProfileUser=null,communityProfileLoading=false,communityProfileSaving=false,communityProfileError="";
