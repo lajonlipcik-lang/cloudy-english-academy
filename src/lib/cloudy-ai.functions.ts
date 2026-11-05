@@ -317,7 +317,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
     }
     const details=active.questions.map((question:any)=>({questionId:question.id,skillId:question.skillId,prompt:question.prompt,selected:question.options[answers.get(question.id)!],correct:question.options[question.correctIndex],correctAnswer:answers.get(question.id)===question.correctIndex,explanation:question.explanation}));
     const score=details.filter((detail:any)=>detail.correctAnswer).length,total=details.length;
-    const weakSkills=[...new Set(details.filter((detail:any)=>!detail.correctAnswer).map((detail:any)=>detail.skillId))];
+    const weakSkills:string[]=[...new Set<string>(details.filter((detail:any)=>!detail.correctAnswer).map((detail:any)=>String(detail.skillId)))];
     const providers=(await rows(db)).filter((provider:any)=>provider.enabled).sort((a:any,b:any)=>a.priority-b.priority);
     if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
     const feedbackPrompt="Оцени завершённый персональный экзамен ученика уровня "+active.level+". Результат: "+score+" из "+total+". По каждому неверному ответу кратко объясни ошибку, а затем дай общий вывод и 2 конкретные темы для повторения. Не преувеличивай уровень знаний и не меняй CEFR-уровень. Пиши по-русски, доброжелательно, коротко и без Markdown. Данные: "+JSON.stringify(details.map((detail:any)=>({question:detail.prompt,answer:detail.selected,correctAnswer:detail.correct,wasCorrect:detail.correctAnswer,explanation:detail.explanation})));
