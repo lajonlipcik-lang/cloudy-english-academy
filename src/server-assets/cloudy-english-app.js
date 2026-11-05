@@ -217,7 +217,7 @@ function authRequest(action,payload={}){
  if(window.parent===window)return Promise.reject(new Error('Авторизация доступна при открытии Cloudy через основное приложение.'));
  return new Promise((resolve,reject)=>{
   const id=String(++authSequence)+'-'+Date.now();
-  const timeoutMs=action==='ai-chat'?95000:action==='tts'?40000:30000;
+  const timeoutMs=action==='ai-chat'||action==='learning-exam-start'||action==='learning-exam-submit'?95000:action==='tts'?40000:30000;
   const timer=setTimeout(()=>{
    const pending=authPending.get(id);
    if(!pending)return;
@@ -421,7 +421,62 @@ function lg(){const li=LG.reduce((a,x,k)=>S.xp>=x[1]?k:a,0),c=LG[li],nx=LG[li+1]
  rows=BOTS.map((n,k)=>[n,Math.round(((seed*(k+3)*7919)%180+40)*dow/7),0]).concat([['Вы',w,1]]).sort((a,b)=>b[1]-a[1]);
  return `<h2 style="margin-top:12px">Лига: ${c[0]}</h2><div class="card lgc"><span class="mdl" style="color:${LC[li]}">${ic('medal')}</span><div style="flex:1"><b>${nx?'До лиги '+nx[0]+': '+(nx[1]-S.xp)+' XP':'Максимальная лига'}</b><div class="pb" style="margin-top:8px"><i style="width:${pr*100}%"></i></div></div></div><div class="card"><h3>Рейтинг недели</h3>${rows.map((r,k)=>`<div class="row lr${r[2]?' me':''}" style="animation-delay:${k*70}ms"><span><b style="display:inline-block;width:26px">${k+1}</b>${r[0]}</span><b>${r[1]} XP</b></div>`).join('')}<small style="opacity:.7">Соперники учебные: пример для будущей онлайн-лиги</small></div><div class="card"><h3>Достижения</h3><div class="ag">${ACH.map(a=>`<div class="bd${S.ach.includes(a[0])?' on':''}">${ic(a[3])}<small>${a[1]}</small></div>`).join('')}</div></div>`}
 function cal(){const t=new Date(),c=[];for(let k=27;k>=0;k--){const d=new Date(t);d.setDate(t.getDate()-k);const on=S.days.includes(dk(d));c.push(`<i class="cd${on?' on':''}" style="animation-delay:${(27-k)*25}ms">${on?ic('flame'):d.getDate()}</i>`)}return `<div class="card"><h3>Календарь серии</h3><div class="cal">${c.join('')}</div></div>`}
-const remB=()=>{if(!S.set.rem||S.last===new Date().toDateString())return '';const lessons=SEC.flatMap(section=>section.l),nextLesson=lessons[S.dn[S.lv]||0],nextLevel=nxt(S.lv);if(!Number.isInteger(nextLesson)&&!nextLevel)return '';const action=Number.isInteger(nextLesson)?`go(${nextLesson})`:`setLv('${nextLevel}')`;return `<div class="rem-home"><div class="rem-cloud">${mascot()}</div><div class="rem-copy">Есть минутка для английского?</div><button class="rem-start" onclick="${action}">Начать</button></div>`};
+let personalExamBusy=false,PERSONAL_EXAM=null,learningSyncTimer=0;
+const examEscape=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+async function syncLearningEvidence(){
+ if(!S.user||S.user.guest||!window.CloudyLearning)return;
+ const profile=CloudyLearning.profile(KEY);
+ if(!profile||!profile.attempts)return;
+ try{await authRequest("learning-exam-sync",{payload:{learnerProfile:profile}})}catch(error){console.warn("[cloudy-learning] profile sync deferred")}
+}
+window.addEventListener("cloudy:learning-updated",()=>{
+ if(!S.user||S.user.guest)return;
+ clearTimeout(learningSyncTimer);
+ learningSyncTimer=setTimeout(()=>{void syncLearningEvidence()},1200);
+});
+const examCard=()=>{
+ if(!S.user||S.user.guest)return "";
+ const profile=window.CloudyLearning?.profile(KEY),ready=(S.dn[S.lv]||0)>0&&(profile?.attempts||0)>0;
+ const caption=ready?"Экзамен составлен ИИ по твоим урокам, ответам и ошибкам.":"Пройди урок и ответь на задания — Cloudy подготовит твой экзамен.";
+ return '<div class="exam-home"><div class="exam-cloud">'+mascot()+'</div><div class="exam-copy"><b>Персональный экзамен</b><small>'+caption+'</small></div><button class="exam-start" '+(ready?'':'disabled')+' onclick="startPersonalExam()">'+(ready?'Начать':'После урока')+'</button></div>';
+};
+async function startPersonalExam(){
+ if(personalExamBusy)return;
+ if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы сохранить персональный экзамен.");return}
+ personalExamBusy=true;
+ app.innerHTML='<div class="scr exam-loading"><div class="exam-cloud">'+mascot()+'</div><b>Клауди готовит твой экзамен…</b><small>Подбираю вопросы по пройденным урокам и ошибкам</small></div>';
+ try{
+  const profile=window.CloudyLearning?.profile(KEY)||null;
+  const response=await authRequest("learning-exam-start",{payload:{level:S.lv,learnerProfile:profile}});
+  if(!response?.exam?.id||!Array.isArray(response.exam.questions)||response.exam.questions.length!==6)throw new Error("Не удалось подготовить экзамен. Попробуй позже.");
+  PERSONAL_EXAM={...response.exam,index:0,answers:[],selected:null};
+  renderPersonalExam();
+ }catch(error){toast(error?.message||"Не удалось подготовить экзамен.",false);view()}
+ finally{personalExamBusy=false}
+}
+function renderPersonalExam(){
+ const exam=PERSONAL_EXAM;if(!exam)return view();
+ const q=exam.questions[exam.index],progress=exam.index/exam.questions.length*100,selected=exam.selected;
+ app.innerHTML='<div class="scr exam-screen"><div class="top"><button class="x" onclick="PERSONAL_EXAM=null;view()">'+ic("x")+'</button><div class="bar"><i style="width:'+progress+'%"></i></div><b>'+(exam.index+1)+'/'+exam.questions.length+'</b></div><div class="body"><h2>Персональный экзамен · '+exam.level+'</h2><p class="exam-instruction">Выбери один правильный ответ.</p><div class="exam-question">'+examEscape(q.prompt)+'</div><div class="exam-options">'+q.options.map((option,index)=>'<button class="opt '+(selected===index?'sel':'')+'" onclick="examChoose('+index+')">'+examEscape(option)+'</button>').join("")+'</div><button class="btn exam-next" '+(selected===null?'disabled':'')+' onclick="examNext()">'+(exam.index===exam.questions.length-1?'ЗАВЕРШИТЬ':'ДАЛЬШЕ')+'</button></div></div>';
+}
+function examChoose(index){if(!PERSONAL_EXAM||PERSONAL_EXAM.selected!==null)return;PERSONAL_EXAM.selected=index;renderPersonalExam()}
+async function examNext(){
+ const exam=PERSONAL_EXAM;if(!exam||exam.selected===null)return;
+ exam.answers.push({questionId:exam.questions[exam.index].id,selectedIndex:exam.selected});
+ if(exam.index<exam.questions.length-1){exam.index++;exam.selected=null;renderPersonalExam();snd("flip");return}
+ app.innerHTML='<div class="scr exam-loading"><div class="exam-cloud">'+mascot()+'</div><b>Клауди проверяет ответы…</b><small>Анализирую результат и слабые темы</small></div>';
+ try{
+  const response=await authRequest("learning-exam-submit",{payload:{examId:exam.id,answers:exam.answers}});
+  PERSONAL_EXAM=null;renderPersonalExamResult(response.result);
+ }catch(error){toast(error?.message||"Не удалось проверить экзамен.",false);view()}
+}
+function renderPersonalExamResult(result){
+ if(!result){view();return}
+ const details=Array.isArray(result.details)?result.details:[];
+ const rows=details.map(item=>'<div class="exam-result-row '+(item.correctAnswer?'correct':'incorrect')+'"><b>'+(item.correctAnswer?'Верно':'Нужно повторить')+'</b><span>'+examEscape(item.prompt)+'</span>'+(item.correctAnswer?'':'<small>Правильный ответ: '+examEscape(item.correct)+'</small>')+'</div>').join("");
+ app.innerHTML='<div class="scr res exam-result">'+mascot()+'<div class="big2">Экзамен завершён</div><div class="exam-score">'+result.score+' из '+result.total+'</div><div class="exam-percent">'+result.percent+'% правильных ответов · '+result.level+'</div><div class="exam-feedback">'+examEscape(result.feedback).replace(/\n/g,"<br>")+'</div><div class="exam-result-list">'+rows+'</div><button class="btn" onclick="view()">НА ГЛАВНУЮ</button></div>';
+ snd(result.percent>=80?"win":"ok");
+}
 const rvBtn=()=>{const n=Object.keys(S.mis).length;return n?`<button class="chest" onclick="review()">${ic('redo')}<span>Ошибки: ${n}</span></button>`:''};
 const AIcard=()=>`<button class="card ai" onclick="chat()">${mascot()}<div><b>Практика с Клауди</b><br><small style="opacity:.8">Диалог на уровне ${S.lv}</small></div></button>`;
 
@@ -479,7 +534,7 @@ function learn(){
    return `<div class="nw" style="--x:${x}px;--d:${d}ms">${st=="cur"?'<div class="tip">НАЧАТЬ</div>':""}<button class="node ${st}" onclick="${st=="lock"?"snd('bad')":`go(${li})`}">${st=="cur"?'<svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/></svg>':""}${ic(st=="done"?"check":st=="cur"?"star":"lock")}</button><div class="lb">${D[li].t}</div></div>`}).join("");
   return `<div class="ban"><div><small>РАЗДЕЛ ${si+1}</small><h3>${s.n}</h3></div><button class="gd" onclick="guide(${si})">${ic("book")}</button></div><div class="path">${nodes}<div class="deco">${mascot()}</div></div>`}).join("");
  return `<div class="stats"><button class="av" onclick="tab(3)">${ic("user")}</button><span class="pill"><b class="en" onclick="tab(3)">${S.lv}</b></span><span class="sp"></span><span class="pill">${ic("flame")}${S.streak}</span><span class="pill">${ic("bolt")}${S.xp}</span></div>
- <div class="home-actions"><button class="chest ${rdy?"rdy":td.claim?"got":""}" onclick="claim()">${ic("chest")}<span>${td.claim?"Получено":rdy?"Забрать":Math.min(td.xp,g)+"/"+g+" XP"}</span></button>${rvBtn()}</div>${remB()}${AIcard()}${secs}${dn>=tl&&nxt(S.lv)?`<div class="card" style="text-align:center"><b>Уровень ${S.lv} пройден!</b><br><br><button class="btn" onclick="setLv('${nxt(S.lv)}')">ПЕРЕЙТИ НА ${nxt(S.lv)}</button></div>`:""}`}
+ <div class="home-actions"><button class="chest ${rdy?"rdy":td.claim?"got":""}" onclick="claim()">${ic("chest")}<span>${td.claim?"Получено":rdy?"Забрать":Math.min(td.xp,g)+"/"+g+" XP"}</span></button>${rvBtn()}</div>${examCard()}${AIcard()}${secs}${dn>=tl&&nxt(S.lv)?`<div class="card" style="text-align:center"><b>Уровень ${S.lv} пройден!</b><br><br><button class="btn" onclick="setLv('${nxt(S.lv)}')">ПЕРЕЙТИ НА ${nxt(S.lv)}</button></div>`:""}`}
 function claim(){const td=S.td;if(td.xp>=S.set.goal&&!td.claim){td.claim=1;S.xp+=25;save();snd("chest");conf(50);view(0)}else snd("bad")}
 function guide(si){sheet(`<h3>Шпаргалка: ${SEC[si].n}</h3>`+SEC[si].l.map(li=>`<b style="opacity:.8;font-size:13px">${D[li].t.toUpperCase()}</b>`+D[li].w.map(([e,r])=>`<div class="row"><span>${e} <span style="opacity:.65">— ${r}</span></span><button class="spk" onclick="say('${e}',1)">${ic("spk")}</button></div>`).join("")).join("")+`<br><button class="btn" onclick="closeSh()">ЗАКРЫТЬ</button>`)}
 function quests(){const g=S.set.goal,td=S.td,Q=[["Набери "+g+" XP",td.xp,g],["Пройди 2 урока",td.les,2],["Дай 12 верных ответов",td.ok,12]];
