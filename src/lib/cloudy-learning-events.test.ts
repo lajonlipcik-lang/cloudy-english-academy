@@ -10,7 +10,7 @@ describe("Cloudy learning event validation", () => {
   it("binds the authenticated user ID on the server-side row", () => {
     const [row] = normalizeCloudyLearningEvents([{
       eventId, sessionId, eventType: "answer_submitted", at: now, level: "A1",
-      lessonIndex: 3, exerciseType: "c", skillId: "vocabulary:apple", correct: false,
+      lessonIndex: 3, questionIndex: 0, exerciseType: "c", skillId: "vocabulary:apple", correct: false,
       retry: true, responseSeconds: 12, selectedAnswer: "apples", correctAnswer: "apple",
     }], userId, now);
     expect(row.user_id).toBe(userId);
@@ -18,6 +18,7 @@ describe("Cloudy learning event validation", () => {
     expect(row.session_id).toBe(sessionId);
     expect(row.is_correct).toBe(false);
     expect(row.response_seconds).toBe(12);
+    expect(row.question_index).toBe(0);
   });
 
   it("rejects client-supplied duplicate IDs and malformed session IDs", () => {
