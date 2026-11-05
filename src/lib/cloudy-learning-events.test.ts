@@ -13,12 +13,12 @@ describe("Cloudy learning event validation", () => {
       lessonIndex: 3, questionIndex: 0, exerciseType: "c", skillId: "vocabulary:apple", correct: false,
       retry: true, responseSeconds: 12, selectedAnswer: "apples", correctAnswer: "apple",
     }], userId, now);
-    expect(row.user_id).toBe(userId);
-    expect(row.event_id).toBe(eventId);
-    expect(row.session_id).toBe(sessionId);
-    expect(row.is_correct).toBe(false);
-    expect(row.response_seconds).toBe(12);
-    expect(row.question_index).toBe(0);
+    expect(row!.user_id).toBe(userId);
+    expect(row!.event_id).toBe(eventId);
+    expect(row!.session_id).toBe(sessionId);
+    expect(row!.is_correct).toBe(false);
+    expect(row!.response_seconds).toBe(12);
+    expect(row!.question_index).toBe(0);
   });
 
   it("rejects client-supplied duplicate IDs and malformed session IDs", () => {
@@ -43,8 +43,8 @@ describe("Cloudy learning event validation", () => {
       eventId, eventType: "answer_submitted", at: now, correct: true,
       selectedAnswer: "x".repeat(300), correctAnswer: "y".repeat(300),
     }], userId, now);
-    expect(row.selected_answer).toHaveLength(160);
-    expect(row.correct_answer).toHaveLength(160);
+    expect(row!.selected_answer).toHaveLength(160);
+    expect(row!.correct_answer).toHaveLength(160);
   });
 
   it("limits batches to fifty events", () => {
