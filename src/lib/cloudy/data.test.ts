@@ -33,6 +33,18 @@ describe("Cloudy A1-A2 curriculum structure", () => {
     }
   });
 
+  it("keeps corrected translations and question punctuation", () => {
+    expect(D[30]?.s.find(([ru]) => ru.includes("библиотеку"))?.[0]).toBe("Я хожу в библиотеку");
+    expect(D[31]?.s[0]?.[0]).toBe("Я езжу на автобусе");
+    expect(D[32]?.s[1]?.[0]).toBe("На небе есть облако");
+    expect(D[34]?.s[0]?.[1]).toBe("Where is my phone?");
+    expect(D[47]?.s[0]?.[0]).toBe("Ты когда-нибудь был в Лондоне?");
+    expect(D[47]?.s[0]?.[1]).toBe("Have you ever been to London?");
+    expect(D[48]?.s[0]?.[0]).toBe("Хочешь пойти в кино?");
+    expect(D[48]?.s[1]?.[0]).toBe("Давай встретимся в шесть?");
+    expect(D[53]?.s[4]?.[1]).toBe("Is this the checkout line?");
+  });
+
   it("places the three new independence-focused topics at the end of A2", () => {
     expect(D[51]?.t).toBe("Рабочие задачи");
     expect(D[52]?.t).toBe("Телефонное общение");
