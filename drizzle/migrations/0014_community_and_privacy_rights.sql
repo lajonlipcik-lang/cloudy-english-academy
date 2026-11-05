@@ -296,3 +296,59 @@ DROP TRIGGER IF EXISTS community_comments_rate_limit ON public.community_comment
 CREATE TRIGGER community_comments_rate_limit
   BEFORE INSERT ON public.community_comments
   FOR EACH ROW EXECUTE FUNCTION public.enforce_community_comment_rate_limit();
+
+-- Atomic moderation action. Only the trusted server service-role client may execute it.
+CREATE OR REPLACE FUNCTION public.moderate_community_report(
+  p_report_id uuid,
+  p_status text,
+  p_content_action text DEFAULT 'none'
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  target_post_id uuid;
+  target_comment_id uuid;
+BEGIN
+  IF p_status NOT IN ('open', 'reviewing', 'resolved', 'dismissed') THEN
+    RAISE EXCEPTION 'Invalid report status';
+  END IF;
+  IF p_content_action NOT IN ('none', 'hide', 'restore') THEN
+    RAISE EXCEPTION 'Invalid content action';
+  END IF;
+
+  SELECT post_id, comment_id
+    INTO target_post_id, target_comment_id
+    FROM public.community_reports
+    WHERE id = p_report_id
+    FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Report not found';
+  END IF;
+
+  IF p_content_action = 'hide' THEN
+    IF target_post_id IS NOT NULL THEN
+      UPDATE public.community_posts SET status = 'hidden', updated_at = now()
+      WHERE id = target_post_id;
+    ELSE
+      UPDATE public.community_comments SET status = 'hidden', updated_at = now()
+      WHERE id = target_comment_id;
+    END IF;
+  ELSIF p_content_action = 'restore' THEN
+    IF target_post_id IS NOT NULL THEN
+      UPDATE public.community_posts SET status = 'published', updated_at = now()
+      WHERE id = target_post_id;
+    ELSE
+      UPDATE public.community_comments SET status = 'published', updated_at = now()
+      WHERE id = target_comment_id;
+    END IF;
+  END IF;
+
+  UPDATE public.community_reports SET status = p_status WHERE id = p_report_id;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.moderate_community_report(uuid, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.moderate_community_report(uuid, text, text) TO service_role;
