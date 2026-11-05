@@ -391,7 +391,7 @@ const A1_EXTRA = [
     ],
     "s": [
       [
-        "Я еду на автобусе",
+        "Я езжу на автобусе",
         "I go by bus",
         "goes the"
       ],
@@ -406,7 +406,7 @@ const A1_EXTRA = [
         "have the"
       ],
       [
-        "Она едет на велосипеде",
+        "Она ездит на велосипеде",
         "She rides a bicycle",
         "ride the"
       ]
