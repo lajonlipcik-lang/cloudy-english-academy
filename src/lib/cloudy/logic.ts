@@ -122,7 +122,24 @@ export function buildExercises(l: Pick<Lesson, "w" | "s">, pool: Pair[], opts: {
   l.w.forEach(([en, ru], k) => out.push(choiceQuestion(en, ru, k % 3, pool, r)));
   const p = shuffle(l.w, r).slice(0, 4);
   if (p.length) out.push({ k: "m", L: shuffle(p.map((x) => [x[0], x[0]] as Pair), r), R: shuffle(p.map((x) => [x[1], x[0]] as Pair), r) });
-  l.s.forEach(([ru, en, d]) => out.push({ k: "b", q: ru, a: en, o: shuffle([...en.split(" "), ...d.split(" ")], r), title: "Переведите на английский" }));
+  l.s.forEach(([ru, en], sentenceIndex) => {
+    const correctTokens = en.split(" ");
+    const used = new Set(correctTokens.map((token) => token.toLowerCase()));
+    // Build distractors from real single-word vocabulary in this lesson.
+    // Ignore legacy "d" fragments such as "you the" and "four the".
+    const candidates = [
+      ...l.w.map(([word]) => word),
+      ...l.s.filter((_, index) => index !== sentenceIndex).flatMap(([, sentence]) => sentence.split(" ")),
+    ].filter((token) => token && !used.has(token.toLowerCase()) && !/[.,!?]/.test(token));
+    const distractors = [...new Set(candidates)].slice(0, 2);
+    out.push({
+      k: "b",
+      q: ru,
+      a: en,
+      o: shuffle([...correctTokens, ...distractors], r),
+      title: "Переведите на английский",
+    });
+  });
   const pronunciation = shuffle(l.w, r)[0];
   if (pronunciation && opts.mic) out.push({ k: "p", en: pronunciation[0] });
   return shuffle(out, r);
