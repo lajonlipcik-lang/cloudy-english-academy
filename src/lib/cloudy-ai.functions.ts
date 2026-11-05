@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { runWithAiFallback } from "@/lib/ai/router";
 import { D, LI, LV } from "@/lib/cloudy/data";
 const OWNER="lajonlipcik@gmail.com";
-type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown};
+type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>};
 function validate(v:Input){const t=String(v?.accessToken??"");if(!t||t.length>8192||t.split(".").length!==3)throw new Error("Unauthorized");return {...v,accessToken:t}}
 async function ctx(token:string,owner=false){const url=process.env["SUPABASE_URL"],pub=process.env["SUPABASE_PUBLISHABLE_KEY"];if(!url||!pub)throw new Error("Supabase server is not configured.");const auth=createClient(url,pub,{auth:{persistSession:false,autoRefreshToken:false}});const {data,error}=await auth.auth.getUser(token);if(error||!data.user)throw new Error("Unauthorized");const email=(data.user.email??"").trim().toLowerCase(),role=data.user.app_metadata?.["role"];if(owner&&role!=="admin"&&email!==OWNER)throw new Error("Недостаточно прав.");const {supabaseAdmin}=await import("@/integrations/supabase/client.server");return {user:data.user,db:supabaseAdmin as any}}
 // New keys are stored in api_key in this RLS-protected table. Legacy AES-GCM
@@ -192,7 +192,8 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const {data:storedProfile}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
     const learnerProfile=mergeLearnerProfiles(safeLearnerProfile(storedProfile?.profile),incomingProfile);
     if(learnerProfile){
-      const {error:profileError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:learnerProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+      const profileToSave={...learnerProfile,activeExam:storedProfile?.profile?.activeExam??null,lastExam:storedProfile?.profile?.lastExam??null};
+      const {error:profileError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:profileToSave,updated_at:new Date().toISOString()},{onConflict:"user_id"});
       if(profileError)throw new Error("Не удалось сохранить профиль обучения.");
     }
     const context=makeLearnerContext(user.id,state,xpResult.data,learnerProfile,requestedLevel,user.user_metadata?.["age"]);
@@ -213,6 +214,125 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     });
     const a=routed.value;
     return {answer:a.content,provider:a.provider,model:a.model};
+  }finally{
+    await db.rpc("release_cloudy_ai_request",{_user_id:user.id,_request_id:requestId});
+  }
+});
+
+
+const examSafeText=(value:unknown,max:number)=>String(value??"").replace(/[\\u0000-\\u001f\\u007f]/g," ").replace(/\\s+/g," ").trim().slice(0,max);
+async function acquireExamQuota(db:any,userId:string,requestId:string){
+  const {data,error}=await db.rpc("acquire_cloudy_ai_request",{_user_id:userId,_request_id:requestId});
+  if(error)throw new Error("Сервис ИИ временно недоступен. Попробуйте позже.");
+  if(!data?.allowed){
+    const seconds=Math.max(1,Number(data?.retry_after)||10);
+    if(data?.reason==="daily")throw new Error("На сегодня лимит обращений к ИИ исчерпан. Попробуйте завтра.");
+    if(data?.reason==="concurrent")throw new Error("У вас уже выполняются запросы к ИИ. Подождите немного.");
+    throw new Error("Слишком много запросов к ИИ. Повторите через "+seconds+" сек.");
+  }
+}
+function parseExamJson(content:string){
+  const cleaned=content.trim().replace(/^\x60{3}(?:json)?\\s*/i,"").replace(/\\s*\x60{3}$/,"");
+  const parsed=JSON.parse(cleaned);
+  if(!parsed||!Array.isArray(parsed.questions))throw new Error("ИИ вернул некорректную структуру экзамена.");
+  return parsed.questions;
+}
+export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
+  const {db,user}=await ctx(data.accessToken);
+  const action=String(data.examAction??"");
+  if(!["sync","start","submit"].includes(action))throw new Error("Неизвестное действие экзамена.");
+  const {data:storedRow,error:storedError}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
+  if(storedError)throw new Error("Не удалось загрузить историю обучения.");
+  const storedRaw=storedRow?.profile&&typeof storedRow.profile==="object"?storedRow.profile:{};
+  const incoming=safeLearnerProfile(data.learnerProfile);
+  const merged=mergeLearnerProfiles(safeLearnerProfile(storedRaw),incoming);
+  const baseProfile={...(merged??{attempts:0,dueCount:0,skills:[],recentEvents:[]}),activeExam:storedRaw.activeExam??null,lastExam:storedRaw.lastExam??null};
+  if(action==="sync"){
+    if(!merged)return {ok:true,synced:false};
+    const {error}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:baseProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+    if(error)throw new Error("Не удалось сохранить историю ответов.");
+    return {ok:true,synced:true,attempts:baseProfile.attempts};
+  }
+  const requestId=crypto.randomUUID();
+  await acquireExamQuota(db,user.id,requestId);
+  try{
+    const {data:progressRow,error:progressError}=await db.from("user_progress").select("state").eq("user_id",user.id).maybeSingle();
+    if(progressError)throw new Error("Не удалось загрузить прогресс для экзамена.");
+    const state=progressRow?.state&&typeof progressRow.state==="object"?progressRow.state as any:{};
+    const level=["A1","A2","B1","B2"].includes(String(state.lv))?String(state.lv):"A1";
+    const levelLessons=LV[level as keyof typeof LV].s.flatMap((section:any)=>section.l);
+    const completed=Math.max(0,Math.min(levelLessons.length,Number(state.dn?.[level])||0));
+    if(action==="start"){
+      if(completed<1)throw new Error("Сначала пройди хотя бы один урок — тогда Cloudy сможет составить экзамен по знакомому материалу.");
+      if(!baseProfile.attempts)throw new Error("Пока недостаточно ответов для персонального экзамена. Пройди урок и ответь на задания.");
+      const lessonIds=levelLessons.slice(0,completed);
+      const lessons=lessonIds.map((id:number)=>D[id]).filter(Boolean);
+      const words=[...new Set(lessons.flatMap((lesson:any)=>lesson.w.map((pair:any)=>String(pair[0]).trim())).filter(Boolean))].slice(0,180);
+      const sentences=[...new Set(lessons.flatMap((lesson:any)=>lesson.s.map((pair:any)=>String(pair[1]).trim())).filter(Boolean))].slice(0,100);
+      if(!words.length&&!sentences.length)throw new Error("В пройденных уроках пока нет материала для экзамена.");
+      const evidence=new Map((baseProfile.skills??[]).map((skill:any)=>[skill.id,skill]));
+      const candidates=words.map(word=>{
+        const id="vocabulary:"+word.toLowerCase();
+        const skill:any=evidence.get(id);
+        return {id,mastery:skill?Math.round(skill.mastery*100):50,evidence:skill?.evidence??0,incorrect:skill?.incorrect??0,correct:skill?.correct??0};
+      });
+      if(sentences.length)candidates.push({id:"grammar:sentence-building",mastery:Math.round((evidence.get("grammar:sentence-building") as any)?.mastery*100)||50,evidence:(evidence.get("grammar:sentence-building") as any)?.evidence??0,incorrect:(evidence.get("grammar:sentence-building") as any)?.incorrect??0,correct:(evidence.get("grammar:sentence-building") as any)?.correct??0});
+      const weak=candidates.filter(skill=>skill.evidence>0).sort((a,b)=>a.mastery-b.mastery||b.incorrect-a.incorrect).slice(0,16);
+      const focus=weak.length?weak:candidates.slice(0,16);
+      const material={level,completedLessons:lessons.map((lesson:any)=>lesson.t),knownWords:words,knownSentences:sentences,focusSkills:focus};
+      const providers=(await rows(db)).filter((provider:any)=>provider.enabled).sort((a:any,b:any)=>a.priority-b.priority);
+      if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
+      const prompt="Составь персональный экзамен по английскому для уровня "+level+". Используй ТОЛЬКО слова, фразы, предложения и темы из пройденного материала ниже. Не добавляй новую лексику и грамматику. В первую очередь проверяй focusSkills с низким mastery и большим incorrect; это реальные слабые места ученика. Сделай ровно 6 разных вопросов с четырьмя вариантами ответа. Вопросы и инструкции пиши по-русски, варианты могут быть на английском или русском. Не повторяй один и тот же вопрос. Для каждого вопроса выбери skillId строго из списка focusSkills. Если focusSkills недостаточно, повторно проверь разные элементы известных слов и предложений, не вводя новый материал. Верни только валидный JSON без Markdown: {\"questions\":[{\"id\":\"q1\",\"skillId\":\"...\",\"prompt\":\"...\",\"options\":[\"...\",\"...\",\"...\",\"...\"],\"correctIndex\":0,\"explanation\":\"Короткое объяснение на русском\"}]}. Материал: "+JSON.stringify(material);
+      const routed=await runWithAiFallback(providers.map((provider:any)=>({id:String(provider.id),priority:Number(provider.priority)||0})),async(candidate)=>{
+        const provider=providers.find((item:any)=>String(item.id)===candidate.id);
+        if(!provider)throw new Error("AI provider configuration changed.");
+        return ask(provider,[{role:"system",content:"Ты создаёшь точные образовательные тесты. Не выдумывай сведения о прогрессе. Возвращай только JSON, соблюдай заданную схему."},{role:"user",content:prompt}],1400);
+      });
+      const generated=parseExamJson(routed.value.content);
+      const allowed=new Set(focus.map(skill=>skill.id));
+      const questions=generated.slice(0,6).map((question:any,index:number)=>{
+        const id="q"+(index+1),skillId=String(question?.skillId??"");
+        const options=Array.isArray(question?.options)?question.options.slice(0,4).map((option:any)=>examSafeText(option,100)):[];
+        const correctIndex=Number(question?.correctIndex);
+        const promptText=examSafeText(question?.prompt,240);
+        const explanation=examSafeText(question?.explanation,320);
+        if(!allowed.has(skillId)||!promptText||options.length!==4||options.some((option:string)=>!option)||new Set(options.map((option:string)=>option.toLowerCase())).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
+        return {id,skillId,prompt:promptText,options,correctIndex,explanation};
+      });
+      if(questions.length!==6)throw new Error("Не удалось подготовить полный экзамен. Попробуй ещё раз.");
+      const examId=crypto.randomUUID(),createdAt=Date.now();
+      const nextProfile={...baseProfile,activeExam:{id:examId,level,createdAt,expiresAt:createdAt+30*60*1000,questions}};
+      const {error:saveError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:nextProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+      if(saveError)throw new Error("Не удалось сохранить экзамен.");
+      return {exam:{id:examId,level,questions:questions.map(({id,skillId,prompt,options}:any)=>({id,skillId,prompt,options}))}};
+    }
+    const active=baseProfile.activeExam;
+    if(!active||active.id!==String(data.examId??"")||Number(active.expiresAt)<Date.now())throw new Error("Время экзамена истекло. Начни новый экзамен.");
+    if(!Array.isArray(data.answers)||data.answers.length!==active.questions.length)throw new Error("Ответь на все вопросы экзамена.");
+    const answers=new Map<string,number>();
+    for(const answer of data.answers){
+      const questionId=String(answer?.questionId??""),selectedIndex=Number(answer?.selectedIndex);
+      if(!active.questions.some((question:any)=>question.id===questionId)||!Number.isInteger(selectedIndex)||selectedIndex<0||selectedIndex>3||answers.has(questionId))throw new Error("Ответы экзамена имеют неверный формат.");
+      answers.set(questionId,selectedIndex);
+    }
+    const details=active.questions.map((question:any)=>({questionId:question.id,skillId:question.skillId,prompt:question.prompt,selected:question.options[answers.get(question.id)!],correct:question.options[question.correctIndex],correctAnswer:answers.get(question.id)===question.correctIndex,explanation:question.explanation}));
+    const score=details.filter((detail:any)=>detail.correctAnswer).length,total=details.length;
+    const weakSkills=[...new Set(details.filter((detail:any)=>!detail.correctAnswer).map((detail:any)=>detail.skillId))];
+    const providers=(await rows(db)).filter((provider:any)=>provider.enabled).sort((a:any,b:any)=>a.priority-b.priority);
+    if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
+    const feedbackPrompt="Оцени завершённый персональный экзамен ученика уровня "+active.level+". Результат: "+score+" из "+total+". По каждому неверному ответу кратко объясни ошибку, а затем дай общий вывод и 2 конкретные темы для повторения. Не преувеличивай уровень знаний и не меняй CEFR-уровень. Пиши по-русски, доброжелательно, коротко и без Markdown. Данные: "+JSON.stringify(details.map((detail:any)=>({question:detail.prompt,answer:detail.selected,correctAnswer:detail.correct,wasCorrect:detail.correctAnswer,explanation:detail.explanation})));
+    const routed=await runWithAiFallback(providers.map((provider:any)=>({id:String(provider.id),priority:Number(provider.priority)||0})),async(candidate)=>{
+      const provider=providers.find((item:any)=>String(item.id)===candidate.id);
+      if(!provider)throw new Error("AI provider configuration changed.");
+      return ask(provider,[{role:"system",content:"Ты Cloudy, персональный преподаватель английского. Анализируй только предоставленные ответы. Не придумывай ошибки и не меняй официальный уровень ученика."},{role:"user",content:feedbackPrompt}],700);
+    });
+    const feedback=examSafeText(routed.value.content,1800);
+    const completedAt=Date.now();
+    const lastExam={id:active.id,level:active.level,score,total,completedAt,weakSkills,feedback};
+    const nextProfile={...baseProfile,activeExam:null,lastExam};
+    const {error:saveError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:nextProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+    if(saveError)throw new Error("Не удалось сохранить результат экзамена.");
+    return {result:{level:active.level,score,total,percent:Math.round(score/total*100),weakSkills,feedback,details}};
   }finally{
     await db.rpc("release_cloudy_ai_request",{_user_id:user.id,_request_id:requestId});
   }
