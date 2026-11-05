@@ -91,6 +91,15 @@ CREATE TABLE IF NOT EXISTS public.optional_consent_events (
 CREATE INDEX IF NOT EXISTS optional_consent_events_user_purpose_created_idx
   ON public.optional_consent_events (user_id, purpose, created_at DESC);
 
+-- Safe public projection: exposes no email, age, account metadata, or learning records.
+CREATE OR REPLACE VIEW public.community_public_profiles
+WITH (security_barrier = true) AS
+  SELECT id, display_name, bio, created_at
+  FROM public.profiles
+  WHERE is_public = true;
+REVOKE ALL ON public.community_public_profiles FROM PUBLIC, anon;
+GRANT SELECT ON public.community_public_profiles TO authenticated;
+
 ALTER TABLE public.community_posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_reactions ENABLE ROW LEVEL SECURITY;
@@ -130,7 +139,7 @@ CREATE POLICY community_comments_public_read ON public.community_comments
   FOR SELECT TO authenticated USING (
     status = 'published' AND EXISTS (
       SELECT 1 FROM public.community_posts cp
-      JOIN public.profiles p ON p.id = cp.author_id
+      JOIN public.community_public_profiles p ON p.id = cp.author_id
       WHERE cp.id = post_id AND cp.status = 'published' AND p.is_public = true
     )
   );
