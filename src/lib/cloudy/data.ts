@@ -22,7 +22,7 @@ export const D: Lesson[] = [
   { t: "Мнения", w: [["opinion", "мнение"], ["agree", "соглашаться"], ["argue", "спорить"], ["evidence", "доказательство"], ["however", "однако"], ["although", "хотя"]], s: [["Я не согласен с вами", "I disagree with you", "agree the"], ["Хотя было поздно, мы работали", "Although it was late we worked", "however the"]] },
   { t: "Общество", w: [["government", "правительство"], ["society", "общество"], ["environment", "окружающая среда"], ["economy", "экономика"], ["challenge", "вызов"], ["achievement", "достижение"]], s: [["Экономика быстро растёт", "The economy is growing fast", "society the"], ["Это большой вызов", "This is a big challenge", "government a"]] },
   { t: "Бизнес", w: [["deadline", "срок"], ["budget", "бюджет"], ["negotiate", "вести переговоры"], ["strategy", "стратегия"], ["profit", "прибыль"], ["risk", "риск"]], s: [["Нам нужна новая стратегия", "We need a new strategy", "budget the"], ["Срок уже близко", "The deadline is close", "risk a"]] },
-  P("Ресторан", "restaurant=ресторан,menu=меню,bill=счёт,waiter=официант,delicious=вкусный,hungry=голодный", "Можно мне счёт, пожалуйста?=Could I have the bill, please?=menu the;Я очень голоден=I am very hungry=waiter a"),
+  P("Ресторан", "restaurant=ресторан,menu=меню,bill=счёт,waiter=официант,delicious=вкусный,hungry=голодный", "Можно мне счёт, пожалуйста?=Could I have the bill, please?=menu the;Я очень хочу есть=I am very hungry=waiter a"),
   P("Погода", "weather=погода,rainy=дождливый,sunny=солнечный,cold=холодный,wind=ветер,snow=снег", "Сегодня солнечно=It is sunny today=rainy the;Зимой идёт снег=It snows in winter=wind a"),
   P("Одежда", "jacket=куртка,shoes=обувь,dress=платье,shirt=рубашка,size=размер,wear=носить", "Мне нужна куртка=I need a jacket=shoes the;Какой размер вы носите?=What size do you wear?=dress a"),
   P("Технологии", "password=пароль,download=скачивать,screen=экран,battery=батарея,website=сайт,update=обновление", "Я забыл пароль=I forgot my password=screen the;Батарея почти разряжена=The battery is almost dead=update a"),
@@ -159,7 +159,7 @@ const A1_EXTRA: Lesson[] = [
         "are the"
       ],
       [
-        "Я ученик",
+        "Я учусь в школе",
         "I am a student",
         "is the"
       ],
@@ -752,12 +752,12 @@ const A2_EXTRA = [
   P("Путешествия и направления", "turn left=повернуть налево,straight ahead=прямо,opposite=напротив,corner=угол,platform=платформа,round-trip ticket=билет туда и обратно", "Поверните налево на углу=Turn left at the corner=turn right;Банк напротив вокзала=The bank is opposite the station=behind the;Мне нужен билет туда и обратно=I need a round-trip ticket=one way"),
   P("Здоровье и советы", "cough=кашель,fever=повышенная температура,sore throat=боль в горле,should=следует,rest=отдых,medical appointment=приём у врача", "Тебе следует отдохнуть=You should get some rest=shouldn't work;У него болит горло=He has a sore throat=has a headache;Мне нужно записаться к врачу=I need to make an appointment with the doctor=cancel the"),
   P("Домашние обязанности", "tidy=убирать,sweep=подметать,wash the dishes=мыть посуду,take out the trash=выносить мусор,repair=чинить,have to=быть должным", "Мне нужно убрать комнату=I have to tidy my room=tidied yesterday;Ей не нужно работать в воскресенье=She doesn't have to work on Sunday=mustn't the;Пожалуйста, вынеси мусор=Please take out the trash=bring the"),
-  P("Жизненный опыт", "ever=когда-либо,never=никогда,already=уже,yet=ещё,recently=недавно,experience=опыт", "Ты когда-нибудь был в Лондоне?=Have you ever been to London?=Did you ever go;Я ещё не закончил домашнюю работу=I haven't finished my homework yet=already finished;Она уже позвонила маме=She has already called her mother=will call tomorrow"),
+  P("Жизненный опыт", "ever=когда-либо,never=никогда,already=уже,yet=ещё,recently=недавно,experience=опыт", "Ты когда-нибудь был(а) в Лондоне?=Have you ever been to London?=Did you ever go;Я ещё не закончил(а) домашнюю работу=I haven't finished my homework yet=already finished;Она уже позвонила маме=She has already called her mother=will call tomorrow"),
   P("Приглашения и договорённости", "would you like=не хотел бы ты,shall we=давай,sounds great=звучит отлично,available=свободен / доступен,maybe=возможно,unfortunately=к сожалению", "Хочешь пойти в кино?=Would you like to go to the movies?=Do you like cinema;Давай встретимся в шесть?=Shall we meet at six?=Did we meet;Это звучит отлично=That sounds great=That sounds bad"),
   P("Природа и окружающая среда", "recycle=перерабатывать,pollution=загрязнение,waste=отходы,protect=защищать,save energy=экономить энергию,reduce=сокращать", "Мы должны перерабатывать бумагу=We should recycle paper=throw the;Загрязнение воздуха — серьёзная проблема=Air pollution is a serious problem=water the;Выключай свет, чтобы экономить энергию=Turn off the lights to save energy=leave everything on"),
-  P("Общение и обучение", "explain=объяснять,repeat=повторять,understand=понимать,remember=помнить,forget=забывать,instruction=инструкция", "Можешь повторить вопрос?=Could you repeat the question?=forget the;Я не понял инструкции=I didn't understand the instructions=remembered yesterday;Она объяснила правило ясно=She explained the rule clearly=explains unclear"),
+  P("Общение и обучение", "explain=объяснять,repeat=повторять,understand=понимать,remember=помнить,forget=забывать,instruction=инструкция", "Можешь повторить вопрос?=Could you repeat the question?=forget the;Я не понял(а) инструкции=I didn't understand the instructions=remembered yesterday;Она объяснила правило ясно=She explained the rule clearly=explains unclear"),
   P("Работа и обязанности", "task=задача,colleague=коллега,customer=клиент,shift=рабочая смена,busy=занятый,finish=заканчивать,start=начинать,help=помогать,break=перерыв,uniform=форма", "Я начинаю работу в девять=I start work at nine=starts the;Моя смена заканчивается в шесть=My shift finishes at six=finish yesterday;Сегодня у нас много задач=We have a lot of tasks today=has much task;Мой коллега помогает клиентам=My colleague helps customers=help customer;Я делаю перерыв после обеда=I take a break after lunch=takes break;На работе я ношу форму=I wear a uniform at work=wears uniforms"),
-  P("Решение повседневных проблем", "problem=проблема,broken=сломанный,fix=чинить,lost=потерянный,find=находить,ask=спрашивать,explain=объяснять,mistake=ошибка,possible=возможный,need=нуждаться / быть необходимым", "Мой телефон сломан=My phone is broken=My phone are broken;Я не могу найти ключи=I can't find my keys=I can find my keys;Можешь мне помочь?=Can you help me?=Can you helps me?;Я ошибся с адресом=I made a mistake with the address=I make mistake yesterday;Пожалуйста, объясните проблему=Please explain the problem=Please explains the problem;Можно это исправить сегодня?=Is it possible to fix this today?=Was it possible yesterday?"),
+  P("Решение повседневных проблем", "problem=проблема,broken=сломанный,fix=чинить,lost=потерянный,find=находить,ask=спрашивать,explain=объяснять,mistake=ошибка,possible=возможный,need=нуждаться / быть необходимым", "Мой телефон сломан=My phone is broken=My phone are broken;Я не могу найти ключи=I can't find my keys=I can find my keys;Можешь мне помочь?=Can you help me?=Can you helps me?;Я допустил(а) ошибку в адресе=I made a mistake with the address=I make mistake yesterday;Пожалуйста, объясните проблему=Please explain the problem=Please explains the problem;Можно это исправить сегодня?=Is it possible to fix this today?=Was it possible yesterday?"),
   P("Цели и планы", "goal=цель,improve=улучшать,practice=заниматься / практиковаться,course=курс,skill=навык,next=следующий,future=будущее,choose=выбирать,hope=надеяться,progress=прогресс", "Моя цель — лучше говорить по-английски=My goal is to speak English better=My goal speak better;Я каждый день занимаюсь английским=I practice English every day=I practices every day;Я хочу пройти новый курс=I want to take a new course=I wanted yesterday;Мне нужно улучшить навыки=I need to improve my skills=I needs improve;Что ты хочешь делать дальше?=What do you want to do next?=What you wanted yesterday;Я надеюсь добиться прогресса=I hope to make progress=I hope making progress")
 ];
 D.push(...A2_EXTRA);
@@ -889,7 +889,7 @@ extendLesson(15, [["order", "заказывать"], ["appetizer", "закуск
   ["Я хотел бы заказать салат", "I'd like to order a salad", "I'd like salad"],
   ["Что вы посоветуете на основное блюдо?", "What would you recommend for the main course?", "What you recommend"],
   ["У нас столик на двоих", "We have a table for two", "We has table"],
-  ["Я бы хотел закуску", "I'd like an appetizer", "I like appetizer"],
+  ["Я бы хотел(а) закуску", "I'd like an appetizer", "I like appetizer"],
 ]);
 extendLesson(16, [["forecast", "прогноз погоды"], ["cloudy", "облачный"], ["temperature", "температура"]], [
   ["По прогнозу будет дождь", "The forecast says it will rain", "The forecast say"],
@@ -917,7 +917,7 @@ extendLesson(40, [["concert", "концерт"], ["restaurant", "рестора�
   ["Мы ужинали в небольшом ресторане", "We had dinner at a small restaurant", "We have dinner tomorrow"],
 ]);
 extendLesson(41, [["probably", "вероятно"], ["perhaps", "возможно"]], [
-  ["Возможно, я навещу двоюродного брата в эти выходные", "Perhaps I'll visit my cousin this weekend", "Perhaps I visited last week"],
+  ["Возможно, я навещу двоюродного брата или сестру в эти выходные", "Perhaps I'll visit my cousin this weekend", "Perhaps I visited last week"],
   ["Мы, вероятно, забронируем столик", "We will probably book a table", "We booked yesterday"],
 ]);
 extendLesson(42, [["cheaper", "дешевле"], ["noisy", "шумный"]], [
@@ -947,16 +947,16 @@ extendLesson(46, [["laundry", "стирка"], ["floor", "пол"]], [
   ["Пожалуйста, подмети пол на кухне", "Please sweep the kitchen floor", "Please sweeps"],
 ]);
 extendLesson(47, [["been", "был"], ["abroad", "за границей"]], [
-  ["Я никогда не путешествовал за границей", "I have never traveled abroad", "I never traveled yesterday"],
+  ["Я никогда не путешествовал(а) за границей", "I have never traveled abroad", "I never traveled yesterday"],
   ["Ты уже закончил домашнюю работу?", "Have you finished your homework yet?", "Did you finished"],
 ]);
 extendLesson(48, [["free", "свободный"], ["plan", "план"]], [
-  ["Ты свободен в субботу?", "Are you free on Saturday?", "Do you free"],
+  ["У тебя есть время в субботу?", "Are you free on Saturday?", "Do you free"],
   ["Извини, я не могу прийти сегодня вечером", "Sorry, I can't come tonight", "I don't can"],
   ["Нам нужно составить план на выходные", "We need to make a plan for the weekend", "We make a plan yesterday"],
 ]);
 extendLesson(48, [], [
-  ["Ты свободен завтра вечером?", "Are you available tomorrow evening", "Do you available tomorrow evening"],
+  ["У тебя есть время завтра вечером?", "Are you available tomorrow evening", "Do you available tomorrow evening"],
 ]);
 extendLesson(49, [["plastic", "пластик"], ["paper", "бумага"]], [
   ["Нам следует использовать меньше пластика", "We should use less plastic", "We should uses"],
@@ -1015,7 +1015,7 @@ extendLesson(46, [["dust", "вытирать пыль"], ["vacuum", "пылес�
   ["Я пылесошу гостиную по пятницам", "I vacuum the living room on Fridays", "I vacuums living room"],
 ]);
 extendLesson(47, [["museum", "музей"], ["mountain", "гора"]], [
-  ["Я уже посетил этот музей", "I have already visited this museum", "I already visit yesterday"],
+  ["Я уже побывал(а) в этом музее", "I have already visited this museum", "I already visit yesterday"],
 ]);
 extendLesson(48, [["busy", "занятый"], ["weekend", "выходные"]], [
   ["К сожалению, я занят в воскресенье", "Unfortunately, I'm busy on Sunday", "Unfortunately I busy"],
@@ -1097,7 +1097,7 @@ extendLesson(35, [], [
 extendLesson(36, [], [
   ["Это красивый цветок", "This is a beautiful flower", "This are beautiful flower"],
   ["Дерево высокое", "The tree is tall", "The tree are tall"],
-  ["Я сегодня устал", "I am tired today", "I is tired today"],
+  ["Сегодня я устал(а)", "I am tired today", "I is tired today"],
 ]);
 extendLesson(37, [], [
   ["Я хожу в школу пешком", "I walk to school", "I walks to school"],
@@ -1144,7 +1144,7 @@ extendLesson(50, [], [
   ["Мой словарный запас растёт", "My vocabulary is growing", "My vocabulary are growing"],
 ]);
 extendLesson(52, [], [
-  ["Я потерял ключи", "I lost my keys", "I lose my keys tomorrow"],
+  ["Я потерял(а) ключи", "I lost my keys", "I lose my keys tomorrow"],
 ]);
 
 export const LV: Record<Level, LevelDef> = {
