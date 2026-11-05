@@ -24,6 +24,13 @@ describe("Cloudy learning progress", () => {
     expect(state.mis["hello"]).toBeUndefined();
   });
 
+  it("advances the A2 path when a newly added lesson is completed in order", () => {
+    const state = { ...defaultState(), lv: "A2" as const, dn: { A1: 0, A2: 17, B1: 0, B2: 0 } };
+    const session = newSession(50, [{ k: "c", q: "hello", a: "привет", en: "hello", spk: false, o: ["привет"], title: "Перевод" }]);
+    const result = finishLesson(state, session, new Date("2026-11-05T12:00:00"));
+    expect(result.state.dn.A2).toBe(18);
+  });
+
   it("awards lesson XP and updates the daily streak", () => {
     const state = { ...defaultState(), lv: "A1" as const };
     const session = newSession(0, [{ k: "c", q: "hello", a: "привет", en: "hello", spk: false, o: ["привет"], title: "Перевод" }]);
