@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.cloudy_learning_events (
   occurred_at timestamptz NOT NULL,
   level text CHECK (level IS NULL OR level IN ('A1', 'A2', 'B1', 'B2')),
   lesson_index integer CHECK (lesson_index IS NULL OR lesson_index BETWEEN -1 AND 1000),
+  question_index integer CHECK (question_index IS NULL OR question_index BETWEEN 0 AND 1000),
   session_type text CHECK (session_type IS NULL OR session_type IN ('lesson', 'review')),
   exercise_type text CHECK (exercise_type IS NULL OR length(exercise_type) <= 24),
   skill_id text CHECK (skill_id IS NULL OR length(skill_id) <= 90),
