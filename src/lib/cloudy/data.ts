@@ -757,7 +757,7 @@ const A2_EXTRA = [
   P("Природа и окружающая среда", "recycle=перерабатывать,pollution=загрязнение,waste=отходы,protect=защищать,save energy=экономить энергию,reduce=сокращать", "Мы должны перерабатывать бумагу=We should recycle paper=throw the;Загрязнение воздуха — серьёзная проблема=Air pollution is a serious problem=water the;Выключай свет, чтобы экономить энергию=Turn off the lights to save energy=leave everything on"),
   P("Общение и обучение", "explain=объяснять,repeat=повторять,understand=понимать,remember=помнить,forget=забывать,instruction=инструкция", "Можешь повторить вопрос?=Could you repeat the question?=forget the;Я не понял инструкции=I didn't understand the instructions=remembered yesterday;Она объяснила правило ясно=She explained the rule clearly=explains unclear"),
   P("Работа и обязанности", "task=задача,colleague=коллега,customer=клиент,shift=рабочая смена,busy=занятый,finish=заканчивать,start=начинать,help=помогать,break=перерыв,uniform=форма", "Я начинаю работу в девять=I start work at nine=starts the;Моя смена заканчивается в шесть=My shift finishes at six=finish yesterday;Сегодня у нас много задач=We have a lot of tasks today=has much task;Мой коллега помогает клиентам=My colleague helps customers=help customer;Я делаю перерыв после обеда=I take a break after lunch=takes break;На работе я ношу форму=I wear a uniform at work=wears uniforms"),
-  P("Решение повседневных проблем", "problem=проблема,broken=сломанный,fix=чинить,lost=потерянный,find=находить,ask=спрашивать,explain=объяснять,mistake=ошибка,possible=возможный,need=нуждаться", "Мой телефон сломан=My phone is broken=My phone are broken;Я не могу найти ключи=I can't find my keys=I can find my keys;Можешь мне помочь?=Can you help me?=Can you helps me?;Я сделал ошибку в адресе=I made a mistake in the address=I make mistake yesterday;Пожалуйста, объясните проблему=Please explain the problem=Please explains the problem;Можно это исправить сегодня?=Is it possible to fix this today?=Was it possible yesterday?"),
+  P("Решение повседневных проблем", "problem=проблема,broken=сломанный,fix=чинить,lost=потерянный,find=находить,ask=спрашивать,explain=объяснять,mistake=ошибка,possible=возможный,need=нуждаться", "Мой телефон сломан=My phone is broken=My phone are broken;Я не могу найти ключи=I can't find my keys=I can find my keys;Можешь мне помочь?=Can you help me?=Can you helps me?;Я ошибся в адресе=I made a mistake in the address=I make mistake yesterday;Пожалуйста, объясните проблему=Please explain the problem=Please explains the problem;Можно это исправить сегодня?=Is it possible to fix this today?=Was it possible yesterday?"),
   P("Цели и планы", "goal=цель,improve=улучшать,practise=практиковать,course=курс,skill=навык,next=следующий,future=будущее,choose=выбирать,hope=надеяться,progress=прогресс", "Моя цель — лучше говорить по-английски=My goal is to speak English better=My goal speak better;Я занимаюсь каждый день=I practise every day=I practises every day;Я хочу пройти новый курс=I want to take a new course=I wanted yesterday;Мне нужно улучшить навыки=I need to improve my skills=I needs improve;Что ты хочешь делать дальше?=What do you want to do next?=What you wanted yesterday;Я надеюсь добиться прогресса=I hope to make progress=I hope making progress")
 ];
 D.push(...A2_EXTRA);
@@ -864,6 +864,63 @@ extendLesson(50, [["meaning", "значение"], ["example", "пример"]],
 ]);
 
 
+
+
+ // Complete the A2 topic sets to a consistent 10-word / 6-sentence standard.
+extendLesson(6, [["neighbourhood", "район"]], [
+  ["В моём районе есть большой парк", "There is a large park in my neighbourhood", "There are a park"],
+]);
+extendLesson(7, [["refund", "возврат денег"]], [
+  ["Могу я вернуть эту вещь?", "Can I return this item?", "Can I returned this item"],
+]);
+extendLesson(8, [["quarter past", "четверть после"]], [
+  ["Сейчас четверть шестого", "It's a quarter past five", "It's five past a quarter"],
+]);
+extendLesson(15, [["dessert", "десерт"]], [
+  ["Можем заказать десерт?", "Can we order dessert?", "Can we orders dessert"],
+]);
+extendLesson(16, [["windy", "ветреный"]], [
+  ["Сегодня очень ветрено", "It's very windy today", "It very windy today"],
+]);
+extendLesson(17, [["socks", "носки"]], [
+  ["Мне нужна пара носков", "I need a pair of socks", "I need pair socks"],
+]);
+extendLesson(39, [["get dressed", "одеваться"], ["commute", "дорога на работу"]], [
+  ["Я одеваюсь до завтрака", "I get dressed before breakfast", "I gets dressed"],
+]);
+extendLesson(40, [["returned", "вернулся"], ["decided", "решил"]], [
+  ["Мы вернулись домой поздно", "We returned home late", "We return home tomorrow"],
+]);
+extendLesson(41, [["expect", "ожидать"], ["book", "бронировать"]], [
+  ["Я планирую начать курс в январе", "I plan to start a course in January", "I planned yesterday"],
+]);
+extendLesson(42, [["better", "лучше"], ["worse", "хуже"]], [
+  ["Этот район безопаснее ночью", "This area is safer at night", "This area is safest than"],
+]);
+extendLesson(43, [["several", "несколько"], ["plenty of", "много"]], [
+  ["У нас достаточно места в машине", "We have plenty of room in the car", "We has many rooms"],
+]);
+extendLesson(44, [["underground", "метро"], ["entrance", "вход"]], [
+  ["Вход находится рядом с платформой", "The entrance is near the platform", "The entrance are near"],
+]);
+extendLesson(45, [["symptom", "симптом"], ["painkiller", "обезболивающее"]], [
+  ["Это может быть симптомом простуды", "It may be a symptom of a cold", "It may is symptom"],
+]);
+extendLesson(46, [["dust", "вытирать пыль"], ["vacuum", "пылесосить"]], [
+  ["Я пылесошу гостиную по пятницам", "I vacuum the living room on Fridays", "I vacuums living room"],
+]);
+extendLesson(47, [["museum", "музей"], ["mountain", "гора"]], [
+  ["Я уже посетил этот музей", "I have already visited this museum", "I already visit yesterday"],
+]);
+extendLesson(48, [["busy", "занятый"], ["weekend", "выходные"]], [
+  ["К сожалению, я занят в воскресенье", "Unfortunately, I'm busy on Sunday", "Unfortunately I busy"],
+]);
+extendLesson(49, [["bin", "контейнер"], ["environment", "окружающая среда"]], [
+  ["Мы сортируем отходы дома", "We sort our waste at home", "We sorts waste"],
+]);
+extendLesson(50, [["pronunciation", "произношение"], ["vocabulary", "словарный запас"]], [
+  ["Я стараюсь запоминать новые слова", "I try to remember new words", "I tries remember"],
+]);
 
 export const LV: Record<Level, LevelDef> = {
   A1: { s: [
