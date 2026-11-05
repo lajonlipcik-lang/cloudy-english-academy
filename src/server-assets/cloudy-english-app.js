@@ -100,8 +100,8 @@ function cloudyLocalSpeechFallback(text,request){
  try{
   if(request!==cloudySpeechRequest||typeof speechSynthesis==="undefined"||typeof SpeechSynthesisUtterance==="undefined")return;
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=.92;
-  const voices=speechSynthesis.getVoices(),male=cloudySelectMaleAmericanVoice(voices);if(male)u.voice=male;
+  const u=new SpeechSynthesisUtterance(text);const russian=/[А-Яа-яЁё]/.test(text);u.lang=russian?"ru-RU":"en-US";u.rate=russian?.96:.92;
+  const voices=speechSynthesis.getVoices(),voice=russian?voices.find(v=>/^ru([_-]|$)/i.test(v.lang||"")):cloudySelectMaleAmericanVoice(voices);if(voice)u.voice=voice;
   speechSynthesis.speak(u);
  }catch(e){}
 }
@@ -109,6 +109,7 @@ async function say(t,f){
  if(!f&&!S.set.voice)return;
  const text=String(t||"").replace(/\s+/g," ").trim();if(!text)return;
  const request=++cloudySpeechRequest;
+ if(/[А-Яа-яЁё]/.test(text)){cloudyLocalSpeechFallback(text,request);return}
  try{
   if(cloudyCurrentAudio){cloudyCurrentAudio.pause();cloudyCurrentAudio=null}
   if(typeof speechSynthesis!=="undefined")speechSynthesis.cancel();
