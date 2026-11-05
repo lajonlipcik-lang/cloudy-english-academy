@@ -207,4 +207,26 @@ describe("Cloudy learning progress", () => {
   });
 
 
+  it("uses consistent American English across all A1-A2 lesson content", () => {
+    const content = [...levelLessons("A1"), ...levelLessons("A2")]
+      .map((index) => {
+        const lesson = D[index]!;
+        return [
+          lesson.t,
+          ...lesson.w.flatMap(([word, translation]) => [word, translation]),
+          ...lesson.s.flatMap(([russian, english]) => [russian, english]),
+        ].join(" ");
+      })
+      .join(" ")
+      .toLocaleLowerCase();
+    expect(content).not.toMatch(/\bfavourite\b|\bcolour\b|\bcity centre\b|\bunderground\b|\brubbish\b|\bwash up\b|\bpractise\b|\bat weekends\b|\btravelled\b|\bneighbourhood\b|\bgrey\b|\btrousers\b|\bfootball\b|\bcinema\b|\breturn ticket\b/);
+    expect(content).toContain("favorite color");
+    expect(content).toContain("subway");
+    expect(content).toContain("take out the trash");
+    expect(content).toContain("practice english");
+    expect(content).toContain("on weekends");
+    expect(content).toContain("round-trip ticket");
+  });
+
+
 });
