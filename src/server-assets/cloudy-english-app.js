@@ -614,7 +614,7 @@ function ptr(){const level=LVS[PT.best];S.lv=level;S.tested=1;save();checkAch();
 function learn(){
  const g=S.set.goal,td=S.td,rdy=td.xp>=g&&!td.claim,dn=S.dn[S.lv]||0,tl=SEC.reduce((a,s)=>a+s.l.length,0);let n=0;
  const secs=SEC.map((s,si)=>{
-  const nodes=s.l.map(li=>{const st=n<dn?"done":n==dn?"cur":"lock",x=Math.round(Math.sin(n*1.15)*60),d=n*70;n++;
+  const nodes=s.l.map(li=>{const st=n<dn?"done":n==dn?"cur":"lock",x=Math.round(Math.sin(n*1.15)*60),d=Math.min(n,9)*24;n++;
    return `<div class="nw" style="--x:${x}px;--d:${d}ms">${st=="cur"?'<div class="tip">НАЧАТЬ</div>':""}<button class="node ${st}" onclick="${st=="lock"?"snd('bad')":`go(${li})`}">${st=="cur"?'<svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/></svg>':""}${ic(st=="done"?"check":st=="cur"?"star":"lock")}</button><div class="lb">${D[li].t}</div></div>`}).join("");
   return `<div class="ban"><div><small>РАЗДЕЛ ${si+1}</small><h3>${s.n}</h3></div><button class="gd" onclick="guide(${si})">${ic("book")}</button></div><div class="path">${nodes}<div class="deco">${mascot()}</div></div>`}).join("");
  return `<div class="stats"><button class="av" onclick="tab(3)">${ic("user")}</button><span class="pill"><b class="en" onclick="tab(3)">${S.lv}</b></span><span class="sp"></span><span class="pill">${ic("flame")}${S.streak}</span><span class="pill">${ic("bolt")}${S.xp}</span></div>
