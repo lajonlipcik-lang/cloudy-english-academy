@@ -1021,6 +1021,126 @@ extendLesson(50, [["pronunciation", "произношение"], ["vocabulary", 
   ["Я стараюсь запоминать новые слова", "I try to remember new words", "I tries remember"],
 ]);
 
+
+ // Context coverage: use remaining key words in natural A1/A2 examples.
+extendLesson(2, [], [
+  ["У меня восемь карандашей", "I have eight pencils", "I has eight pencils"],
+  ["Число девять", "The number is nine", "The number are nine"],
+]);
+extendLesson(3, [], [
+  ["Я ем банан", "I eat a banana", "I eats a banana"],
+  ["Она ест рис и яйцо", "She eats rice and an egg", "She eat rice and egg"],
+]);
+extendLesson(4, [], [
+  ["Стул на кухне", "The chair is in the kitchen", "The chair are kitchen"],
+  ["Ванная рядом с кухней", "The bathroom is next to the kitchen", "The bathroom are next kitchen"],
+]);
+extendLesson(5, [], [
+  ["У меня оранжевая чашка", "I have an orange cup", "I has an orange cup"],
+  ["Её любимый цвет — розовый", "Her favourite colour is pink", "Her favourite colour are pink"],
+  ["Мой свитер коричневый", "My sweater is brown", "My sweater are brown"],
+  ["Мой кот серый", "My cat is grey", "My cat are grey"],
+]);
+extendLesson(25, [], [
+  ["Я обычно иду на работу в восемь", "I usually go to work at eight", "I usually goes to work"],
+  ["Я читаю перед сном ночью", "I read before bed at night", "I reads before bed"],
+]);
+extendLesson(26, [], [
+  ["Моя книга на парте", "My book is on the desk", "My book are on desk"],
+  ["Я делаю домашнее задание после школы", "I do my homework after school", "I does my homework"],
+]);
+extendLesson(27, [], [
+  ["У меня две руки", "I have two arms", "I has two arms"],
+  ["У меня болят уши", "My ears hurt", "My ears hurts"],
+]);
+extendLesson(28, [], [
+  ["На ферме есть корова", "There is a cow on the farm", "There are a cow"],
+  ["Мышь маленькая", "The mouse is small", "The mouse are small"],
+]);
+extendLesson(29, [], [
+  ["Я хочу пить воду", "I want some water", "I wants some water"],
+  ["Картофель горячий", "The potato is hot", "The potato are hot"],
+]);
+extendLesson(30, [], [
+  ["Магазин на этой улице", "The shop is on this street", "The shop are street"],
+  ["Парк рядом с кафе", "The park is near the cafe", "The park are near cafe"],
+]);
+extendLesson(31, [], [
+  ["Автобусная остановка рядом с домом", "The bus stop is near my house", "The bus stop are near"],
+  ["Этот поезд быстрый", "This train is fast", "This train are fast"],
+]);
+extendLesson(32, [], [
+  ["Трава зелёная после дождя", "The grass is green after the rain", "The grass are green"],
+  ["Летом мы купаемся в море", "We swim in the sea in summer", "We swims in sea"],
+  ["Гора высокая", "The mountain is high", "The mountain are high"],
+]);
+extendLesson(33, [], [
+  ["Я бегаю в парке по выходным", "I run in the park at weekends", "I runs in the park"],
+]);
+extendLesson(34, [], [
+  ["Мои наручные часы новые", "My watch is new", "My watch are new"],
+  ["Где мой кошелёк?", "Where is my wallet?", "Where are my wallet?"],
+  ["Мой компьютер на столе", "My computer is on the desk", "My computer are desk"],
+  ["У меня есть бутылка воды", "I have a bottle of water", "I has bottle water"],
+  ["Я ношу очки", "I wear glasses", "I wears glasses"],
+]);
+extendLesson(35, [], [
+  ["Сегодня воскресенье", "Today is Sunday", "Today are Sunday"],
+  ["В субботу у меня выходной", "I have a day off on Saturday", "I has day off"],
+]);
+extendLesson(36, [], [
+  ["Это красивый цветок", "This is a beautiful flower", "This are beautiful flower"],
+  ["Дерево высокое", "The tree is tall", "The tree are tall"],
+  ["Я сегодня устал", "I am tired today", "I is tired today"],
+]);
+extendLesson(37, [], [
+  ["Я хожу в школу пешком", "I walk to school", "I walks to school"],
+  ["Мы бегаем в парке", "We run in the park", "We runs in the park"],
+]);
+extendLesson(38, [], [
+  ["Моя рубашка белая", "My shirt is white", "My shirt are white"],
+  ["Её платье красивое", "Her dress is beautiful", "Her dress are beautiful"],
+  ["Надень перчатки", "Put on your gloves", "Puts on your gloves"],
+]);
+extendLesson(6, [], [
+  ["На этой улице оживлённое движение", "There is a lot of traffic on this street", "There are a lot traffic"],
+]);
+extendLesson(7, [], [
+  ["Могу я получить возврат денег?", "Can I get a refund?", "Can I gets a refund?"],
+]);
+extendLesson(41, [], [
+  ["Мы ожидаем подтверждение бронирования", "We expect a booking confirmation", "We expects a booking"],
+]);
+extendLesson(42, [], [
+  ["Этот отель лучше предыдущего", "This hotel is better than the previous one", "This hotel is good than"],
+]);
+extendLesson(43, [], [
+  ["Я купил несколько яблок", "I bought several apples", "I buy several apples tomorrow"],
+]);
+extendLesson(44, [], [
+  ["Давай поедем на метро", "Let's take the underground", "Let's takes the underground"],
+]);
+extendLesson(45, [], [
+  ["Прими обезболивающее, если боль не проходит", "Take a painkiller if the pain doesn't go away", "Takes a painkiller"],
+]);
+extendLesson(46, [], [
+  ["Я вытираю пыль с полок каждую субботу", "I dust the shelves every Saturday", "I dusts the shelves"],
+]);
+extendLesson(47, [], [
+  ["Прошлым летом мы поднялись на гору", "We climbed a mountain last summer", "We climb a mountain tomorrow"],
+]);
+extendLesson(49, [], [
+  ["Положи пластик в контейнер для переработки", "Put the plastic in the recycling bin", "Puts plastic in bin"],
+  ["Нам следует защищать окружающую среду", "We should protect the environment", "We should protects environment"],
+]);
+extendLesson(50, [], [
+  ["Я тренирую произношение каждый день", "I practise my pronunciation every day", "I practises pronunciation"],
+  ["Мой словарный запас растёт", "My vocabulary is growing", "My vocabulary are growing"],
+]);
+extendLesson(52, [], [
+  ["Я потерял ключи", "I lost my keys", "I lose my keys tomorrow"],
+]);
+
 export const LV: Record<Level, LevelDef> = {
   A1: { s: [
     { n: "Знакомство", l: [0, 1, 2] },
