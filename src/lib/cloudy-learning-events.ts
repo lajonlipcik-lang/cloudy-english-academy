@@ -1,5 +1,5 @@
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const EVENT_TYPES = new Set(["session_started", "answer_submitted", "question_skipped", "hint_used", "lesson_completed", "lesson_failed", "lesson_abandoned"]);
+const EVENT_TYPES = new Set(["session_started", "answer_submitted", "question_opened", "question_skipped", "hint_used", "lesson_completed", "lesson_failed", "lesson_abandoned"]);
 const LEVELS = new Set(["A1", "A2", "B1", "B2"]);
 
 function cleanText(value: unknown, max: number): string | null {
