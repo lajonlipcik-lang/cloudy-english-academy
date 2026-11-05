@@ -191,7 +191,8 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const requestedLevel=["A1","A2","B1","B2"].includes(String(data.level))?String(data.level):"A1";
     const incomingProfile=safeLearnerProfile(data.learnerProfile);
     const {data:storedProfile}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
-    const learnerProfile=mergeLearnerProfiles(safeLearnerProfile(storedProfile?.profile),incomingProfile);
+    const journalProfile=await loadJournalLearnerProfile(db,user.id);
+    const learnerProfile=mergeLearnerProfiles(mergeLearnerProfiles(safeLearnerProfile(storedProfile?.profile),incomingProfile),journalProfile);
     if(learnerProfile){
       const profileToSave={...learnerProfile,activeExam:storedProfile?.profile?.activeExam??null,lastExam:storedProfile?.profile?.lastExam??null};
       const {error:profileError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:profileToSave,updated_at:new Date().toISOString()},{onConflict:"user_id"});
