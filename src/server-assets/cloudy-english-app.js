@@ -423,11 +423,24 @@ function lg(){const li=LG.reduce((a,x,k)=>S.xp>=x[1]?k:a,0),c=LG[li],nx=LG[li+1]
 function cal(){const t=new Date(),c=[];for(let k=27;k>=0;k--){const d=new Date(t);d.setDate(t.getDate()-k);const on=S.days.includes(dk(d));c.push(`<i class="cd${on?' on':''}" style="animation-delay:${(27-k)*25}ms">${on?ic('flame'):d.getDate()}</i>`)}return `<div class="card"><h3>Календарь серии</h3><div class="cal">${c.join('')}</div></div>`}
 let personalExamBusy=false,PERSONAL_EXAM=null,learningSyncTimer=0,learningSyncInFlight=null;
 const examEscape=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+function examLearnerProfile(){
+ const profile=window.CloudyLearning?.profile(KEY)||{version:1,attempts:0,dueCount:0,skills:[],recentEvents:[]};
+ // Bring forward the learner's existing mistake counter so the first exam
+ // can already focus on errors made before detailed evidence was introduced.
+ const legacy=Object.entries(S.mis||{}).filter(([word,count])=>String(word).trim()&&Number(count)>0).map(([word,count])=>({
+  id:"vocabulary:"+String(word).toLowerCase().trim(),
+  mastery:0.2,evidence:Math.min(1000,Number(count)||1),correct:0,
+  incorrect:Math.min(10000,Number(count)||1),due:true,lastPracticed:Date.now()
+ }));
+ const skills=new Map((profile.skills||[]).map(skill=>[skill.id,skill]));
+ for(const skill of legacy){const prior=skills.get(skill.id);if(!prior||skill.evidence>prior.evidence)skills.set(skill.id,skill)}
+ return {...profile,attempts:Math.max(Number(profile.attempts)||0,legacy.length),skills:[...skills.values()]};
+}
 async function syncLearningEvidence(){
  if(!S.user||S.user.guest||!window.CloudyLearning)return;
  if(learningSyncInFlight)return learningSyncInFlight;
- const profile=CloudyLearning.profile(KEY);
- if(!profile||!profile.attempts)return;
+ const profile=examLearnerProfile();
+ if(!profile.attempts)return;
  learningSyncInFlight=authRequest("learning-exam-sync",{payload:{learnerProfile:profile}}).catch(()=>{console.warn("[cloudy-learning] profile sync deferred")}).finally(()=>{learningSyncInFlight=null});
  return learningSyncInFlight;
 }
@@ -438,7 +451,7 @@ window.addEventListener("cloudy:learning-updated",()=>{
 });
 const examCard=()=>{
  if(!S.user||S.user.guest)return "";
- const profile=window.CloudyLearning?.profile(KEY),ready=(S.dn[S.lv]||0)>0&&(profile?.attempts||0)>0;
+ const profile=examLearnerProfile(),ready=(S.dn[S.lv]||0)>0&&(profile.attempts||0)>0;
  const caption=ready?"Экзамен составлен ИИ по твоим урокам, ответам и ошибкам.":"Пройди урок и ответь на задания — Cloudy подготовит твой экзамен.";
  return '<div class="exam-home"><div class="exam-cloud">'+mascot()+'</div><div class="exam-copy"><b>Персональный экзамен</b><small>'+caption+'</small></div><button class="exam-start" '+(ready?'':'disabled')+' onclick="startPersonalExam()">'+(ready?'Начать':'Пройди урок')+'</button></div>';
 };
@@ -450,7 +463,7 @@ async function startPersonalExam(){
  await syncLearningEvidence();
  app.innerHTML='<div class="scr exam-loading"><div class="exam-cloud">'+mascot()+'</div><b>Клауди готовит твой экзамен…</b><small>Подбираю вопросы по пройденным урокам и ошибкам</small></div>';
  try{
-  const profile=window.CloudyLearning?.profile(KEY)||null;
+  const profile=examLearnerProfile();
   const response=await authRequest("learning-exam-start",{payload:{level:S.lv,learnerProfile:profile}});
   if(!response?.exam?.id||!Array.isArray(response.exam.questions)||response.exam.questions.length!==6)throw new Error("Не удалось подготовить экзамен. Попробуй позже.");
   PERSONAL_EXAM={...response.exam,index:0,answers:[],selected:null};
