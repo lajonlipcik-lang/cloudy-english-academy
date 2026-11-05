@@ -234,27 +234,29 @@ async function acquireExamQuota(db:any,userId:string,requestId:string){
     throw new Error("Слишком много запросов к ИИ. Повторите через "+seconds+" сек.");
   }
 }
-function buildFallbackExamQuestions(wordPairs:Array<{en:string;ru:string}>,sentencePairs:Array<{en:string;ru:string}>){
-  const questions:any[]=[];
-  const vocab=wordPairs.filter((pair)=>pair.en&&pair.ru).slice(0,30);
-  for(let index=0;index<Math.min(6,vocab.length);index++){
-    const pair=vocab[index];
-    if(!pair)continue;
-    const distractors=vocab.filter((item)=>item.en!==pair.en&&item.ru!==pair.ru).map((item)=>item.ru);
-    const options=[pair.ru,...distractors].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
-    if(options.length!==4)continue;
-    questions.push({id:"q"+(questions.length+1),skillId:"vocabulary:"+pair.en.toLowerCase(),target:pair.en,prompt:"Что означает английское слово «"+pair.en+"»?",options,correctIndex:0,explanation:"«"+pair.en+"» переводится как «"+pair.ru+"»."});
-  }
-  if(questions.length<6&&sentencePairs.length>=4){
-    const remaining=sentencePairs.filter((pair)=>!questions.some((question)=>question.target===pair.en));
-    for(const pair of remaining){
-      const options=[pair.en,...sentencePairs.filter((item)=>item.en!==pair.en).map((item)=>item.en)].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
-      if(options.length!==4)continue;
-      questions.push({id:"q"+(questions.length+1),skillId:"grammar:sentence-building",target:pair.en,prompt:"Как по-английски: «"+pair.ru+"»?",options,correctIndex:0,explanation:"Это предложение из твоих пройденных уроков."});
-      if(questions.length===6)break;
+function buildFallbackExamQuestions(wordPairs:Array<{en:string;ru:string}>,sentencePairs:Array<{en:string;ru:string}>,grammarPairs:Array<{skillId:string;en:string;ru:string}>,focusSkills:Array<{id:string}>){
+  const questions:any[]=[],usedTargets=new Set<string>();
+  const vocab=wordPairs.filter((pair)=>pair.en&&pair.ru),grammar=grammarPairs.filter((pair)=>pair.en&&pair.ru),sentence=sentencePairs.filter((pair)=>pair.en&&pair.ru);
+  const makeQuestion=(skillId:string)=>{
+    if(skillId.startsWith("vocabulary:")){
+      const pair=vocab.find((item)=>item.en.toLowerCase()===skillId.slice("vocabulary:".length)&&!usedTargets.has(item.en.toLowerCase()));
+      if(!pair)return null;
+      const options=[pair.ru,...vocab.filter((item)=>item.en!==pair.en&&item.ru!==pair.ru).map((item)=>item.ru)].filter((value,index,array)=>array.indexOf(value)===index).slice(0,4);
+      if(options.length!==4)return null;
+      usedTargets.add(pair.en.toLowerCase());
+      return {skillId,target:pair.en,prompt:"Что означает английское слово «"+pair.en+"»?",options,correctIndex:0,explanation:"«"+pair.en+"» переводится как «"+pair.ru+"»."};
     }
-  }
-  if(questions.length!==6)throw new Error("Пока недостаточно разных слов и предложений для экзамена. Пройди ещё один урок.");
+    const pair=skillId==="grammar:sentence-building"?sentence.find((item)=>!usedTargets.has(item.en.toLowerCase())):grammar.find((item)=>item.skillId===skillId&&!usedTargets.has(item.en.toLowerCase()));
+    if(!pair)return null;
+    const bank=skillId==="grammar:sentence-building"?sentence.map((item)=>item.en):[...grammar.map((item)=>item.en),...sentence.map((item)=>item.en)];
+    const options=[pair.en,...bank.filter((value)=>value!==pair.en)].filter((value,index,array)=>array.indexOf(value)===index).slice(0,4);
+    if(options.length!==4)return null;
+    usedTargets.add(pair.en.toLowerCase());
+    return {skillId,target:pair.en,prompt:"Как по-английски: «"+pair.ru+"»?",options,correctIndex:0,explanation:skillId==="grammar:sentence-building"?"Это предложение из твоих пройденных уроков.":"Проверь правило и порядок слов в этом примере."};
+  };
+  const priority=[...focusSkills.map((skill)=>skill.id),...vocab.map((pair)=>"vocabulary:"+pair.en.toLowerCase()),"grammar:sentence-building",...new Set(grammar.map((pair)=>pair.skillId))];
+  for(const skillId of priority){const question=makeQuestion(skillId);if(question)questions.push({id:"q"+(questions.length+1),...question});if(questions.length===6)break;}
+  if(questions.length!==6)throw new Error("Пока недостаточно разных изученных примеров для персонального экзамена. Пройди ещё несколько заданий.");
   return questions;
 }
 function parseExamJson(content:string){
