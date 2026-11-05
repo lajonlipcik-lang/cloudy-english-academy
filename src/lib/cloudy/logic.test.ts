@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, normalizeState } from "./logic";
+import { D, LV, levelLessons } from "./data";
+import { isLessonInLevel, sanitizeCloudyProgress } from "./progress-policy";
 import type { Exercise, Lesson } from "./types";
 
 describe("Cloudy learning progress", () => {
@@ -55,6 +57,27 @@ describe("Cloudy learning progress", () => {
       expect(exercise.o).not.toContain("you");
       expect(exercise.o).not.toContain("the");
     }
+  });
+
+
+  it("keeps A1 and A2 as seven complete sections with 21 lessons each", () => {
+    expect(LV.A1.s).toHaveLength(7);
+    expect(LV.A2.s).toHaveLength(7);
+    expect(levelLessons("A1")).toHaveLength(21);
+    expect(levelLessons("A2")).toHaveLength(21);
+    for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
+      expect(D[index]).toBeDefined();
+    }
+  });
+
+  it("authorizes and preserves the three new A2 lessons in progress", () => {
+    expect([51, 52, 53].every((index) => isLessonInLevel(index, "A2"))).toBe(true);
+    expect(isLessonInLevel(51, "A1")).toBe(false);
+    const state = sanitizeCloudyProgress({
+      ...defaultState(),
+      dn: { A1: 0, A2: 99, B1: 0, B2: 0 },
+    });
+    expect(state.dn.A2).toBe(21);
   });
 
 });
