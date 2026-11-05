@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, normalizeState } from "./logic";
 import { D, LV, levelLessons } from "./data";
@@ -72,6 +74,27 @@ describe("Cloudy learning progress", () => {
     for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
       expect(D[index]).toBeDefined();
     }
+  });
+
+  it("keeps the browser runtime catalog identical to the typed curriculum", () => {
+    const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV } } = {};
+    const browserCatalog = readFileSync(
+      new URL("../../server-assets/cloudy-catalog.js", import.meta.url),
+      "utf8",
+    );
+    runInNewContext(browserCatalog, { window: browserWindow });
+    expect(JSON.stringify(browserWindow.CloudyCatalog?.D)).toBe(JSON.stringify(D));
+    expect(JSON.stringify(browserWindow.CloudyCatalog?.LV)).toBe(JSON.stringify(LV));
+  });
+
+  it("keeps lesson indices unique and progress authorization aligned with curriculum", () => {
+    for (const level of ["A1", "A2", "B1", "B2"] as const) {
+      const indices = levelLessons(level);
+      expect(new Set(indices).size).toBe(indices.length);
+      expect(indices.every((index) => D[index] !== undefined)).toBe(true);
+      expect(indices.every((index) => isLessonInLevel(index, level))).toBe(true);
+    }
+    expect(levelLessons("A1").some((index) => levelLessons("A2").includes(index))).toBe(false);
   });
 
   it("authorizes and preserves the three new A2 lessons in progress", () => {
