@@ -769,6 +769,105 @@ const extendLesson = (index: number, words: Lesson["w"], sentences: Lesson["s"])
   lesson.s.push(...sentences);
 };
 
+
+ // Expand A1 lessons with beginner-safe vocabulary and short everyday sentences.
+extendLesson(0, [["good morning", "доброе утро"], ["good evening", "добрый вечер"], ["name", "имя"], ["meet", "знакомиться"]], [
+  ["Доброе утро!", "Good morning!", "Good evenings!"],
+  ["Как тебя зовут?", "What's your name?", "What's he name?"],
+  ["Приятно познакомиться", "Nice to meet you", "Nice meet you"],
+  ["До скорой встречи!", "See you soon!", "See you yesterday!"],
+]);
+extendLesson(1, [["parents", "родители"], ["child", "ребёнок"], ["grandmother", "бабушка"], ["grandfather", "дедушка"]], [
+  ["Это моя семья", "This is my family", "These is my family"],
+  ["Мои родители дома", "My parents are at home", "My parents is home"],
+  ["У неё есть сын", "She has a son", "She have a son"],
+  ["Мой дедушка добрый", "My grandfather is kind", "My grandfather are kind"],
+]);
+extendLesson(2, [["seven", "семь"], ["eight", "восемь"], ["nine", "девять"], ["ten", "десять"]], [
+  ["Мне десять лет", "I am ten years old", "I have ten years"],
+  ["У меня пять яблок", "I have five apples", "I has five apples"],
+  ["Сколько тебе лет?", "How old are you?", "How many years you?"],
+  ["Номер автобуса — семь", "The bus number is seven", "The bus number are seven"],
+]);
+extendLesson(3, [["banana", "банан"], ["tea", "чай"], ["egg", "яйцо"], ["rice", "рис"]], [
+  ["Я ем яблоко", "I eat an apple", "I eats an apple"],
+  ["Она пьёт чай", "She drinks tea", "She drink tea"],
+  ["Мы любим сыр", "We like cheese", "We likes cheese"],
+  ["Я ем хлеб на завтрак", "I eat bread for breakfast", "I eat bread at breakfast"],
+]);
+extendLesson(4, [["kitchen", "кухня"], ["bathroom", "ванная"], ["chair", "стул"], ["room", "комната"]], [
+  ["Книга на столе", "The book is on the table", "The book are on table"],
+  ["Моя кровать в комнате", "My bed is in the room", "My bed are in room"],
+  ["Кухня большая", "The kitchen is big", "The kitchen are big"],
+  ["Закрой дверь, пожалуйста", "Close the door, please", "Closes the door please"],
+]);
+extendLesson(5, [["orange", "оранжевый"], ["pink", "розовый"], ["brown", "коричневый"], ["grey", "серый"]], [
+  ["Моя сумка синяя", "My bag is blue", "My bag are blue"],
+  ["У неё красное платье", "She has a red dress", "She have a red dress"],
+  ["Трава зелёная", "The grass is green", "The grass are green"],
+  ["Мой любимый цвет — жёлтый", "My favourite colour is yellow", "My favourite colour are yellow"],
+]);
+extendLesson(24, [["family", "семья"], ["classmate", "одноклассник"], ["kind", "добрый"], ["together", "вместе"], ["meet", "встречаться"]], [
+  ["Мой одноклассник очень добрый", "My classmate is very kind", "My classmate are kind"],
+  ["Мы часто играем вместе", "We often play together", "We often plays together"],
+]);
+extendLesson(25, [["morning", "утро"], ["school", "школа"], ["work", "работа"], ["usually", "обычно"], ["at night", "ночью"]], [
+  ["Я просыпаюсь рано утром", "I wake up early in the morning", "I wakes up early"],
+  ["Мы ужинаем в семь часов", "We have dinner at seven", "We has dinner at seven"],
+]);
+extendLesson(26, [["book", "книга"], ["desk", "парта"], ["lesson", "урок"], ["homework", "домашнее задание"], ["bag", "сумка"]], [
+  ["У нас сегодня английский", "We have English today", "We has English today"],
+  ["Мой карандаш в сумке", "My pencil is in my bag", "My pencil are in my bag"],
+]);
+extendLesson(27, [["arm", "рука"], ["leg", "нога"], ["foot", "ступня"], ["ear", "ухо"], ["hair", "волосы"]], [
+  ["У неё длинные волосы", "She has long hair", "She have long hair"],
+  ["У меня болит нога", "My leg hurts", "My leg hurted"],
+]);
+extendLesson(28, [["cow", "корова"], ["rabbit", "кролик"], ["mouse", "мышь"], ["farm", "ферма"], ["small", "маленький"]], [
+  ["Кролик маленький", "The rabbit is small", "The rabbit are small"],
+  ["Лошадь на ферме", "The horse is on the farm", "The horse are farm"],
+]);
+extendLesson(29, [["juice", "сок"], ["water", "вода"], ["chicken", "курица"], ["potato", "картофель"], ["hungry", "голодный"]], [
+  ["Я хочу апельсиновый сок", "I want orange juice", "I wants orange juice"],
+  ["Она ест рис и курицу", "She eats rice and chicken", "She eat rice and chicken"],
+]);
+extendLesson(30, [["shop", "магазин"], ["cafe", "кафе"], ["park", "парк"], ["near", "рядом"], ["street", "улица"]], [
+  ["Библиотека рядом со школой", "The library is near the school", "The library are near school"],
+  ["Мы идём в кафе", "We're going to a cafe", "We goes to cafe"],
+]);
+extendLesson(31, [["driver", "водитель"], ["road", "дорога"], ["stop", "остановка"], ["fast", "быстрый"], ["slow", "медленный"]], [
+  ["Автобус останавливается здесь", "The bus stops here", "The bus stop here"],
+  ["Мой папа водит машину", "My father drives a car", "My father drive a car"],
+]);
+extendLesson(32, [["sky", "небо"], ["grass", "трава"], ["mountain", "гора"], ["sea", "море"], ["forest", "лес"]], [
+  ["Небо сегодня голубое", "The sky is blue today", "The sky are blue today"],
+  ["Река рядом с лесом", "The river is near the forest", "The river are near forest"],
+]);
+extendLesson(33, [["read", "читать"], ["book", "книга"], ["football", "футбол"], ["run", "бегать"], ["weekend", "выходные"]], [
+  ["Я читаю книгу вечером", "I read a book in the evening", "I reads a book"],
+  ["Мы играем в футбол по воскресеньям", "We play football on Sundays", "We plays football"],
+]);
+extendLesson(34, [["watch", "наручные часы"], ["wallet", "кошелёк"], ["computer", "компьютер"], ["bottle", "бутылка"], ["glasses", "очки"]], [
+  ["Мой телефон на столе", "My phone is on the table", "My phone are on the table"],
+  ["Где мои ключи?", "Where are my keys?", "Where is my keys?"],
+]);
+extendLesson(35, [["Wednesday", "среда"], ["Thursday", "четверг"], ["Saturday", "суббота"], ["Sunday", "воскресенье"], ["calendar", "календарь"]], [
+  ["Мой день рождения в субботу", "My birthday is on Saturday", "My birthday are Saturday"],
+  ["Урок начинается в девять", "The lesson starts at nine", "The lesson start at nine"],
+]);
+extendLesson(36, [["beautiful", "красивый"], ["tall", "высокий"], ["short", "низкий"], ["friendly", "дружелюбный"], ["tired", "уставший"]], [
+  ["Моя сестра очень дружелюбная", "My sister is very friendly", "My sister are friendly"],
+  ["Этот дом старый", "This house is old", "This house are old"],
+]);
+extendLesson(37, [["read", "читать"], ["write", "писать"], ["walk", "ходить"], ["run", "бегать"], ["listen", "слушать"]], [
+  ["Я пишу письмо", "I write a letter", "I writes a letter"],
+  ["Послушай эту песню", "Listen to this song", "Listens to this song"],
+]);
+extendLesson(38, [["shoes", "обувь"], ["shirt", "рубашка"], ["dress", "платье"], ["jacket", "куртка"], ["gloves", "перчатки"]], [
+  ["Мои туфли чёрные", "My shoes are black", "My shoes is black"],
+  ["Надень свою куртку", "Put on your jacket", "Puts on your jacket"],
+]);
+
 // A2 foundations: add practical vocabulary and complete sentence practice.
 extendLesson(6, [["pharmacy", "аптека"], ["traffic", "дорожное движение"], ["crossroads", "перекрёсток"]], [
   ["Аптека находится рядом с банком", "The pharmacy is near the bank", "near the"],
