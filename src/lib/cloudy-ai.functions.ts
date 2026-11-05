@@ -618,9 +618,10 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
   });
 
 
-type ShortsCommentInput = { accessToken: string; videoId?: string; body?: string };
+type ShortsCommentInput = { accessToken: string; videoId: string; body: string };
+type ShortsCommentLookupInput = { accessToken: string; videoId: string };
 
-function validateShortsCommentInput(input: ShortsCommentInput): ShortsCommentInput {
+function validateShortsCommentInput(input: Partial<ShortsCommentInput>): ShortsCommentInput {
   const token = String(input?.accessToken ?? "");
   const videoId = String(input?.videoId ?? "");
   const body = typeof input?.body === "string" ? input.body.trim() : "";
@@ -632,7 +633,7 @@ function validateShortsCommentInput(input: ShortsCommentInput): ShortsCommentInp
 
 /** Returns only comments already approved by Cloudy AI or a moderator. */
 export const getShortsComments = createServerFn({ method: "POST" })
-  .inputValidator((input: ShortsCommentInput): ShortsCommentInput => {
+  .inputValidator((input: Partial<ShortsCommentLookupInput>): ShortsCommentLookupInput => {
     const token = String(input?.accessToken ?? "");
     const videoId = String(input?.videoId ?? "");
     if (!token || token.length > 8192 || token.split(".").length !== 3) throw new Error("Unauthorized");
