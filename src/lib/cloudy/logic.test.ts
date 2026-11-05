@@ -152,7 +152,7 @@ describe("Cloudy learning progress", () => {
   });
 
   it("keeps the browser runtime catalog identical to the typed curriculum", () => {
-    const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV } } = {};
+    const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV; F: typeof A1_FOUNDATIONS } } = {};
     const browserCatalog = readFileSync(
       join(process.cwd(), "src/server-assets/cloudy-catalog.js"),
       "utf8",
