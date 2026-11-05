@@ -153,6 +153,26 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           else result = await api.cloudyTutorChat({ data: payload as never });
           reply({ ok: true, result }); return;
         }
+        if (message.action === "community-profile-get") {
+          if (!accessTokenRef.current || !userIdRef.current) throw new Error("Сначала войдите в аккаунт.");
+          const { data, error } = await supabase.from("profiles").select("is_public, bio").eq("id", userIdRef.current).maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error("Профиль не найден.");
+          reply({ ok: true, result: { is_public: data.is_public === true, bio: String(data.bio ?? "").slice(0, 240) } });
+          return;
+        }
+        if (message.action === "community-profile-update") {
+          if (!accessTokenRef.current || !userIdRef.current) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          if (typeof payload.is_public !== "boolean") throw new Error("Некорректная настройка публичности.");
+          const bio = typeof payload.bio === "string" ? payload.bio.trim() : "";
+          if (bio.length > 240) throw new Error("Описание слишком длинное.");
+          const { data, error } = await supabase.from("profiles").update({ is_public: payload.is_public, bio }).eq("id", userIdRef.current).select("is_public, bio").single();
+          if (error) throw error;
+          reply({ ok: true, result: { is_public: data.is_public === true, bio: String(data.bio ?? "").slice(0, 240) } });
+          return;
+        }
+
         if (message.action === "signUp") {
           const { data, error } = await supabase.auth.signUp({
             email: String(message.email ?? "").trim().toLowerCase(),
