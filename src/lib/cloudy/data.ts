@@ -762,6 +762,97 @@ const A2_EXTRA = [
 ];
 D.push(...A2_EXTRA);
 
+const extendLesson = (index, words, sentences) => {
+  const lesson = D[index];
+  if (!lesson) throw new Error("Missing Cloudy lesson at index " + index);
+  lesson.w.push(...words);
+  lesson.s.push(...sentences);
+};
+
+// A2 foundations: add practical vocabulary and complete sentence practice.
+extendLesson(6, [["pharmacy", "аптека"], ["traffic", "дорожное движение"], ["crossroads", "перекрёсток"]], [
+  ["Аптека находится рядом с банком", "The pharmacy is near the bank", "near the"],
+  ["На этой улице много машин", "There is a lot of traffic on this street", "are many"],
+  ["Поверните направо на перекрёстке", "Turn right at the crossroads", "turn left"],
+]);
+extendLesson(7, [["receipt", "чек"], ["cash", "наличные"], ["change", "сдача"]], [
+  ["Можно получить чек?", "Could I have a receipt?", "Could I get"],
+  ["Я заплачу наличными", "I'll pay in cash", "paid yesterday"],
+  ["Оставьте сдачу себе", "Keep the change", "take the"],
+]);
+extendLesson(8, [["midnight", "полночь"], ["noon", "полдень"], ["on time", "вовремя"]], [
+  ["Поезд отправляется в половине девятого", "The train leaves at half past eight", "leave tomorrow"],
+  ["У меня встреча в полдень", "I have an appointment at noon", "at midnight"],
+  ["Мы приехали вовремя", "We arrived on time", "arrive late"],
+]);
+extendLesson(15, [["order", "заказывать"], ["starter", "закуска"], ["main course", "основное блюдо"]], [
+  ["Я хотел бы заказать салат", "I'd like to order a salad", "I'd like salad"],
+  ["Что вы посоветуете на основное блюдо?", "What would you recommend for the main course?", "What you recommend"],
+  ["У нас столик на двоих", "We have a table for two", "We has table"],
+]);
+extendLesson(16, [["forecast", "прогноз погоды"], ["cloudy", "облачный"], ["temperature", "температура"]], [
+  ["По прогнозу будет дождь", "The forecast says it will rain", "The forecast say"],
+  ["Сегодня десять градусов", "It is ten degrees today", "It are ten"],
+  ["Возьми с собой зонт", "Take an umbrella with you", "Takes umbrella"],
+]);
+extendLesson(17, [["boots", "ботинки"], ["tight", "тесный"], ["comfortable", "удобный"]], [
+  ["Эти туфли слишком тесные", "These shoes are too tight", "This shoes"],
+  ["Эта куртка мне хорошо подходит", "This jacket fits me well", "fit me good"],
+  ["Я ищу тёплое пальто", "I'm looking for a warm coat", "I look yesterday"],
+]);
+
+// A2 extension topics: broaden each vocabulary set and add contextual phrases.
+extendLesson(39, [["sometimes", "иногда"], ["twice", "дважды"]], [
+  ["Я иногда хожу на работу пешком", "I sometimes walk to work", "I sometimes walks"],
+  ["Она ложится спать до одиннадцати", "She goes to bed before eleven", "She go to bed"],
+]);
+extendLesson(40, [["concert", "концерт"], ["restaurant", "ресторан"]], [
+  ["Мы остановились в небольшом отеле", "We stayed in a small hotel", "We stay tomorrow"],
+  ["Они провели воскресенье с семьёй", "They spent Sunday with their family", "They spend Sunday"],
+]);
+extendLesson(41, [["probably", "вероятно"], ["perhaps", "возможно"]], [
+  ["У меня назначена встреча в пятницу", "I have an appointment on Friday", "I had yesterday"],
+  ["Мы собираемся забронировать столик", "We are going to book a table", "We booked yesterday"],
+]);
+extendLesson(42, [["cheaper", "дешевле"], ["noisy", "шумный"]], [
+  ["Автобус дешевле такси", "The bus is cheaper than a taxi", "the cheapest taxi"],
+  ["Это самая тихая комната в отеле", "This is the quietest room in the hotel", "more quiet room"],
+]);
+extendLesson(43, [["price", "цена"], ["cash", "наличные"]], [
+  ["Сколько стоит эта бутылка?", "How much does this bottle cost?", "How much this cost"],
+  ["Осталось не так много яиц", "There aren't many eggs left", "There isn't many"],
+]);
+extendLesson(44, [["departure", "отправление"], ["arrival", "прибытие"]], [
+  ["Поезд отправляется с платформы номер два", "The train leaves from platform two", "The train leave"],
+  ["Идите прямо и поверните налево", "Go straight ahead and turn left", "Go straight and turning"],
+]);
+extendLesson(45, [["temperature", "температура"], ["medicine", "лекарство"]], [
+  ["Сегодня у меня высокая температура", "I have a high temperature today", "I has a high"],
+  ["Тебе следует пить много воды", "You should drink plenty of water", "You should drinks"],
+]);
+extendLesson(46, [["laundry", "стирка"], ["floor", "пол"]], [
+  ["По субботам я стираю", "I do the laundry on Saturdays", "I does laundry"],
+  ["Пожалуйста, подмети пол на кухне", "Please sweep the kitchen floor", "Please sweeps"],
+]);
+extendLesson(47, [["been", "был"], ["abroad", "за границей"]], [
+  ["Я никогда не путешествовал за границей", "I have never travelled abroad", "I never travelled yesterday"],
+  ["Ты уже закончил домашнюю работу?", "Have you finished your homework yet?", "Did you finished"],
+]);
+extendLesson(48, [["free", "свободный"], ["plan", "план"]], [
+  ["Ты свободен в субботу?", "Are you free on Saturday?", "Do you free"],
+  ["Извини, я не могу прийти сегодня вечером", "Sorry, I can't come tonight", "I don't can"],
+]);
+extendLesson(49, [["plastic", "пластик"], ["paper", "бумага"]], [
+  ["Нам следует использовать меньше пластика", "We should use less plastic", "We should uses"],
+  ["Люди могут экономить воду дома", "People can save water at home", "People can saves"],
+]);
+extendLesson(50, [["meaning", "значение"], ["example", "пример"]], [
+  ["Что означает это слово?", "What does this word mean?", "What this word means"],
+  ["Можешь привести пример?", "Can you give me an example?", "Can you gives"],
+]);
+
+
+
 export const LV: Record<Level, LevelDef> = {
   A1: { s: [
     { n: "Знакомство", l: [0, 1, 2] },
