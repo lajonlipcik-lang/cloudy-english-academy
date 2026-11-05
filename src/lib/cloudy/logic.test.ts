@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { applyAnswer, defaultState, finishLesson, newSession, normalizeState } from "./logic";
-import type { Exercise } from "./types";
+import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, normalizeState } from "./logic";
+import type { Exercise, Lesson } from "./types";
 
 describe("Cloudy learning progress", () => {
   it("normalizes damaged or empty saved data without throwing", () => {
@@ -39,4 +39,22 @@ describe("Cloudy learning progress", () => {
     expect(result.state.streak).toBe(1);
     expect(result.state.dn.A1).toBe(1);
   });
+  it("uses single-word lesson vocabulary as sentence-builder distractors", () => {
+    const lesson: Pick<Lesson, "w" | "s"> = {
+      w: [["hello", "привет"], ["friend", "друг"], ["school", "школа"]],
+      s: [
+        ["Привет, мой друг", "Hello my friend", "you the"],
+        ["Я иду в школу", "I go to school", "four the"],
+      ],
+    };
+    const exercises = buildExercises(lesson, lesson.w, { mic: false }, () => 0);
+    const builders = exercises.filter((exercise) => exercise.k === "b");
+    expect(builders).toHaveLength(2);
+    for (const exercise of builders) {
+      expect(exercise.o?.every((token) => !token.includes(" "))).toBe(true);
+      expect(exercise.o).not.toContain("you");
+      expect(exercise.o).not.toContain("the");
+    }
+  });
+
 });
