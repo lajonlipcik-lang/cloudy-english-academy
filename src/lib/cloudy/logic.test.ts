@@ -133,7 +133,7 @@ describe("Cloudy learning progress", () => {
     expect(D[44]!.s.some(([, en]) => en.includes("opposite the station"))).toBe(true);
     expect(D[53]!.s.some(([ru, en]) => ru.includes("занимаюсь английским") && en.includes("practice English"))).toBe(true);
     expect(D[34]!.w.some(([word, translation]) => word === "clock" && translation.includes("настенные"))).toBe(true);
-    expect(D[52]!.s.some(([ru, en]) => ru.includes("ошибся с адресом") && en.includes("mistake with the address"))).toBe(true);
+    expect(D[52]!.s.some(([ru, en]) => ru.includes("допустил(а) ошибку в адресе") && en.includes("mistake with the address"))).toBe(true);
     expect(D[27]!.w.some(([word]) => word === "raise")).toBe(true);
     expect(D[27]!.s.some(([ru, en]) => ru === "Подними руку." && en === "Raise your hand.")).toBe(true);
     expect(D[27]!.s.some(([ru, en]) => ru === "У меня болит рука." && en === "My arm hurts.")).toBe(true);
