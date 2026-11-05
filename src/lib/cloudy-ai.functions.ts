@@ -233,21 +233,23 @@ async function acquireExamQuota(db:any,userId:string,requestId:string){
     throw new Error("Слишком много запросов к ИИ. Повторите через "+seconds+" сек.");
   }
 }
-function buildFallbackExamQuestions(wordPairs:Array<{en:string;ru:string}>,sentences:string[]){
+function buildFallbackExamQuestions(wordPairs:Array<{en:string;ru:string}>,sentencePairs:Array<{en:string;ru:string}>){
   const questions:any[]=[];
   const vocab=wordPairs.filter((pair)=>pair.en&&pair.ru).slice(0,30);
   for(let index=0;index<Math.min(6,vocab.length);index++){
-    const pair=vocab[index],distractors=vocab.filter((item)=>item.en!==pair.en&&item.ru!==pair.ru).map((item)=>item.ru);
+    const pair=vocab[index];
+    if(!pair)continue;
+    const distractors=vocab.filter((item)=>item.en!==pair.en&&item.ru!==pair.ru).map((item)=>item.ru);
     const options=[pair.ru,...distractors].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
     if(options.length!==4)continue;
     questions.push({id:"q"+(questions.length+1),skillId:"vocabulary:"+pair.en.toLowerCase(),target:pair.en,prompt:"Что означает английское слово «"+pair.en+"»?",options,correctIndex:0,explanation:"«"+pair.en+"» переводится как «"+pair.ru+"»."});
   }
-  if(questions.length<6&&sentences.length>=4){
-    const remaining=sentences.filter((sentence)=>!questions.some((question)=>question.target===sentence));
-    for(const sentence of remaining){
-      const options=[sentence,...sentences.filter((item)=>item!==sentence)].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
+  if(questions.length<6&&sentencePairs.length>=4){
+    const remaining=sentencePairs.filter((pair)=>!questions.some((question)=>question.target===pair.en));
+    for(const pair of remaining){
+      const options=[pair.en,...sentencePairs.filter((item)=>item.en!==pair.en).map((item)=>item.en)].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
       if(options.length!==4)continue;
-      questions.push({id:"q"+(questions.length+1),skillId:"grammar:sentence-building",target:sentence,prompt:"Выбери предложение из уже пройденного материала.",options,correctIndex:0,explanation:"Это предложение встречалось в твоих уроках."});
+      questions.push({id:"q"+(questions.length+1),skillId:"grammar:sentence-building",target:pair.en,prompt:"Как по-английски: «"+pair.ru+"»?",options,correctIndex:0,explanation:"Это предложение из твоих пройденных уроков."});
       if(questions.length===6)break;
     }
   }
@@ -332,7 +334,8 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       const lessons=lessonIds.map((id:number)=>D[id]).filter(Boolean);
       const wordPairs:Array<{en:string;ru:string}>=[...new Map<string,{en:string;ru:string}>(lessons.flatMap((lesson:any)=>lesson.w.map((pair:any)=>[String(pair[0]).trim().toLowerCase(),{en:String(pair[0]).trim(),ru:String(pair[1]).trim()}] as [string,{en:string;ru:string}]).filter((entry:any)=>entry[0]&&entry[1].en&&entry[1].ru))).values()].slice(0,180);
       const words=wordPairs.map((pair:any)=>pair.en);
-      const sentences=[...new Set(lessons.flatMap((lesson:any)=>lesson.s.map((pair:any)=>String(pair[1]).trim())).filter(Boolean))].slice(0,100);
+      const sentencePairs=[...new Map<string,{en:string;ru:string}>(lessons.flatMap((lesson:any)=>lesson.s.map((pair:any)=>[String(pair[1]).trim().toLowerCase(),{en:String(pair[1]).trim(),ru:String(pair[0]).trim()}] as [string,{en:string;ru:string}]).filter((entry:any)=>entry[1].en&&entry[1].ru))).values()].slice(0,100);
+      const sentences=sentencePairs.map((pair)=>pair.en);
       if(!words.length&&!sentences.length)throw new Error("В пройденных уроках пока нет материала для экзамена.");
       const evidence=new Map((baseProfile.skills??[]).map((skill:any)=>[skill.id,skill]));
       const candidates=words.map(word=>{
@@ -345,10 +348,10 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       const weakIds=new Set(weak.map(skill=>skill.id));
       const remaining=candidates.filter(skill=>!weakIds.has(skill.id)).sort((a,b)=>a.mastery-b.mastery||b.evidence-a.evidence);
       const focus=[...weak,...remaining].slice(0,16);
-      const material={level,completedLessons:lessons.map((lesson:any)=>lesson.t),knownVocabulary:wordPairs,knownSentences:sentences,focusSkills:focus};
+      const material={level,completedLessons:lessons.map((lesson:any)=>lesson.t),knownVocabulary:wordPairs,knownSentences:sentencePairs,focusSkills:focus};
       const providers=(await rows(db)).filter((provider:any)=>provider.enabled).sort((a:any,b:any)=>a.priority-b.priority);
       if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
-      const prompt="Составь персональный экзамен по английскому для уровня "+level+". Используй ТОЛЬКО слова, фразы, предложения и темы из пройденного материала ниже. Не добавляй новую лексику и грамматику. В первую очередь проверяй focusSkills с низким mastery и большим incorrect; это реальные слабые места ученика. Сделай ровно 6 разных вопросов с четырьмя вариантами ответа. Вопросы и инструкции пиши по-русски, варианты могут быть на английском или русском. Не повторяй один и тот же вопрос. Для каждого вопроса выбери skillId строго из списка focusSkills и target строго из соответствующего изученного слова или предложения. Для vocabulary:<слово> target должен быть ровно этим английским словом, вопрос должен просить выбрать его русский перевод, а правильный вариант обязан дословно совпадать с ru-переводом из knownVocabulary. Для grammar:sentence-building target должен быть одним из knownSentences, а правильный вариант обязан дословно совпадать с этим предложением. Если focusSkills недостаточно, повторно проверь разные элементы известных слов и предложений, не вводя новый материал. Верни только валидный JSON без Markdown: {\"questions\":[{\"id\":\"q1\",\"skillId\":\"...\",\"target\":\"...\",\"prompt\":\"...\",\"options\":[\"...\",\"...\",\"...\",\"...\"],\"correctIndex\":0,\"explanation\":\"Короткое объяснение на русском\"}]}. Материал: "+JSON.stringify(material);
+      const prompt="Составь персональный экзамен по английскому для уровня "+level+". Используй ТОЛЬКО слова, фразы, предложения и темы из пройденного материала ниже. Не добавляй новую лексику и грамматику. В первую очередь проверяй focusSkills с низким mastery и большим incorrect; это реальные слабые места ученика. Сделай ровно 6 разных вопросов с четырьмя вариантами ответа. Вопросы и инструкции пиши по-русски, варианты могут быть на английском или русском. Не повторяй один и тот же вопрос. Для каждого вопроса выбери skillId строго из списка focusSkills и target строго из соответствующего изученного слова или предложения. Для vocabulary:<слово> target должен быть ровно этим английским словом, вопрос должен просить выбрать его русский перевод, а правильный вариант обязан дословно совпадать с ru-переводом из knownVocabulary. Для grammar:sentence-building target должен точно совпадать с knownSentences[].en, prompt должен спрашивать перевод соответствующего knownSentences[].ru на английский, а правильный вариант обязан дословно совпадать с knownSentences[].en. Если focusSkills недостаточно, повторно проверь разные элементы известных слов и предложений, не вводя новый материал. Верни только валидный JSON без Markdown: {\"questions\":[{\"id\":\"q1\",\"skillId\":\"...\",\"target\":\"...\",\"prompt\":\"...\",\"options\":[\"...\",\"...\",\"...\",\"...\"],\"correctIndex\":0,\"explanation\":\"Короткое объяснение на русском\"}]}. Материал: "+JSON.stringify(material);
       let generatedContent="";
       try{
         const routed=await runWithAiFallback(providers.map((provider:any)=>({id:String(provider.id),priority:Number(provider.priority)||0})),async(candidate)=>{
@@ -364,7 +367,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       try{
         const generated=parseExamJson(generatedContent);
         const allowed=new Set(focus.map(skill=>skill.id));
-        const questions=generated.slice(0,6).map((question:any,index:number)=>{
+        questions=generated.slice(0,6).map((question:any,index:number)=>{
           const id="q"+(index+1),skillId=String(question?.skillId??"");
           const target=examSafeText(question?.target,120),normalizedTarget=target.toLowerCase();
           const options=Array.isArray(question?.options)?question.options.slice(0,4).map((option:any)=>examSafeText(option,100)):[];
@@ -381,7 +384,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
         if(questions.length!==6)throw new Error("ИИ вернул неполный экзамен.");
       }catch(error){
         console.warn("[cloudy-exam] invalid AI question payload; using verified lesson-based fallback");
-        questions=buildFallbackExamQuestions(wordPairs,sentences);
+        questions=buildFallbackExamQuestions(wordPairs,sentencePairs);
       }
       const examId=crypto.randomUUID(),createdAt=Date.now();
       const nextProfile={...baseProfile,activeExam:{id:examId,level,createdAt,expiresAt:createdAt+30*60*1000,questions}};
