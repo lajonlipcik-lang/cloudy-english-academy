@@ -451,8 +451,8 @@ export const listCommunityReports=createServerFn({method:"POST"}).inputValidator
   const profileResult=authorIds.length?await db.from("community_public_profiles").select("id,display_name").in("id",authorIds):{data:[],error:null};
   if(profileResult.error)throw new Error("Не удалось загрузить авторов жалоб.");
   const names=new Map((profileResult.data??[]).map((p:any)=>[p.id,p.display_name||"Участник"]));
-  const postMap=new Map((postsResult.data??[]).map((p:any)=>[p.id,p]));
-  const commentMap=new Map((commentsResult.data??[]).map((p:any)=>[p.id,p]));
+  const postMap=new Map<string, any>((postsResult.data??[]).map((p:any)=>[p.id,p]));
+  const commentMap=new Map<string, any>((commentsResult.data??[]).map((p:any)=>[p.id,p]));
   return {reports:(reports??[]).map((report:any)=>{
     const target=report.post_id?postMap.get(report.post_id):commentMap.get(report.comment_id);
     return {id:report.id,reason:report.reason,details:report.details,status:report.status,created_at:report.created_at,target_type:report.post_id?"post":"comment",target_id:report.post_id||report.comment_id,target_body:target?.body??"[Содержимое уже удалено]",target_status:target?.status??"removed",author_name:names.get(target?.author_id)||"Участник",parent_post_id:target?.post_id??null,reporter_hint:String(report.reporter_id||"").slice(-8)};
