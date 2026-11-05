@@ -54,7 +54,8 @@ export type Exercise =
   | { k: "l"; a: string; en: string; o: string[]; title: string }
   | { k: "b"; q: string; a: string; o: string[]; title: string; en?: undefined }
   | { k: "m"; L: Pair[]; R: Pair[]; en?: undefined }
-  | { k: "p"; en: string };
+  | { k: "p"; en: string }
+  | { k: "r"; q: string; a: string; en: string; title: string };
 
 export interface Session {
   review: boolean;
