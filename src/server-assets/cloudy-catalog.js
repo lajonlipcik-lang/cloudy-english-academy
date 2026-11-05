@@ -743,12 +743,34 @@ const A1_EXTRA = [
   }
 ];
 D.push(...A1_EXTRA);
+
+const A2_EXTRA = [
+  P("Распорядок дня и привычки", "routine=распорядок,schedule=расписание,usually=обычно,rarely=редко,early=рано,late=поздно", "Я обычно просыпаюсь рано=I usually wake up early=never late;Я редко смотрю телевизор=I rarely watch TV=always the;Мой рабочий день начинается в девять=My working day starts at nine=finish yesterday"),
+  P("Прошедшие выходные", "visited=посетил,bought=купил,met=встретил,spent=провёл,stayed=остался,trip=поездка", "Мы посетили музей вчера=We visited the museum yesterday=tomorrow the;Он купил новый билет=He bought a new ticket=buys tomorrow;Я встретил друга в парке=I met a friend in the park=meet the"),
+  P("Планы на будущее", "plan=план,invite=приглашать,appointment=встреча,arrange=организовать,decide=решать,hope=надеяться", "Я собираюсь навестить двоюродного брата=I am going to visit my cousin=visited yesterday;Мы встречаемся с друзьями завтра=We are meeting friends tomorrow=met last week;Она надеется найти новую работу=She hopes to find a new job=found yesterday"),
+  P("Сравнение мест и вещей", "crowded=переполненный,quiet=тихий,modern=современный,comfortable=удобный,safer=безопаснее,farther=дальше", "Этот район тише центра=This area is quieter than the city centre=the quietest;Это самый удобный отель=This is the most comfortable hotel=more comfortable;Мой путь короче твоего=My journey is shorter than yours=the shortest"),
+  P("Количество и покупки", "a little=немного,a few=несколько,enough=достаточно,too much=слишком много,bottle=бутылка,packet=пакет", "В бутылке немного воды=There is a little water in the bottle=many bottles;Нам нужно несколько яблок=We need a few apples=any apple;У нас достаточно времени=We have enough time=too many times"),
+  P("Путешествия и направления", "turn left=повернуть налево,straight ahead=прямо,across from=напротив,corner=угол,platform=платформа,return ticket=билет туда и обратно", "Поверните налево на углу=Turn left at the corner=turn right;Банк напротив вокзала=The bank is across from the station=behind the;Мне нужен билет туда и обратно=I need a return ticket=one way"),
+  P("Здоровье и советы", "cough=кашель,fever=температура,sore throat=боль в горле,should=следует,rest=отдых,appointment=приём", "Тебе следует отдохнуть=You should get some rest=shouldn't work;У него болит горло=He has a sore throat=has a headache;Мне нужно записаться к врачу=I need to make an appointment with the doctor=cancel the"),
+  P("Домашние обязанности", "tidy=убирать,sweep=подметать,wash up=мыть посуду,take out the rubbish=выносить мусор,repair=чинить,have to=быть должным", "Мне нужно убрать комнату=I have to tidy my room=tidied yesterday;Ей не нужно работать в воскресенье=She doesn't have to work on Sunday=mustn't the;Пожалуйста, вынеси мусор=Please take out the rubbish=bring the"),
+  P("Жизненный опыт", "ever=когда-либо,never=никогда,already=уже,yet=ещё,recently=недавно,experience=опыт", "Ты когда-нибудь был в Лондоне=Have you ever been to London=Did you ever go;Я ещё не закончил домашнюю работу=I haven't finished my homework yet=already finished;Она уже позвонила маме=She has already called her mother=will call tomorrow"),
+  P("Приглашения и договорённости", "would you like=не хотел бы ты,shall we=давай,sounds great=звучит отлично,available=свободный,maybe=возможно,unfortunately=к сожалению", "Хочешь пойти в кино=Would you like to go to the cinema=Do you like cinema;Давай встретимся в шесть=Shall we meet at six=Did we meet;Это звучит отлично=That sounds great=That sound badly"),
+  P("Природа и окружающая среда", "recycle=перерабатывать,pollution=загрязнение,waste=отходы,protect=защищать,save energy=экономить энергию,reduce=сокращать", "Мы должны перерабатывать бумагу=We should recycle paper=throw the;Загрязнение воздуха — серьёзная проблема=Air pollution is a serious problem=water the;Выключай свет, чтобы экономить энергию=Turn off the lights to save energy=leave everything on"),
+  P("Общение и обучение", "explain=объяснять,repeat=повторять,understand=понимать,remember=помнить,forget=забывать,instruction=инструкция", "Можешь повторить вопрос=Could you repeat the question=forget the;Я не понял инструкцию=I didn't understand the instruction=remembered yesterday;Она объяснила правило ясно=She explained the rule clearly=explains unclear")
+];
+D.push(...A2_EXTRA);
 LV.A1.s.push(
   {n:"Люди и школа",l:[24,25,26]},
   {n:"Тело и окружающий мир",l:[27,28,29]},
   {n:"Город и транспорт",l:[30,31,32]},
   {n:"Досуг и повседневность",l:[33,34,35]},
   {n:"Время и практика",l:[36,37,38]}
+);
+LV.A2.s.push(
+  {n:"Привычки и прошлое",l:[39,40,41]},
+  {n:"Сравнения и покупки",l:[42,43,44]},
+  {n:"Путешествия и здоровье",l:[45,46,47]},
+  {n:"Общение и окружающий мир",l:[48,49,50]}
 );
 
 const ALL=D.flatMap(l=>l.w);
