@@ -137,7 +137,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
 
       try {
         const accessToken = accessTokenRef.current;
-        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events"].includes(String(message.action))) {
+        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events"].includes(String(message.action))) {
           if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
           const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
           const api = await import("@/lib/cloudy-ai.functions");
@@ -147,12 +147,160 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           else if (message.action === "admin-provider-save") result = await api.saveAiProvider({ data: payload as never });
           else if (message.action === "admin-provider-delete") result = await api.deleteAiProvider({ data: payload as never });
           else if (message.action === "admin-provider-test") result = await api.testAiProvider({ data: payload as never });
+          else if (message.action === "admin-community-reports") result = await api.listCommunityReports({ data: payload as never });
+          else if (message.action === "admin-community-moderate") result = await api.moderateCommunityReport({ data: payload as never });
           else if (message.action === "tts") result = await api.cloudyTextToSpeech({ data: { accessToken, message: String((payload as any).text ?? "") } });
           else if (message.action === "learning-events") result = await api.syncCloudyLearningEvents({ data: payload as never });
           else if (String(message.action).startsWith("learning-exam-")) result = await api.cloudyPersonalExam({ data: { ...payload, accessToken, examAction: String(message.action).replace("learning-exam-", "") } as never });
           else result = await api.cloudyTutorChat({ data: payload as never });
           reply({ ok: true, result }); return;
         }
+        if (message.action === "community-interactions-get") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          const postIds = Array.isArray(payload["postIds"]) ? [...new Set((payload["postIds"] as unknown[]).filter((id): id is string => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id)))].slice(0, 50) : [];
+          if (!postIds.length) {
+            reply({ ok: true, result: { comments: [], reactions: [] } });
+            return;
+          }
+          const [commentsResult, reactionsResult]: any[] = await Promise.all([
+            (supabase.from("community_comments" as any) as any).select("id, post_id, author_id, body, created_at").in("post_id", postIds).eq("status", "published").order("created_at", { ascending: true }).limit(250),
+            (supabase.from("community_reactions" as any) as any).select("post_id, user_id, reaction").in("post_id", postIds),
+          ]);
+          if (commentsResult.error) throw commentsResult.error;
+          if (reactionsResult.error) throw reactionsResult.error;
+          const comments = (commentsResult.data ?? []) as { id: string; post_id: string; author_id: string; body: string; created_at: string }[];
+          const authorIds = [...new Set(comments.map(comment => comment.author_id))];
+          const profiles: any = authorIds.length ? await (supabase.from("community_public_profiles" as any) as any).select("id, display_name").in("id", authorIds) : { data: [], error: null };
+          if (profiles.error) throw profiles.error;
+          const names = new Map(((profiles.data ?? []) as { id: string; display_name: string | null }[]).map(profile => [profile.id, profile.display_name || "Участник"]));
+          reply({ ok: true, result: {
+            comments: comments.map(comment => ({ ...comment, author_name: names.get(comment.author_id) || (comment.author_id === uid ? "Вы" : "Участник"), is_own: comment.author_id === uid })),
+            reactions: (reactionsResult.data ?? []).map((reaction: any) => ({ post_id: reaction.post_id, is_own: reaction.user_id === uid, reaction: reaction.reaction })),
+          } });
+          return;
+        }
+        if (message.action === "community-comment-create") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          const postId = typeof payload["postId"] === "string" ? payload["postId"] : "";
+          const body = typeof payload["body"] === "string" ? (payload["body"] as string).trim() : "";
+          if (!/^[0-9a-f-]{36}$/i.test(postId)) throw new Error("Некорректная публикация.");
+          if (body.length < 1 || body.length > 1000) throw new Error("Комментарий должен содержать от 1 до 1000 символов.");
+          const result: any = await (supabase.from("community_comments" as any) as any).insert({ post_id: postId, author_id: uid, body }).select("id").single();
+          if (result.error) throw result.error;
+          reply({ ok: true, result: { id: result.data.id } });
+          return;
+        }
+        if (message.action === "community-comment-delete") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          const commentId = typeof payload["commentId"] === "string" ? payload["commentId"] : "";
+          if (!/^[0-9a-f-]{36}$/i.test(commentId)) throw new Error("Некорректный комментарий.");
+          const result: any = await (supabase.from("community_comments" as any) as any).delete().eq("id", commentId).eq("author_id", uid).select("id").maybeSingle();
+          if (result.error) throw result.error;
+          if (!result.data) throw new Error("Комментарий не найден или уже удалён.");
+          reply({ ok: true, result: { id: result.data.id } });
+          return;
+        }
+        if (message.action === "community-reaction-toggle") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          const postId = typeof payload["postId"] === "string" ? payload["postId"] : "";
+          if (!/^[0-9a-f-]{36}$/i.test(postId)) throw new Error("Некорректная публикация.");
+          const readResult: any = await (supabase.from("community_reactions" as any) as any).select("post_id").eq("post_id", postId).eq("user_id", uid).maybeSingle();
+          if (readResult.error) throw readResult.error;
+          const existing = readResult.data;
+          if (existing) {
+            const deleteResult: any = await (supabase.from("community_reactions" as any) as any).delete().eq("post_id", postId).eq("user_id", uid);
+            if (deleteResult.error) throw deleteResult.error;
+          } else {
+            const insertResult: any = await (supabase.from("community_reactions" as any) as any).insert({ post_id: postId, user_id: uid, reaction: "like" });
+            if (insertResult.error) throw insertResult.error;
+          }
+          reply({ ok: true, result: { active: !existing } });
+          return;
+        }
+        if (message.action === "community-report-create") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          const postId = typeof payload["postId"] === "string" ? payload["postId"] : "";
+          const commentId = typeof payload["commentId"] === "string" ? payload["commentId"] : "";
+          const reason = payload["reason"];
+          const details = typeof payload["details"] === "string" ? (payload["details"] as string).trim().slice(0, 1000) : "";
+          if ((!postId && !commentId) || (postId && !/^[0-9a-f-]{36}$/i.test(postId)) || (commentId && !/^[0-9a-f-]{36}$/i.test(commentId)) || (postId && commentId)) throw new Error("Некорректная жалоба.");
+          if (!["harassment", "personal_data", "spam", "inappropriate", "other"].includes(String(reason))) throw new Error("Выбери причину жалобы.");
+          const result: any = await (supabase.from("community_reports" as any) as any).insert({ reporter_id: uid, post_id: postId || null, comment_id: commentId || null, reason, details }).select("id").single();
+          if (result.error) throw result.error;
+          reply({ ok: true, result: { id: result.data.id } });
+          return;
+        }
+        if (message.action === "community-feed-get") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const { data: posts, error } = await supabase.from("community_posts").select("id, author_id, body, status, created_at").eq("status", "published").order("created_at", { ascending: false }).limit(50);
+          if (error) throw error;
+          const own = await supabase.from("community_posts").select("id, author_id, body, status, created_at").eq("author_id", uid).order("created_at", { ascending: false }).limit(30);
+          if (own.error) throw own.error;
+          const merged = new Map<string, { id: string; author_id: string; body: string; status: string; created_at: string }>();
+          for (const post of [...(posts ?? []), ...(own.data ?? [])]) merged.set(post.id, post);
+          const rows = [...merged.values()].sort((x, y) => Date.parse(y.created_at) - Date.parse(x.created_at)).slice(0, 50);
+          const authorIds = [...new Set(rows.map(post => post.author_id))];
+          const profiles: any = authorIds.length ? await supabase.from("community_public_profiles" as any).select("id, display_name").in("id", authorIds) : { data: [], error: null };
+          if (profiles.error) throw profiles.error;
+          const profileRows = (profiles.data ?? []) as { id: string; display_name: string | null }[];
+          const names = new Map(profileRows.map(profile => [profile.id, profile.display_name || "Участник"]));
+          reply({ ok: true, result: rows.map(post => ({ ...post, author_name: names.get(post.author_id) || (post.author_id === uid ? "Вы" : "Участник"), is_own: post.author_id === uid })) });
+          return;
+        }
+        if (message.action === "community-post-create") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          const body = typeof payload["body"] === "string" ? (payload["body"] as string).trim() : "";
+          if (body.length < 1 || body.length > 2000) throw new Error("Текст публикации должен содержать от 1 до 2000 символов.");
+          const { data, error } = await supabase.from("community_posts").insert({ author_id: uid, body }).select("id").single();
+          if (error) throw error;
+          reply({ ok: true, result: { id: data.id } });
+          return;
+        }
+        if (message.action === "community-post-delete") {
+          const uid = userIdRef.current;
+          if (!accessTokenRef.current || !uid) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          const postId = typeof payload["postId"] === "string" ? payload["postId"] : "";
+          if (!/^[0-9a-f-]{36}$/i.test(postId)) throw new Error("Некорректная публикация.");
+          const { data, error } = await supabase.from("community_posts").delete().eq("id", postId).eq("author_id", uid).select("id").maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error("Публикация не найдена или уже удалена.");
+          reply({ ok: true, result: { id: data.id } });
+          return;
+        }
+        if (message.action === "community-profile-get") {
+          if (!accessTokenRef.current || !userIdRef.current) throw new Error("Сначала войдите в аккаунт.");
+          const { data, error } = await supabase.from("profiles").select("is_public, bio").eq("id", userIdRef.current).maybeSingle();
+          if (error) throw error;
+          if (!data) throw new Error("Профиль не найден.");
+          reply({ ok: true, result: { is_public: data.is_public === true, bio: String(data.bio ?? "").slice(0, 240) } });
+          return;
+        }
+        if (message.action === "community-profile-update") {
+          if (!accessTokenRef.current || !userIdRef.current) throw new Error("Сначала войдите в аккаунт.");
+          const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
+          if (typeof payload["is_public"] !== "boolean") throw new Error("Некорректная настройка публичности.");
+          const bio = typeof payload["bio"] === "string" ? (payload["bio"] as string).trim() : "";
+          if (bio.length > 240) throw new Error("Описание слишком длинное.");
+          const { data, error } = await supabase.from("profiles").update({ is_public: payload["is_public"] as boolean, bio }).eq("id", userIdRef.current).select("is_public, bio").single();
+          if (error) throw error;
+          reply({ ok: true, result: { is_public: data.is_public === true, bio: String(data.bio ?? "").slice(0, 240) } });
+          return;
+        }
+
         if (message.action === "signUp") {
           const { data, error } = await supabase.auth.signUp({
             email: String(message.email ?? "").trim().toLowerCase(),
