@@ -375,3 +375,58 @@ h2{font-size:21px;margin:0 0 16px}
 .exam-result-row.correct b{color:#68dca9}
 .exam-result-row.incorrect b{color:#ffb0a7}
 .exam-result-row small{color:rgba(215,226,246,.7)}
+
+
+/* Premium Cloudy learning cards */
+.study-screen .body{padding:4px 0 12px}
+.study-stage{transform-origin:center;will-change:transform,opacity}
+.study-stage-enter{animation:cloudyStudyEnter .38s cubic-bezier(.2,.78,.22,1) both}
+.study-stage.is-leaving{animation:cloudyStudyLeave .27s cubic-bezier(.42,0,.72,.2) both;pointer-events:none}
+@keyframes cloudyStudyEnter{from{opacity:0;transform:translate3d(-34px,0,0) scale(.985);filter:blur(2px)}to{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
+@keyframes cloudyStudyLeave{to{opacity:0;transform:translate3d(42px,0,0) scale(.985);filter:blur(2px)}}
+.vocab-lesson,.grammar-lesson{width:100%;max-width:620px;margin:0 auto;padding:8px 1px 4px;font-family:"Avenir Next","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-synthesis:none}
+.study-heading-row{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:3px 0 8px}
+.study-kicker{display:inline-flex;align-items:center;gap:7px;color:#8bd5ff;font-size:10px;font-weight:850;letter-spacing:.15em;text-transform:uppercase}
+.study-kicker:before{content:"";width:17px;height:2px;border-radius:4px;background:linear-gradient(90deg,#6ac8ff,#b4eaff)}
+.study-heading-row h2,.study-title{margin:9px 0 0;font-size:clamp(23px,5.8vw,30px);font-weight:850;letter-spacing:-.045em;line-height:1.08;text-wrap:balance}
+.vocab-count{flex:none;margin-bottom:2px;padding:7px 10px;border:1px solid rgba(137,207,255,.22);border-radius:99px;background:rgba(75,174,255,.12);color:#c8eaff;font-size:11px;font-weight:750}
+.study-description{margin:12px 0 17px;color:rgba(230,243,255,.76);font-size:13px;font-weight:450;line-height:1.55;letter-spacing:-.01em}
+.vocab-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.vocab-card{position:relative;min-width:0;min-height:116px;padding:16px 42px 14px 14px;overflow:hidden;border:1px solid rgba(173,222,255,.2);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(91,173,255,.075));box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 8px 20px rgba(0,14,55,.12);animation:cloudyCardRise .42s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--card-index,0)*35ms)}
+.vocab-card:after{content:"";position:absolute;width:90px;height:90px;right:-48px;bottom:-53px;border-radius:50%;background:radial-gradient(circle,rgba(113,202,255,.22),transparent 70%);pointer-events:none}
+.vocab-index{display:block;margin-bottom:11px;color:rgba(193,226,255,.55);font-size:9px;font-weight:850;letter-spacing:.12em}
+.vocab-word{overflow-wrap:anywhere;color:#fff;font-size:clamp(19px,4.8vw,23px);font-weight:850;letter-spacing:-.045em;line-height:1.08}
+.vocab-translation{margin-top:7px;color:rgba(226,241,255,.77);font-size:13px;font-weight:550;line-height:1.3}
+.vocab-speak{position:absolute;top:12px;right:10px;z-index:1;width:30px;height:30px;display:grid;place-items:center;border:1px solid rgba(163,218,255,.2);border-radius:11px;background:rgba(82,174,255,.17);color:#bde8ff;transition:transform .2s,background .2s}
+.vocab-speak:active{transform:scale(.9);background:rgba(82,174,255,.32)}
+.vocab-speak .i{width:15px;height:15px}
+@keyframes cloudyCardRise{from{opacity:0;transform:translateY(10px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+.study-title{margin-top:10px}
+.grammar-lesson .study-description{margin:12px 0 16px}
+.pronoun-section{margin:16px 0 18px}
+.study-section-label{margin:0 0 9px;color:rgba(190,224,255,.65);font-size:9px;font-weight:850;letter-spacing:.14em}
+.pronoun-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pronoun-card{display:flex;min-height:80px;flex-direction:column;justify-content:center;gap:6px;padding:12px 10px;border:1px solid rgba(149,211,255,.24);border-radius:16px;background:linear-gradient(145deg,rgba(255,255,255,.17),rgba(65,152,255,.09));box-shadow:inset 0 1px 0 rgba(255,255,255,.1);animation:cloudyCardRise .38s both;animation-delay:calc(var(--card-index,0)*32ms)}
+.pronoun-en{color:#fff;font-size:clamp(23px,6vw,29px);font-weight:900;letter-spacing:-.055em;line-height:1}
+.pronoun-ru{color:#c6e7ff;font-size:12px;font-weight:650;letter-spacing:-.01em}
+.grammar-example-grid{display:grid;gap:9px;margin-top:16px}
+.grammar-example-card{display:grid;gap:7px;padding:14px 15px;border:1px solid rgba(167,218,255,.18);border-radius:16px;background:rgba(255,255,255,.085);box-shadow:inset 0 1px 0 rgba(255,255,255,.07);animation:cloudyCardRise .4s both;animation-delay:calc(var(--card-index,0)*40ms)}
+.grammar-example-index{color:rgba(177,219,255,.56);font-size:9px;font-weight:850;letter-spacing:.13em}
+.grammar-example-en{color:#fff;font-size:clamp(16px,4.3vw,19px);font-weight:800;letter-spacing:-.025em;line-height:1.25;overflow-wrap:anywhere}
+.grammar-example-ru{color:rgba(220,239,255,.74);font-size:13px;font-weight:550;line-height:1.35}
+.grammar-tip{margin-top:14px;padding:13px 15px;border:1px solid rgba(95,190,255,.23);border-radius:15px;background:linear-gradient(120deg,rgba(53,151,255,.18),rgba(77,205,255,.07))}
+.grammar-tip>span{color:#8bd5ff;font-size:9px;font-weight:900;letter-spacing:.15em}
+.grammar-tip p{margin:6px 0 0;color:#f0f8ff;font-size:13px;font-weight:600;line-height:1.5}
+@media(max-width:350px){.vocab-grid{gap:8px}.vocab-card{padding:14px 36px 12px 11px;min-height:108px}.pronoun-grid{gap:6px}.pronoun-card{min-height:72px;padding:10px 8px}}
+@media(prefers-reduced-motion:reduce){.study-stage-enter,.study-stage.is-leaving,.vocab-card,.pronoun-card,.grammar-example-card{animation:none!important;filter:none!important;transform:none!important}}
+
+
+/* Personal exam: recognizable skill and matching slide direction */
+.exam-skill-label{display:inline-flex;align-items:center;margin:2px 0 4px;padding:7px 10px;border:1px solid rgba(126,205,255,.22);border-radius:99px;background:rgba(68,165,255,.13);color:#a9ddff;font-size:9px;font-weight:900;letter-spacing:.13em}
+.exam-question-stage{transform-origin:center;animation:cloudyExamEnter .36s cubic-bezier(.2,.78,.22,1) both}
+.exam-question-stage.is-leaving{animation:cloudyExamLeave .26s cubic-bezier(.42,0,.72,.2) both;pointer-events:none}
+@keyframes cloudyExamEnter{from{opacity:0;transform:translate3d(-30px,0,0)}to{opacity:1;transform:translate3d(0,0,0)}}
+@keyframes cloudyExamLeave{to{opacity:0;transform:translate3d(38px,0,0)}}
+@media(prefers-reduced-motion:reduce){.exam-question-stage,.exam-question-stage.is-leaving{animation:none!important;transform:none!important}}
+
+.study-screen,.exam-screen{overflow-x:hidden}
