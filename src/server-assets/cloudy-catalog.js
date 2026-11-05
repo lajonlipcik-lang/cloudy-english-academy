@@ -688,7 +688,7 @@ const A1_EXTRA = [
         "sits the"
       ],
       [
-        "Помоги мне пожалуйста",
+        "Помоги мне, пожалуйста.",
         "Please help me",
         "helps the"
       ]
