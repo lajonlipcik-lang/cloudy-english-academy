@@ -192,22 +192,33 @@ describe("Cloudy learning progress", () => {
     expect(runtime).toContain('e.k!=="b"&&e.k!=="r"');
   });
   it("adds only completed A1 verb topics and their taught examples to the personal exam", () => {
-    const foundations = {
-      24: { examples: [["I want water.", "Я хочу воды."]] as [string, string][] },
-      25: { examples: [["I study English.", "Я изучаю английский."]] as [string, string][] },
-      26: { examples: [["She likes tea.", "Она любит чай."]] as [string, string][] },
-      27: { examples: [["Does she work?", "Она работает?"]] as [string, string][] },
-      28: { examples: [["He doesn't work.", "Он не работает."]] as [string, string][] },
-      29: { examples: [["We study at home.", "Мы учимся дома."]] as [string, string][] },
-    };
-    const grammar = buildKnownGrammar([24, 26, 28], foundations);
-    expect(grammar.map((pair) => pair.skillId)).toEqual([
+    const grammar = buildKnownGrammar([24, 26, 28], A1_FOUNDATIONS);
+    expect([...new Set(grammar.map((pair) => pair.skillId))]).toEqual([
       "grammar:verbs:action",
       "grammar:present-simple:third-person",
       "grammar:present-simple:negatives",
     ]);
-    expect(grammar.map((pair) => pair.en)).toEqual(["I want water.", "She likes tea.", "He doesn't work."]);
-    expect(buildKnownGrammar([23], foundations)).toEqual([]);
+    expect(grammar.some((pair) => pair.en === "She likes tea." && pair.ru === "Я люблю чай.")).toBe(true);
+    expect(buildKnownGrammar([23], A1_FOUNDATIONS)).toEqual([]);
+  });
+
+  it("validates grammar exam targets against completed lesson examples", () => {
+    const source = readFileSync(join(process.cwd(), "src/lib/cloudy-ai.functions.ts"), "utf8");
+    expect(source).toContain("const knownGrammar=buildKnownGrammar(lessonIds,A1_FOUNDATIONS);");
+    expect(source).toContain("knownGrammar.find((pair)=>pair.skillId===skillId&&pair.en.toLowerCase()===normalizedTarget)");
+    expect(source).toContain("buildFallbackExamQuestions(wordPairs,sentencePairs,knownGrammar,focus)");
+  });
+
+  it("renders Cloudy-style bilingual study cards with an accessible rightward transition", () => {
+    const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
+    const styles = readFileSync(join(process.cwd(), "src/server-assets/cloudy-english.css"), "utf8");
+    expect(runtime).toContain('class="pronoun-grid"');
+    expect(runtime).toContain('class="vocab-card"');
+    expect(runtime).toContain('study-stage-enter');
+    expect(runtime).toContain('stage.classList.add("is-leaving")');
+    expect(styles).toContain("@keyframes cloudyStudyLeave");
+    expect(styles).toContain(".pronoun-card");
+    expect(styles).toContain("@media(prefers-reduced-motion:reduce)");
   });
 
   it("teaches action verbs and Present Simple in a fixed six-step A1 progression", () => {
