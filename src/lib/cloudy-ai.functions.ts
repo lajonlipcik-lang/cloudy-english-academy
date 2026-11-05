@@ -305,7 +305,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
         const expectedAnswer=skillId.startsWith("vocabulary:")?wordPairs.find((pair:any)=>pair.en.toLowerCase()===normalizedTarget)?.ru:target;
         const normalizeAnswer=(value:string)=>value.toLowerCase().replace(/[.!?]+$/,"").replace(/\s+/g," ").trim();
         const correctMatches=!!expectedAnswer&&options[correctIndex]!==undefined&&normalizeAnswer(options[correctIndex])===normalizeAnswer(expectedAnswer);
-        const knownChoices=new Set([...wordPairs.flatMap((pair:any)=>[pair.en,pair.ru]),...sentences].map(normalizeAnswer));
+        const knownChoices=new Set((skillId.startsWith("vocabulary:")?wordPairs.map((pair:any)=>pair.ru):sentences).map(normalizeAnswer));
         const choicesKnown=options.length===4&&options.every((option:string)=>knownChoices.has(normalizeAnswer(option)));
         if(!allowed.has(skillId)||!targetValid||!correctMatches||!choicesKnown||!promptText||options.some((option:string)=>!option)||new Set(options.map((option:string)=>normalizeAnswer(option))).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
         return {id,skillId,target,prompt:promptText,options,correctIndex,explanation};
