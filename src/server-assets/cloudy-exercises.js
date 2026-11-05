@@ -118,12 +118,16 @@ function mk(l){const r=[];
   else r.push({k:"c",q:m?en:ru,a:m?ru:en,en,spk:!!m,o:o.map(x=>m?x[1]:x[0]),title:(m?titles.en:titles.ru)[Math.random()*(m?titles.en:titles.ru).length|0]})});
  const p=sh(l.w).slice(0,4);r.push({k:"m",L:sh(p.map(x=>[x[0],x[0]])),R:sh(p.map(x=>[x[1],x[0]])),title:"Найдите пары"});
  l.s.forEach(([ru,en],sentenceIndex)=>{
-  const correctTokens=en.split(" "),used=new Set(correctTokens.map(token=>token.toLowerCase()));
+  const correctTokens=en.split(" "),normalizeToken=token=>token.toLowerCase().replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu,"");
+  const used=new Set(correctTokens.map(normalizeToken).filter(Boolean));
   const candidates=[
    ...l.w.map(([word])=>word).filter(word=>!/\s/.test(word)),
    ...l.s.filter((_,index)=>index!==sentenceIndex).flatMap(([,sentence])=>sentence.split(" "))
-  ].filter(token=>token&&!used.has(token.toLowerCase())&&!/[.,!?]/.test(token));
-  const distractors=[...new Set(candidates)].slice(0,2);
+  ].filter(token=>{
+   const normalized=normalizeToken(token),unpunctuated=token.replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu,"");
+   return token&&normalized&&token===unpunctuated&&!used.has(normalized)&&!/[.,!?]/.test(token);
+  });
+  const distractors=[...new Map(candidates.map(token=>[normalizeToken(token),token])).values()].slice(0,2);
   r.push({k:"b",q:ru,a:en,o:sh([...correctTokens,...distractors]),title:titles.bank[Math.random()*titles.bank.length|0]});
  });
  if(l.w.length&&(window.SpeechRecognition||window.webkitSpeechRecognition)&&S.set.mic)r.push({k:"p",en:sh(l.w)[0][0]});return sh(r)}
