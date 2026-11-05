@@ -30,23 +30,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
         let ownerIsAdmin = user?.app_metadata?.["role"] === "admin";
         if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) {
           try {
-            let ownerIsAdmin = data.user.app_metadata?.["role"] === "admin";
-          if (data.user.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session.access_token) {
-            try {
-              let ownerIsAdmin = data.user.app_metadata?.["role"] === "admin";
-          if (data.user.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session.access_token) {
-            try {
-              const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
-              ownerIsAdmin = role.isAdmin;
-            } catch {
-              console.error("[cloudy-admin] owner role refresh failed");
-            }
-          }
-              ownerIsAdmin = role.isAdmin;
-            } catch {
-              console.error("[cloudy-admin] owner role refresh failed");
-            }
-          }
+            const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
             ownerIsAdmin = role.isAdmin;
           } catch {
             console.error("[cloudy-admin] owner role refresh failed");
@@ -180,7 +164,15 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           }
           accessTokenRef.current = data.session.access_token;
           userIdRef.current = data.user.id;
-          const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
+          let ownerIsAdmin = data.user.app_metadata?.["role"] === "admin";
+          if (data.user.email?.toLowerCase() === "lajonlipcik@gmail.com") {
+            try {
+              const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
+              ownerIsAdmin = role.isAdmin;
+            } catch {
+              console.error("[cloudy-admin] owner role refresh failed");
+            }
+          }
           reply({
             ok: true,
             user: {
@@ -208,7 +200,15 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           }
           accessTokenRef.current = data.session.access_token;
           userIdRef.current = data.user.id;
-          const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
+          let ownerIsAdmin = data.user.app_metadata?.["role"] === "admin";
+          if (data.user.email?.toLowerCase() === "lajonlipcik@gmail.com") {
+            try {
+              const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
+              ownerIsAdmin = role.isAdmin;
+            } catch {
+              console.error("[cloudy-admin] owner role refresh failed");
+            }
+          }
           let progress: { state: unknown; updated_at: string } | null = null;
           let learnerProfile: { english_level: string | null; placement_test_completed: boolean } | null = null;
           let progressLoadFailed = false;
