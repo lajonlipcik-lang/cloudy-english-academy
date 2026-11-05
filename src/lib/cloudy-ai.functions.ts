@@ -616,3 +616,136 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
       mediaReviewed: false,
     };
   });
+
+
+type ShortsCommentInput = { accessToken: string; videoId: string; body: string };
+type ShortsCommentLookupInput = { accessToken: string; videoId: string };
+
+function validateShortsCommentInput(input: Partial<ShortsCommentInput>): ShortsCommentInput {
+  const token = String(input?.accessToken ?? "");
+  const videoId = String(input?.videoId ?? "");
+  const body = typeof input?.body === "string" ? input.body.trim() : "";
+  if (!token || token.length > 8192 || token.split(".").length !== 3) throw new Error("Unauthorized");
+  if (!/^[0-9a-f-]{36}$/i.test(videoId)) throw new Error("Некорректное видео.");
+  if (body.length > 500) throw new Error("Комментарий не должен превышать 500 символов.");
+  return { accessToken: token, videoId, body };
+}
+
+/** Returns only comments already approved by Cloudy AI or a moderator. */
+export const getShortsComments = createServerFn({ method: "POST" })
+  .inputValidator((input: Partial<ShortsCommentLookupInput>): ShortsCommentLookupInput => {
+    const token = String(input?.accessToken ?? "");
+    const videoId = String(input?.videoId ?? "");
+    if (!token || token.length > 8192 || token.split(".").length !== 3) throw new Error("Unauthorized");
+    if (!/^[0-9a-f-]{36}$/i.test(videoId)) throw new Error("Некорректное видео.");
+    return { accessToken: token, videoId };
+  })
+  .handler(async ({ data }) => {
+    const { db, user } = await ctx(data.accessToken);
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const contentDb = getCloudyContentAdmin();
+    const { data: video, error: videoError } = await contentDb
+      .from("shorts_videos").select("id,author_id,status").eq("id", data.videoId).maybeSingle();
+    if (videoError || !video || (video.status !== "approved" && video.author_id !== user.id)) {
+      throw new Error("Комментарии недоступны.");
+    }
+    const { data: comments, error } = await contentDb
+      .from("shorts_comments")
+      .select("id,author_id,body,created_at")
+      .eq("video_id", data.videoId)
+      .eq("status", "published")
+      .order("created_at", { ascending: true })
+      .limit(100);
+    if (error) throw new Error("Не удалось загрузить комментарии.");
+    const authorIds = [...new Set((comments ?? []).map((item: any) => item.author_id))];
+    const profiles = authorIds.length
+      ? await db.from("community_public_profiles").select("id,display_name").in("id", authorIds)
+      : { data: [], error: null };
+    if (profiles.error) throw new Error("Не удалось загрузить авторов комментариев.");
+    const names = new Map((profiles.data ?? []).map((item: any) => [item.id, item.display_name || "Участник"]));
+    return {
+      comments: (comments ?? []).map((item: any) => ({
+        id: item.id,
+        name: names.get(item.author_id) || (item.author_id === user.id ? "Вы" : "Участник"),
+        text: item.body,
+        time: item.created_at,
+        likes: 0,
+        replies: [],
+        isOwn: item.author_id === user.id,
+      })),
+    };
+  });
+
+/**
+ * Creates a pending comment, then asks the same Cloudy AI router backed by Core AI Vault.
+ * No comment is visible in the public thread until a high-confidence allow decision is stored.
+ */
+export const createShortComment = createServerFn({ method: "POST" })
+  .inputValidator(validateShortsCommentInput)
+  .handler(async ({ data }) => {
+    const { db: coreDb, user } = await ctx(data.accessToken);
+    const body = String(data.body ?? "").trim();
+    if (!body || body.length > 500) throw new Error("Комментарий должен содержать от 1 до 500 символов.");
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const contentDb = getCloudyContentAdmin();
+
+    const { data: video, error: videoError } = await contentDb
+      .from("shorts_videos").select("id,status").eq("id", data.videoId).maybeSingle();
+    if (videoError || !video || video.status !== "approved") throw new Error("Это видео пока недоступно для комментариев.");
+
+    const now = Date.now();
+    const { data: restrictions, error: restrictionError } = await contentDb
+      .from("content_user_restrictions")
+      .select("restriction_type,starts_at,expires_at")
+      .eq("user_id", user.id)
+      .eq("active", true)
+      .in("restriction_type", ["comment_block", "community_block", "temporary_ban", "permanent_ban"]);
+    if (restrictionError) throw new Error("Не удалось проверить ограничения аккаунта.");
+    const blocked = (restrictions ?? []).some((item: any) => {
+      const starts = Date.parse(item.starts_at);
+      const expires = item.expires_at ? Date.parse(item.expires_at) : Number.POSITIVE_INFINITY;
+      return starts <= now && expires > now;
+    });
+    if (blocked) throw new Error("Для аккаунта временно недоступны комментарии.");
+
+    const { data: inserted, error: insertError } = await contentDb
+      .from("shorts_comments")
+      .insert({ video_id: data.videoId, author_id: user.id, body, status: "pending_review", moderation_status: "pending" })
+      .select("id")
+      .single();
+    if (insertError || !inserted) throw new Error("Не удалось отправить комментарий на проверку.");
+
+    let decision: ContentModerationDecision;
+    let model = "cloudy-ai";
+    try {
+      const result = await runCloudyContentTextModeration(coreDb, "short_comment", body);
+      decision = result;
+      model = result.model || result.provider;
+    } catch (error) {
+      decision = {
+        decision: "review",
+        reason: "Автоматическая проверка временно недоступна; комментарий ожидает дополнительной проверки.",
+        labels: ["moderation_unavailable"],
+        confidence: 0,
+      };
+      console.warn("[cloudy-shorts-comments] AI review deferred", error instanceof Error ? error.name : "unknown");
+    }
+
+    const { data: applied, error: applyError } = await contentDb.rpc("apply_shorts_text_moderation", {
+      p_content_type: "short_comment",
+      p_content_id: inserted.id,
+      p_decision: decision.decision,
+      p_reason: decision.reason,
+      p_labels: decision.labels,
+      p_confidence: decision.confidence,
+      p_model: model,
+      p_policy_version: "cloudy-content-text-v1",
+    });
+    if (applyError || !applied) throw new Error("Комментарий сохранён, но его статус проверки пока не удалось обновить.");
+    return {
+      id: inserted.id,
+      status: decision.decision === "allow" ? "published" : decision.decision === "reject" ? "removed" : "pending_review",
+      decision: decision.decision,
+      reason: decision.reason,
+    };
+  });

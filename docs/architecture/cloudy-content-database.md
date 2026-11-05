@@ -64,3 +64,13 @@ Public feed eligibility is checked against Core profiles.is_public. Resolve disp
 - A video is not considered fully AI-moderated until media frames/audio are actually inspected; caption-only moderation cannot approve the underlying video.
 - Moderation RPC is callable only with service role and only after the Core admin check.
 - Service-role credentials must never be committed to the repository.
+
+## Shorts comment request flow
+
+1. The embedded Shorts UI sends a comment request through the same-origin Cloudy auth bridge; the bridge attaches the current Core access token and never accepts a client-supplied author ID.
+2. The server validates the Core token, confirms that the target video is approved, and checks active Content restrictions for the authenticated user.
+3. The server inserts the comment as `pending_review`, then asks Cloudy AI through the existing Core AI Vault/provider router to review the text.
+4. A high-confidence allow decision publishes the comment. A clear high-confidence violation removes it. Uncertain results or AI outages leave it pending for additional review.
+5. Public comment reads return only rows with `status = 'published'`; pending or rejected text is never returned in the public thread.
+
+The current three Shorts cards are still demonstration content with non-database IDs. Live comment calls activate only for real UUID-backed Content videos after the Content project and migrations are provisioned. Demo comments remain clearly labelled as demonstration data. Replies, comment likes, and actual video upload/feed playback are not part of this slice.
