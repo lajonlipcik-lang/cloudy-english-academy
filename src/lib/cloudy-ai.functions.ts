@@ -5,7 +5,7 @@ import { A1_FOUNDATIONS, D, LI, LV } from "@/lib/cloudy/data";
 import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 const OWNER="lajonlipcik@gmail.com";
-type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;reportId?:string;status?:string;contentAction?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
+type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;reportId?:string;status?:string;contentAction?:string;moderationNote?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
 function validate(v:Input){const t=String(v?.accessToken??"");if(!t||t.length>8192||t.split(".").length!==3)throw new Error("Unauthorized");return {...v,accessToken:t}}
 async function ctx(token:string,owner=false){const url=process.env["SUPABASE_URL"],pub=process.env["SUPABASE_PUBLISHABLE_KEY"];if(!url||!pub)throw new Error("Supabase server is not configured.");const auth=createClient(url,pub,{auth:{persistSession:false,autoRefreshToken:false}});const {data,error}=await auth.auth.getUser(token);if(error||!data.user)throw new Error("Unauthorized");const email=(data.user.email??"").trim().toLowerCase(),role=data.user.app_metadata?.["role"];if(owner&&role!=="admin"&&email!==OWNER)throw new Error("Недостаточно прав.");const {supabaseAdmin}=await import("@/integrations/supabase/client.server");return {user:data.user,db:supabaseAdmin as any}}
 // New keys are stored in api_key in this RLS-protected table. Legacy AES-GCM
@@ -437,7 +437,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
 
 export const listCommunityReports=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db}=await ctx(data.accessToken,true);
-  const {data:reports,error}=await db.from("community_reports").select("id,reporter_id,post_id,comment_id,reason,details,status,created_at").order("created_at",{ascending:false}).limit(100);
+  const {data:reports,error}=await db.from("community_reports").select("id,reporter_id,post_id,comment_id,reason,details,status,created_at,reviewed_by,reviewed_at,moderation_note").order("created_at",{ascending:false}).limit(100);
   if(error)throw new Error("Не удалось загрузить жалобы.");
   const postIds=[...new Set((reports??[]).map((r:any)=>r.post_id).filter(Boolean))];
   const commentIds=[...new Set((reports??[]).map((r:any)=>r.comment_id).filter(Boolean))];
@@ -459,14 +459,16 @@ export const listCommunityReports=createServerFn({method:"POST"}).inputValidator
   })};
 });
 export const moderateCommunityReport=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
-  const {db}=await ctx(data.accessToken,true);
+  const {db,user}=await ctx(data.accessToken,true);
   const reportId=String(data.reportId??"");
   const status=String(data.status??"");
   const contentAction=String(data.contentAction??"none");
   if(!/^[0-9a-f-]{36}$/i.test(reportId))throw new Error("Некорректная жалоба.");
   if(!["reviewing","resolved","dismissed"].includes(status))throw new Error("Некорректный статус жалобы.");
   if(!["none","hide","restore"].includes(contentAction))throw new Error("Некорректное действие с публикацией.");
-  const {error}=await db.rpc("moderate_community_report",{p_report_id:reportId,p_status:status,p_content_action:contentAction});
+  const moderationNote=String(data.moderationNote??"").trim();
+  if(moderationNote.length>1000)throw new Error("Примечание модератора слишком длинное.");
+  const {error}=await db.rpc("moderate_community_report",{p_report_id:reportId,p_status:status,p_content_action:contentAction,p_moderator_id:user.id,p_moderation_note:moderationNote});
   if(error)throw new Error("Не удалось применить решение модерации.");
   return {ok:true};
 });
