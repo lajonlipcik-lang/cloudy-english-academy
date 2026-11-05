@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
 import { handleSupportAi, LIMITS, type ProviderRow, type RelayDeps } from "./relay.server";
 
@@ -8,7 +7,7 @@ const provider: ProviderRow = { provider: "groq", label: "Groq", model: "qwen/qw
 
 function req(body: unknown, token: string | null = SECRET, raw?: string) {
   const headers: Record<string, string> = { "content-type": "application/json" };
-  if (token) headers.authorization = `Bearer ${token}`;
+  if (token) headers["authorization"] = `Bearer ${token}`;
   return new Request("http://localhost/api/internal/support-ai", {
     method: "POST", headers, body: raw ?? JSON.stringify(body),
   });

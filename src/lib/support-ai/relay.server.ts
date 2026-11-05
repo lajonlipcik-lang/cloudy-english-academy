@@ -80,7 +80,7 @@ export function validateMessages(input: unknown): ChatMessage[] | string {
   return out;
 }
 
-async function readLimited(res: Response, max: number): Promise<string | null> {
+async function readLimited(res: { body: ReadableStream<Uint8Array> | null }, max: number): Promise<string | null> {
   if (!res.body) return "";
   const reader = res.body.getReader();
   const chunks: Uint8Array[] = [];
