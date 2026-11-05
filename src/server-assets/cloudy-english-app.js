@@ -686,7 +686,7 @@ async function loadCommunityProfile(force=false){
  if(!S.user||S.user.guest)return;
  const uid=S.user.id;if(communityProfileLoading||(!force&&communityProfileUser===uid))return;
  communityProfileLoading=true;communityProfileError="";
- try{const result=await authRequest("community-profile-get");if(S.user?.id!==uid)return;communityProfile={is_public:result.result?.is_public===true,bio:String(result.result?.bio||"").slice(0,240)};communityProfileUser=uid;communityFeedUser=null;communityFeed=[];}
+ try{const result=await authRequest("community-profile-get");if(S.user?.id!==uid)return;communityProfile={is_public:result.result?.is_public===true,bio:String(result.result?.bio||"").slice(0,240)};communityProfileUser=uid;communityFeedUser=null;communityFeed=[];communityInteractions={comments:[],reactions:[]};}
  catch(error){communityProfile=null;communityProfileUser=uid;communityProfileError=error.message||"Не удалось загрузить настройки публичного профиля.";toast(communityProfileError,false);}
  finally{communityProfileLoading=false;if(S.user?.id===uid&&(T===3||T===4)){view(0);if(T===4&&communityProfile?.is_public)void loadCommunityFeed();}}
 }
