@@ -956,7 +956,7 @@ extendLesson(48, [["free", "свободный"], ["plan", "план"]], [
   ["Нам нужно составить план на выходные", "We need to make a plan for the weekend", "We make a plan yesterday"],
 ]);
 extendLesson(48, [], [
-  ["У тебя есть время завтра вечером?", "Are you available tomorrow evening", "Do you available tomorrow evening"],
+  ["У тебя есть время завтра вечером?", "Are you available tomorrow evening?", "Do you available tomorrow evening"],
 ]);
 extendLesson(49, [["plastic", "пластик"], ["paper", "бумага"]], [
   ["Нам следует использовать меньше пластика", "We should use less plastic", "We should uses"],
