@@ -21,6 +21,9 @@ export function toUserErrorMessage(error: unknown, context: UserErrorContext = "
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     return "Нет подключения к интернету. Проверьте сеть и повторите попытку.";
   }
+  if (/сначала войдите в аккаунт|войдите в аккаунт|войти в аккаунт/i.test(text)) {
+    return "Чтобы общаться с Cloudy, войдите в свой аккаунт.";
+  }
   if (/invalid login credentials|invalid_credentials|wrong password|email or password/i.test(text)) {
     return "Не удалось войти: проверьте email и пароль. Если пароль забыт, воспользуйтесь восстановлением доступа.";
   }
