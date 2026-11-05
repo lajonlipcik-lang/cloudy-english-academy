@@ -762,7 +762,7 @@ const A2_EXTRA = [
 ];
 D.push(...A2_EXTRA);
 
-const extendLesson = (index, words, sentences) => {
+const extendLesson = (index: number, words: Lesson["w"], sentences: Lesson["s"]) => {
   const lesson = D[index];
   if (!lesson) throw new Error("Missing Cloudy lesson at index " + index);
   lesson.w.push(...words);
@@ -784,11 +784,13 @@ extendLesson(8, [["midnight", "полночь"], ["noon", "полдень"], ["o
   ["Поезд отправляется в половине девятого", "The train leaves at half past eight", "leave tomorrow"],
   ["У меня встреча в полдень", "I have an appointment at noon", "at midnight"],
   ["Мы приехали вовремя", "We arrived on time", "arrive late"],
+  ["Мы вернулись домой до полуночи", "We got home before midnight", "We get home at noon"],
 ]);
 extendLesson(15, [["order", "заказывать"], ["starter", "закуска"], ["main course", "основное блюдо"]], [
   ["Я хотел бы заказать салат", "I'd like to order a salad", "I'd like salad"],
   ["Что вы посоветуете на основное блюдо?", "What would you recommend for the main course?", "What you recommend"],
   ["У нас столик на двоих", "We have a table for two", "We has table"],
+  ["Я бы хотел закуску", "I'd like a starter", "I like starter"],
 ]);
 extendLesson(16, [["forecast", "прогноз погоды"], ["cloudy", "облачный"], ["temperature", "температура"]], [
   ["По прогнозу будет дождь", "The forecast says it will rain", "The forecast say"],
@@ -799,24 +801,26 @@ extendLesson(17, [["boots", "ботинки"], ["tight", "тесный"], ["comf
   ["Эти туфли слишком тесные", "These shoes are too tight", "This shoes"],
   ["Эта куртка мне хорошо подходит", "This jacket fits me well", "fit me good"],
   ["Я ищу тёплое пальто", "I'm looking for a warm coat", "I look yesterday"],
+  ["Эти ботинки очень удобные", "These boots are very comfortable", "This boots is comfortable"],
 ]);
 
 // A2 extension topics: broaden each vocabulary set and add contextual phrases.
 extendLesson(39, [["sometimes", "иногда"], ["twice", "дважды"]], [
   ["Я иногда хожу на работу пешком", "I sometimes walk to work", "I sometimes walks"],
-  ["Она ложится спать до одиннадцати", "She goes to bed before eleven", "She go to bed"],
+  ["Я хожу в спортзал два раза в неделю", "I go to the gym twice a week", "I goes to the gym"],
 ]);
 extendLesson(40, [["concert", "концерт"], ["restaurant", "ресторан"]], [
-  ["Мы остановились в небольшом отеле", "We stayed in a small hotel", "We stay tomorrow"],
-  ["Они провели воскресенье с семьёй", "They spent Sunday with their family", "They spend Sunday"],
+  ["Мы ходили на концерт в субботу", "We went to a concert on Saturday", "We go to a concert tomorrow"],
+  ["Мы ужинали в небольшом ресторане", "We had dinner at a small restaurant", "We have dinner tomorrow"],
 ]);
 extendLesson(41, [["probably", "вероятно"], ["perhaps", "возможно"]], [
-  ["У меня назначена встреча в пятницу", "I have an appointment on Friday", "I had yesterday"],
-  ["Мы собираемся забронировать столик", "We are going to book a table", "We booked yesterday"],
+  ["Возможно, я навещу двоюродного брата в эти выходные", "Perhaps I'll visit my cousin this weekend", "Perhaps I visited last week"],
+  ["Мы, вероятно, забронируем столик", "We will probably book a table", "We booked yesterday"],
 ]);
 extendLesson(42, [["cheaper", "дешевле"], ["noisy", "шумный"]], [
   ["Автобус дешевле такси", "The bus is cheaper than a taxi", "the cheapest taxi"],
   ["Это самая тихая комната в отеле", "This is the quietest room in the hotel", "more quiet room"],
+  ["Эта улица шумнее парка", "This street is noisier than the park", "This street is noisy than"],
 ]);
 extendLesson(43, [["price", "цена"], ["cash", "наличные"]], [
   ["Сколько стоит эта бутылка?", "How much does this bottle cost?", "How much this cost"],
@@ -825,10 +829,13 @@ extendLesson(43, [["price", "цена"], ["cash", "наличные"]], [
 extendLesson(44, [["departure", "отправление"], ["arrival", "прибытие"]], [
   ["Поезд отправляется с платформы номер два", "The train leaves from platform two", "The train leave"],
   ["Идите прямо и поверните налево", "Go straight ahead and turn left", "Go straight and turning"],
+  ["Время отправления указано в билете", "The departure time is on the ticket", "The depart time"],
+  ["Мы прибываем в десять часов", "Our arrival time is ten o'clock", "We arrives at ten"],
 ]);
 extendLesson(45, [["temperature", "температура"], ["medicine", "лекарство"]], [
   ["Сегодня у меня высокая температура", "I have a high temperature today", "I has a high"],
   ["Тебе следует пить много воды", "You should drink plenty of water", "You should drinks"],
+  ["Принимай это лекарство после еды", "Take this medicine after meals", "Takes medicine yesterday"],
 ]);
 extendLesson(46, [["laundry", "стирка"], ["floor", "пол"]], [
   ["По субботам я стираю", "I do the laundry on Saturdays", "I does laundry"],
@@ -841,10 +848,12 @@ extendLesson(47, [["been", "был"], ["abroad", "за границей"]], [
 extendLesson(48, [["free", "свободный"], ["plan", "план"]], [
   ["Ты свободен в субботу?", "Are you free on Saturday?", "Do you free"],
   ["Извини, я не могу прийти сегодня вечером", "Sorry, I can't come tonight", "I don't can"],
+  ["Нам нужно составить план на выходные", "We need to make a plan for the weekend", "We make a plan yesterday"],
 ]);
 extendLesson(49, [["plastic", "пластик"], ["paper", "бумага"]], [
   ["Нам следует использовать меньше пластика", "We should use less plastic", "We should uses"],
   ["Люди могут экономить воду дома", "People can save water at home", "People can saves"],
+  ["Положи бумагу в контейнер для переработки", "Put the paper in the recycling bin", "Puts paper in bin"],
 ]);
 extendLesson(50, [["meaning", "значение"], ["example", "пример"]], [
   ["Что означает это слово?", "What does this word mean?", "What this word means"],
