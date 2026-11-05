@@ -447,13 +447,15 @@ async function syncLearningEvidence(){
  return learningSyncInFlight;
 }
 async function loadRemoteLearningProfile(){
- if(!S.user||S.user.guest||remoteLearningProfileLoading||remoteLearningProfileUser===S.user.id)return;
+ if(!S.user||S.user.guest||remoteLearningProfileLoading)return;
+ if(remoteLearningProfileUser&&remoteLearningProfileUser!==S.user.id){remoteLearningProfile=null;remoteLearningProfileUser=null}
+ if(remoteLearningProfileUser===S.user.id)return;
  const userId=S.user.id;remoteLearningProfileLoading=true;
  try{
   const response=await authRequest("learning-exam-profile");
   if(S.user?.id===userId){remoteLearningProfile=response?.profile||null;remoteLearningProfileUser=userId;if(T===0)view(0)}
- }catch(error){remoteLearningProfileUser=userId;console.warn("[cloudy-learning] remote profile unavailable")}
- finally{remoteLearningProfileLoading=false}
+ }catch(error){if(S.user?.id===userId)remoteLearningProfileUser=userId;console.warn("[cloudy-learning] remote profile unavailable")}
+ finally{remoteLearningProfileLoading=false;if(S.user&&!S.user.guest&&remoteLearningProfileUser!==S.user.id)void loadRemoteLearningProfile()}
 }
 window.addEventListener("cloudy:learning-updated",()=>{
  if(!S.user||S.user.guest)return;
