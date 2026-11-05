@@ -349,14 +349,20 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       const providers=(await rows(db)).filter((provider:any)=>provider.enabled).sort((a:any,b:any)=>a.priority-b.priority);
       if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
       const prompt="Составь персональный экзамен по английскому для уровня "+level+". Используй ТОЛЬКО слова, фразы, предложения и темы из пройденного материала ниже. Не добавляй новую лексику и грамматику. В первую очередь проверяй focusSkills с низким mastery и большим incorrect; это реальные слабые места ученика. Сделай ровно 6 разных вопросов с четырьмя вариантами ответа. Вопросы и инструкции пиши по-русски, варианты могут быть на английском или русском. Не повторяй один и тот же вопрос. Для каждого вопроса выбери skillId строго из списка focusSkills и target строго из соответствующего изученного слова или предложения. Для vocabulary:<слово> target должен быть ровно этим английским словом, вопрос должен просить выбрать его русский перевод, а правильный вариант обязан дословно совпадать с ru-переводом из knownVocabulary. Для grammar:sentence-building target должен быть одним из knownSentences, а правильный вариант обязан дословно совпадать с этим предложением. Если focusSkills недостаточно, повторно проверь разные элементы известных слов и предложений, не вводя новый материал. Верни только валидный JSON без Markdown: {\"questions\":[{\"id\":\"q1\",\"skillId\":\"...\",\"target\":\"...\",\"prompt\":\"...\",\"options\":[\"...\",\"...\",\"...\",\"...\"],\"correctIndex\":0,\"explanation\":\"Короткое объяснение на русском\"}]}. Материал: "+JSON.stringify(material);
-      const routed=await runWithAiFallback(providers.map((provider:any)=>({id:String(provider.id),priority:Number(provider.priority)||0})),async(candidate)=>{
-        const provider=providers.find((item:any)=>String(item.id)===candidate.id);
-        if(!provider)throw new Error("AI provider configuration changed.");
-        return ask(provider,[{role:"system",content:"Ты создаёшь точные образовательные тесты. Не выдумывай сведения о прогрессе. Возвращай только JSON, соблюдай заданную схему."},{role:"user",content:prompt}],1400);
-      });
+      let generatedContent="";
+      try{
+        const routed=await runWithAiFallback(providers.map((provider:any)=>({id:String(provider.id),priority:Number(provider.priority)||0})),async(candidate)=>{
+          const provider=providers.find((item:any)=>String(item.id)===candidate.id);
+          if(!provider)throw new Error("AI provider configuration changed.");
+          return ask(provider,[{role:"system",content:"Ты создаёшь точные образовательные тесты. Не выдумывай сведения о прогрессе. Возвращай только JSON, соблюдай заданную схему."},{role:"user",content:prompt}],1400);
+        });
+        generatedContent=routed.value.content;
+      }catch(error){
+        console.warn("[cloudy-exam] AI generation unavailable; using verified lesson-based fallback");
+      }
       let questions:any[]=[];
       try{
-        const generated=parseExamJson(routed.value.content);
+        const generated=parseExamJson(generatedContent);
         const allowed=new Set(focus.map(skill=>skill.id));
         const questions=generated.slice(0,6).map((question:any,index:number)=>{
           const id="q"+(index+1),skillId=String(question?.skillId??"");
