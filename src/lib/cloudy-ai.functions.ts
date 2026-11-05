@@ -2,8 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { runWithAiFallback } from "@/lib/ai/router";
 import { D, LI, LV } from "@/lib/cloudy/data";
+import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 const OWNER="lajonlipcik@gmail.com";
-type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>};
+type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
 function validate(v:Input){const t=String(v?.accessToken??"");if(!t||t.length>8192||t.split(".").length!==3)throw new Error("Unauthorized");return {...v,accessToken:t}}
 async function ctx(token:string,owner=false){const url=process.env["SUPABASE_URL"],pub=process.env["SUPABASE_PUBLISHABLE_KEY"];if(!url||!pub)throw new Error("Supabase server is not configured.");const auth=createClient(url,pub,{auth:{persistSession:false,autoRefreshToken:false}});const {data,error}=await auth.auth.getUser(token);if(error||!data.user)throw new Error("Unauthorized");const email=(data.user.email??"").trim().toLowerCase(),role=data.user.app_metadata?.["role"];if(owner&&role!=="admin"&&email!==OWNER)throw new Error("Недостаточно прав.");const {supabaseAdmin}=await import("@/integrations/supabase/client.server");return {user:data.user,db:supabaseAdmin as any}}
 // New keys are stored in api_key in this RLS-protected table. Legacy AES-GCM
@@ -237,6 +238,13 @@ function parseExamJson(content:string){
   if(!parsed||!Array.isArray(parsed.questions))throw new Error("ИИ вернул некорректную структуру экзамена.");
   return parsed.questions;
 }
+export const syncCloudyLearningEvents=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
+  const {db,user}=await ctx(data.accessToken);
+  const rows=normalizeCloudyLearningEvents(data.events,user.id);
+  const {error}=await db.from("cloudy_learning_events").upsert(rows,{onConflict:"user_id,event_id",ignoreDuplicates:true});
+  if(error)throw new Error("Не удалось сохранить журнал обучения.");
+  return {ok:true,acceptedEventIds:rows.map((row)=>row.event_id),acceptedCount:rows.length};
+});
 export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
   const action=String(data.examAction??"");
