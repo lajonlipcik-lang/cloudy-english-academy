@@ -220,7 +220,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
 });
 
 
-const examSafeText=(value:unknown,max:number)=>String(value??"").replace(/[\\u0000-\\u001f\\u007f]/g," ").replace(/\\s+/g," ").trim().slice(0,max);
+const examSafeText=(value:unknown,max:number)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
 async function acquireExamQuota(db:any,userId:string,requestId:string){
   const {data,error}=await db.rpc("acquire_cloudy_ai_request",{_user_id:userId,_request_id:requestId});
   if(error)throw new Error("Сервис ИИ временно недоступен. Попробуйте позже.");
@@ -232,7 +232,7 @@ async function acquireExamQuota(db:any,userId:string,requestId:string){
   }
 }
 function parseExamJson(content:string){
-  const cleaned=content.trim().replace(/^\x60{3}(?:json)?\\s*/i,"").replace(/\\s*\x60{3}$/,"");
+  const cleaned=content.trim().replace(/^\x60{3}(?:json)?\s*/i,"").replace(/\s*\x60{3}$/,"");
   const parsed=JSON.parse(cleaned);
   if(!parsed||!Array.isArray(parsed.questions))throw new Error("ИИ вернул некорректную структуру экзамена.");
   return parsed.questions;
@@ -277,12 +277,14 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
         return {id,mastery:skill?Math.round(skill.mastery*100):50,evidence:skill?.evidence??0,incorrect:skill?.incorrect??0,correct:skill?.correct??0};
       });
       if(sentences.length)candidates.push({id:"grammar:sentence-building",mastery:Math.round((evidence.get("grammar:sentence-building") as any)?.mastery*100)||50,evidence:(evidence.get("grammar:sentence-building") as any)?.evidence??0,incorrect:(evidence.get("grammar:sentence-building") as any)?.incorrect??0,correct:(evidence.get("grammar:sentence-building") as any)?.correct??0});
-      const weak=candidates.filter(skill=>skill.evidence>0).sort((a,b)=>a.mastery-b.mastery||b.incorrect-a.incorrect).slice(0,16);
-      const focus=weak.length?weak:candidates.slice(0,16);
+      const weak=candidates.filter(skill=>skill.evidence>0).sort((a,b)=>a.mastery-b.mastery||b.incorrect-a.incorrect);
+      const weakIds=new Set(weak.map(skill=>skill.id));
+      const remaining=candidates.filter(skill=>!weakIds.has(skill.id)).sort((a,b)=>a.mastery-b.mastery||b.evidence-a.evidence);
+      const focus=[...weak,...remaining].slice(0,16);
       const material={level,completedLessons:lessons.map((lesson:any)=>lesson.t),knownWords:words,knownSentences:sentences,focusSkills:focus};
       const providers=(await rows(db)).filter((provider:any)=>provider.enabled).sort((a:any,b:any)=>a.priority-b.priority);
       if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
-      const prompt="Составь персональный экзамен по английскому для уровня "+level+". Используй ТОЛЬКО слова, фразы, предложения и темы из пройденного материала ниже. Не добавляй новую лексику и грамматику. В первую очередь проверяй focusSkills с низким mastery и большим incorrect; это реальные слабые места ученика. Сделай ровно 6 разных вопросов с четырьмя вариантами ответа. Вопросы и инструкции пиши по-русски, варианты могут быть на английском или русском. Не повторяй один и тот же вопрос. Для каждого вопроса выбери skillId строго из списка focusSkills. Если focusSkills недостаточно, повторно проверь разные элементы известных слов и предложений, не вводя новый материал. Верни только валидный JSON без Markdown: {\"questions\":[{\"id\":\"q1\",\"skillId\":\"...\",\"prompt\":\"...\",\"options\":[\"...\",\"...\",\"...\",\"...\"],\"correctIndex\":0,\"explanation\":\"Короткое объяснение на русском\"}]}. Материал: "+JSON.stringify(material);
+      const prompt="Составь персональный экзамен по английскому для уровня "+level+". Используй ТОЛЬКО слова, фразы, предложения и темы из пройденного материала ниже. Не добавляй новую лексику и грамматику. В первую очередь проверяй focusSkills с низким mastery и большим incorrect; это реальные слабые места ученика. Сделай ровно 6 разных вопросов с четырьмя вариантами ответа. Вопросы и инструкции пиши по-русски, варианты могут быть на английском или русском. Не повторяй один и тот же вопрос. Для каждого вопроса выбери skillId строго из списка focusSkills и target строго из соответствующего изученного слова или предложения. Для vocabulary:<слово> target должен быть ровно этим словом; для grammar:sentence-building target должен быть одним из knownSentences. Если focusSkills недостаточно, повторно проверь разные элементы известных слов и предложений, не вводя новый материал. Верни только валидный JSON без Markdown: {\"questions\":[{\"id\":\"q1\",\"skillId\":\"...\",\"target\":\"...\",\"prompt\":\"...\",\"options\":[\"...\",\"...\",\"...\",\"...\"],\"correctIndex\":0,\"explanation\":\"Короткое объяснение на русском\"}]}. Материал: "+JSON.stringify(material);
       const routed=await runWithAiFallback(providers.map((provider:any)=>({id:String(provider.id),priority:Number(provider.priority)||0})),async(candidate)=>{
         const provider=providers.find((item:any)=>String(item.id)===candidate.id);
         if(!provider)throw new Error("AI provider configuration changed.");
@@ -292,12 +294,14 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       const allowed=new Set(focus.map(skill=>skill.id));
       const questions=generated.slice(0,6).map((question:any,index:number)=>{
         const id="q"+(index+1),skillId=String(question?.skillId??"");
+        const target=examSafeText(question?.target,120),normalizedTarget=target.toLowerCase();
         const options=Array.isArray(question?.options)?question.options.slice(0,4).map((option:any)=>examSafeText(option,100)):[];
         const correctIndex=Number(question?.correctIndex);
         const promptText=examSafeText(question?.prompt,240);
         const explanation=examSafeText(question?.explanation,320);
-        if(!allowed.has(skillId)||!promptText||options.length!==4||options.some((option:string)=>!option)||new Set(options.map((option:string)=>option.toLowerCase())).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
-        return {id,skillId,prompt:promptText,options,correctIndex,explanation};
+        const targetValid=skillId.startsWith("vocabulary:")?skillId==="vocabulary:"+normalizedTarget&&words.some(word=>word.toLowerCase()===normalizedTarget):skillId==="grammar:sentence-building"&&sentences.some(sentence=>sentence.toLowerCase()===normalizedTarget);
+        if(!allowed.has(skillId)||!targetValid||!promptText||options.length!==4||options.some((option:string)=>!option)||new Set(options.map((option:string)=>option.toLowerCase())).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
+        return {id,skillId,target,prompt:promptText,options,correctIndex,explanation};
       });
       if(questions.length!==6)throw new Error("Не удалось подготовить полный экзамен. Попробуй ещё раз.");
       const examId=crypto.randomUUID(),createdAt=Date.now();
@@ -315,12 +319,12 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       if(!active.questions.some((question:any)=>question.id===questionId)||!Number.isInteger(selectedIndex)||selectedIndex<0||selectedIndex>3||answers.has(questionId))throw new Error("Ответы экзамена имеют неверный формат.");
       answers.set(questionId,selectedIndex);
     }
-    const details=active.questions.map((question:any)=>({questionId:question.id,skillId:question.skillId,prompt:question.prompt,selected:question.options[answers.get(question.id)!],correct:question.options[question.correctIndex],correctAnswer:answers.get(question.id)===question.correctIndex,explanation:question.explanation}));
+    const details=active.questions.map((question:any)=>({questionId:question.id,skillId:question.skillId,target:question.target,prompt:question.prompt,selected:question.options[answers.get(question.id)!],correct:question.options[question.correctIndex],correctAnswer:answers.get(question.id)===question.correctIndex,explanation:question.explanation}));
     const score=details.filter((detail:any)=>detail.correctAnswer).length,total=details.length;
     const weakSkills:string[]=[...new Set<string>(details.filter((detail:any)=>!detail.correctAnswer).map((detail:any)=>String(detail.skillId)))];
     const providers=(await rows(db)).filter((provider:any)=>provider.enabled).sort((a:any,b:any)=>a.priority-b.priority);
     if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
-    const feedbackPrompt="Оцени завершённый персональный экзамен ученика уровня "+active.level+". Результат: "+score+" из "+total+". По каждому неверному ответу кратко объясни ошибку, а затем дай общий вывод и 2 конкретные темы для повторения. Не преувеличивай уровень знаний и не меняй CEFR-уровень. Пиши по-русски, доброжелательно, коротко и без Markdown. Данные: "+JSON.stringify(details.map((detail:any)=>({question:detail.prompt,answer:detail.selected,correctAnswer:detail.correct,wasCorrect:detail.correctAnswer,explanation:detail.explanation})));
+    const feedbackPrompt="Оцени завершённый персональный экзамен ученика уровня "+active.level+". Результат: "+score+" из "+total+". По каждому неверному ответу кратко объясни ошибку, а затем дай общий вывод и 2 конкретные темы для повторения. Не преувеличивай уровень знаний и не меняй CEFR-уровень. Пиши по-русски, доброжелательно, коротко и без Markdown. Данные: "+JSON.stringify(details.map((detail:any)=>({target:detail.target,question:detail.prompt,answer:detail.selected,correctAnswer:detail.correct,wasCorrect:detail.correctAnswer,explanation:detail.explanation})));
     const routed=await runWithAiFallback(providers.map((provider:any)=>({id:String(provider.id),priority:Number(provider.priority)||0})),async(candidate)=>{
       const provider=providers.find((item:any)=>String(item.id)===candidate.id);
       if(!provider)throw new Error("AI provider configuration changed.");
