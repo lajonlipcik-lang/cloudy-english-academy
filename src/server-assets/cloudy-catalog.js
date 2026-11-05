@@ -532,7 +532,7 @@ const A1_EXTRA = [
     ],
     "s": [
       [
-        "Где мой телефон",
+        "Где мой телефон?",
         "Where is my phone?",
         "are the"
       ],
@@ -688,7 +688,7 @@ const A1_EXTRA = [
         "sits the"
       ],
       [
-        "Помоги мне пожалуйста",
+        "Помоги мне, пожалуйста.",
         "Please help me",
         "helps the"
       ]
