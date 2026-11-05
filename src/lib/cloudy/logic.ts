@@ -124,14 +124,20 @@ export function buildExercises(l: Pick<Lesson, "w" | "s">, pool: Pair[], opts: {
   if (p.length) out.push({ k: "m", L: shuffle(p.map((x) => [x[0], x[0]] as Pair), r), R: shuffle(p.map((x) => [x[1], x[0]] as Pair), r) });
   l.s.forEach(([ru, en], sentenceIndex) => {
     const correctTokens = en.split(" ");
-    const used = new Set(correctTokens.map((token) => token.toLowerCase()));
+    const normalizeToken = (token: string) => token.toLocaleLowerCase().replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu, "");
+    const used = new Set(correctTokens.map(normalizeToken).filter(Boolean));
     // Build distractors from real single-word vocabulary in this lesson.
     // Ignore legacy "d" fragments such as "you the" and "four the".
+    // Strip punctuation before comparison so "Hello," excludes "hello".
     const candidates = [
       ...l.w.map(([word]) => word).filter((word) => !/\s/.test(word)),
       ...l.s.filter((_, index) => index !== sentenceIndex).flatMap(([, sentence]) => sentence.split(" ")),
-    ].filter((token) => token && !used.has(token.toLowerCase()) && !/[.,!?]/.test(token));
-    const distractors = [...new Set(candidates)].slice(0, 2);
+    ].filter((token) => {
+      const normalized = normalizeToken(token);
+      const unpunctuated = token.replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu, "");
+      return token && normalized && token === unpunctuated && !used.has(normalized) && !/[.,!?]/.test(token);
+    });
+    const distractors = [...new Map(candidates.map((token) => [normalizeToken(token), token])).values()].slice(0, 2);
     out.push({
       k: "b",
       q: ru,
