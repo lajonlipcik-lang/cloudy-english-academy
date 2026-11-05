@@ -233,6 +233,27 @@ async function acquireExamQuota(db:any,userId:string,requestId:string){
     throw new Error("Слишком много запросов к ИИ. Повторите через "+seconds+" сек.");
   }
 }
+function buildFallbackExamQuestions(wordPairs:Array<{en:string;ru:string}>,sentences:string[],focus:any[]){
+  const questions:any[]=[];
+  const vocab=wordPairs.filter((pair)=>pair.en&&pair.ru).slice(0,30);
+  for(let index=0;index<Math.min(6,vocab.length);index++){
+    const pair=vocab[index],distractors=vocab.filter((item)=>item.en!==pair.en&&item.ru!==pair.ru).map((item)=>item.ru);
+    const options=[pair.ru,...distractors].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
+    if(options.length!==4)continue;
+    questions.push({id:"q"+(questions.length+1),skillId:"vocabulary:"+pair.en.toLowerCase(),target:pair.en,prompt:"Что означает английское слово «"+pair.en+"»?",options,correctIndex:0,explanation:"«"+pair.en+"» переводится как «"+pair.ru+"»."});
+  }
+  if(questions.length<6&&sentences.length>=4){
+    const remaining=sentences.filter((sentence)=>!questions.some((question)=>question.target===sentence));
+    for(const sentence of remaining){
+      const options=[sentence,...sentences.filter((item)=>item!==sentence)].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
+      if(options.length!==4)continue;
+      questions.push({id:"q"+(questions.length+1),skillId:"grammar:sentence-building",target:sentence,prompt:"Выбери предложение из уже пройденного материала.",options,correctIndex:0,explanation:"Это предложение встречалось в твоих уроках."});
+      if(questions.length===6)break;
+    }
+  }
+  if(questions.length!==6)throw new Error("Пока недостаточно разных слов и предложений для экзамена. Пройди ещё один урок.");
+  return questions;
+}
 function parseExamJson(content:string){
   const cleaned=content.trim().replace(/^\x60{3}(?:json)?\s*/i,"").replace(/\s*\x60{3}$/,"");
   const parsed=JSON.parse(cleaned);
@@ -333,23 +354,29 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
         if(!provider)throw new Error("AI provider configuration changed.");
         return ask(provider,[{role:"system",content:"Ты создаёшь точные образовательные тесты. Не выдумывай сведения о прогрессе. Возвращай только JSON, соблюдай заданную схему."},{role:"user",content:prompt}],1400);
       });
-      const generated=parseExamJson(routed.value.content);
-      const allowed=new Set(focus.map(skill=>skill.id));
-      const questions=generated.slice(0,6).map((question:any,index:number)=>{
-        const id="q"+(index+1),skillId=String(question?.skillId??"");
-        const target=examSafeText(question?.target,120),normalizedTarget=target.toLowerCase();
-        const options=Array.isArray(question?.options)?question.options.slice(0,4).map((option:any)=>examSafeText(option,100)):[];
-        const correctIndex=Number(question?.correctIndex);
-        const promptText=examSafeText(question?.prompt,240);
-        const explanation=examSafeText(question?.explanation,320);
-        const targetValid=skillId.startsWith("vocabulary:")?skillId==="vocabulary:"+normalizedTarget&&wordPairs.some((pair:any)=>pair.en.toLowerCase()===normalizedTarget):skillId==="grammar:sentence-building"&&sentences.some(sentence=>sentence.toLowerCase()===normalizedTarget);
-        const expectedAnswer=skillId.startsWith("vocabulary:")?wordPairs.find((pair:any)=>pair.en.toLowerCase()===normalizedTarget)?.ru:target;
-        const normalizeAnswer=(value:string)=>value.toLowerCase().replace(/[.!?]+$/,"").replace(/\s+/g," ").trim();
-        const correctMatches=!!expectedAnswer&&options[correctIndex]!==undefined&&normalizeAnswer(options[correctIndex])===normalizeAnswer(expectedAnswer);
-        if(!allowed.has(skillId)||!targetValid||!correctMatches||!promptText||options.length!==4||options.some((option:string)=>!option)||new Set(options.map((option:string)=>option.toLowerCase())).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
-        return {id,skillId,target,prompt:promptText,options,correctIndex,explanation};
-      });
-      if(questions.length!==6)throw new Error("Не удалось подготовить полный экзамен. Попробуй ещё раз.");
+      let questions:any[]=[];
+      try{
+        const generated=parseExamJson(routed.value.content);
+        const allowed=new Set(focus.map(skill=>skill.id));
+        const questions=generated.slice(0,6).map((question:any,index:number)=>{
+          const id="q"+(index+1),skillId=String(question?.skillId??"");
+          const target=examSafeText(question?.target,120),normalizedTarget=target.toLowerCase();
+          const options=Array.isArray(question?.options)?question.options.slice(0,4).map((option:any)=>examSafeText(option,100)):[];
+          const correctIndex=Number(question?.correctIndex);
+          const promptText=examSafeText(question?.prompt,240);
+          const explanation=examSafeText(question?.explanation,320);
+          const targetValid=skillId.startsWith("vocabulary:")?skillId==="vocabulary:"+normalizedTarget&&wordPairs.some((pair:any)=>pair.en.toLowerCase()===normalizedTarget):skillId==="grammar:sentence-building"&&sentences.some(sentence=>sentence.toLowerCase()===normalizedTarget);
+          const expectedAnswer=skillId.startsWith("vocabulary:")?wordPairs.find((pair:any)=>pair.en.toLowerCase()===normalizedTarget)?.ru:target;
+          const normalizeAnswer=(value:string)=>value.toLowerCase().replace(/[.!?]+$/,"").replace(/\s+/g," ").trim();
+          const correctMatches=!!expectedAnswer&&options[correctIndex]!==undefined&&normalizeAnswer(options[correctIndex])===normalizeAnswer(expectedAnswer);
+          if(!allowed.has(skillId)||!targetValid||!correctMatches||!promptText||options.length!==4||options.some((option:string)=>!option)||new Set(options.map((option:string)=>option.toLowerCase())).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
+          return {id,skillId,target,prompt:promptText,options,correctIndex,explanation};
+        });
+        if(questions.length!==6)throw new Error("ИИ вернул неполный экзамен.");
+      }catch(error){
+        console.warn("[cloudy-exam] invalid AI question payload; using verified lesson-based fallback");
+        questions=buildFallbackExamQuestions(wordPairs,sentences,focus);
+      }
       const examId=crypto.randomUUID(),createdAt=Date.now();
       const nextProfile={...baseProfile,activeExam:{id:examId,level,createdAt,expiresAt:createdAt+30*60*1000,questions}};
       const {error:saveError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:nextProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
