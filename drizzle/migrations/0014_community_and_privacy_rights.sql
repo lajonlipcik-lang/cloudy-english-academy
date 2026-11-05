@@ -245,3 +245,54 @@ DROP TRIGGER IF EXISTS community_posts_rate_limit ON public.community_posts;
 CREATE TRIGGER community_posts_rate_limit
   BEFORE INSERT ON public.community_posts
   FOR EACH ROW EXECUTE FUNCTION public.enforce_community_post_rate_limit();
+
+-- Prevent duplicate reports for the same target by the same account.
+CREATE UNIQUE INDEX IF NOT EXISTS community_reports_one_post_per_user_idx
+  ON public.community_reports (reporter_id, post_id) WHERE post_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS community_reports_one_comment_per_user_idx
+  ON public.community_reports (reporter_id, comment_id) WHERE comment_id IS NOT NULL;
+
+-- Keep comment spam bounded even if a user deletes their own comments.
+CREATE TABLE IF NOT EXISTS public.community_comment_rate_limits (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  window_started_at timestamptz NOT NULL,
+  comment_count integer NOT NULL DEFAULT 0 CHECK (comment_count >= 0)
+);
+ALTER TABLE public.community_comment_rate_limits ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.community_comment_rate_limits FROM PUBLIC, anon, authenticated;
+GRANT ALL ON public.community_comment_rate_limits TO service_role;
+
+CREATE OR REPLACE FUNCTION public.enforce_community_comment_rate_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  current_window timestamptz := date_trunc('hour', now());
+  current_count integer;
+BEGIN
+  INSERT INTO public.community_comment_rate_limits (user_id, window_started_at, comment_count)
+  VALUES (NEW.author_id, current_window, 1)
+  ON CONFLICT (user_id) DO UPDATE
+  SET window_started_at = CASE
+        WHEN community_comment_rate_limits.window_started_at < current_window THEN current_window
+        ELSE community_comment_rate_limits.window_started_at
+      END,
+      comment_count = CASE
+        WHEN community_comment_rate_limits.window_started_at < current_window THEN 1
+        ELSE community_comment_rate_limits.comment_count + 1
+      END
+  RETURNING comment_count INTO current_count;
+
+  IF current_count > 10 THEN
+    RAISE EXCEPTION 'Достигнут лимит: не более 10 комментариев в час.';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.enforce_community_comment_rate_limit() FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS community_comments_rate_limit ON public.community_comments;
+CREATE TRIGGER community_comments_rate_limit
+  BEFORE INSERT ON public.community_comments
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_community_comment_rate_limit();
