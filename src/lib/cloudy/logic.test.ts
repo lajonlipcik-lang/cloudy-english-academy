@@ -254,4 +254,19 @@ describe("Cloudy learning progress", () => {
   });
 
 
+  it("avoids assigning an unstated gender in Russian translations", () => {
+    expect(D[15]!.s.some(([ru]) => ru === "Я очень хочу есть.")).toBe(true);
+    expect(D[15]!.s.some(([ru]) => ru === "Я бы хотел(а) закуску.")).toBe(true);
+    expect(D[26]!.s.some(([ru]) => ru === "Я учусь в школе.")).toBe(true);
+    expect(D[36]!.s.some(([ru]) => ru === "Сегодня я устал(а).")).toBe(true);
+    expect(D[41]!.s.some(([ru]) => ru.includes("двоюродного брата или сестру") && ru.includes("эти выходные"))).toBe(true);
+    expect(D[47]!.s.some(([ru]) => ru === "Ты когда-нибудь был(а) в Лондоне?")).toBe(true);
+    expect(D[47]!.s.some(([ru]) => ru === "Я никогда не путешествовал(а) за границей.")).toBe(true);
+    expect(D[48]!.s.some(([ru]) => ru === "У тебя есть время в субботу?")).toBe(true);
+    expect(D[50]!.s.some(([ru]) => ru === "Я не понял(а) инструкции.")).toBe(true);
+    expect(D[52]!.s.some(([ru]) => ru === "Я допустил(а) ошибку в адресе.")).toBe(true);
+    expect(D[52]!.s.some(([ru]) => ru === "Я потерял(а) ключи.")).toBe(true);
+  });
+
+
 });
