@@ -100,7 +100,7 @@ function cloudyLocalSpeechFallback(text,request){
  try{
   if(request!==cloudySpeechRequest||typeof speechSynthesis==="undefined"||typeof SpeechSynthesisUtterance==="undefined")return;
   speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);const russian=/[А-Яа-яЁё]/.test(text);u.lang=russian?"ru-RU":"en-US";u.rate=russian?.96:.92;
+  const u=new SpeechSynthesisUtterance(text);const russian=/[А-Яа-яЁё]/.test(text);u.lang=russian?"ru-RU":"en-US";u.rate=russian ? 0.96 : 0.92;
   const voices=speechSynthesis.getVoices(),voice=russian?voices.find(v=>/^ru([_-]|$)/i.test(v.lang||"")):cloudySelectMaleAmericanVoice(voices);if(voice)u.voice=voice;
   speechSynthesis.speak(u);
  }catch(e){}
@@ -546,7 +546,7 @@ async function examNext(){
   const stage=document.querySelector(".exam-question-stage"),reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if(stage&&!reduce){
    exam.transitioning=true;stage.classList.add("is-leaving");
-   setTimeout(()=>{if(PERSONAL_EXAM!==exam)return;exam.index++;exam.selected=null;exam.transitioning=false;renderPersonalExam();snd("flip")},270);
+   setTimeout(()=>{if(PERSONAL_EXAM!==exam)return;exam.index++;exam.selected=null;exam.transitioning=false;renderPersonalExam();snd("flip")},220);
   }else{exam.index++;exam.selected=null;renderPersonalExam();snd("flip")}
   return;
  }
