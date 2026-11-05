@@ -27,6 +27,8 @@ export function normalizeCloudyLearningEvents(value: unknown, userId: string, no
     if (level !== null && !LEVELS.has(level)) throw new Error("Invalid learning level.");
     const lessonIndex = event.lessonIndex == null ? null : Number(event.lessonIndex);
     if (lessonIndex !== null && (!Number.isInteger(lessonIndex) || lessonIndex < -1 || lessonIndex > 1000)) throw new Error("Invalid lesson index.");
+    const questionIndex = event.questionIndex == null ? null : Number(event.questionIndex);
+    if (questionIndex !== null && (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex > 1000)) throw new Error("Invalid question index.");
     const responseSeconds = event.responseSeconds == null ? null : Number(event.responseSeconds);
     if (responseSeconds !== null && (!Number.isInteger(responseSeconds) || responseSeconds < 0 || responseSeconds > 3600)) throw new Error("Invalid response duration.");
     const correct = event.correct == null ? null : event.correct;
@@ -42,6 +44,7 @@ export function normalizeCloudyLearningEvents(value: unknown, userId: string, no
       occurred_at: new Date(timestamp).toISOString(),
       level,
       lesson_index: lessonIndex,
+      question_index: questionIndex,
       session_type: sessionType,
       exercise_type: cleanText(event.exerciseType, 24),
       skill_id: cleanText(event.skillId, 90),
