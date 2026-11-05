@@ -65,6 +65,10 @@ describe("Cloudy learning progress", () => {
     expect(LV.A2.s).toHaveLength(7);
     expect(levelLessons("A1")).toHaveLength(21);
     expect(levelLessons("A2")).toHaveLength(21);
+    for (const index of levelLessons("A2")) {
+      expect(D[index]?.w.length).toBeGreaterThanOrEqual(8);
+      expect(D[index]?.s.length).toBeGreaterThanOrEqual(5);
+    }
     for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
       expect(D[index]).toBeDefined();
     }
