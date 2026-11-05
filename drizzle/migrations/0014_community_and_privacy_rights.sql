@@ -294,10 +294,21 @@ CREATE TRIGGER community_comments_rate_limit
   FOR EACH ROW EXECUTE FUNCTION public.enforce_community_comment_rate_limit();
 
 -- Atomic moderation action. Only the trusted server service-role client may execute it.
+ALTER TABLE public.community_reports
+  ADD COLUMN IF NOT EXISTS reviewed_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS reviewed_at timestamptz,
+  ADD COLUMN IF NOT EXISTS moderation_note text NOT NULL DEFAULT '';
+ALTER TABLE public.community_reports
+  DROP CONSTRAINT IF EXISTS community_reports_moderation_note_length_check;
+ALTER TABLE public.community_reports
+  ADD CONSTRAINT community_reports_moderation_note_length_check CHECK (char_length(moderation_note) <= 1000);
+
 CREATE OR REPLACE FUNCTION public.moderate_community_report(
   p_report_id uuid,
   p_status text,
-  p_content_action text DEFAULT 'none'
+  p_content_action text DEFAULT 'none',
+  p_moderator_id uuid DEFAULT NULL,
+  p_moderation_note text DEFAULT ''
 )
 RETURNS void
 LANGUAGE plpgsql
@@ -313,6 +324,12 @@ BEGIN
   END IF;
   IF p_content_action NOT IN ('none', 'hide', 'restore') THEN
     RAISE EXCEPTION 'Invalid content action';
+  END IF;
+  IF p_moderator_id IS NULL THEN
+    RAISE EXCEPTION 'Moderator identity is required';
+  END IF;
+  IF char_length(coalesce(p_moderation_note, '')) > 1000 THEN
+    RAISE EXCEPTION 'Moderation note is too long';
   END IF;
 
   SELECT post_id, comment_id
@@ -343,8 +360,13 @@ BEGIN
     END IF;
   END IF;
 
-  UPDATE public.community_reports SET status = p_status WHERE id = p_report_id;
+  UPDATE public.community_reports
+    SET status = p_status,
+        reviewed_by = p_moderator_id,
+        reviewed_at = now(),
+        moderation_note = btrim(coalesce(p_moderation_note, ''))
+    WHERE id = p_report_id;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.moderate_community_report(uuid, text, text) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.moderate_community_report(uuid, text, text) TO service_role;
+REVOKE ALL ON FUNCTION public.moderate_community_report(uuid, text, text, uuid, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.moderate_community_report(uuid, text, text, uuid, text) TO service_role;
