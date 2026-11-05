@@ -25,7 +25,7 @@ const P=(t,w,s)=>({t,w:w.split(',').map(x=>x.split('=')),s:s.split(';').map(x=>x
 D.push(
 P('Ресторан','restaurant=ресторан,menu=меню,bill=счёт,waiter=официант,delicious=вкусный,hungry=голодный','Принесите счёт, пожалуйста=Could I have the bill, please?=menu the;Я очень голоден=I am very hungry=waiter a'),
 P('Погода','weather=погода,rainy=дождливый,sunny=солнечный,cold=холодный,wind=ветер,snow=снег','Сегодня солнечно=It is sunny today=rainy the;Зимой идёт снег=It snows in winter=wind a'),
-P('Одежда','jacket=куртка,shoes=обувь,dress=платье,shirt=рубашка,size=размер,wear=носить','Мне нужна куртка=I need a jacket=shoes the;Какой у вас размер=What size do you wear?=dress a'),
+P('Одежда','jacket=куртка,shoes=обувь,dress=платье,shirt=рубашка,size=размер,wear=носить','Мне нужна куртка=I need a jacket=shoes the;Какой размер вы носите?=What size do you wear?=dress a'),
 P('Технологии','password=пароль,download=скачивать,screen=экран,battery=батарея,website=сайт,update=обновление','Я забыл пароль=I forgot my password=screen the;Батарея почти разряжена=The battery is almost dead=update a'),
 P('Эмоции','nervous=нервный,proud=гордый,embarrassed=смущённый,disappointed=разочарованный,excited=взволнованный,jealous=завистливый','Я горжусь тобой=I am proud of you=nervous the;Она была разочарована=She was disappointed=excited a'),
 P('Учёба','degree=степень,lecture=лекция,exam=экзамен,subject=предмет,scholarship=стипендия,graduate=окончить','Завтра у меня экзамен=I have an exam tomorrow=lecture the;Это мой любимый предмет=This is my favorite subject=degree a'),
