@@ -514,3 +514,7 @@ h2{font-size:21px;margin:0 0 16px}
 .community-comment-form input:focus{border-color:rgba(112,204,255,.7)}
 .community-comment-form input::placeholder{color:rgba(220,237,255,.42)}
 .community-comment-form button{padding:0 12px;border:1px solid rgba(130,205,255,.28);border-radius:11px;background:rgba(76,157,224,.15);color:#d8f1ff;font:inherit;font-size:10px;font-weight:850}
+
+.community-post.is-hidden .community-post-actions,.community-post.is-hidden .community-comments{display:none}
+.community-post-hidden{display:block;margin-top:10px;color:rgba(220,237,255,.48);font-size:10px}
+.community-comment-limit{color:rgba(220,237,255,.4);font-size:9px;text-align:right}
