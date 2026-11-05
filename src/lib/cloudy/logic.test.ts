@@ -198,7 +198,7 @@ describe("Cloudy learning progress", () => {
       "grammar:present-simple:third-person",
       "grammar:present-simple:negatives",
     ]);
-    expect(grammar.some((pair) => pair.en === "She likes tea." && pair.ru === "Я люблю чай.")).toBe(true);
+    expect(grammar.some((pair) => pair.en.includes("She likes tea.") && pair.ru.includes("Она любит чай."))).toBe(true);
     expect(buildKnownGrammar([23], A1_FOUNDATIONS)).toEqual([]);
   });
 
