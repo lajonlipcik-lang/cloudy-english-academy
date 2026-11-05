@@ -434,3 +434,15 @@ h2{font-size:21px;margin:0 0 16px}
 @media(prefers-reduced-motion:reduce){.exam-question-stage,.exam-question-stage.is-leaving{animation:none!important;transform:none!important}}
 
 .study-screen,.exam-screen{overflow-x:hidden}
+
+/* Keep the first Cloudy screen stable on mobile GPUs.
+   Navigation and lesson-stage transitions remain available; decorative
+   entrance loops and staggered card animations do not run during rendering. */
+.scr:not(.tab-screen){animation:none!important}
+.scr.tab-screen{animation:cloudyTabEnter .24s cubic-bezier(.2,.75,.25,1) both}
+.nw,.ban{animation:none!important}
+.ring,.tip,.amb u{animation:none!important}
+.vocab-card,.pronoun-card,.grammar-example-card{animation:none!important}
+.study-stage-enter,.study-stage.is-leaving,.exam-question-stage,.exam-question-stage.is-leaving{filter:none!important}
+.scr:has(.stats) .ban,
+.scr:has(.stats) .exam-home{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
