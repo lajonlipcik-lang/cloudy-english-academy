@@ -5,7 +5,7 @@ import { A1_FOUNDATIONS, D, LI, LV } from "@/lib/cloudy/data";
 import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 const OWNER="lajonlipcik@gmail.com";
-type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
+type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;reportId?:string;status?:string;contentAction?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
 function validate(v:Input){const t=String(v?.accessToken??"");if(!t||t.length>8192||t.split(".").length!==3)throw new Error("Unauthorized");return {...v,accessToken:t}}
 async function ctx(token:string,owner=false){const url=process.env["SUPABASE_URL"],pub=process.env["SUPABASE_PUBLISHABLE_KEY"];if(!url||!pub)throw new Error("Supabase server is not configured.");const auth=createClient(url,pub,{auth:{persistSession:false,autoRefreshToken:false}});const {data,error}=await auth.auth.getUser(token);if(error||!data.user)throw new Error("Unauthorized");const email=(data.user.email??"").trim().toLowerCase(),role=data.user.app_metadata?.["role"];if(owner&&role!=="admin"&&email!==OWNER)throw new Error("Недостаточно прав.");const {supabaseAdmin}=await import("@/integrations/supabase/client.server");return {user:data.user,db:supabaseAdmin as any}}
 // New keys are stored in api_key in this RLS-protected table. Legacy AES-GCM
@@ -433,4 +433,40 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
   }finally{
     await db.rpc("release_cloudy_ai_request",{_user_id:user.id,_request_id:requestId});
   }
+});
+
+export const listCommunityReports=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
+  const {db}=await ctx(data.accessToken,true);
+  const {data:reports,error}=await db.from("community_reports").select("id,reporter_id,post_id,comment_id,reason,details,status,created_at").in("status",["open","reviewing"]).order("created_at",{ascending:true}).limit(100);
+  if(error)throw new Error("Не удалось загрузить жалобы.");
+  const postIds=[...new Set((reports??[]).map((r:any)=>r.post_id).filter(Boolean))];
+  const commentIds=[...new Set((reports??[]).map((r:any)=>r.comment_id).filter(Boolean))];
+  const [postsResult,commentsResult]=await Promise.all([
+    postIds.length?db.from("community_posts").select("id,author_id,body,status").in("id",postIds):Promise.resolve({data:[],error:null}),
+    commentIds.length?db.from("community_comments").select("id,post_id,author_id,body,status").in("id",commentIds):Promise.resolve({data:[],error:null}),
+  ]);
+  if(postsResult.error||commentsResult.error)throw new Error("Не удалось загрузить содержимое жалоб.");
+  const targets=[...(postsResult.data??[]),...(commentsResult.data??[])];
+  const authorIds=[...new Set(targets.map((x:any)=>x.author_id))];
+  const profileResult=authorIds.length?await db.from("community_public_profiles").select("id,display_name").in("id",authorIds):{data:[],error:null};
+  if(profileResult.error)throw new Error("Не удалось загрузить авторов жалоб.");
+  const names=new Map((profileResult.data??[]).map((p:any)=>[p.id,p.display_name||"Участник"]));
+  const postMap=new Map((postsResult.data??[]).map((p:any)=>[p.id,p]));
+  const commentMap=new Map((commentsResult.data??[]).map((p:any)=>[p.id,p]));
+  return {reports:(reports??[]).map((report:any)=>{
+    const target=report.post_id?postMap.get(report.post_id):commentMap.get(report.comment_id);
+    return {id:report.id,reason:report.reason,details:report.details,status:report.status,created_at:report.created_at,target_type:report.post_id?"post":"comment",target_id:report.post_id||report.comment_id,target_body:target?.body??"[Содержимое уже удалено]",target_status:target?.status??"removed",author_name:names.get(target?.author_id)||"Участник",parent_post_id:target?.post_id??null,reporter_hint:String(report.reporter_id||"").slice(-8)};
+  })};
+});
+export const moderateCommunityReport=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
+  const {db}=await ctx(data.accessToken,true);
+  const reportId=String(data.reportId??"");
+  const status=String(data.status??"");
+  const contentAction=String(data.contentAction??"none");
+  if(!/^[0-9a-f-]{36}$/i.test(reportId))throw new Error("Некорректная жалоба.");
+  if(!["reviewing","resolved","dismissed"].includes(status))throw new Error("Некорректный статус жалобы.");
+  if(!["none","hide","restore"].includes(contentAction))throw new Error("Некорректное действие с публикацией.");
+  const {error}=await db.rpc("moderate_community_report",{p_report_id:reportId,p_status:status,p_content_action:contentAction});
+  if(error)throw new Error("Не удалось применить решение модерации.");
+  return {ok:true};
 });
