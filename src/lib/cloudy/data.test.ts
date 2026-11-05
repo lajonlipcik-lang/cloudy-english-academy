@@ -39,5 +39,9 @@ describe("Cloudy A1-A2 curriculum structure", () => {
     expect(D[53]?.t).toBe("Покупки и услуги");
     expect(LV.A2.s[6]?.n).toBe("Работа, общение и самостоятельность");
     expect(LV.A2.s[6]?.l).toEqual([51, 52, 53]);
+    for (const index of [51, 52, 53]) {
+      expect(D[index]?.w.length).toBeGreaterThanOrEqual(10);
+      expect(D[index]?.s.length).toBeGreaterThanOrEqual(7);
+    }
   });
 });
