@@ -123,9 +123,9 @@ export type Database = {
         Relationships: []
       }
       community_reports: {
-        Row: { comment_id: string | null; created_at: string; details: string; id: string; post_id: string | null; reason: string; reporter_id: string; status: string }
-        Insert: { comment_id?: string | null; created_at?: string; details?: string; id?: string; post_id?: string | null; reason: string; reporter_id: string; status?: string }
-        Update: { comment_id?: string | null; created_at?: string; details?: string; id?: string; post_id?: string | null; reason?: string; reporter_id?: string; status?: string }
+        Row: { comment_id: string | null; created_at: string; details: string; id: string; moderation_note: string; post_id: string | null; reason: string; reporter_id: string; reviewed_at: string | null; reviewed_by: string | null; status: string }
+        Insert: { comment_id?: string | null; created_at?: string; details?: string; id?: string; moderation_note?: string; post_id?: string | null; reason: string; reporter_id: string; reviewed_at?: string | null; reviewed_by?: string | null; status?: string }
+        Update: { comment_id?: string | null; created_at?: string; details?: string; id?: string; moderation_note?: string; post_id?: string | null; reason?: string; reporter_id?: string; reviewed_at?: string | null; reviewed_by?: string | null; status?: string }
         Relationships: []
       }
       community_posts: {
