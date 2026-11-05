@@ -66,7 +66,7 @@ describe("Cloudy learning progress", () => {
   it("uses safe single-word distractors in the legacy browser exercise runtime", () => {
     const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
     const start = runtime.indexOf("function mk(l){");
-    const end = runtime.indexOf("\n function go", start);
+    const end = runtime.indexOf("\nfunction go", start);
     expect(start).toBeGreaterThanOrEqual(0);
     expect(end).toBeGreaterThan(start);
     const legacyMk = runInNewContext(`${runtime.slice(start, end)}; mk`, {
