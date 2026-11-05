@@ -129,7 +129,9 @@ CREATE POLICY community_posts_public_read ON public.community_posts
 CREATE POLICY community_posts_owner_read ON public.community_posts
   FOR SELECT TO authenticated USING (author_id = auth.uid());
 CREATE POLICY community_posts_owner_insert ON public.community_posts
-  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid());
+  FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND EXISTS (
+    SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_public = true
+  ));
 CREATE POLICY community_posts_owner_update ON public.community_posts
   FOR UPDATE TO authenticated USING (author_id = auth.uid()) WITH CHECK (author_id = auth.uid());
 CREATE POLICY community_posts_owner_delete ON public.community_posts
@@ -198,3 +200,48 @@ CREATE POLICY optional_consent_owner_insert ON public.optional_consent_events
 
 -- Public profile fields are deliberately restricted to display_name and bio.
 -- Do not grant broad profile-table reads: existing own-profile RLS remains intact.
+
+-- Persist rate-limit windows independently of post deletion so deleting/reposting cannot bypass the cap.
+CREATE TABLE IF NOT EXISTS public.community_post_rate_limits (
+  user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  window_started_at timestamptz NOT NULL,
+  post_count integer NOT NULL DEFAULT 0 CHECK (post_count >= 0)
+);
+ALTER TABLE public.community_post_rate_limits ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.community_post_rate_limits FROM PUBLIC, anon, authenticated;
+GRANT ALL ON public.community_post_rate_limits TO service_role;
+
+CREATE OR REPLACE FUNCTION public.enforce_community_post_rate_limit()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  current_window timestamptz := date_trunc('hour', now());
+  current_count integer;
+BEGIN
+  INSERT INTO public.community_post_rate_limits (user_id, window_started_at, post_count)
+  VALUES (NEW.author_id, current_window, 1)
+  ON CONFLICT (user_id) DO UPDATE
+  SET window_started_at = CASE
+        WHEN community_post_rate_limits.window_started_at < current_window THEN current_window
+        ELSE community_post_rate_limits.window_started_at
+      END,
+      post_count = CASE
+        WHEN community_post_rate_limits.window_started_at < current_window THEN 1
+        ELSE community_post_rate_limits.post_count + 1
+      END
+  RETURNING post_count INTO current_count;
+
+  IF current_count > 5 THEN
+    RAISE EXCEPTION 'Достигнут лимит: не более 5 публикаций в час.';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.enforce_community_post_rate_limit() FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS community_posts_rate_limit ON public.community_posts;
+CREATE TRIGGER community_posts_rate_limit
+  BEFORE INSERT ON public.community_posts
+  FOR EACH ROW EXECUTE FUNCTION public.enforce_community_post_rate_limit();
