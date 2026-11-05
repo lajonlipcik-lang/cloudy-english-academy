@@ -447,7 +447,7 @@ async function loadRemoteExamStatus(force=false){
   const response=await authRequest("learning-exam-status");
   if(S.user?.id===userId){remoteExamStatus=response||{ready:false,reason:"Не удалось проверить готовность"};remoteExamStatusUser=userId;if(T===0)view(0)}
  }catch(error){
-  if(S.user?.id===userId){remoteExamStatus={ready:false,reason:"Не удалось проверить готовность экзамена"};remoteExamStatusUser=userId}
+  if(S.user?.id===userId){remoteExamStatus={ready:false,reason:"Не удалось проверить готовность экзамена"};remoteExamStatusUser=userId;if(T===0)view(0)}
   console.warn("[cloudy-exam] readiness check failed");
  }finally{remoteExamStatusLoading=false}
 }
