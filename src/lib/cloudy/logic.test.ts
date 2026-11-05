@@ -176,7 +176,7 @@ describe("Cloudy learning progress", () => {
   it("introduces lesson vocabulary before graded practice", () => {
     const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
     expect(runtime).toContain('const vocabulary={k:"v",words:D[n].w};');
-    expect(runtime).toContain('ex=intro?[{k:"t",...intro},vocabulary,...recall,...practice]:[vocabulary,...recall,...practice];');
+    expect(runtime).toContain('ex=intro?[{k:"t",...intro},vocabulary,...guided,...recall,...practice]:[vocabulary,...guided,...recall,...practice];');
     expect(runtime).toContain('if(e.k=="v")b=');
     expect(runtime).toContain('e.k=="t"||e.k=="v"');
   });
@@ -184,12 +184,49 @@ describe("Cloudy learning progress", () => {
   it("adds three typed vocabulary-recall prompts before multiple-choice practice", () => {
     const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
     expect(runtime).toContain('const recall=sh(D[n].w).slice(0,Math.min(3,D[n].w.length)).map(([en,ru])=>({k:"r",q:ru,a:en,en,title:"Вспомни слово без подсказок"}));');
-    expect(runtime).toContain("vocabulary,...recall,...practice");
+    expect(runtime).toContain("vocabulary,...guided,...recall,...practice");
     expect(runtime).toContain('else if(e.k=="r")b=');
     expect(runtime).toContain('typed===String(e.a).toLocaleLowerCase()');
     expect(runtime).toContain('selectedAnswer:e.k==="r"?typed');
     expect(runtime).toContain('e.k!=="b"&&e.k!=="r"');
   });
+  it("teaches action verbs and Present Simple in a fixed six-step A1 progression", () => {
+    const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
+    const start = runtime.indexOf("function verbPath(n){");
+    const end = runtime.indexOf("\nfunction go", start);
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    const verbPath = runInNewContext(`${runtime.slice(start, end)}; verbPath`, {
+      sh: <T,>(items: T[]) => [...items].reverse(),
+    }) as (lesson: number) => { q: string; a: string; skillId: string; o: string[] }[];
+    const expectedSkills = [
+      "grammar:verbs:action",
+      "grammar:present-simple:base",
+      "grammar:present-simple:third-person",
+      "grammar:present-simple:questions",
+      "grammar:present-simple:negatives",
+      "grammar:sentence-order",
+    ];
+    for (let offset = 0; offset < expectedSkills.length; offset++) {
+      const drills = verbPath(24 + offset);
+      expect(drills).toHaveLength(2);
+      expect(drills.every((drill) => drill.skillId === expectedSkills[offset])).toBe(true);
+      for (const drill of drills) {
+        expect(drill.q.trim()).not.toBe("");
+        expect(drill.a.trim()).not.toBe("");
+        expect(drill.o).toContain(drill.a.split(" ")[0]);
+        expect(drill.o.length).toBeGreaterThan(drill.a.split(" ").length);
+      }
+    }
+    expect(verbPath(23)).toHaveLength(0);
+    expect(verbPath(30)).toHaveLength(0);
+  });
+
+  it("keeps guided grammar answers in separate learner skill records", () => {
+    const learning = readFileSync(join(process.cwd(), "src/server-assets/cloudy-learning.js"), "utf8");
+    expect(learning).toContain("if (exercise && exercise.skillId) return cleanText(exercise.skillId, 90);");
+  });
+
   it("provides a teach-before-test foundation note for every A1 lesson", () => {
     expect(Object.keys(A1_FOUNDATIONS).map(Number)).toEqual(levelLessons("A1"));
     for (const index of levelLessons("A1")) {
