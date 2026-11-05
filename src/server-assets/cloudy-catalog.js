@@ -10,7 +10,7 @@ const D=[
 {t:"Цвета",w:[["red","красный"],["blue","синий"],["green","зелёный"],["yellow","жёлтый"],["black","чёрный"],["white","белый"]],s:[["Это красное яблоко","This is a red apple","blue the"],["Небо синее","The sky is blue","red green"]]}
 ];
 D.push(
-{t:"Город",w:[["bank","банк"],["street","улица"],["station","вокзал"],["market","рынок"],["park","парк"],["bridge","мост"]],s:[["Я иду в парк","I go to the park","market a"],["Где находится вокзал?","Where is the station?","street a"]]},
+{t:"Город",w:[["bank","банк"],["street","улица"],["station","вокзал"],["market","рынок"],["park","парк"],["bridge","мост"]],s:[["Я хожу в парк","I go to the park","market a"],["Где находится вокзал?","Where is the station?","street a"]]},
 {t:"Покупки",w:[["cheap","дешёвый"],["expensive","дорогой"],["price","цена"],["shop","магазин"],["money","деньги"],["ticket","билет"]],s:[["Сколько это стоит?","How much is it?","cheap the"],["У меня нет денег","I have no money","shop a"]]},
 {t:"Время",w:[["morning","утро"],["evening","вечер"],["today","сегодня"],["tomorrow","завтра"],["week","неделя"],["always","всегда"]],s:[["Увидимся завтра","See you tomorrow","today the"],["Я всегда пью кофе утром","I always drink coffee in the morning","evening a"]]},
 {t:"Работа",w:[["job","работа"],["office","офис"],["meeting","встреча"],["boss","начальник"],["salary","зарплата"],["skill","навык"]],s:[["У меня завтра встреча","I have a meeting tomorrow","office the"],["Я ищу новую работу","I am looking for a new job","boss the"]]},
@@ -151,7 +151,7 @@ const A1_EXTRA = [
       ],
       [
         "classroom",
-        "класс"
+        "классная комната"
       ]
     ],
     "s": [
@@ -186,7 +186,7 @@ const A1_EXTRA = [
       ],
       [
         "hand",
-        "рука"
+        "кисть руки"
       ],
       [
         "eye",
@@ -756,7 +756,7 @@ const A2_EXTRA = [
   P("Жизненный опыт", "ever=когда-либо,never=никогда,already=уже,yet=ещё,recently=недавно,experience=опыт", "Ты когда-нибудь был в Лондоне=Have you ever been to London=Did you ever go;Я ещё не закончил домашнюю работу=I haven't finished my homework yet=already finished;Она уже позвонила маме=She has already called her mother=will call tomorrow"),
   P("Приглашения и договорённости", "would you like=не хотел бы ты,shall we=давай,sounds great=звучит отлично,available=свободный,maybe=возможно,unfortunately=к сожалению", "Хочешь пойти в кино=Would you like to go to the cinema=Do you like cinema;Давай встретимся в шесть=Shall we meet at six=Did we meet;Это звучит отлично=That sounds great=That sounds bad"),
   P("Природа и окружающая среда", "recycle=перерабатывать,pollution=загрязнение,waste=отходы,protect=защищать,save energy=экономить энергию,reduce=сокращать", "Мы должны перерабатывать бумагу=We should recycle paper=throw the;Загрязнение воздуха — серьёзная проблема=Air pollution is a serious problem=water the;Выключай свет, чтобы экономить энергию=Turn off the lights to save energy=leave everything on"),
-  P("Общение и обучение", "explain=объяснять,repeat=повторять,understand=понимать,remember=помнить,forget=забывать,instruction=инструкция", "Можешь повторить вопрос=Could you repeat the question?=forget the;Я не понял эти инструкции=I didn't understand the instructions=remembered yesterday;Она объяснила правило ясно=She explained the rule clearly=explains unclear"),
+  P("Общение и обучение", "explain=объяснять,repeat=повторять,understand=понимать,remember=помнить,forget=забывать,instruction=инструкция", "Можешь повторить вопрос?=Could you repeat the question?=forget the;Я не понял эти инструкции=I didn't understand the instructions=remembered yesterday;Она объяснила правило ясно=She explained the rule clearly=explains unclear"),
   P("Рабочие задачи", "task=задача,customer=клиент,shift=рабочая смена,break=перерыв,busy=занятый,helpful=готовый помочь,earn=зарабатывать,apply for=подавать заявку на,part-time=неполный рабочий день,uniform=форма", "Сегодня у меня много задач=I have a lot of tasks today=I has many tasks;Она работает неполный день=She works part-time=She work full-time;Во время перерыва я пью чай=I drink tea during my break=I drinks tea;Этот сотрудник всегда готов помочь=This employee is always helpful=These employee are helpful;Он подал заявку на работу=He applied for the job=He apply the job"),
   P("Телефонное общение", "call=звонить,answer=отвечать,leave a message=оставить сообщение,call back=перезвонить,hold on=подождать на линии,wrong number=неверный номер,line=линия,speak=говорить,later=позже,voicemail=голосовая почта", "Можно поговорить с Анной?=Could I speak to Anna?=Could I speaking Anna?;Пожалуйста, подождите на линии=Please hold on=Please holds on;Я оставлю сообщение=I will leave a message=I leave a messages;Он перезвонит позже=He will call back later=He will calls back later;Извините, вы ошиблись номером=Sorry, you have the wrong number=Sorry, you has wrong number"),
   P("Покупки и услуги", "receipt=чек,cash=наличные,card=карта,change=сдача,queue=очередь,refund=возврат денег,exchange=обмен,broken=сломанный,customer service=служба поддержки,pay by card=платить картой", "Можно получить чек?=Could I have a receipt?=Could I has receipt?;Я заплачу картой=I will pay by card=I will pay with a cash;Мне нужна сдача=I need some change=I need many changes;Товар сломан, я хочу вернуть деньги=The item is broken and I would like a refund=The item are broken;Где находится очередь на кассу?=Where is the checkout queue?=Where are checkout queue?")
