@@ -437,7 +437,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
 
 export const listCommunityReports=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db}=await ctx(data.accessToken,true);
-  const {data:reports,error}=await db.from("community_reports").select("id,reporter_id,post_id,comment_id,reason,details,status,created_at").in("status",["open","reviewing"]).order("created_at",{ascending:true}).limit(100);
+  const {data:reports,error}=await db.from("community_reports").select("id,reporter_id,post_id,comment_id,reason,details,status,created_at").order("created_at",{ascending:false}).limit(100);
   if(error)throw new Error("Не удалось загрузить жалобы.");
   const postIds=[...new Set((reports??[]).map((r:any)=>r.post_id).filter(Boolean))];
   const commentIds=[...new Set((reports??[]).map((r:any)=>r.comment_id).filter(Boolean))];
