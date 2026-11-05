@@ -44,6 +44,9 @@ describe("server XP policy", () => {
     expect(isLessonInLevel(24, "A1")).toBe(true);
     expect(isLessonInLevel(38, "A1")).toBe(true);
     expect(isLessonInLevel(39, "A1")).toBe(false);
+    expect(isLessonInLevel(39, "A2")).toBe(true);
+    expect(isLessonInLevel(50, "A2")).toBe(true);
+    expect(isLessonInLevel(38, "A2")).toBe(false);
     expect(isLessonInLevel(6, "A1")).toBe(false);
     expect(isLessonInLevel(1.5, "A1")).toBe(false);
     expect(isLessonInLevel(1, "unknown")).toBe(false);
