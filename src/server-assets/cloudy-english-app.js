@@ -519,16 +519,35 @@ async function startPersonalExam(){
  }catch(error){toast(error?.message||"Не удалось подготовить экзамен.",false);view()}
  finally{personalExamBusy=false}
 }
+const examSkillLabel=(skillId)=>{
+ const labels={
+  "grammar:verbs:action":"ГЛАГОЛЫ ДЕЙСТВИЯ",
+  "grammar:present-simple:base":"PRESENT SIMPLE",
+  "grammar:present-simple:third-person":"HE · SHE · IT",
+  "grammar:present-simple:questions":"ВОПРОСЫ DO / DOES",
+  "grammar:present-simple:negatives":"ОТРИЦАНИЯ",
+  "grammar:sentence-order":"ПОРЯДОК СЛОВ",
+  "grammar:sentence-building":"ПОСТРОЕНИЕ ПРЕДЛОЖЕНИЙ"
+ };
+ return labels[skillId]|| (String(skillId||"").startsWith("grammar:")?"ГРАММАТИКА":"СЛОВАРЬ");
+};
 function renderPersonalExam(){
  const exam=PERSONAL_EXAM;if(!exam)return view();
  const q=exam.questions[exam.index],progress=exam.index/exam.questions.length*100,selected=exam.selected;
- app.innerHTML='<div class="scr exam-screen"><div class="top"><button class="x" onclick="PERSONAL_EXAM=null;view()">'+ic("x")+'</button><div class="bar"><i style="width:'+progress+'%"></i></div><b>'+(exam.index+1)+'/'+exam.questions.length+'</b></div><div class="body"><h2>Персональный экзамен · '+exam.level+'</h2><p class="exam-instruction">Выбери один правильный ответ.</p><div class="exam-question">'+examEscape(q.prompt)+'</div><div class="exam-options">'+q.options.map((option,index)=>'<button class="opt '+(selected===index?'sel':'')+'" onclick="examChoose('+index+')">'+examEscape(option)+'</button>').join("")+'</div><button class="btn exam-next" '+(selected===null?'disabled':'')+' onclick="examNext()">'+(exam.index===exam.questions.length-1?'ЗАВЕРШИТЬ':'ДАЛЬШЕ')+'</button></div></div>';
+ app.innerHTML='<div class="scr exam-screen"><div class="top"><button class="x" onclick="PERSONAL_EXAM=null;view()">'+ic("x")+'</button><div class="bar"><i style="width:'+progress+'%"></i></div><b>'+(exam.index+1)+'/'+exam.questions.length+'</b></div><div class="body"><h2>Персональный экзамен · '+exam.level+'</h2><p class="exam-instruction">Вопросы подобраны по пройденным темам и твоим ответам.</p><section class="exam-question-stage"><span class="exam-skill-label">'+examEscape(examSkillLabel(q.skillId))+'</span><div class="exam-question">'+examEscape(q.prompt)+'</div><div class="exam-options">'+q.options.map((option,index)=>'<button class="opt '+(selected===index?'sel':'')+'" onclick="examChoose('+index+')">'+examEscape(option)+'</button>').join("")+'</div></section><button class="btn exam-next" '+(selected===null?'disabled':'')+' onclick="examNext()">'+(exam.index===exam.questions.length-1?'ЗАВЕРШИТЬ':'ДАЛЬШЕ')+'</button></div></div>';
 }
-function examChoose(index){if(!PERSONAL_EXAM||PERSONAL_EXAM.selected!==null)return;PERSONAL_EXAM.selected=index;renderPersonalExam()}
+function examChoose(index){if(!PERSONAL_EXAM||PERSONAL_EXAM.selected!==null||PERSONAL_EXAM.transitioning)return;PERSONAL_EXAM.selected=index;renderPersonalExam()}
 async function examNext(){
- const exam=PERSONAL_EXAM;if(!exam||exam.selected===null)return;
+ const exam=PERSONAL_EXAM;if(!exam||exam.selected===null||exam.transitioning)return;
  exam.answers.push({questionId:exam.questions[exam.index].id,selectedIndex:exam.selected});
- if(exam.index<exam.questions.length-1){exam.index++;exam.selected=null;renderPersonalExam();snd("flip");return}
+ if(exam.index<exam.questions.length-1){
+  const stage=document.querySelector(".exam-question-stage"),reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(stage&&!reduce){
+   exam.transitioning=true;stage.classList.add("is-leaving");
+   setTimeout(()=>{if(PERSONAL_EXAM!==exam)return;exam.index++;exam.selected=null;exam.transitioning=false;renderPersonalExam();snd("flip")},270);
+  }else{exam.index++;exam.selected=null;renderPersonalExam();snd("flip")}
+  return;
+ }
  app.innerHTML='<div class="scr exam-loading"><div class="exam-cloud">'+mascot()+'</div><b>Клауди проверяет ответы…</b><small>Анализирую результат и слабые темы</small></div>';
  try{
   const response=await authRequest("learning-exam-submit",{payload:{examId:exam.id,answers:exam.answers}});
