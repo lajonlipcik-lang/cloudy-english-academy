@@ -36,7 +36,8 @@ CREATE POLICY "Users can read their own Cloudy learning events"
   ON public.cloudy_learning_events FOR SELECT TO authenticated
   USING (auth.uid() = user_id);
 
-REVOKE INSERT, UPDATE, DELETE ON public.cloudy_learning_events FROM anon, authenticated;
-GRANT SELECT ON public.cloudy_learning_events TO authenticated;
-GRANT ALL ON public.cloudy_learning_events TO service_role;
+REVOKE ALL PRIVILEGES ON TABLE public.cloudy_learning_events FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON TABLE public.cloudy_learning_events TO authenticated;
+GRANT ALL PRIVILEGES ON TABLE public.cloudy_learning_events TO service_role;
+REVOKE ALL PRIVILEGES ON SEQUENCE public.cloudy_learning_events_id_seq FROM PUBLIC, anon, authenticated;
 GRANT USAGE, SELECT ON SEQUENCE public.cloudy_learning_events_id_seq TO service_role;
