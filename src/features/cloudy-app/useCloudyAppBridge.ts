@@ -162,15 +162,15 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
             reply({ ok: true, result: { comments: [], reactions: [] } });
             return;
           }
-          const [commentsResult, reactionsResult] = await Promise.all([
-            supabase.from("community_comments" as any).select("id, post_id, author_id, body, created_at").in("post_id", postIds).eq("status", "published").order("created_at", { ascending: true }).limit(250),
-            supabase.from("community_reactions" as any).select("post_id, user_id, reaction").in("post_id", postIds),
+          const [commentsResult, reactionsResult]: any[] = await Promise.all([
+            (supabase.from("community_comments" as any) as any).select("id, post_id, author_id, body, created_at").in("post_id", postIds).eq("status", "published").order("created_at", { ascending: true }).limit(250),
+            (supabase.from("community_reactions" as any) as any).select("post_id, user_id, reaction").in("post_id", postIds),
           ]);
           if (commentsResult.error) throw commentsResult.error;
           if (reactionsResult.error) throw reactionsResult.error;
           const comments = (commentsResult.data ?? []) as { id: string; post_id: string; author_id: string; body: string; created_at: string }[];
           const authorIds = [...new Set(comments.map(comment => comment.author_id))];
-          const profiles: any = authorIds.length ? await supabase.from("community_public_profiles" as any).select("id, display_name").in("id", authorIds) : { data: [], error: null };
+          const profiles: any = authorIds.length ? await (supabase.from("community_public_profiles" as any) as any).select("id, display_name").in("id", authorIds) : { data: [], error: null };
           if (profiles.error) throw profiles.error;
           const names = new Map(((profiles.data ?? []) as { id: string; display_name: string | null }[]).map(profile => [profile.id, profile.display_name || "Участник"]));
           reply({ ok: true, result: {
@@ -187,9 +187,9 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const body = typeof payload["body"] === "string" ? (payload["body"] as string).trim() : "";
           if (!/^[0-9a-f-]{36}$/i.test(postId)) throw new Error("Некорректная публикация.");
           if (body.length < 1 || body.length > 1000) throw new Error("Комментарий должен содержать от 1 до 1000 символов.");
-          const { data, error } = await supabase.from("community_comments" as any).insert({ post_id: postId, author_id: uid, body }).select("id").single();
-          if (error) throw error;
-          reply({ ok: true, result: { id: data.id } });
+          const result: any = await (supabase.from("community_comments" as any) as any).insert({ post_id: postId, author_id: uid, body }).select("id").single();
+          if (result.error) throw result.error;
+          reply({ ok: true, result: { id: result.data.id } });
           return;
         }
         if (message.action === "community-comment-delete") {
@@ -198,10 +198,10 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
           const commentId = typeof payload["commentId"] === "string" ? payload["commentId"] : "";
           if (!/^[0-9a-f-]{36}$/i.test(commentId)) throw new Error("Некорректный комментарий.");
-          const { data, error } = await supabase.from("community_comments" as any).delete().eq("id", commentId).eq("author_id", uid).select("id").maybeSingle();
-          if (error) throw error;
-          if (!data) throw new Error("Комментарий не найден или уже удалён.");
-          reply({ ok: true, result: { id: data.id } });
+          const result: any = await (supabase.from("community_comments" as any) as any).delete().eq("id", commentId).eq("author_id", uid).select("id").maybeSingle();
+          if (result.error) throw result.error;
+          if (!result.data) throw new Error("Комментарий не найден или уже удалён.");
+          reply({ ok: true, result: { id: result.data.id } });
           return;
         }
         if (message.action === "community-reaction-toggle") {
@@ -210,14 +210,15 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const payload = message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {};
           const postId = typeof payload["postId"] === "string" ? payload["postId"] : "";
           if (!/^[0-9a-f-]{36}$/i.test(postId)) throw new Error("Некорректная публикация.");
-          const { data: existing, error: readError } = await supabase.from("community_reactions" as any).select("post_id").eq("post_id", postId).eq("user_id", uid).maybeSingle();
-          if (readError) throw readError;
+          const readResult: any = await (supabase.from("community_reactions" as any) as any).select("post_id").eq("post_id", postId).eq("user_id", uid).maybeSingle();
+          if (readResult.error) throw readResult.error;
+          const existing = readResult.data;
           if (existing) {
-            const { error } = await supabase.from("community_reactions" as any).delete().eq("post_id", postId).eq("user_id", uid);
-            if (error) throw error;
+            const deleteResult: any = await (supabase.from("community_reactions" as any) as any).delete().eq("post_id", postId).eq("user_id", uid);
+            if (deleteResult.error) throw deleteResult.error;
           } else {
-            const { error } = await supabase.from("community_reactions" as any).insert({ post_id: postId, user_id: uid, reaction: "like" });
-            if (error) throw error;
+            const insertResult: any = await (supabase.from("community_reactions" as any) as any).insert({ post_id: postId, user_id: uid, reaction: "like" });
+            if (insertResult.error) throw insertResult.error;
           }
           reply({ ok: true, result: { active: !existing } });
           return;
@@ -232,9 +233,9 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           const details = typeof payload["details"] === "string" ? (payload["details"] as string).trim().slice(0, 1000) : "";
           if ((!postId && !commentId) || (postId && !/^[0-9a-f-]{36}$/i.test(postId)) || (commentId && !/^[0-9a-f-]{36}$/i.test(commentId)) || (postId && commentId)) throw new Error("Некорректная жалоба.");
           if (!["harassment", "personal_data", "spam", "inappropriate", "other"].includes(String(reason))) throw new Error("Выбери причину жалобы.");
-          const { data, error } = await supabase.from("community_reports" as any).insert({ reporter_id: uid, post_id: postId || null, comment_id: commentId || null, reason, details }).select("id").single();
-          if (error) throw error;
-          reply({ ok: true, result: { id: data.id } });
+          const result: any = await (supabase.from("community_reports" as any) as any).insert({ reporter_id: uid, post_id: postId || null, comment_id: commentId || null, reason, details }).select("id").single();
+          if (result.error) throw result.error;
+          reply({ ok: true, result: { id: result.data.id } });
           return;
         }
         if (message.action === "community-feed-get") {
