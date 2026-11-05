@@ -57,7 +57,7 @@ describe("server XP policy", () => {
     expect(migration).toContain("WHERE user_id = _user_id AND lesson_index = _lesson_index AND award_day = v_day");
     expect(migration).toContain("REVOKE ALL ON FUNCTION public.award_cloudy_lesson_xp");
     expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.award_cloudy_lesson_xp(uuid, integer, text) TO service_role");
-    expect(journal.entries).toContainEqual({ idx: 12, tag: "0012_complete_a2_curriculum" });
+    expect(journal.entries.some((entry) => entry.idx === 12 && entry.tag === "0012_complete_a2_curriculum")).toBe(true);
   });
 
   it("accepts only lessons assigned to the requested CEFR level", () => {
