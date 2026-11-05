@@ -24,10 +24,10 @@ DECLARE
   event_action text;
   safe_reason text := btrim(coalesce(p_reason, ''));
 BEGIN
-  IF p_content_type NOT IN ('short_comment', 'short_video') THEN
+  IF p_content_type IS NULL OR p_content_type NOT IN ('short_comment', 'short_video') THEN
     RAISE EXCEPTION 'Unsupported content type';
   END IF;
-  IF p_decision NOT IN ('allow', 'reject', 'review') THEN
+  IF p_decision IS NULL OR p_decision NOT IN ('allow', 'reject', 'review') THEN
     RAISE EXCEPTION 'Unsupported moderation decision';
   END IF;
   IF char_length(safe_reason) NOT BETWEEN 1 AND 500 THEN
