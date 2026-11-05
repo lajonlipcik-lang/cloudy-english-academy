@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS public.cloudy_learning_events (
   event_id uuid NOT NULL,
   session_id uuid,
   event_type text NOT NULL CHECK (event_type IN (
-    'session_started', 'answer_submitted', 'question_skipped', 'hint_used',
+    'session_started', 'answer_submitted', 'question_opened', 'question_skipped', 'hint_used',
     'lesson_completed', 'lesson_failed', 'lesson_abandoned'
   )),
   occurred_at timestamptz NOT NULL,
