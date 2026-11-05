@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { runInNewContext, Script } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, normalizeState } from "./logic";
-import { D, LV, levelLessons } from "./data";
+import { A1_FOUNDATIONS, D, LV, levelLessons } from "./data";
 import { isLessonInLevel, sanitizeCloudyProgress } from "./progress-policy";
 import type { Exercise, Lesson } from "./types";
 
@@ -152,7 +152,7 @@ describe("Cloudy learning progress", () => {
   });
 
   it("keeps the browser runtime catalog identical to the typed curriculum", () => {
-    const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV } } = {};
+    const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV; F: typeof A1_FOUNDATIONS } } = {};
     const browserCatalog = readFileSync(
       join(process.cwd(), "src/server-assets/cloudy-catalog.js"),
       "utf8",
@@ -170,6 +170,27 @@ describe("Cloudy learning progress", () => {
         : "No lesson data mismatch",
     ).toBe(-1);
     expect(JSON.stringify(browserWindow.CloudyCatalog?.LV)).toBe(JSON.stringify(LV));
+    expect(JSON.stringify(browserWindow.CloudyCatalog?.F)).toBe(JSON.stringify(A1_FOUNDATIONS));
+  });
+
+  it("introduces lesson vocabulary before graded practice", () => {
+    const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
+    expect(runtime).toContain('const vocabulary={k:"v",words:D[n].w};');
+    expect(runtime).toContain('ex=intro?[{k:"t",...intro},vocabulary,...practice]:[vocabulary,...practice];');
+    expect(runtime).toContain('if(e.k=="v")b=');
+    expect(runtime).toContain('e.k=="t"||e.k=="v"');
+  });
+
+  it("provides a teach-before-test foundation note for every A1 lesson", () => {
+    expect(Object.keys(A1_FOUNDATIONS).map(Number)).toEqual(levelLessons("A1"));
+    for (const index of levelLessons("A1")) {
+      const note = A1_FOUNDATIONS[index]!;
+      expect(note.title.trim()).not.toBe("");
+      expect(note.body.trim()).not.toBe("");
+      expect(note.examples.length).toBeGreaterThanOrEqual(2);
+      expect(note.examples.every(([english, russian]) => english.trim() && russian.trim())).toBe(true);
+      expect(note.tip.trim()).not.toBe("");
+    }
   });
 
   it("keeps lesson indices unique and progress authorization aligned with curriculum", () => {
