@@ -45,7 +45,7 @@ describe("Cloudy learning progress", () => {
   });
   it("uses single-word lesson vocabulary as sentence-builder distractors", () => {
     const lesson: Pick<Lesson, "w" | "s"> = {
-      w: [["hello", "привет"], ["friend", "друг"], ["school", "школа"]],
+      w: [["hello", "привет"], ["friend", "друг"], ["school", "школа"], ["turn left", "повернуть налево"], ["quarter past", "четверть после"]],
       s: [
         ["Привет, мой друг", "Hello my friend", "you the"],
         ["Я иду в школу", "I go to school", "four the"],
@@ -68,8 +68,8 @@ describe("Cloudy learning progress", () => {
     expect(levelLessons("A1")).toHaveLength(21);
     expect(levelLessons("A2")).toHaveLength(21);
     for (const index of levelLessons("A2")) {
-      expect(D[index]?.w.length).toBeGreaterThanOrEqual(8);
-      expect(D[index]?.s.length).toBeGreaterThanOrEqual(5);
+      expect(D[index]?.w.length).toBeGreaterThanOrEqual(10);
+      expect(D[index]?.s.length).toBeGreaterThanOrEqual(6);
     }
     for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
       expect(D[index]).toBeDefined();
