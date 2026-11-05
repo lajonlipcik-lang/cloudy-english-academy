@@ -124,13 +124,20 @@ export function buildExercises(l: Pick<Lesson, "w" | "s">, pool: Pair[], opts: {
   if (p.length) out.push({ k: "m", L: shuffle(p.map((x) => [x[0], x[0]] as Pair), r), R: shuffle(p.map((x) => [x[1], x[0]] as Pair), r) });
   l.s.forEach(([ru, en], sentenceIndex) => {
     const correctTokens = en.split(" ");
-    const used = new Set(correctTokens.map((token) => token.toLowerCase()));
-    // Build distractors from real single-word vocabulary in this lesson.
+    const normalizeToken = (token: string) => token.toLocaleLowerCase().replace(/^[^\\p{L}\\p{N}']+|[^\\p{L}\\p{N}']+$/gu, "");
+    const used = new Set(correctTokens.map(normalizeToken).filter(Boolean));
+    // Vocabulary can contain expressions ("a little", "take out the trash").
+    // Sentence-builder tiles must always be individual words, never whole expressions.
+    // Normalize punctuation so "Hello," also excludes the vocabulary item "hello".
     // Ignore legacy "d" fragments such as "you the" and "four the".
     const candidates = [
-      ...l.w.map(([word]) => word),
-      ...l.s.filter((_, index) => index !== sentenceIndex).flatMap(([, sentence]) => sentence.split(" ")),
-    ].filter((token) => token && !used.has(token.toLowerCase()) && !/[.,!?]/.test(token));
+      ...l.w.flatMap(([word]) => word.split(/\\s+/)),
+      ...l.s.filter((_, index) => index !== sentenceIndex).flatMap(([, sentence]) => sentence.split(/\\s+/)),
+    ].filter((token) => {
+      const normalized = normalizeToken(token);
+      return normalized && normalized === token.toLocaleLowerCase().replace(/^[^\\p{L}\\p{N}']+|[^\\p{L}\\p{N}']+$/gu, "") &&
+        !used.has(normalized) && !/[.,!?]/.test(token);
+    });
     const distractors = [...new Set(candidates)].slice(0, 2);
     out.push({
       k: "b",
