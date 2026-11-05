@@ -43,6 +43,11 @@ describe("Cloudy A1-A2 curriculum structure", () => {
     expect(D[48]?.s[0]?.[0]).toBe("Хочешь пойти в кино?");
     expect(D[48]?.s[1]?.[0]).toBe("Давай встретимся в шесть?");
     expect(D[53]?.s[4]?.[1]).toBe("Is this the checkout line?");
+    expect(D[40]?.w[0]?.[0]).toBe("visit");
+    expect(D[42]?.s[2]?.[1]).toBe("My commute is shorter than yours");
+    expect(D[51]?.s[0]?.[1]).toBe("I have a lot of tasks to do today");
+    expect(D[52]?.s[1]?.[1]).toBe("Please hold.");
+    expect(D[53]?.s[7]?.[1]).toBe("Please contact customer service.");
   });
 
   it("places the three new independence-focused topics at the end of A2", () => {
