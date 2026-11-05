@@ -6,7 +6,16 @@ const cq=(en,ru,m)=>{const o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice
 function review(){const w=Object.keys(S.mis).slice(0,8).map(en=>[en,ruOf(en)]).filter(x=>x[1]);if(!w.length)return snd('bad');snd('go');rv=1;rt=1;lm=[];L=-1;if(window.CloudyLearning)CloudyLearning.beginSession(KEY,{level:S.lv,lessonIndex:-1,sessionType:'review'});ex=mk({w,s:[]});i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
 function again(){rv?review():go(L)}
 const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button class="spk" onclick="say('${e.en}',1)">${ic('spk')}</button></div><button class="big" id="mic" onclick="rec()">${ic('mic')}</button><p id="rs" style="text-align:center;opacity:.85">Нажмите и произнесите слово</p><button class="btn ghost" onclick="skipP()">ПРОПУСТИТЬ</button>`;
-function skipP(){if(done)return;if(window.CloudyLearning)CloudyLearning.track(KEY,'question_skipped',{exerciseType:'p',questionIndex:i});fx(true,'Пропущено')}
+function skipP(){
+ if(done)return;
+ done=true;
+ if(window.CloudyLearning)CloudyLearning.track(KEY,'question_skipped',{exerciseType:'p',questionIndex:i});
+ const ft=$("#ft");ft.style.display="";ft.className="foot";
+ ft.innerHTML='<div class="ft-head"><p>Пропущено</p></div><button class="btn" onclick="next()">ДАЛЬШЕ</button>';
+ showCloudySkipReaction();
+ clearTimeout(cloudySuccessAdvanceTimer);
+ cloudySuccessAdvanceTimer=setTimeout(()=>{if(done&&ft.isConnected)next()},2400);
+}
 let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false,lastVoiceTranscript='';
 const { normalizeSpeechText, speechDistance, speechMatches } = window.CloudySpeech;
 function clearCloudyRecognition(active=cloudyRecognition){
@@ -221,6 +230,31 @@ function showCloudySuccess(){
  document.body.appendChild(reaction);
  setTimeout(()=>{if(reaction.isConnected){reaction.classList.add("is-leaving");cloudyPlaySwoosh();setTimeout(()=>reaction.remove(),820)}},1050);
 }
+function showCloudySkipReaction(){
+ const message="В следующий раз получится!",styleId="cloudy-skip-reaction-style";
+ if(!document.getElementById(styleId)){
+  const style=document.createElement("style");style.id=styleId;style.textContent=`
+   .cloudy-skip-reaction{position:fixed;inset:0;z-index:10050;display:grid;place-content:center;justify-items:center;gap:12px;pointer-events:none;background:radial-gradient(ellipse at center,rgba(38,160,230,.12),transparent 58%);animation:cloudy-skip-backdrop .24s ease-out both}
+   .cloudy-skip-cloud{width:min(58vw,225px);animation:cloudy-skip-cloud-in .42s cubic-bezier(.2,.78,.25,1) both}
+   .cloudy-skip-cloud .ms{display:block;width:100%;height:auto;filter:drop-shadow(0 9px 20px rgba(63,174,255,.22))}
+   .cloudy-skip-reaction strong{max-width:88vw;text-align:center;font:800 clamp(22px,6vw,31px)/1.15 system-ui,sans-serif;letter-spacing:-.02em;color:#e3f5ff;text-shadow:0 2px 14px rgba(46,171,255,.25);animation:cloudy-skip-text .38s .12s both}
+   @keyframes cloudy-skip-backdrop{from{opacity:0}to{opacity:1}}
+   @keyframes cloudy-skip-cloud-in{from{opacity:0;transform:translateY(24px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+   @keyframes cloudy-skip-text{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+   .cloudy-skip-reaction.is-leaving .cloudy-skip-cloud{animation:cloudy-skip-cloud-out .32s ease-in forwards}
+   .cloudy-skip-reaction.is-leaving strong{animation:cloudy-skip-text-out .24s ease-in forwards}
+   @keyframes cloudy-skip-cloud-out{to{opacity:0;transform:translateY(24px) scale(.96)}}
+   @keyframes cloudy-skip-text-out{to{opacity:0;transform:translateY(10px)}}
+   @media(prefers-reduced-motion:reduce){.cloudy-skip-reaction,.cloudy-skip-reaction *{animation:none!important}}
+  `;document.head.appendChild(style);
+ }
+ document.querySelector(".cloudy-skip-reaction")?.remove();
+ const reaction=document.createElement("div");reaction.className="cloudy-skip-reaction";reaction.setAttribute("aria-live","polite");
+ reaction.innerHTML='<div class="cloudy-skip-cloud">'+mascot()+'</div><strong>'+message+'</strong>';
+ document.body.appendChild(reaction);
+ say(message,true);
+ setTimeout(()=>{if(reaction.isConnected){reaction.classList.add("is-leaving");setTimeout(()=>reaction.remove(),360)}},1850);
+}
 function fx(good,msg){done=true;const ft=$("#ft"),e=ex[i];const speechWord=String(e?.en||(/[A-Za-z]/.test(String(e?.a??""))&&!/[А-Яа-яЁё]/.test(String(e?.a??""))?e.a:"")).trim();const safeSpeech=speechWord.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/\r?\n/g,"\\n").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");ft.style.display="";ft.className="foot "+(good?"ok":"bad");ft.innerHTML=`<div class="ft-head"><p>${msg}</p>${speechWord?`<button class="spk sm" aria-label="Озвучить" onclick="say('${safeSpeech}', 1)">${ic("spk")}</button>`:""}</div><button class="btn" style="margin-bottom:9px" onclick="next()">ДАЛЬШЕ</button><button class="btn ghost sm" onclick="askExerciseCoach()">РАЗОБРАТЬ С CLOUDY</button><div id="exerciseCoachReply" style="margin-top:10px;font-weight:600;line-height:1.45"></div>`;if(good){$(".bar i").style.width=(i+1)/ex.length*100+"%";showCloudySuccess();clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=setTimeout(()=>{if(done&&ft.isConnected)next()},1650)}}
 async function askExerciseCoach(){
  clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=0;
@@ -254,7 +288,7 @@ function next(){
  const current=ex[i];
  if(current&&(current.k==="t"||current.k==="v")){
   const stage=$(".study-stage"),reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if(stage&&!reduce){stage.classList.remove("study-stage-enter");stage.classList.add("is-leaving");studyTransitionTimer=setTimeout(()=>{studyTransitionTimer=0;advanceExercise()},270);return;}
+  if(stage&&!reduce){stage.classList.remove("study-stage-enter");stage.classList.add("is-leaving");studyTransitionTimer=setTimeout(()=>{studyTransitionTimer=0;advanceExercise()},230);return;}
  }
  advanceExercise();
 }
