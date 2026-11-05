@@ -446,6 +446,8 @@ async function startPersonalExam(){
  if(personalExamBusy)return;
  if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы сохранить персональный экзамен.");return}
  personalExamBusy=true;
+ clearTimeout(learningSyncTimer);
+ await syncLearningEvidence();
  app.innerHTML='<div class="scr exam-loading"><div class="exam-cloud">'+mascot()+'</div><b>Клауди готовит твой экзамен…</b><small>Подбираю вопросы по пройденным урокам и ошибкам</small></div>';
  try{
   const profile=window.CloudyLearning?.profile(KEY)||null;
