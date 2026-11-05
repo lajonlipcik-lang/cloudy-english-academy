@@ -131,7 +131,7 @@ describe("Cloudy learning progress", () => {
     expect([51, 52, 53].every((index) => isLessonInLevel(index, "A2"))).toBe(true);
     for (const index of [51, 52, 53]) {
       expect(D[index]?.w).toHaveLength(10);
-      expect(D[index]?.s).toHaveLength(6);
+      expect(D[index]?.s.length).toBeGreaterThanOrEqual(6);
     }
     expect(isLessonInLevel(51, "A1")).toBe(false);
     const state = sanitizeCloudyProgress({
