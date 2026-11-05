@@ -78,7 +78,12 @@ describe("Cloudy learning progress", () => {
 
     for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
       const lesson = D[index]!;
-      const builders = legacyMk(lesson).filter((exercise) => exercise.k === "b");
+      const legacyExercises = legacyMk(lesson);
+      const vocabularyExercises = legacyExercises.filter((exercise) => exercise.k === "c" || exercise.k === "l");
+      const listeningExercises = legacyExercises.filter((exercise) => exercise.k === "l");
+      const builders = legacyExercises.filter((exercise) => exercise.k === "b");
+      expect(vocabularyExercises).toHaveLength(lesson.w.length);
+      expect(listeningExercises).toHaveLength(Math.floor(lesson.w.length / 3));
       expect(builders).toHaveLength(lesson.s.length);
       for (const exercise of builders) {
         if (exercise.k !== "b") continue;
