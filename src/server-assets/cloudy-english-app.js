@@ -463,7 +463,8 @@ window.addEventListener("cloudy:learning-updated",()=>{
  learningSyncTimer=setTimeout(()=>{void syncLearningEvidence()},1200);
 });
 const examCard=()=>{
- if(!S.user||S.user.guest)return "";
+ if(!S.user)return "";
+ if(S.user.guest)return '<div class="exam-home"><div class="exam-cloud">'+mascot()+'</div><div class="exam-copy"><b>Персональный экзамен</b><small>Войди в аккаунт, чтобы ИИ учитывал твои уроки, ответы и ошибки.</small></div><button class="exam-start" onclick="authV()">Войти</button></div>';
  const profile=examLearnerProfile(),ready=(S.dn[S.lv]||0)>0&&(profile.attempts||0)>0;
  const caption=ready?"Экзамен составлен ИИ по твоим урокам, ответам и ошибкам.":"Пройди урок и ответь на задания — Cloudy подготовит твой экзамен.";
  return '<div class="exam-home"><div class="exam-cloud">'+mascot()+'</div><div class="exam-copy"><b>Персональный экзамен</b><small>'+caption+'</small></div><button class="exam-start" '+(ready?'':'disabled')+' onclick="startPersonalExam()">'+(ready?'Начать':'Пройди урок')+'</button></div>';
