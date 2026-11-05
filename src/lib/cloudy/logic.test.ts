@@ -63,6 +63,39 @@ describe("Cloudy learning progress", () => {
   });
 
 
+  it("uses safe single-word distractors in the legacy browser exercise runtime", () => {
+    const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
+    const start = runtime.indexOf("function mk(l){");
+    const end = runtime.indexOf("\\n function go", start);
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    const legacyMk = runInNewContext(`${runtime.slice(start, end)}; mk`, {
+      sh: <T,>(items: T[]) => items,
+      pool: () => [],
+      S: { set: { mic: 0 } },
+      window: { SpeechRecognition: undefined, webkitSpeechRecognition: undefined },
+    }) as (lesson: Lesson) => Exercise[];
+
+    for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
+      const lesson = D[index]!;
+      const builders = legacyMk(lesson).filter((exercise) => exercise.k === "b");
+      expect(builders).toHaveLength(lesson.s.length);
+      for (const exercise of builders) {
+        if (exercise.k !== "b") continue;
+        const correctTokens = exercise.a.split(" ");
+        const distractors = exercise.o.slice(correctTokens.length);
+        const availableWords = new Set([
+          ...lesson.w.map(([word]) => word).filter((word) => !/\\s/.test(word)),
+          ...lesson.s.flatMap(([, sentence]) => sentence.split(" ")),
+        ]);
+        expect(exercise.o.slice(0, correctTokens.length)).toEqual(correctTokens);
+        expect(distractors.every((token) => availableWords.has(token))).toBe(true);
+        expect(distractors.every((token) => !/\\s/.test(token) && !/[.,!?]/.test(token))).toBe(true);
+        expect(distractors.every((token) => !correctTokens.includes(token))).toBe(true);
+      }
+    }
+  });
+
   it("keeps A1 and A2 as seven complete sections with 21 lessons each", () => {
     expect(LV.A1.s).toHaveLength(7);
     expect(LV.A2.s).toHaveLength(7);
