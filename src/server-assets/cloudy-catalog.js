@@ -338,7 +338,7 @@ const A1_EXTRA = [
         "библиотека"
       ],
       [
-        "cinema",
+        "movie theater",
         "кинотеатр"
       ]
     ],
@@ -360,7 +360,7 @@ const A1_EXTRA = [
       ],
       [
         "Кинотеатр рядом с домом",
-        "The cinema is near my home",
+        "The movie theater is near my home",
         "are a"
       ]
     ]
@@ -710,7 +710,7 @@ const A1_EXTRA = [
         "носки"
       ],
       [
-        "trousers",
+        "pants",
         "брюки"
       ],
       [
@@ -748,18 +748,18 @@ const A2_EXTRA = [
   P("Распорядок дня и привычки", "routine=распорядок дня,schedule=расписание,usually=обычно,rarely=редко,early=рано,late=поздно", "Я обычно просыпаюсь рано=I usually wake up early=never late;Я редко смотрю телевизор=I rarely watch TV=always the;Мой рабочий день начинается в девять=My working day starts at nine=finish yesterday"),
   P("Прошедшие выходные", "visited=посетил,bought=купил,met=встретил,spent=провёл,stayed=остался,trip=поездка", "Мы посетили музей вчера=We visited the museum yesterday=tomorrow the;Он купил новый билет=He bought a new ticket=buys tomorrow;Я встретил друга в парке=I met a friend in the park=meet the"),
   P("Планы на будущее", "plan=план,invite=приглашать,appointment=назначенная встреча,arrange=организовать,decide=решать,hope=надеяться", "Я собираюсь навестить двоюродного брата или сестру=I am going to visit my cousin=visited yesterday;Мы встречаемся с друзьями завтра=We are meeting friends tomorrow=met last week;Она надеется найти новую работу=She hopes to find a new job=found yesterday"),
-  P("Сравнение мест и вещей", "crowded=переполненный,quiet=тихий,modern=современный,comfortable=удобный,safer=безопаснее,farther=дальше", "Этот район тише центра=This area is quieter than the city centre=the quietest;Это самый удобный отель=This is the most comfortable hotel=more comfortable;Моя поездка короче твоей=My trip is shorter than yours=the shortest"),
+  P("Сравнение мест и вещей", "crowded=переполненный,quiet=тихий,modern=современный,comfortable=удобный,safer=безопаснее,farther=дальше", "Этот район тише центра=This area is quieter than the city center=the quietest;Это самый удобный отель=This is the most comfortable hotel=more comfortable;Моя поездка короче твоей=My trip is shorter than yours=the shortest"),
   P("Количество и покупки", "a little=немного,a few=несколько,enough=достаточно,too much=слишком много,bottle=бутылка,packet=пакет", "В бутылке немного воды=There is a little water in the bottle=many bottles;Нам нужно несколько яблок=We need a few apples=any apple;У нас достаточно времени=We have enough time=too many times"),
-  P("Путешествия и направления", "turn left=повернуть налево,straight ahead=прямо,opposite=напротив,corner=угол,platform=платформа,return ticket=билет туда и обратно", "Поверните налево на углу=Turn left at the corner=turn right;Банк напротив вокзала=The bank is opposite the station=behind the;Мне нужен билет туда и обратно=I need a return ticket=one way"),
+  P("Путешествия и направления", "turn left=повернуть налево,straight ahead=прямо,opposite=напротив,corner=угол,platform=платформа,round-trip ticket=билет туда и обратно", "Поверните налево на углу=Turn left at the corner=turn right;Банк напротив вокзала=The bank is opposite the station=behind the;Мне нужен билет туда и обратно=I need a round-trip ticket=one way"),
   P("Здоровье и советы", "cough=кашель,fever=повышенная температура,sore throat=боль в горле,should=следует,rest=отдых,medical appointment=приём у врача", "Тебе следует отдохнуть=You should get some rest=shouldn't work;У него болит горло=He has a sore throat=has a headache;Мне нужно записаться к врачу=I need to make an appointment with the doctor=cancel the"),
-  P("Домашние обязанности", "tidy=убирать,sweep=подметать,wash up=мыть посуду,take out the rubbish=выносить мусор,repair=чинить,have to=быть должным", "Мне нужно убрать комнату=I have to tidy my room=tidied yesterday;Ей не нужно работать в воскресенье=She doesn't have to work on Sunday=mustn't the;Пожалуйста, вынеси мусор=Please take out the rubbish=bring the"),
+  P("Домашние обязанности", "tidy=убирать,sweep=подметать,wash the dishes=мыть посуду,take out the trash=выносить мусор,repair=чинить,have to=быть должным", "Мне нужно убрать комнату=I have to tidy my room=tidied yesterday;Ей не нужно работать в воскресенье=She doesn't have to work on Sunday=mustn't the;Пожалуйста, вынеси мусор=Please take out the trash=bring the"),
   P("Жизненный опыт", "ever=когда-либо,never=никогда,already=уже,yet=ещё,recently=недавно,experience=опыт", "Ты когда-нибудь был в Лондоне?=Have you ever been to London?=Did you ever go;Я ещё не закончил домашнюю работу=I haven't finished my homework yet=already finished;Она уже позвонила маме=She has already called her mother=will call tomorrow"),
-  P("Приглашения и договорённости", "would you like=не хотел бы ты,shall we=давай,sounds great=звучит отлично,available=свободный,maybe=возможно,unfortunately=к сожалению", "Хочешь пойти в кино?=Would you like to go to the cinema?=Do you like cinema;Давай встретимся в шесть?=Shall we meet at six?=Did we meet;Это звучит отлично=That sounds great=That sounds bad"),
+  P("Приглашения и договорённости", "would you like=не хотел бы ты,shall we=давай,sounds great=звучит отлично,available=свободный,maybe=возможно,unfortunately=к сожалению", "Хочешь пойти в кино?=Would you like to go to the movies?=Do you like cinema;Давай встретимся в шесть?=Shall we meet at six?=Did we meet;Это звучит отлично=That sounds great=That sounds bad"),
   P("Природа и окружающая среда", "recycle=перерабатывать,pollution=загрязнение,waste=отходы,protect=защищать,save energy=экономить энергию,reduce=сокращать", "Мы должны перерабатывать бумагу=We should recycle paper=throw the;Загрязнение воздуха — серьёзная проблема=Air pollution is a serious problem=water the;Выключай свет, чтобы экономить энергию=Turn off the lights to save energy=leave everything on"),
   P("Общение и обучение", "explain=объяснять,repeat=повторять,understand=понимать,remember=помнить,forget=забывать,instruction=инструкция", "Можешь повторить вопрос?=Could you repeat the question?=forget the;Я не понял инструкции=I didn't understand the instructions=remembered yesterday;Она объяснила правило ясно=She explained the rule clearly=explains unclear"),
   P("Работа и обязанности", "task=задача,colleague=коллега,customer=клиент,shift=рабочая смена,busy=занятый,finish=заканчивать,start=начинать,help=помогать,break=перерыв,uniform=форма", "Я начинаю работу в девять=I start work at nine=starts the;Моя смена заканчивается в шесть=My shift finishes at six=finish yesterday;Сегодня у нас много задач=We have a lot of tasks today=has much task;Мой коллега помогает клиентам=My colleague helps customers=help customer;Я делаю перерыв после обеда=I take a break after lunch=takes break;На работе я ношу форму=I wear a uniform at work=wears uniforms"),
   P("Решение повседневных проблем", "problem=проблема,broken=сломанный,fix=чинить,lost=потерянный,find=находить,ask=спрашивать,explain=объяснять,mistake=ошибка,possible=возможный,need=нуждаться / быть необходимым", "Мой телефон сломан=My phone is broken=My phone are broken;Я не могу найти ключи=I can't find my keys=I can find my keys;Можешь мне помочь?=Can you help me?=Can you helps me?;Я ошибся с адресом=I made a mistake with the address=I make mistake yesterday;Пожалуйста, объясните проблему=Please explain the problem=Please explains the problem;Можно это исправить сегодня?=Is it possible to fix this today?=Was it possible yesterday?"),
-  P("Цели и планы", "goal=цель,improve=улучшать,practise=заниматься / практиковаться,course=курс,skill=навык,next=следующий,future=будущее,choose=выбирать,hope=надеяться,progress=прогресс", "Моя цель — лучше говорить по-английски=My goal is to speak English better=My goal speak better;Я каждый день занимаюсь английским=I practise English every day=I practises every day;Я хочу пройти новый курс=I want to take a new course=I wanted yesterday;Мне нужно улучшить навыки=I need to improve my skills=I needs improve;Что ты хочешь делать дальше?=What do you want to do next?=What you wanted yesterday;Я надеюсь добиться прогресса=I hope to make progress=I hope making progress")
+  P("Цели и планы", "goal=цель,improve=улучшать,practice=заниматься / практиковаться,course=курс,skill=навык,next=следующий,future=будущее,choose=выбирать,hope=надеяться,progress=прогресс", "Моя цель — лучше говорить по-английски=My goal is to speak English better=My goal speak better;Я каждый день занимаюсь английским=I practice English every day=I practices every day;Я хочу пройти новый курс=I want to take a new course=I wanted yesterday;Мне нужно улучшить навыки=I need to improve my skills=I needs improve;Что ты хочешь делать дальше?=What do you want to do next?=What you wanted yesterday;Я надеюсь добиться прогресса=I hope to make progress=I hope making progress")
 ];
 D.push(...A2_EXTRA);
 
@@ -802,11 +802,11 @@ extendLesson(4, [["kitchen", "кухня"], ["bathroom", "ванная"], ["chai
   ["Кухня большая", "The kitchen is big", "The kitchen are big"],
   ["Закрой дверь, пожалуйста", "Close the door, please", "Closes the door please"],
 ]);
-extendLesson(5, [["orange", "оранжевый"], ["pink", "розовый"], ["brown", "коричневый"], ["grey", "серый"]], [
+extendLesson(5, [["orange", "оранжевый"], ["pink", "розовый"], ["brown", "коричневый"], ["gray", "серый"]], [
   ["Моя сумка синяя", "My bag is blue", "My bag are blue"],
   ["У неё красное платье", "She has a red dress", "She have a red dress"],
   ["Трава зелёная", "The grass is green", "The grass are green"],
-  ["Мой любимый цвет — жёлтый", "My favourite colour is yellow", "My favourite colour are yellow"],
+  ["Мой любимый цвет — жёлтый", "My favorite color is yellow", "My favorite color are yellow"],
 ]);
 extendLesson(24, [["family", "семья"], ["classmate", "одноклассник"], ["kind", "добрый"], ["together", "вместе"], ["meet", "встречаться"]], [
   ["Мой одноклассник очень добрый", "My classmate is very kind", "My classmate are kind"],
@@ -844,9 +844,9 @@ extendLesson(32, [["sky", "небо"], ["grass", "трава"], ["mountain", "г
   ["Небо сегодня голубое", "The sky is blue today", "The sky are blue today"],
   ["Река рядом с лесом", "The river is near the forest", "The river are near forest"],
 ]);
-extendLesson(33, [["read", "читать"], ["book", "книга"], ["football", "футбол"], ["run", "бегать"], ["weekend", "выходные"]], [
+extendLesson(33, [["read", "читать"], ["book", "книга"], ["soccer", "футбол"], ["run", "бегать"], ["weekend", "выходные"]], [
   ["Я читаю книгу вечером", "I read a book in the evening", "I reads a book"],
-  ["Мы играем в футбол по воскресеньям", "We play football on Sundays", "We plays football"],
+  ["Мы играем в футбол по воскресеньям", "We play soccer on Sundays", "We plays soccer"],
 ]);
 extendLesson(34, [["watch", "наручные часы"], ["wallet", "кошелёк"], ["computer", "компьютер"], ["bottle", "бутылка"], ["glasses", "очки"]], [
   ["Мой телефон на столе", "My phone is on the table", "My phone are on the table"],
@@ -945,7 +945,7 @@ extendLesson(46, [["laundry", "стирка"], ["floor", "пол"]], [
   ["Пожалуйста, подмети пол на кухне", "Please sweep the kitchen floor", "Please sweeps"],
 ]);
 extendLesson(47, [["been", "был"], ["abroad", "за границей"]], [
-  ["Я никогда не путешествовал за границей", "I have never travelled abroad", "I never travelled yesterday"],
+  ["Я никогда не путешествовал за границей", "I have never traveled abroad", "I never traveled yesterday"],
   ["Ты уже закончил домашнюю работу?", "Have you finished your homework yet?", "Did you finished"],
 ]);
 extendLesson(48, [["free", "свободный"], ["plan", "план"]], [
@@ -966,8 +966,8 @@ extendLesson(50, [["meaning", "значение"], ["example", "пример"]],
 
 
  // Complete the A2 topic sets to a consistent 10-word / 6-sentence standard.
-extendLesson(6, [["neighbourhood", "район"]], [
-  ["В моём районе есть большой парк", "There is a large park in my neighbourhood", "There are a park"],
+extendLesson(6, [["neighborhood", "район"]], [
+  ["В моём районе есть большой парк", "There is a large park in my neighborhood", "There are a park"],
 ]);
 extendLesson(7, [["refund", "возврат денег"]], [
   ["Могу я вернуть эту вещь?", "Can I return this item?", "Can I returned this item"],
@@ -999,7 +999,7 @@ extendLesson(42, [["better", "лучше"], ["worse", "хуже"]], [
 extendLesson(43, [["several", "несколько"], ["plenty of", "много"]], [
   ["У нас достаточно места в машине", "We have plenty of room in the car", "We has many rooms"],
 ]);
-extendLesson(44, [["underground", "метро"], ["entrance", "вход"]], [
+extendLesson(44, [["subway", "метро"], ["entrance", "вход"]], [
   ["Вход находится рядом с платформой", "The entrance is near the platform", "The entrance are near"],
 ]);
 extendLesson(45, [["symptom", "симптом"], ["painkiller", "обезболивающее"]], [
@@ -1037,9 +1037,9 @@ extendLesson(4, [], [
 ]);
 extendLesson(5, [], [
   ["У меня оранжевая чашка", "I have an orange cup", "I has an orange cup"],
-  ["Её любимый цвет — розовый", "Her favourite colour is pink", "Her favourite colour are pink"],
+  ["Её любимый цвет — розовый", "Her favorite color is pink", "Her favorite color are pink"],
   ["Мой свитер коричневый", "My sweater is brown", "My sweater are brown"],
-  ["Мой кот серый", "My cat is grey", "My cat are grey"],
+  ["Мой кот серый", "My cat is gray", "My cat are gray"],
 ]);
 extendLesson(25, [], [
   ["Я обычно иду на работу в восемь", "I usually go to work at eight", "I usually goes to work"],
@@ -1075,7 +1075,7 @@ extendLesson(32, [], [
   ["Гора высокая", "The mountain is high", "The mountain are high"],
 ]);
 extendLesson(33, [], [
-  ["Я бегаю в парке по выходным", "I run in the park at weekends", "I runs in the park"],
+  ["Я бегаю в парке по выходным", "I run in the park on weekends", "I runs in the park"],
 ]);
 extendLesson(34, [], [
   ["Мои наручные часы новые", "My watch is new", "My watch are new"],
@@ -1118,7 +1118,7 @@ extendLesson(43, [], [
   ["Я купил несколько яблок", "I bought several apples", "I buy several apples tomorrow"],
 ]);
 extendLesson(44, [], [
-  ["Давай поедем на метро", "Let's take the underground", "Let's takes the underground"],
+  ["Давай поедем на метро", "Let's take the subway", "Let's takes the subway"],
 ]);
 extendLesson(45, [], [
   ["Прими обезболивающее, если боль не проходит", "Take a painkiller if the pain doesn't go away", "Takes a painkiller"],
@@ -1134,7 +1134,7 @@ extendLesson(49, [], [
   ["Нам следует защищать окружающую среду", "We should protect the environment", "We should protects environment"],
 ]);
 extendLesson(50, [], [
-  ["Я тренирую произношение каждый день", "I practise my pronunciation every day", "I practises pronunciation"],
+  ["Я тренирую произношение каждый день", "I practice my pronunciation every day", "I practices pronunciation"],
   ["Мой словарный запас растёт", "My vocabulary is growing", "My vocabulary are growing"],
 ]);
 extendLesson(52, [], [
