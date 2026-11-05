@@ -88,7 +88,17 @@ describe("Cloudy learning progress", () => {
       "utf8",
     );
     runInNewContext(browserCatalog, { window: browserWindow });
-    expect(JSON.stringify(browserWindow.CloudyCatalog?.D)).toBe(JSON.stringify(D));
+    const browserLessons = browserWindow.CloudyCatalog?.D ?? [];
+    const mismatchIndex = D.findIndex(
+      (lesson, index) => JSON.stringify(lesson) !== JSON.stringify(browserLessons[index]),
+    );
+    expect(browserLessons.length).toBe(D.length);
+    expect(
+      mismatchIndex,
+      mismatchIndex >= 0
+        ? `Lesson ${mismatchIndex}: TS=${JSON.stringify(D[mismatchIndex])}; browser=${JSON.stringify(browserLessons[mismatchIndex])}`
+        : "No lesson data mismatch",
+    ).toBe(-1);
     expect(JSON.stringify(browserWindow.CloudyCatalog?.LV)).toBe(JSON.stringify(LV));
   });
 
