@@ -72,7 +72,7 @@ describe("Cloudy learning progress", () => {
     expect(first.o).not.toContain("hello");
     expect(first.o).not.toContain("a little");
     expect(first.o?.every((token) => !token.includes(" "))).toBe(true);
-    const normalized = first.o?.map((token) => token.toLocaleLowerCase().replace(/[.,!?]/g, ""));
+    const normalized = (first.o ?? []).map((token) => token.toLocaleLowerCase().replace(/[.,!?]/g, ""));
     expect(new Set(normalized).size).toBe(normalized.length);
   });
 
