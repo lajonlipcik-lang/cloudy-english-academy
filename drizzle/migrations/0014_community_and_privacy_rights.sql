@@ -122,15 +122,15 @@ CREATE POLICY community_posts_public_read ON public.community_posts
   USING (
     status = 'published'
     AND EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = author_id AND p.is_public = true
+      SELECT 1 FROM public.community_public_profiles p
+      WHERE p.id = author_id
     )
   );
 CREATE POLICY community_posts_owner_read ON public.community_posts
   FOR SELECT TO authenticated USING (author_id = auth.uid());
 CREATE POLICY community_posts_owner_insert ON public.community_posts
   FOR INSERT TO authenticated WITH CHECK (author_id = auth.uid() AND EXISTS (
-    SELECT 1 FROM public.profiles p WHERE p.id = auth.uid() AND p.is_public = true
+    SELECT 1 FROM public.community_public_profiles p WHERE p.id = auth.uid()
   ));
 CREATE POLICY community_posts_owner_update ON public.community_posts
   FOR UPDATE TO authenticated USING (author_id = auth.uid()) WITH CHECK (author_id = auth.uid());
@@ -142,7 +142,7 @@ CREATE POLICY community_comments_public_read ON public.community_comments
     status = 'published' AND EXISTS (
       SELECT 1 FROM public.community_posts cp
       JOIN public.community_public_profiles p ON p.id = cp.author_id
-      WHERE cp.id = post_id AND cp.status = 'published' AND p.is_public = true
+      WHERE cp.id = post_id AND cp.status = 'published'
     )
   );
 CREATE POLICY community_comments_owner_read ON public.community_comments
@@ -151,8 +151,8 @@ CREATE POLICY community_comments_owner_insert ON public.community_comments
   FOR INSERT TO authenticated WITH CHECK (
     author_id = auth.uid() AND EXISTS (
       SELECT 1 FROM public.community_posts cp
-      JOIN public.profiles p ON p.id = cp.author_id
-      WHERE cp.id = post_id AND cp.status = 'published' AND p.is_public = true
+      JOIN public.community_public_profiles p ON p.id = cp.author_id
+      WHERE cp.id = post_id AND cp.status = 'published'
     )
   );
 CREATE POLICY community_comments_owner_update ON public.community_comments
@@ -163,14 +163,14 @@ CREATE POLICY community_comments_owner_delete ON public.community_comments
 CREATE POLICY community_reactions_public_read ON public.community_reactions
   FOR SELECT TO authenticated USING (EXISTS (
     SELECT 1 FROM public.community_posts cp
-    JOIN public.profiles p ON p.id = cp.author_id
-    WHERE cp.id = post_id AND cp.status = 'published' AND p.is_public = true
+    JOIN public.community_public_profiles p ON p.id = cp.author_id
+    WHERE cp.id = post_id AND cp.status = 'published'
   ));
 CREATE POLICY community_reactions_owner_insert ON public.community_reactions
   FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid() AND EXISTS (
     SELECT 1 FROM public.community_posts cp
-    JOIN public.profiles p ON p.id = cp.author_id
-    WHERE cp.id = post_id AND cp.status = 'published' AND p.is_public = true
+    JOIN public.community_public_profiles p ON p.id = cp.author_id
+    WHERE cp.id = post_id AND cp.status = 'published'
   ));
 CREATE POLICY community_reactions_owner_delete ON public.community_reactions
   FOR DELETE TO authenticated USING (user_id = auth.uid());
