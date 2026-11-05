@@ -238,6 +238,26 @@ function parseExamJson(content:string){
   if(!parsed||!Array.isArray(parsed.questions))throw new Error("ИИ вернул некорректную структуру экзамена.");
   return parsed.questions;
 }
+async function loadJournalLearnerProfile(db:any,userId:string){
+  const {data,error}=await db.from("cloudy_learning_events")
+    .select("event_type,occurred_at,level,lesson_index,exercise_type,skill_id,is_correct,retry")
+    .eq("user_id",userId).order("occurred_at",{ascending:false}).limit(1000);
+  if(error)throw new Error("Не удалось прочитать журнал обучения.");
+  const events=data??[],answers=events.filter((event:any)=>event.event_type==="answer_submitted"&&event.skill_id&&typeof event.is_correct==="boolean");
+  const grouped=new Map<string,any>();
+  for(const event of answers){
+    const id=String(event.skill_id),prior=grouped.get(id)??{id,correct:0,incorrect:0,evidence:0,lastPracticed:0,recent:[]};
+    if(event.is_correct)prior.correct++;else prior.incorrect++;
+    prior.evidence++;prior.lastPracticed=Math.max(prior.lastPracticed,new Date(event.occurred_at).getTime()||0);
+    prior.recent.push(event);grouped.set(id,prior);
+  }
+  const skills=[...grouped.values()].map((skill:any)=>{
+    const total=skill.correct+skill.incorrect;
+    const mastery=total?Math.max(.05,Math.min(.98,(skill.correct+1)/(total+2))):.5;
+    return {...skill,mastery,due:skill.incorrect>skill.correct||Date.now()-skill.lastPracticed>2*86400000};
+  }).sort((a:any,b:any)=>a.mastery-b.mastery);
+  return {attempts:answers.length,dueCount:skills.filter((skill:any)=>skill.due).length,skills,recentEvents:answers.slice(0,20).reverse().map((event:any)=>({skillId:event.skill_id,exerciseType:event.exercise_type??"unknown",correct:!!event.is_correct,retry:!!event.retry,at:new Date(event.occurred_at).getTime()||0}))};
+}
 export const syncCloudyLearningEvents=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
   const rows=normalizeCloudyLearningEvents(data.events,user.id);
@@ -248,7 +268,7 @@ export const syncCloudyLearningEvents=createServerFn({method:"POST"}).inputValid
 export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
   const action=String(data.examAction??"");
-  if(!["sync","profile","start","submit"].includes(action))throw new Error("Неизвестное действие экзамена.");
+  if(!["sync","profile","status","start","submit"].includes(action))throw new Error("Неизвестное действие экзамена.");
   const {data:storedRow,error:storedError}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
   if(storedError)throw new Error("Не удалось загрузить историю обучения.");
   const storedRaw=storedRow?.profile&&typeof storedRow.profile==="object"?storedRow.profile:{};
