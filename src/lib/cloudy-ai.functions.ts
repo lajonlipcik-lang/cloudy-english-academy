@@ -240,13 +240,14 @@ function parseExamJson(content:string){
 export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
   const action=String(data.examAction??"");
-  if(!["sync","start","submit"].includes(action))throw new Error("Неизвестное действие экзамена.");
+  if(!["sync","profile","start","submit"].includes(action))throw new Error("Неизвестное действие экзамена.");
   const {data:storedRow,error:storedError}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
   if(storedError)throw new Error("Не удалось загрузить историю обучения.");
   const storedRaw=storedRow?.profile&&typeof storedRow.profile==="object"?storedRow.profile:{};
   const incoming=safeLearnerProfile(data.learnerProfile);
   const merged=mergeLearnerProfiles(safeLearnerProfile(storedRaw),incoming);
   const baseProfile={...(merged??{attempts:0,dueCount:0,skills:[],recentEvents:[]}),activeExam:storedRaw.activeExam??null,lastExam:storedRaw.lastExam??null};
+  if(action==="profile")return {profile:merged??null};
   if(action==="sync"){
     if(!merged)return {ok:true,synced:false};
     const {error}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:baseProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
