@@ -69,8 +69,12 @@ describe("Cloudy learning progress", () => {
     expect(levelLessons("A1")).toHaveLength(21);
     expect(levelLessons("A2")).toHaveLength(21);
     for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
-      expect(D[index]?.w.length).toBeGreaterThanOrEqual(10);
-      expect(D[index]?.s.length).toBeGreaterThanOrEqual(6);
+      const lesson = D[index]!;
+      expect(lesson.w.length).toBeGreaterThanOrEqual(10);
+      expect(lesson.s.length).toBeGreaterThanOrEqual(6);
+      expect(new Set(lesson.w.map(([word]) => word.toLowerCase())).size).toBe(lesson.w.length);
+      expect(lesson.w.every(([word, translation]) => word.trim() && translation.trim())).toBe(true);
+      expect(lesson.s.every(([ru, en]) => ru.trim() && en.trim())).toBe(true);
     }
     for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
       expect(D[index]).toBeDefined();
