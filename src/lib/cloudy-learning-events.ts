@@ -14,27 +14,27 @@ export function normalizeCloudyLearningEvents(value: unknown, userId: string, no
   return value.map((raw: unknown) => {
     if (!raw || typeof raw !== "object") throw new Error("Invalid learning event.");
     const event = raw as Record<string, unknown>;
-    const eventId = String(event.eventId ?? "");
-    const sessionId = event.sessionId == null ? null : String(event.sessionId);
-    const eventType = String(event.eventType ?? "");
+    const eventId = String(event["eventId"] ?? "");
+    const sessionId = event["sessionId"] == null ? null : String(event["sessionId"]);
+    const eventType = String(event["eventType"] ?? "");
     if (!UUID_PATTERN.test(eventId) || seen.has(eventId)) throw new Error("Invalid or duplicate learning event ID.");
     if (sessionId !== null && !UUID_PATTERN.test(sessionId)) throw new Error("Invalid learning session ID.");
     if (!EVENT_TYPES.has(eventType)) throw new Error("Unsupported learning event type.");
     seen.add(eventId);
-    const timestamp = Number(event.at);
+    const timestamp = Number(event["at"]);
     if (!Number.isFinite(timestamp) || timestamp < now - 365 * 86400000 || timestamp > now + 5 * 60000) throw new Error("Learning event timestamp is outside the accepted range.");
-    const level = event.level == null ? null : String(event.level);
+    const level = event["level"] == null ? null : String(event["level"]);
     if (level !== null && !LEVELS.has(level)) throw new Error("Invalid learning level.");
-    const lessonIndex = event.lessonIndex == null ? null : Number(event.lessonIndex);
+    const lessonIndex = event["lessonIndex"] == null ? null : Number(event["lessonIndex"]);
     if (lessonIndex !== null && (!Number.isInteger(lessonIndex) || lessonIndex < -1 || lessonIndex > 1000)) throw new Error("Invalid lesson index.");
-    const questionIndex = event.questionIndex == null ? null : Number(event.questionIndex);
+    const questionIndex = event["questionIndex"] == null ? null : Number(event["questionIndex"]);
     if (questionIndex !== null && (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex > 1000)) throw new Error("Invalid question index.");
-    const responseSeconds = event.responseSeconds == null ? null : Number(event.responseSeconds);
+    const responseSeconds = event["responseSeconds"] == null ? null : Number(event["responseSeconds"]);
     if (responseSeconds !== null && (!Number.isInteger(responseSeconds) || responseSeconds < 0 || responseSeconds > 3600)) throw new Error("Invalid response duration.");
-    const correct = event.correct == null ? null : event.correct;
+    const correct = event["correct"] == null ? null : event["correct"];
     if (correct !== null && typeof correct !== "boolean") throw new Error("Invalid answer outcome.");
     if (eventType === "answer_submitted" && typeof correct !== "boolean") throw new Error("Answer events require a boolean outcome.");
-    const sessionType = event.sessionType == null ? null : String(event.sessionType);
+    const sessionType = event["sessionType"] == null ? null : String(event["sessionType"]);
     if (sessionType !== null && !["lesson", "review"].includes(sessionType)) throw new Error("Invalid session type.");
     return {
       user_id: userId,
@@ -46,13 +46,13 @@ export function normalizeCloudyLearningEvents(value: unknown, userId: string, no
       lesson_index: lessonIndex,
       question_index: questionIndex,
       session_type: sessionType,
-      exercise_type: cleanText(event.exerciseType, 24),
-      skill_id: cleanText(event.skillId, 90),
+      exercise_type: cleanText(event["exerciseType"], 24),
+      skill_id: cleanText(event["skillId"], 90),
       is_correct: correct,
-      retry: Boolean(event.retry),
+      retry: Boolean(event["retry"]),
       response_seconds: responseSeconds,
-      selected_answer: cleanText(event.selectedAnswer, 160),
-      correct_answer: cleanText(event.correctAnswer, 160),
+      selected_answer: cleanText(event["selectedAnswer"], 160),
+      correct_answer: cleanText(event["correct"]Answer, 160),
     };
   });
 }
