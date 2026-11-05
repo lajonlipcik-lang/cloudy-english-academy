@@ -245,4 +245,13 @@ describe("Cloudy learning progress", () => {
   });
 
 
+  it("uses natural American English for directions, traffic, and clock times", () => {
+    expect(D[6]!.w.some(([word]) => word === "intersection")).toBe(true);
+    expect(D[6]!.s.some(([, en]) => en === "Turn right at the intersection.")).toBe(true);
+    expect(D[6]!.s.some(([ru, en]) => ru === "На этой улице интенсивное движение." && en === "There is a lot of traffic on this street.")).toBe(true);
+    expect(D[8]!.w.some(([word, translation]) => word === "quarter past" && translation.includes("четверть часа после"))).toBe(true);
+    expect(D[8]!.s.some(([, en]) => en === "The train leaves at eight thirty.")).toBe(true);
+  });
+
+
 });
