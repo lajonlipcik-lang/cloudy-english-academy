@@ -81,6 +81,19 @@ describe("Cloudy learning progress", () => {
     }
   });
 
+  it("keeps learner-facing sentences punctuated and preserves key A2 language corrections", () => {
+    for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
+      for (const [ru, en] of D[index]!.s) {
+        expect(ru).toMatch(/[.!?…]$/);
+        expect(en).toMatch(/[.!?…]$/);
+      }
+    }
+    expect(D[41]!.s.some(([ru, en]) => ru.includes("двоюродного родственника") && en.includes("my cousin"))).toBe(true);
+    expect(D[44]!.w.some(([word]) => word === "opposite")).toBe(true);
+    expect(D[44]!.s.some(([, en]) => en.includes("opposite the station"))).toBe(true);
+    expect(D[53]!.s.some(([ru, en]) => ru.includes("занимаюсь английским") && en.includes("practise English"))).toBe(true);
+  });
+
   it("keeps the browser runtime catalog identical to the typed curriculum", () => {
     const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV } } = {};
     const browserCatalog = readFileSync(
