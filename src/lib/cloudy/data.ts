@@ -835,7 +835,7 @@ extendLesson(30, [["shop", "магазин"], ["cafe", "кафе"], ["park", "п
   ["Библиотека рядом со школой", "The library is near the school", "The library are near school"],
   ["Мы идём в кафе", "We're going to a cafe", "We goes to cafe"],
 ]);
-extendLesson(31, [["driver", "водитель"], ["road", "дорога"], ["stop", "остановка"], ["fast", "быстрый"], ["slow", "медленный"]], [
+extendLesson(31, [["driver", "водитель"], ["road", "дорога"], ["bus stop", "автобусная остановка"], ["fast", "быстрый"], ["slow", "медленный"]], [
   ["Автобус останавливается здесь", "The bus stops here", "The bus stop here"],
   ["Мой папа водит машину", "My father drives a car", "My father drive a car"],
 ]);
