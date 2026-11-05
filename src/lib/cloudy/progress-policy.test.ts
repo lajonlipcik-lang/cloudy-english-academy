@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   CLOUDY_LESSON_XP,
   CLOUDY_MAX_DAILY_LESSON_AWARDS,
@@ -35,8 +37,27 @@ describe("server XP policy", () => {
     expect(safe).not.toHaveProperty("user");
   });
 
-  it("bounds A2 progress to its expanded 18-lesson path", () => {
-    expect(sanitizeCloudyProgress({ dn: { A2: 999 } }).dn.A2).toBe(18);
+  it("bounds A2 progress to its complete 21-lesson path", () => {
+    expect(sanitizeCloudyProgress({ dn: { A2: 999 } }).dn.A2).toBe(21);
+  });
+
+  it("keeps the A2 XP migration bounded, authorized, and registered", () => {
+    const migration = readFileSync(
+      join(process.cwd(), "drizzle/migrations/0012_complete_a2_curriculum.sql"),
+      "utf8",
+    );
+    const journal = JSON.parse(readFileSync(
+      join(process.cwd(), "drizzle/migrations/meta/_journal.json"),
+      "utf8",
+    )) as { entries: { idx: number; tag: string }[] };
+
+    expect(migration).toContain("CHECK (lesson_index BETWEEN 0 AND 53)");
+    expect(migration).toContain("_level = 'A2' AND (_lesson_index BETWEEN 6 AND 8 OR _lesson_index BETWEEN 15 AND 17 OR _lesson_index BETWEEN 39 AND 53)");
+    expect(migration).toContain("IF v_xp.daily_lessons >= 5 THEN");
+    expect(migration).toContain("WHERE user_id = _user_id AND lesson_index = _lesson_index AND award_day = v_day");
+    expect(migration).toContain("REVOKE ALL ON FUNCTION public.award_cloudy_lesson_xp");
+    expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.award_cloudy_lesson_xp(uuid, integer, text) TO service_role");
+    expect(journal.entries.some((entry) => entry.idx === 12 && entry.tag === "0012_complete_a2_curriculum")).toBe(true);
   });
 
   it("accepts only lessons assigned to the requested CEFR level", () => {
@@ -50,6 +71,10 @@ describe("server XP policy", () => {
     expect(isLessonInLevel(39, "A1")).toBe(false);
     expect(isLessonInLevel(39, "A2")).toBe(true);
     expect(isLessonInLevel(50, "A2")).toBe(true);
+    expect(isLessonInLevel(51, "A2")).toBe(true);
+    expect(isLessonInLevel(52, "A2")).toBe(true);
+    expect(isLessonInLevel(53, "A2")).toBe(true);
+    expect(isLessonInLevel(51, "A1")).toBe(false);
     expect(isLessonInLevel(38, "A2")).toBe(false);
     expect(isLessonInLevel(6, "A1")).toBe(false);
     expect(isLessonInLevel(1.5, "A1")).toBe(false);

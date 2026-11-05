@@ -128,7 +128,7 @@ export function buildExercises(l: Pick<Lesson, "w" | "s">, pool: Pair[], opts: {
     // Build distractors from real single-word vocabulary in this lesson.
     // Ignore legacy "d" fragments such as "you the" and "four the".
     const candidates = [
-      ...l.w.map(([word]) => word),
+      ...l.w.map(([word]) => word).filter((word) => !/\s/.test(word)),
       ...l.s.filter((_, index) => index !== sentenceIndex).flatMap(([, sentence]) => sentence.split(" ")),
     ].filter((token) => token && !used.has(token.toLowerCase()) && !/[.,!?]/.test(token));
     const distractors = [...new Set(candidates)].slice(0, 2);
