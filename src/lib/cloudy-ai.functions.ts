@@ -302,7 +302,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
         const explanation=examSafeText(question?.explanation,320);
         const targetValid=skillId.startsWith("vocabulary:")?skillId==="vocabulary:"+normalizedTarget&&wordPairs.some((pair:any)=>pair.en.toLowerCase()===normalizedTarget):skillId==="grammar:sentence-building"&&sentences.some(sentence=>sentence.toLowerCase()===normalizedTarget);
         const expectedAnswer=skillId.startsWith("vocabulary:")?wordPairs.find((pair:any)=>pair.en.toLowerCase()===normalizedTarget)?.ru:target;
-        const normalizeAnswer=(value:string)=>value.toLowerCase().replace(/[.!?]+$/,"").replace(/\\s+/g," ").trim();
+        const normalizeAnswer=(value:string)=>value.toLowerCase().replace(/[.!?]+$/,"").replace(/\s+/g," ").trim();
         const correctMatches=!!expectedAnswer&&options[correctIndex]!==undefined&&normalizeAnswer(options[correctIndex])===normalizeAnswer(expectedAnswer);
         if(!allowed.has(skillId)||!targetValid||!correctMatches||!promptText||options.length!==4||options.some((option:string)=>!option)||new Set(options.map((option:string)=>option.toLowerCase())).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
         return {id,skillId,target,prompt:promptText,options,correctIndex,explanation};
