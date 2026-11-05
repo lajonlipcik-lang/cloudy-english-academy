@@ -131,7 +131,36 @@ function mk(l){const r=[];
   r.push({k:"b",q:ru,a:en,o:sh([...correctTokens,...distractors]),title:titles.bank[Math.random()*titles.bank.length|0]});
  });
  if(l.w.length&&(window.SpeechRecognition||window.webkitSpeechRecognition)&&S.set.mic)r.push({k:"p",en:sh(l.w)[0][0]});return sh(r)}
-function go(n){snd("go");rv=0;lm=[];rt=0;L=n;if(window.CloudyLearning)CloudyLearning.beginSession(KEY,{level:S.lv,lessonIndex:n,sessionType:"lesson"});const practice=window.CloudyLearning?CloudyLearning.prioritize(KEY,mk(D[n])):mk(D[n]);const intro=window.CloudyCatalog?.F?.[n];const vocabulary={k:"v",words:D[n].w};const recall=sh(D[n].w).slice(0,Math.min(3,D[n].w.length)).map(([en,ru])=>({k:"r",q:ru,a:en,en,title:"Вспомни слово без подсказок"}));ex=intro?[{k:"t",...intro},vocabulary,...recall,...practice]:[vocabulary,...recall,...practice];i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
+function verbPath(n){
+ const lessons={
+  24:[
+   {q:"Я хочу воды.",a:"I want water.",o:["I","want","water.","We","go","home"],skillId:"grammar:verbs:action"},
+   {q:"Мы идём домой.",a:"We go home.",o:["We","go","home.","I","want","water."],skillId:"grammar:verbs:action"}
+  ],
+  25:[
+   {q:"Я просыпаюсь рано.",a:"I wake up early.",o:["I","wake","up","early.","She","wakes"],skillId:"grammar:present-simple:base"},
+   {q:"Они изучают английский.",a:"They study English.",o:["They","study","English.","He","studies","I"],skillId:"grammar:present-simple:base"}
+  ],
+  26:[
+   {q:"Она любит чай.",a:"She likes tea.",o:["She","likes","tea.","I","like","coffee."],skillId:"grammar:present-simple:third-person"},
+   {q:"Он работает каждый день.",a:"He works every day.",o:["He","works","every","day.","They","work"],skillId:"grammar:present-simple:third-person"}
+  ],
+  27:[
+   {q:"Ты говоришь по-английски?",a:"Do you speak English?",o:["Do","you","speak","English?","Does","she","speaks"],skillId:"grammar:present-simple:questions"},
+   {q:"Она работает здесь?",a:"Does she work here?",o:["Does","she","work","here?","Do","works","they"],skillId:"grammar:present-simple:questions"}
+  ],
+  28:[
+   {q:"Я не знаю.",a:"I don't know.",o:["I","don't","know.","He","doesn't","knows"],skillId:"grammar:present-simple:negatives"},
+   {q:"Он не любит кофе.",a:"He doesn't like coffee.",o:["He","doesn't","like","coffee.","I","don't","likes"],skillId:"grammar:present-simple:negatives"}
+  ],
+  29:[
+   {q:"Она читает книгу дома.",a:"She reads a book at home.",o:["She","reads","a","book","at","home.","I","read"],skillId:"grammar:sentence-order"},
+   {q:"Мы изучаем английский каждый день.",a:"We study English every day.",o:["We","study","English","every","day.","She","studies"],skillId:"grammar:sentence-order"}
+  ]
+ };
+ return (lessons[n]||[]).map(item=>({k:"b",q:item.q,a:item.a,o:sh(item.o),title:"Собери предложение",skillId:item.skillId}));
+}
+function go(n){snd("go");rv=0;lm=[];rt=0;L=n;if(window.CloudyLearning)CloudyLearning.beginSession(KEY,{level:S.lv,lessonIndex:n,sessionType:"lesson"});const practice=window.CloudyLearning?CloudyLearning.prioritize(KEY,mk(D[n])):mk(D[n]);const intro=window.CloudyCatalog?.F?.[n];const vocabulary={k:"v",words:D[n].w};const recall=sh(D[n].w).slice(0,Math.min(3,D[n].w.length)).map(([en,ru])=>({k:"r",q:ru,a:en,en,title:"Вспомни слово без подсказок"}));const guided=verbPath(n);ex=intro?[{k:"t",...intro},vocabulary,...guided,...recall,...practice]:[vocabulary,...guided,...recall,...practice];i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
 const opts=e=>e.o.map((o,k)=>`<button class="opt" style="--i:${k}" onclick="pick(${k})">${o}</button>`).join("");
 function draw(){const e=ex[i];questionStartedAt=Date.now();if(e.k!=="t"&&e.k!=="v"&&window.CloudyLearning)CloudyLearning.track(KEY,"question_opened",{exercise:e,questionIndex:i});sel=null;built=[];done=false;ml=null;mc=0;let b;
  if(e.k=="v")b=`<div style="max-width:620px;margin:0 auto;padding:8px 2px"><div style="display:inline-block;padding:6px 10px;border-radius:20px;background:rgba(73,184,255,.16);color:#72caff;font-size:11px;font-weight:800;letter-spacing:.08em">СЛОВА ЭТОГО УРОКА</div><h2 style="margin:14px 0 8px;font-size:clamp(22px,5vw,28px)">Сначала познакомься со словами</h2><p style="font-size:14px;line-height:1.45;opacity:.75;margin:0 0 14px">Посмотри на перевод и нажми на значок звука, чтобы услышать произношение. После этого попробуешь вспомнить слова самостоятельно.</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px">${e.words.map(([en,ru])=>`<div style="display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:12px;background:rgba(255,255,255,.09);text-align:left;min-width:0"><div style="min-width:0;flex:1"><strong style="display:block;font-size:15px;line-height:1.3;overflow-wrap:anywhere">${en}</strong><span style="display:block;margin-top:3px;font-size:13px;opacity:.72">${ru}</span></div><button class="spk sm" aria-label="Прослушать ${en}" data-word="${en}" onclick="say(this.dataset.word,1)">${ic("spk")}</button></div>`).join("")}</div></div>`;else if(e.k=="t")b=`<div style="max-width:620px;margin:0 auto;padding:8px 2px"><div style="display:inline-block;padding:6px 10px;border-radius:20px;background:rgba(73,184,255,.16);color:#72caff;font-size:11px;font-weight:800;letter-spacing:.08em">СНАЧАЛА РАЗБЕРЁМСЯ</div><h2 style="margin:14px 0 10px;font-size:clamp(22px,5vw,29px);line-height:1.2">${e.title}</h2><p style="font-size:16px;line-height:1.55;opacity:.92;margin:0 0 16px">${e.body}</p><div style="display:grid;gap:9px">${e.examples.map(([en,ru])=>`<div style="padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.09);text-align:left"><strong style="display:block;font-size:16px;line-height:1.35">${en}</strong><span style="display:block;margin-top:4px;font-size:14px;opacity:.72">${ru}</span></div>`).join("")}</div><p style="margin:16px 0 0;padding:11px 13px;border-left:3px solid #55baff;background:rgba(65,170,255,.09);border-radius:0 10px 10px 0;font-size:14px;line-height:1.45">${e.tip}</p></div>`;else if(e.k=="r")b=`<h2>${e.title}</h2><div class="qq" style="font-size:25px;line-height:1.35">${e.q}</div><p style="font-size:14px;opacity:.72;margin:10px 0 14px">Введи английское слово самостоятельно. Вариантов ответа не будет.</p><input id="recallAnswer" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Напиши по-английски…" aria-label="Английское слово" style="display:block;width:100%;box-sizing:border-box;padding:15px 16px;border:1px solid rgba(120,195,255,.5);border-radius:14px;background:rgba(255,255,255,.1);color:inherit;font:inherit;font-size:18px;outline:none" oninput="document.getElementById(&quot;go&quot;).disabled=!this.value.trim()" onkeydown="if(event.key===&quot;Enter&quot;&amp;&amp;!document.getElementById(&quot;go&quot;).disabled)check()">`;else if(e.k=="c")b=`<h2>${e.title}</h2><div class="qq">${e.q}${e.spk?`<button class="spk" onclick="say('${e.en}',1)">${ic("spk")}</button>`:""}</div>${opts(e)}`;

@@ -20,6 +20,7 @@
   };
   const storageKey = scope => "cl2:learning-intelligence:" + String(scope || "guest").slice(0, 180);
   const skillFor = exercise => {
+    if (exercise && exercise.skillId) return cleanText(exercise.skillId, 90);
     if (exercise && exercise.en) return "vocabulary:" + String(exercise.en).toLowerCase().trim();
     if (exercise && exercise.k === "b") return "grammar:sentence-building";
     if (exercise && exercise.k === "m") return "vocabulary:matching";
