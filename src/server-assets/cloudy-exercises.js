@@ -144,13 +144,13 @@ function cloudyPlaySwoosh(){
   const C=window.AudioContext||window.webkitAudioContext;if(!C)return;
   if(!AC){AC=new C();MG=AC.createGain();MG.connect(AC.destination)}
   if(AC.state==="suspended")AC.resume();
-  const now=AC.currentTime,duration=.72,length=Math.floor(AC.sampleRate*duration);
+  const now=AC.currentTime,duration=.95,length=Math.floor(AC.sampleRate*duration);
   const buffer=AC.createBuffer(1,length,AC.sampleRate),data=buffer.getChannelData(0);
-  for(let n=0;n<length;n++){const fade= Math.pow(1-n/length,1.8);data[n]=(Math.random()*2-1)*fade}
+  for(let n=0;n<length;n++){const fade=Math.sin(Math.PI*n/length)*Math.pow(1-n/length,.7);data[n]=(Math.random()*2-1)*fade}
   const source=AC.createBufferSource(),filter=AC.createBiquadFilter(),gain=AC.createGain();
-  source.buffer=buffer;filter.type="bandpass";filter.Q.value=.65;
-  filter.frequency.setValueAtTime(420,now);filter.frequency.exponentialRampToValueAtTime(2600,now+.38);filter.frequency.exponentialRampToValueAtTime(780,now+duration);
-  gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(.24*S.set.vol,now+.1);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
+  source.buffer=buffer;filter.type="lowpass";filter.Q.value=.35;
+  filter.frequency.setValueAtTime(520,now);filter.frequency.exponentialRampToValueAtTime(1450,now+.48);filter.frequency.exponentialRampToValueAtTime(680,now+duration);
+  gain.gain.setValueAtTime(.0001,now);gain.gain.linearRampToValueAtTime(.065*S.set.vol,now+.28);gain.gain.exponentialRampToValueAtTime(.0001,now+duration);
   source.connect(filter);filter.connect(gain);gain.connect(AC.destination);source.start(now);source.stop(now+duration);
  }catch(e){}
 }
@@ -161,13 +161,11 @@ function showCloudySuccess(){
    .cloudy-success-reaction{position:fixed;inset:0;z-index:10050;display:grid;place-content:center;justify-items:center;gap:10px;pointer-events:none;background:radial-gradient(ellipse at center,rgba(38,160,230,.13),transparent 58%);animation:cloudy-success-backdrop .3s ease-out both}
    .cloudy-success-cloud{position:relative;width:min(44vw,184px);animation:cloudy-success-cloud-in .8s cubic-bezier(.18,.82,.25,1.2) both,cloudy-success-float 1.15s .8s ease-in-out infinite}
    .cloudy-success-cloud .ms{display:block;width:100%;height:auto;filter:drop-shadow(0 10px 22px rgba(63,174,255,.25))}
-   .cloudy-success-smile{position:absolute;left:50%;top:57%;width:31%;height:19%;transform:translateX(-50%);overflow:visible}
-   .cloudy-success-smile path{fill:none;stroke:#55718b;stroke-width:4.2;stroke-linecap:round;stroke-dasharray:42;stroke-dashoffset:42;animation:cloudy-success-smile-draw .55s .38s ease-out forwards}
    .cloudy-success-reaction strong{font:800 clamp(27px,7vw,38px)/1.1 system-ui,sans-serif;letter-spacing:.01em;color:#42baff;text-shadow:0 2px 14px rgba(46,171,255,.25);animation:cloudy-success-text .6s .35s cubic-bezier(.2,.8,.2,1) both}
    @keyframes cloudy-success-backdrop{from{opacity:0}to{opacity:1}}
    @keyframes cloudy-success-cloud-in{0%{opacity:0;transform:translateY(65px) scale(.58)}65%{opacity:1;transform:translateY(-9px) scale(1.07)}100%{opacity:1;transform:translateY(0) scale(1)}}
    @keyframes cloudy-success-float{0%,100%{transform:translateY(0) rotate(-1deg)}50%{transform:translateY(-10px) rotate(1deg)}}
-   @keyframes cloudy-success-smile-draw{to{stroke-dashoffset:0}}
+   }
    @keyframes cloudy-success-text{from{opacity:0;transform:translateY(16px) scale(.86)}to{opacity:1;transform:translateY(0) scale(1)}}
    .cloudy-success-reaction.is-leaving .cloudy-success-cloud{animation:cloudy-success-fly-away .78s cubic-bezier(.45,0,.9,.45) forwards}
    .cloudy-success-reaction.is-leaving strong{animation:cloudy-success-text-away .35s ease-in forwards}
@@ -178,7 +176,7 @@ function showCloudySuccess(){
  }
  document.querySelector(".cloudy-success-reaction")?.remove();
  const reaction=document.createElement("div");reaction.className="cloudy-success-reaction";reaction.setAttribute("aria-live","polite");
- reaction.innerHTML='<div class="cloudy-success-cloud">'+mascot("s")+'<svg class="cloudy-success-smile" viewBox="0 0 100 55" aria-hidden="true"><path d="M12 8 Q50 53 88 8"/></svg></div><strong>Молодец!</strong>';
+ reaction.innerHTML='<div class="cloudy-success-cloud">'+mascot()+'</div><strong>Молодец!</strong>';
  document.body.appendChild(reaction);
  setTimeout(()=>{if(reaction.isConnected){reaction.classList.add("is-leaving");cloudyPlaySwoosh();setTimeout(()=>reaction.remove(),820)}},2050);
 }
