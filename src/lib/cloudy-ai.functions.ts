@@ -485,18 +485,18 @@ type ContentModerationDecision = {
 function parseContentModeration(raw: string): ContentModerationDecision {
   const cleaned = raw.trim().replace(/^\x60{3}(?:json)?\s*/i, "").replace(/\s*\x60{3}$/i, "");
   const parsed = JSON.parse(cleaned) as Record<string, unknown>;
-  const decision = parsed.decision;
+  const decision = parsed["decision"];
   if (decision !== "allow" && decision !== "reject" && decision !== "review") {
     throw new Error("Некорректное решение Cloudy AI.");
   }
-  const labels = Array.isArray(parsed.labels)
-    ? [...new Set(parsed.labels.map((label) => String(label).toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40)).filter(Boolean))].slice(0, 12)
+  const labels = Array.isArray(parsed["labels"])
+    ? [...new Set(parsed["labels"].map((label) => String(label).toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40)).filter(Boolean))].slice(0, 12)
     : [];
-  const confidence = Number(parsed.confidence);
+  const confidence = Number(parsed["confidence"]);
   if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
     throw new Error("Некорректная уверенность Cloudy AI.");
   }
-  const reason = safeContextText(parsed.reason, 500);
+  const reason = safeContextText(parsed["reason"], 500);
   if (!reason) throw new Error("Cloudy AI не указал причину решения.");
   return { decision, reason, labels, confidence };
 }
@@ -533,9 +533,9 @@ async function runCloudyContentTextModeration(
   const parsed = parseContentModeration(routed.value.content);
   // Conservative thresholds: uncertain model output is never auto-published or auto-rejected.
   const decision: ContentModerationDecision["decision"] =
-    parsed.decision === "allow" && parsed.confidence >= 0.9 && parsed.labels.length === 0
+    parsed["decision"] === "allow" && parsed["confidence"] >= 0.9 && parsed["labels"].length === 0
       ? "allow"
-      : parsed.decision === "reject" && parsed.confidence >= 0.95 && parsed.labels.length > 0
+      : parsed["decision"] === "reject" && parsed["confidence"] >= 0.95 && parsed["labels"].length > 0
         ? "reject"
         : "review";
   return { ...parsed, decision, provider: routed.value.provider, model: routed.value.model };
@@ -569,9 +569,10 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (error || !item) throw new Error("Публикация не найдена.");
-    if (item.author_id !== user.id) throw new Error("Нельзя модерировать чужую публикацию.");
-    if (item.moderation_status !== "pending") throw new Error("Эта публикация уже отправлена на проверку.");
-    const body = safeContextText(item[bodyColumn], 1200);
+    const contentItem = item as any;
+    if (contentItem.author_id !== user.id) throw new Error("Нельзя модерировать чужую публикацию.");
+    if (contentItem.moderation_status !== "pending") throw new Error("Эта публикация уже отправлена на проверку.");
+    const body = safeContextText(contentItem[bodyColumn], 1200);
     if (!body) throw new Error("Нет текста для проверки.");
 
     let decision: ContentModerationDecision;
