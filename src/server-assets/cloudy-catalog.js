@@ -23,7 +23,7 @@ D.push(
 const LV={A1:{s:[{n:"Знакомство",l:[0,1,2]},{n:"Повседневная жизнь",l:[3,4,5]}]},A2:{s:[{n:"Город и быт",l:[6,7,8]},{n:"Повседневное общение",l:[15,16,17]}]},B1:{s:[{n:"Работа и поездки",l:[9,10,11]},{n:"Жизнь и технологии",l:[18,19,20]}]},B2:{s:[{n:"Мнения и общество",l:[12,13,14]},{n:"Культура и карьера",l:[21,22,23]}]}};
 const P=(t,w,s)=>({t,w:w.split(',').map(x=>x.split('=')),s:s.split(';').map(x=>x.split('='))});
 D.push(
-P('Ресторан','restaurant=ресторан,menu=меню,bill=счёт,waiter=официант,delicious=вкусный,hungry=голодный','Принесите счёт, пожалуйста=Could I have the bill, please?=menu the;Я очень голоден=I am very hungry=waiter a'),
+P('Ресторан','restaurant=ресторан,menu=меню,bill=счёт,waiter=официант,delicious=вкусный,hungry=голодный','Можно мне счёт, пожалуйста?=Could I have the bill, please?=menu the;Я очень голоден=I am very hungry=waiter a'),
 P('Погода','weather=погода,rainy=дождливый,sunny=солнечный,cold=холодный,wind=ветер,snow=снег','Сегодня солнечно=It is sunny today=rainy the;Зимой идёт снег=It snows in winter=wind a'),
 P('Одежда','jacket=куртка,shoes=обувь,dress=платье,shirt=рубашка,size=размер,wear=носить','Мне нужна куртка=I need a jacket=shoes the;Какой размер вы носите?=What size do you wear?=dress a'),
 P('Технологии','password=пароль,download=скачивать,screen=экран,battery=батарея,website=сайт,update=обновление','Я забыл пароль=I forgot my password=screen the;Батарея почти разряжена=The battery is almost dead=update a'),
@@ -699,7 +699,7 @@ const A1_EXTRA = [
     "w": [
       [
         "hat",
-        "шапка"
+        "шляпа"
       ],
       [
         "coat",
@@ -720,7 +720,7 @@ const A1_EXTRA = [
     ],
     "s": [
       [
-        "Моя шапка синяя",
+        "Моя шляпа синяя",
         "My hat is blue",
         "are the"
       ],
@@ -747,7 +747,7 @@ D.push(...A1_EXTRA);
 const A2_EXTRA = [
   P("Распорядок дня и привычки", "routine=распорядок дня,schedule=расписание,usually=обычно,rarely=редко,early=рано,late=поздно", "Я обычно просыпаюсь рано=I usually wake up early=never late;Я редко смотрю телевизор=I rarely watch TV=always the;Мой рабочий день начинается в девять=My working day starts at nine=finish yesterday"),
   P("Прошедшие выходные", "visited=посетил,bought=купил,met=встретил,spent=провёл,stayed=остался,trip=поездка", "Мы посетили музей вчера=We visited the museum yesterday=tomorrow the;Он купил новый билет=He bought a new ticket=buys tomorrow;Я встретил друга в парке=I met a friend in the park=meet the"),
-  P("Планы на будущее", "plan=план,invite=приглашать,appointment=назначенная встреча,arrange=организовать,decide=решать,hope=надеяться", "Я собираюсь навестить двоюродного родственника=I am going to visit my cousin=visited yesterday;Мы встречаемся с друзьями завтра=We are meeting friends tomorrow=met last week;Она надеется найти новую работу=She hopes to find a new job=found yesterday"),
+  P("Планы на будущее", "plan=план,invite=приглашать,appointment=назначенная встреча,arrange=организовать,decide=решать,hope=надеяться", "Я собираюсь навестить двоюродного брата или сестру=I am going to visit my cousin=visited yesterday;Мы встречаемся с друзьями завтра=We are meeting friends tomorrow=met last week;Она надеется найти новую работу=She hopes to find a new job=found yesterday"),
   P("Сравнение мест и вещей", "crowded=переполненный,quiet=тихий,modern=современный,comfortable=удобный,safer=безопаснее,farther=дальше", "Этот район тише центра=This area is quieter than the city centre=the quietest;Это самый удобный отель=This is the most comfortable hotel=more comfortable;Моя поездка короче твоей=My trip is shorter than yours=the shortest"),
   P("Количество и покупки", "a little=немного,a few=несколько,enough=достаточно,too much=слишком много,bottle=бутылка,packet=пакет", "В бутылке немного воды=There is a little water in the bottle=many bottles;Нам нужно несколько яблок=We need a few apples=any apple;У нас достаточно времени=We have enough time=too many times"),
   P("Путешествия и направления", "turn left=повернуть налево,straight ahead=прямо,opposite=напротив,corner=угол,platform=платформа,return ticket=билет туда и обратно", "Поверните налево на углу=Turn left at the corner=turn right;Банк напротив вокзала=The bank is opposite the station=behind the;Мне нужен билет туда и обратно=I need a return ticket=one way"),
@@ -1103,7 +1103,7 @@ extendLesson(38, [], [
   ["Надень перчатки", "Put on your gloves", "Puts on your gloves"],
 ]);
 extendLesson(6, [], [
-  ["На этой улице оживлённое движение", "There is a lot of traffic on this street", "There are a lot traffic"],
+  ["На этой улице оживлённое движение", "Traffic is heavy on this street", "There are a lot traffic"],
 ]);
 extendLesson(7, [], [
   ["Могу я получить возврат денег?", "Can I get a refund?", "Can I gets a refund?"],
