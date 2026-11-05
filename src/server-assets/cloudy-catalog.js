@@ -890,7 +890,7 @@ extendLesson(15, [["order", "заказывать"], ["appetizer", "закуск
   ["Я хотел бы заказать салат", "I'd like to order a salad", "I'd like salad"],
   ["Что вы посоветуете на основное блюдо?", "What would you recommend for the main course?", "What you recommend"],
   ["У нас столик на двоих", "We have a table for two", "We has table"],
-  ["Я бы хотел(а) закуску", "I'd like an appetizer", "I like appetizer"],
+  ["Я бы хотел(а) закуску", "I'd like an appetizer", "I like appetizers"],
 ]);
 extendLesson(16, [["forecast", "прогноз погоды"], ["cloudy", "облачный"], ["temperature", "температура"]], [
   ["По прогнозу будет дождь", "The forecast says it will rain", "The forecast say"],
@@ -957,7 +957,7 @@ extendLesson(48, [["free", "свободный"], ["plan", "план"]], [
   ["Нам нужно составить план на выходные", "We need to make a plan for the weekend", "We make a plan yesterday"],
 ]);
 extendLesson(48, [], [
-  ["У тебя есть время завтра вечером?", "Are you available tomorrow evening", "Do you available tomorrow evening"],
+  ["У тебя есть время завтра вечером?", "Are you available tomorrow evening?", "Do you available tomorrow evening"],
 ]);
 extendLesson(49, [["plastic", "пластик"], ["paper", "бумага"]], [
   ["Нам следует использовать меньше пластика", "We should use less plastic", "We should uses"],
