@@ -525,7 +525,7 @@ const A1_EXTRA: Lesson[] = [
       ],
       [
         "clock",
-        "настенные или настольные часы"
+        "настенные / настольные часы"
       ]
     ],
     "s": [
@@ -687,7 +687,7 @@ const A1_EXTRA: Lesson[] = [
       ],
       [
         "Помоги мне, пожалуйста.",
-        "Please help me",
+        "Please help me.",
         "helps the"
       ]
     ]
