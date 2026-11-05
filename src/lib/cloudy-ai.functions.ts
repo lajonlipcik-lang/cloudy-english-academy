@@ -268,7 +268,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       if(!baseProfile.attempts)throw new Error("Пока недостаточно ответов для персонального экзамена. Пройди урок и ответь на задания.");
       const lessonIds=levelLessons.slice(0,completed);
       const lessons=lessonIds.map((id:number)=>D[id]).filter(Boolean);
-      const wordPairs=[...new Map(lessons.flatMap((lesson:any)=>lesson.w.map((pair:any)=>[String(pair[0]).trim().toLowerCase(),{en:String(pair[0]).trim(),ru:String(pair[1]).trim()}])).filter((entry:any)=>entry[0]&&entry[1].en&&entry[1].ru)).values()].slice(0,180);
+      const wordPairs:Array<{en:string;ru:string}>=[...new Map<string,{en:string;ru:string}>(lessons.flatMap((lesson:any)=>lesson.w.map((pair:any)=>[String(pair[0]).trim().toLowerCase(),{en:String(pair[0]).trim(),ru:String(pair[1]).trim()}] as [string,{en:string;ru:string}]).filter((entry:any)=>entry[0]&&entry[1].en&&entry[1].ru))).values()].slice(0,180);
       const words=wordPairs.map((pair:any)=>pair.en);
       const sentences=[...new Set(lessons.flatMap((lesson:any)=>lesson.s.map((pair:any)=>String(pair[1]).trim())).filter(Boolean))].slice(0,100);
       if(!words.length&&!sentences.length)throw new Error("В пройденных уроках пока нет материала для экзамена.");
