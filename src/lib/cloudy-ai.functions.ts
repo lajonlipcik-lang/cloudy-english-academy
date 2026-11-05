@@ -233,7 +233,7 @@ async function acquireExamQuota(db:any,userId:string,requestId:string){
     throw new Error("Слишком много запросов к ИИ. Повторите через "+seconds+" сек.");
   }
 }
-function buildFallbackExamQuestions(wordPairs:Array<{en:string;ru:string}>,sentences:string[],focus:any[]){
+function buildFallbackExamQuestions(wordPairs:Array<{en:string;ru:string}>,sentences:string[]){
   const questions:any[]=[];
   const vocab=wordPairs.filter((pair)=>pair.en&&pair.ru).slice(0,30);
   for(let index=0;index<Math.min(6,vocab.length);index++){
@@ -375,7 +375,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
         if(questions.length!==6)throw new Error("ИИ вернул неполный экзамен.");
       }catch(error){
         console.warn("[cloudy-exam] invalid AI question payload; using verified lesson-based fallback");
-        questions=buildFallbackExamQuestions(wordPairs,sentences,focus);
+        questions=buildFallbackExamQuestions(wordPairs,sentences);
       }
       const examId=crypto.randomUUID(),createdAt=Date.now();
       const nextProfile={...baseProfile,activeExam:{id:examId,level,createdAt,expiresAt:createdAt+30*60*1000,questions}};
