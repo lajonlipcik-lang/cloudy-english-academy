@@ -117,7 +117,15 @@ function mk(l){const r=[],modes=sh([0,0,1,1,2,2]);
   if(m==2)r.push({k:"l",a:en,en,o:o.map(x=>x[0]),title:titles.listen[Math.random()*titles.listen.length|0]});
   else r.push({k:"c",q:m?en:ru,a:m?ru:en,en,spk:!!m,o:o.map(x=>m?x[1]:x[0]),title:(m?titles.en:titles.ru)[Math.random()*(m?titles.en:titles.ru).length|0]})});
  const p=sh(l.w).slice(0,4);r.push({k:"m",L:sh(p.map(x=>[x[0],x[0]])),R:sh(p.map(x=>[x[1],x[0]])),title:"Найдите пары"});
- l.s.forEach(([ru,en,d])=>r.push({k:"b",q:ru,a:en,o:sh([...en.split(" "),...d.split(" ")]),title:titles.bank[Math.random()*titles.bank.length|0]}));
+ l.s.forEach(([ru,en],sentenceIndex)=>{
+  const correctTokens=en.split(" "),used=new Set(correctTokens.map(token=>token.toLowerCase()));
+  const candidates=[
+   ...l.w.map(([word])=>word).filter(word=>!/\\s/.test(word)),
+   ...l.s.filter((_,index)=>index!==sentenceIndex).flatMap(([,sentence])=>sentence.split(" "))
+  ].filter(token=>token&&!used.has(token.toLowerCase())&&!/[.,!?]/.test(token));
+  const distractors=[...new Set(candidates)].slice(0,2);
+  r.push({k:"b",q:ru,a:en,o:sh([...correctTokens,...distractors]),title:titles.bank[Math.random()*titles.bank.length|0]});
+ });
  if(l.w.length&&(window.SpeechRecognition||window.webkitSpeechRecognition)&&S.set.mic)r.push({k:"p",en:sh(l.w)[0][0]});return sh(r)}
 function go(n){snd("go");rv=0;lm=[];rt=0;L=n;ex=window.CloudyLearning?CloudyLearning.prioritize(KEY,mk(D[n])):mk(D[n]);i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
 const opts=e=>e.o.map((o,k)=>`<button class="opt" style="--i:${k}" onclick="pick(${k})">${o}</button>`).join("");
