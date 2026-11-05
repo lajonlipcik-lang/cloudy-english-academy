@@ -1,3 +1,4 @@
+import { buildKnownGrammar } from "./exam-curriculum";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { runInNewContext, Script } from "node:vm";
@@ -190,6 +191,25 @@ describe("Cloudy learning progress", () => {
     expect(runtime).toContain('selectedAnswer:e.k==="r"?typed');
     expect(runtime).toContain('e.k!=="b"&&e.k!=="r"');
   });
+  it("adds only completed A1 verb topics and their taught examples to the personal exam", () => {
+    const foundations = {
+      24: { examples: [["I want water.", "Я хочу воды."]] as [string, string][] },
+      25: { examples: [["I study English.", "Я изучаю английский."]] as [string, string][] },
+      26: { examples: [["She likes tea.", "Она любит чай."]] as [string, string][] },
+      27: { examples: [["Does she work?", "Она работает?"]] as [string, string][] },
+      28: { examples: [["He doesn't work.", "Он не работает."]] as [string, string][] },
+      29: { examples: [["We study at home.", "Мы учимся дома."]] as [string, string][] },
+    };
+    const grammar = buildKnownGrammar([24, 26, 28], foundations);
+    expect(grammar.map((pair) => pair.skillId)).toEqual([
+      "grammar:verbs:action",
+      "grammar:present-simple:third-person",
+      "grammar:present-simple:negatives",
+    ]);
+    expect(grammar.map((pair) => pair.en)).toEqual(["I want water.", "She likes tea.", "He doesn't work."]);
+    expect(buildKnownGrammar([23], foundations)).toEqual([]);
+  });
+
   it("teaches action verbs and Present Simple in a fixed six-step A1 progression", () => {
     const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
     const start = runtime.indexOf("function verbPath(n){");
