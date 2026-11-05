@@ -10,6 +10,9 @@ function cleanText(value: unknown, max: number): string | null {
 export function normalizeCloudyLearningEvents(value: unknown, userId: string, now = Date.now()) {
   if (!UUID_PATTERN.test(userId)) throw new Error("Invalid authenticated learner.");
   if (!Array.isArray(value) || value.length < 1 || value.length > 50) throw new Error("Invalid learning event batch.");
+  let payloadSize = 0;
+  try { payloadSize = JSON.stringify(value).length; } catch { throw new Error("Invalid learning event batch."); }
+  if (payloadSize > 30000) throw new Error("Learning event batch is too large.");
   const seen = new Set<string>();
   return value.map((raw: unknown) => {
     if (!raw || typeof raw !== "object") throw new Error("Invalid learning event.");
@@ -52,7 +55,7 @@ export function normalizeCloudyLearningEvents(value: unknown, userId: string, no
       retry: Boolean(event["retry"]),
       response_seconds: responseSeconds,
       selected_answer: cleanText(event["selectedAnswer"], 160),
-      correct_answer: cleanText(event["correct"]Answer, 160),
+      correct_answer: cleanText(event["correctAnswer"], 160),
     };
   });
 }
