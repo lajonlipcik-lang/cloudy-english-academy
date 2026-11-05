@@ -4,7 +4,7 @@
 const D=[
 {t:"Привет",w:[["hello","привет"],["goodbye","пока"],["thanks","спасибо"],["please","пожалуйста"],["yes","да"],["no","нет"]],s:[["Привет, меня зовут Анна","Hello, my name is Anna.","you the"],["Да, пожалуйста","Yes please","no thanks"]]},
 {t:"Семья",w:[["mother","мама"],["father","папа"],["brother","брат"],["sister","сестра"],["son","сын"],["daughter","дочь"]],s:[["У меня есть брат","I have a brother","sister the"],["Это моя мама","This is my mother","father your"]]},
-{t:"Числа",w:[["one","один"],["two","два"],["three","три"],["four","четыре"],["five","пять"],["six","шесть"]],s:[["Это число шесть","This is number six","four the"],["У меня три книги","I have three books","two a"]]},
+{t:"Числа",w:[["one","один"],["two","два"],["three","три"],["four","четыре"],["five","пять"],["six","шесть"]],s:[["Это число шесть","This number is six.","four the"],["У меня три книги","I have three books","two a"]]},
 {t:"Еда",w:[["apple","яблоко"],["water","вода"],["bread","хлеб"],["milk","молоко"],["coffee","кофе"],["cheese","сыр"]],s:[["Я люблю кофе","I like coffee","water the"],["Мне нужна вода","I need water","bread a"]]},
 {t:"Дом",w:[["house","дом"],["door","дверь"],["window","окно"],["table","стол"],["bed","кровать"],["book","книга"]],s:[["Это мой дом","This is my house","your a"],["У меня есть книга","I have a book","table the"]]},
 {t:"Цвета",w:[["red","красный"],["blue","синий"],["green","зелёный"],["yellow","жёлтый"],["black","чёрный"],["white","белый"]],s:[["Это красное яблоко","This is a red apple","blue the"],["Небо синее","The sky is blue","red green"]]}
