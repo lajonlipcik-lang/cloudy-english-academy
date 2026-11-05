@@ -248,24 +248,24 @@ describe("Cloudy learning progress", () => {
   it("uses natural American English for directions, traffic, and clock times", () => {
     expect(D[6]!.w.some(([word]) => word === "intersection")).toBe(true);
     expect(D[6]!.s.some(([, en]) => en === "Turn right at the intersection")).toBe(true);
-    expect(D[6]!.s.some(([ru, en]) => ru === "На этой улице интенсивное движение" && en === "There is a lot of traffic on this street.")).toBe(true);
+    expect(D[6]!.s.some(([ru, en]) => ru === "На этой улице интенсивное движение" && en === "There is a lot of traffic on this street")).toBe(true);
     expect(D[8]!.w.some(([word, translation]) => word === "quarter past" && translation.includes("четверть часа после"))).toBe(true);
-    expect(D[8]!.s.some(([, en]) => en === "The train leaves at eight thirty.")).toBe(true);
+    expect(D[8]!.s.some(([, en]) => en === "The train leaves at eight thirty")).toBe(true);
   });
 
 
   it("avoids assigning an unstated gender in Russian translations", () => {
-    expect(D[15]!.s.some(([ru]) => ru === "Я очень хочу есть.")).toBe(true);
-    expect(D[15]!.s.some(([ru]) => ru === "Я бы хотел(а) закуску.")).toBe(true);
-    expect(D[26]!.s.some(([ru]) => ru === "Я учусь в школе.")).toBe(true);
-    expect(D[36]!.s.some(([ru]) => ru === "Сегодня я устал(а).")).toBe(true);
+    expect(D[15]!.s.some(([ru]) => ru === "Я очень хочу есть")).toBe(true);
+    expect(D[15]!.s.some(([ru]) => ru === "Я бы хотел(а) закуску")).toBe(true);
+    expect(D[26]!.s.some(([ru]) => ru === "Я учусь в школе")).toBe(true);
+    expect(D[36]!.s.some(([ru]) => ru === "Сегодня я устал(а)")).toBe(true);
     expect(D[41]!.s.some(([ru]) => ru.includes("двоюродного брата или сестру") && ru.includes("эти выходные"))).toBe(true);
     expect(D[47]!.s.some(([ru]) => ru === "Ты когда-нибудь был(а) в Лондоне?")).toBe(true);
-    expect(D[47]!.s.some(([ru]) => ru === "Я никогда не путешествовал(а) за границей.")).toBe(true);
+    expect(D[47]!.s.some(([ru]) => ru === "Я никогда не путешествовал(а) за границей")).toBe(true);
     expect(D[48]!.s.some(([ru]) => ru === "У тебя есть время в субботу?")).toBe(true);
-    expect(D[50]!.s.some(([ru]) => ru === "Я не понял(а) инструкции.")).toBe(true);
-    expect(D[52]!.s.some(([ru]) => ru === "Я допустил(а) ошибку в адресе.")).toBe(true);
-    expect(D[52]!.s.some(([ru]) => ru === "Я потерял(а) ключи.")).toBe(true);
+    expect(D[50]!.s.some(([ru]) => ru === "Я не понял(а) инструкции")).toBe(true);
+    expect(D[52]!.s.some(([ru]) => ru === "Я допустил(а) ошибку в адресе")).toBe(true);
+    expect(D[52]!.s.some(([ru]) => ru === "Я потерял(а) ключи")).toBe(true);
   });
 
 
