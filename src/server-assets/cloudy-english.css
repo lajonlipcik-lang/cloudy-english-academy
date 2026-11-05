@@ -472,3 +472,23 @@ h2{font-size:21px;margin:0 0 16px}
 .community-bio-input::placeholder{color:rgba(220,237,255,.42)}
 .community-settings-foot{display:block;margin-top:9px}
 .community-profile-settings .sw:disabled{opacity:.55}
+
+/* Community feed and post composer */
+.community-composer{padding:15px;border:1px solid rgba(163,218,255,.2);border-radius:18px;background:rgba(255,255,255,.075)}
+.community-composer>label{display:block;margin-bottom:9px;font-size:13px;font-weight:850}
+.community-composer textarea{display:block;width:100%;min-height:92px;resize:vertical;padding:12px;border:1px solid rgba(163,218,255,.2);border-radius:13px;background:rgba(4,24,66,.35);color:#fff;font:inherit;font-size:12px;line-height:1.5;outline:none}
+.community-composer textarea:focus{border-color:rgba(112,204,255,.72);box-shadow:0 0 0 3px rgba(91,181,255,.1)}
+.community-composer textarea::placeholder{color:rgba(220,237,255,.42)}
+.community-composer-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.community-composer-foot small{color:rgba(220,237,255,.6);font-size:10px}
+.community-publish{min-width:120px}
+.community-refresh,.community-delete{border:0;background:transparent;color:#a9e0ff;font:inherit;font-size:10px;font-weight:850}
+.community-post-list{display:grid;gap:10px}
+.community-post{padding:15px;border:1px solid rgba(163,218,255,.16);border-radius:17px;background:rgba(255,255,255,.065)}
+.community-post-head{display:flex;align-items:center;gap:10px}
+.community-avatar{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#77caff,#3477d8);color:#06204d;font-size:14px;font-weight:900}
+.community-post-author{display:grid;gap:3px;min-width:0}
+.community-post-author b{font-size:12px}
+.community-post-author small{color:rgba(220,237,255,.58);font-size:10px}
+.community-delete{margin-left:auto;color:#ffb5bd}
+.community-post-body{margin:13px 0 0;color:rgba(244,249,255,.92);font-size:13px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
