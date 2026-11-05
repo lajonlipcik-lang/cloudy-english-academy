@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { runWithAiFallback } from "@/lib/ai/router";
-import { D, LI, LV } from "@/lib/cloudy/data";
+import { A1_FOUNDATIONS, D, LI, LV } from "@/lib/cloudy/data";
+import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 const OWNER="lajonlipcik@gmail.com";
 type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
