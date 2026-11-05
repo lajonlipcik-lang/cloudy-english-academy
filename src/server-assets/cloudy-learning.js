@@ -52,8 +52,9 @@
     });
   }
   function beginSession(scope, context = {}) {
-    const key = storageKey(scope), data = safeRead(key);
-    if (data.activeSession?.sessionId) endSession(scope, "lesson_abandoned");
+    const key = storageKey(scope);
+    let data = safeRead(key);
+    if (data.activeSession?.sessionId) { endSession(scope, "lesson_abandoned"); data = safeRead(key); }
     const session = {
       sessionId: makeId(), startedAt: Date.now(),
       level: ["A1", "A2", "B1", "B2"].includes(String(context.level)) ? String(context.level) : null,
