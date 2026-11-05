@@ -35,6 +35,10 @@ describe("server XP policy", () => {
     expect(safe).not.toHaveProperty("user");
   });
 
+  it("bounds A2 progress to its expanded 18-lesson path", () => {
+    expect(sanitizeCloudyProgress({ dn: { A2: 999 } }).dn.A2).toBe(18);
+  });
+
   it("accepts only lessons assigned to the requested CEFR level", () => {
     expect(isLessonInLevel(0, "A1")).toBe(true);
     expect(isLessonInLevel(15, "A2")).toBe(true);
@@ -44,6 +48,9 @@ describe("server XP policy", () => {
     expect(isLessonInLevel(24, "A1")).toBe(true);
     expect(isLessonInLevel(38, "A1")).toBe(true);
     expect(isLessonInLevel(39, "A1")).toBe(false);
+    expect(isLessonInLevel(39, "A2")).toBe(true);
+    expect(isLessonInLevel(50, "A2")).toBe(true);
+    expect(isLessonInLevel(38, "A2")).toBe(false);
     expect(isLessonInLevel(6, "A1")).toBe(false);
     expect(isLessonInLevel(1.5, "A1")).toBe(false);
     expect(isLessonInLevel(1, "unknown")).toBe(false);
