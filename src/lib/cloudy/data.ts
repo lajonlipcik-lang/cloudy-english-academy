@@ -201,8 +201,8 @@ const A1_EXTRA: Lesson[] = [
     ],
     "s": [
       [
-        "У меня две руки",
-        "I have two hands",
+        "Подними руку",
+        "Raise your hand",
         "has a"
       ],
       [
@@ -819,7 +819,7 @@ extendLesson(26, [["book", "книга"], ["desk", "парта"], ["lesson", "у
   ["У нас сегодня английский", "We have English today", "We has English today"],
   ["Мой карандаш в сумке", "My pencil is in my bag", "My pencil are in my bag"],
 ]);
-extendLesson(27, [["arm", "рука"], ["leg", "нога"], ["foot", "ступня"], ["ear", "ухо"], ["hair", "волосы"]], [
+extendLesson(27, [["arm", "рука"], ["leg", "нога"], ["foot", "ступня"], ["ear", "ухо"], ["hair", "волосы"], ["raise", "поднимать"]], [
   ["У неё длинные волосы", "She has long hair", "She have long hair"],
   ["У меня болит нога", "My leg hurts", "My leg hurted"],
 ]);
@@ -1050,7 +1050,7 @@ extendLesson(26, [], [
   ["Я делаю домашнее задание после школы", "I do my homework after school", "I does my homework"],
 ]);
 extendLesson(27, [], [
-  ["У меня две руки", "I have two arms", "I has two arms"],
+  ["У меня болит рука", "My arm hurts", "My arm hurted"],
   ["У меня болят уши", "My ears hurt", "My ears hurts"],
 ]);
 extendLesson(28, [], [
