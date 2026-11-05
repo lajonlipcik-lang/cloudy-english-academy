@@ -43,11 +43,12 @@
   function appendEvent(scope, data, event) { data.events.push(event); save(storageKey(scope), data); emit(scope, event); return event; }
   function track(scope, eventType, details = {}) {
     const key = storageKey(scope), data = safeRead(key), session = data.activeSession;
-    if (!["question_skipped", "hint_used"].includes(eventType)) return null;
+    if (!["question_opened", "question_skipped", "hint_used"].includes(eventType)) return null;
     return appendEvent(scope, data, {
       eventId: makeId(), eventType, at: Date.now(), sessionId: session?.sessionId || null,
       level: session?.level || null, lessonIndex: Number.isInteger(session?.lessonIndex) ? session.lessonIndex : null,
-      exerciseType: cleanText(details.exerciseType, 24) || null, skillId: cleanText(details.skillId, 90) || null,
+      exerciseType: cleanText(details.exerciseType || details.exercise?.k, 24) || null, skillId: cleanText(details.skillId || (details.exercise ? skillFor(details.exercise) : ""), 90) || null,
+      questionIndex: Number.isInteger(details.questionIndex) ? clamp(details.questionIndex, 0, 1000) : null,
       correct: null, retry: false, responseSeconds: null, selectedAnswer: null, correctAnswer: null, synced: false
     });
   }
@@ -94,7 +95,7 @@
     appendEvent(scope, data, {
       eventId: makeId(), eventType: "answer_submitted", at: now, sessionId: session?.sessionId || null,
       level: session?.level || null, lessonIndex: Number.isInteger(session?.lessonIndex) ? session.lessonIndex : null,
-      skillId, exerciseType: cleanText(exercise.k || "unknown", 24), correct: Boolean(correct), retry,
+      skillId, exerciseType: cleanText(exercise.k || "unknown", 24), questionIndex: Number.isInteger(options.questionIndex) ? clamp(options.questionIndex, 0, 1000) : null, correct: Boolean(correct), retry,
       responseSeconds: Number.isFinite(options.responseSeconds) ? clamp(Math.round(options.responseSeconds), 0, 3600) : null,
       selectedAnswer: cleanText(options.selectedAnswer, 160) || null,
       correctAnswer: cleanText(options.correctAnswer ?? exercise.a ?? exercise.en, 160) || null, synced: false
