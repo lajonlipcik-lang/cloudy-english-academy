@@ -329,3 +329,19 @@ h2{font-size:21px;margin:0 0 16px}
   font-size: 20px;
   flex: none;
 }
+
+
+/* Compact home screen: keep the original site gradient and typography. */
+.scr:has(.stats){padding:10px 16px 112px}
+.scr:has(.stats) .stats{gap:7px}
+.scr:has(.stats) .pill{padding:7px 10px;font-size:14px}
+.scr:has(.stats) .av{width:40px;height:40px}
+.scr:has(.stats) .ban{margin:12px 0 9px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.105);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:none}
+.scr:has(.stats) .ban>div{padding:11px 14px}
+.scr:has(.stats) .ban small{font-size:10px;letter-spacing:.8px}
+.scr:has(.stats) .ban h3{font-size:18px;line-height:1.2}
+.scr:has(.stats) .gd{padding:0 14px;border-left:1px solid rgba(255,255,255,.15)}
+.scr:has(.stats) .path{gap:20px;padding:6px 0 14px}
+.scr:has(.stats) .ai{margin-top:9px}
+.scr:has(.stats) > .home-actions{display:flex;gap:9px;margin:10px 0 0}
+.scr:has(.stats) > .home-actions .chest{margin:0}
