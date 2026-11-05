@@ -8,7 +8,7 @@ export function CloudyAppFrame() {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
   const [showInstallGuide, setShowInstallGuide] = useState<boolean | null>(null);
   const [regionAccess, setRegionAccess] = useState<RegionAccessState>("checking");
-  useCloudyAppBridge(frameRef);
+  useCloudyAppBridge(frameRef, regionAccess === "allowed");
 
   useEffect(() => {
     let disposed = false;

@@ -426,7 +426,7 @@ const rvBtn=()=>{const n=Object.keys(S.mis).length;return n?`<button class="ches
 const AIcard=()=>`<button class="card ai" onclick="chat()">${mascot()}<div><b>Практика с Клауди</b><br><small style="opacity:.8">Диалог на уровне ${S.lv}</small></div></button>`;
 
 function theme(t){S.set.th=t;save();snd('tab');view(0)}
-async function chat(){app.innerHTML=`
+async function chat(){if(S.user?.guest){toast("Для практики с Клауди войдите в аккаунт");return authV()}app.innerHTML=`
 <section class="chat-shell">
   <div class="top" style="display:flex;align-items:center;justify-content:space-between">
     <button class="x" onclick="snd('tab');view()">${ic('x')}</button>

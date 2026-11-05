@@ -5,11 +5,12 @@ import { toUserErrorMessage } from "@/lib/cloudy/user-errors";
 
 type AuthRequest = { channel?: string; type?: string; id?: string; action?: string; name?: unknown; age?: unknown; email?: unknown; password?: unknown; state?: unknown; userId?: unknown; payload?: unknown; lessonIndex?: unknown; level?: unknown; expectedUpdatedAt?: unknown; syncId?: unknown };
 
-export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>) {
+export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>, enabled = true) {
   const accessTokenRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
     const frame = frameRef.current;
     if (!frame) return;
 
@@ -29,7 +30,23 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
         let ownerIsAdmin = user?.app_metadata?.["role"] === "admin";
         if (user?.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session?.access_token) {
           try {
-            const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
+            let ownerIsAdmin = data.user.app_metadata?.["role"] === "admin";
+          if (data.user.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session.access_token) {
+            try {
+              let ownerIsAdmin = data.user.app_metadata?.["role"] === "admin";
+          if (data.user.email?.toLowerCase() === "lajonlipcik@gmail.com" && data.session.access_token) {
+            try {
+              const role = await ensureOwnerAdmin({ data: { accessToken: data.session.access_token } });
+              ownerIsAdmin = role.isAdmin;
+            } catch {
+              console.error("[cloudy-admin] owner role refresh failed");
+            }
+          }
+              ownerIsAdmin = role.isAdmin;
+            } catch {
+              console.error("[cloudy-admin] owner role refresh failed");
+            }
+          }
             ownerIsAdmin = role.isAdmin;
           } catch {
             console.error("[cloudy-admin] owner role refresh failed");
@@ -171,7 +188,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.["name"] ?? ""),
               age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 13 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
-              isAdmin: role.isAdmin,
+              isAdmin: ownerIsAdmin,
             },
           });
           return;
@@ -208,7 +225,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
               email: data.user.email ?? "",
               name: String(data.user.user_metadata?.["name"] ?? data.user.user_metadata?.["display_name"] ?? ""),
               age: Number.isInteger(Number(data.user.user_metadata?.["age"])) && Number(data.user.user_metadata?.["age"]) >= 13 && Number(data.user.user_metadata?.["age"]) <= 120 ? Number(data.user.user_metadata?.["age"]) : null,
-              isAdmin: role.isAdmin,
+              isAdmin: ownerIsAdmin,
             },
             progress,
             learnerProfile,
@@ -304,6 +321,6 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
       frame.removeEventListener("load", initialize);
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [enabled]);
 
 }
