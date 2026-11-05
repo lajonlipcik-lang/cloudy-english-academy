@@ -137,7 +137,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
 
       try {
         const accessToken = accessTokenRef.current;
-        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-start","learning-exam-submit","learning-events"].includes(String(message.action))) {
+        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events"].includes(String(message.action))) {
           if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
           const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
           const api = await import("@/lib/cloudy-ai.functions");

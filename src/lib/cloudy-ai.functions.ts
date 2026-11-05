@@ -191,7 +191,8 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const requestedLevel=["A1","A2","B1","B2"].includes(String(data.level))?String(data.level):"A1";
     const incomingProfile=safeLearnerProfile(data.learnerProfile);
     const {data:storedProfile}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
-    const learnerProfile=mergeLearnerProfiles(safeLearnerProfile(storedProfile?.profile),incomingProfile);
+    const journalProfile=await loadJournalLearnerProfile(db,user.id);
+    const learnerProfile=mergeLearnerProfiles(mergeLearnerProfiles(safeLearnerProfile(storedProfile?.profile),incomingProfile),journalProfile);
     if(learnerProfile){
       const profileToSave={...learnerProfile,activeExam:storedProfile?.profile?.activeExam??null,lastExam:storedProfile?.profile?.lastExam??null};
       const {error:profileError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:profileToSave,updated_at:new Date().toISOString()},{onConflict:"user_id"});
@@ -232,11 +233,52 @@ async function acquireExamQuota(db:any,userId:string,requestId:string){
     throw new Error("Слишком много запросов к ИИ. Повторите через "+seconds+" сек.");
   }
 }
+function buildFallbackExamQuestions(wordPairs:Array<{en:string;ru:string}>,sentences:string[]){
+  const questions:any[]=[];
+  const vocab=wordPairs.filter((pair)=>pair.en&&pair.ru).slice(0,30);
+  for(let index=0;index<Math.min(6,vocab.length);index++){
+    const pair=vocab[index],distractors=vocab.filter((item)=>item.en!==pair.en&&item.ru!==pair.ru).map((item)=>item.ru);
+    const options=[pair.ru,...distractors].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
+    if(options.length!==4)continue;
+    questions.push({id:"q"+(questions.length+1),skillId:"vocabulary:"+pair.en.toLowerCase(),target:pair.en,prompt:"Что означает английское слово «"+pair.en+"»?",options,correctIndex:0,explanation:"«"+pair.en+"» переводится как «"+pair.ru+"»."});
+  }
+  if(questions.length<6&&sentences.length>=4){
+    const remaining=sentences.filter((sentence)=>!questions.some((question)=>question.target===sentence));
+    for(const sentence of remaining){
+      const options=[sentence,...sentences.filter((item)=>item!==sentence)].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
+      if(options.length!==4)continue;
+      questions.push({id:"q"+(questions.length+1),skillId:"grammar:sentence-building",target:sentence,prompt:"Выбери предложение из уже пройденного материала.",options,correctIndex:0,explanation:"Это предложение встречалось в твоих уроках."});
+      if(questions.length===6)break;
+    }
+  }
+  if(questions.length!==6)throw new Error("Пока недостаточно разных слов и предложений для экзамена. Пройди ещё один урок.");
+  return questions;
+}
 function parseExamJson(content:string){
   const cleaned=content.trim().replace(/^\x60{3}(?:json)?\s*/i,"").replace(/\s*\x60{3}$/,"");
   const parsed=JSON.parse(cleaned);
   if(!parsed||!Array.isArray(parsed.questions))throw new Error("ИИ вернул некорректную структуру экзамена.");
   return parsed.questions;
+}
+async function loadJournalLearnerProfile(db:any,userId:string){
+  const {data,error}=await db.from("cloudy_learning_events")
+    .select("event_type,occurred_at,level,lesson_index,exercise_type,skill_id,is_correct,retry")
+    .eq("user_id",userId).order("occurred_at",{ascending:false}).limit(1000);
+  if(error)throw new Error("Не удалось прочитать журнал обучения.");
+  const events=data??[],answers=events.filter((event:any)=>event.event_type==="answer_submitted"&&event.skill_id&&typeof event.is_correct==="boolean");
+  const grouped=new Map<string,any>();
+  for(const event of answers){
+    const id=String(event.skill_id),prior=grouped.get(id)??{id,correct:0,incorrect:0,evidence:0,lastPracticed:0,recent:[]};
+    if(event.is_correct)prior.correct++;else prior.incorrect++;
+    prior.evidence++;prior.lastPracticed=Math.max(prior.lastPracticed,new Date(event.occurred_at).getTime()||0);
+    prior.recent.push(event);grouped.set(id,prior);
+  }
+  const skills=[...grouped.values()].map((skill:any)=>{
+    const total=skill.correct+skill.incorrect;
+    const mastery=total?Math.max(.05,Math.min(.98,(skill.correct+1)/(total+2))):.5;
+    return {...skill,mastery,due:skill.incorrect>skill.correct||Date.now()-skill.lastPracticed>2*86400000};
+  }).sort((a:any,b:any)=>a.mastery-b.mastery);
+  return {attempts:answers.length,dueCount:skills.filter((skill:any)=>skill.due).length,skills,recentEvents:answers.slice(0,20).reverse().map((event:any)=>({skillId:event.skill_id,exerciseType:event.exercise_type??"unknown",correct:!!event.is_correct,retry:!!event.retry,at:new Date(event.occurred_at).getTime()||0}))};
 }
 export const syncCloudyLearningEvents=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
@@ -248,14 +290,26 @@ export const syncCloudyLearningEvents=createServerFn({method:"POST"}).inputValid
 export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
   const action=String(data.examAction??"");
-  if(!["sync","profile","start","submit"].includes(action))throw new Error("Неизвестное действие экзамена.");
+  if(!["sync","profile","status","start","submit"].includes(action))throw new Error("Неизвестное действие экзамена.");
   const {data:storedRow,error:storedError}=await db.from("user_learning_profiles").select("profile").eq("user_id",user.id).maybeSingle();
   if(storedError)throw new Error("Не удалось загрузить историю обучения.");
   const storedRaw=storedRow?.profile&&typeof storedRow.profile==="object"?storedRow.profile:{};
   const incoming=safeLearnerProfile(data.learnerProfile);
-  const merged=mergeLearnerProfiles(safeLearnerProfile(storedRaw),incoming);
-  const baseProfile={...(merged??{attempts:0,dueCount:0,skills:[],recentEvents:[]}),activeExam:storedRaw.activeExam??null,lastExam:storedRaw.lastExam??null};
+  const journalProfile=await loadJournalLearnerProfile(db,user.id);
+  const merged=mergeLearnerProfiles(mergeLearnerProfiles(safeLearnerProfile(storedRaw),incoming),journalProfile);
+  const baseProfile={...(merged??{attempts:0,dueCount:0,skills:[],recentEvents:[]}),attempts:Math.max(merged?.attempts??0,journalProfile.attempts),activeExam:storedRaw.activeExam??null,lastExam:storedRaw.lastExam??null};
   if(action==="profile")return {profile:merged??null};
+  if(action==="status"){
+    const {data:progressRow,error:progressError}=await db.from("user_progress").select("state").eq("user_id",user.id).maybeSingle();
+    if(progressError)throw new Error("Не удалось проверить прогресс для экзамена.");
+    const state=progressRow?.state&&typeof progressRow.state==="object"?progressRow.state as any:{};
+    const level=["A1","A2","B1","B2"].includes(String(state.lv))?String(state.lv):"A1";
+    const lessons=LV[level as keyof typeof LV].s.flatMap((section:any)=>section.l);
+    const completed=Math.max(0,Math.min(lessons.length,Number(state.dn?.[level])||0));
+    const providers=(await rows(db)).filter((provider:any)=>provider.enabled);
+    const ready=completed>0&&journalProfile.attempts>0&&providers.length>0;
+    return {ready,level,completed,attempts:journalProfile.attempts,reason:!providers.length?"ИИ временно недоступен":completed<1?"Сначала пройди хотя бы один урок":journalProfile.attempts<1?"Ответь на задания в уроках — тогда экзамен сможет учитывать твои ошибки.":""};
+  }
   if(action==="sync"){
     if(!merged)return {ok:true,synced:false};
     const {error}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:baseProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
@@ -300,23 +354,29 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
         if(!provider)throw new Error("AI provider configuration changed.");
         return ask(provider,[{role:"system",content:"Ты создаёшь точные образовательные тесты. Не выдумывай сведения о прогрессе. Возвращай только JSON, соблюдай заданную схему."},{role:"user",content:prompt}],1400);
       });
-      const generated=parseExamJson(routed.value.content);
-      const allowed=new Set(focus.map(skill=>skill.id));
-      const questions=generated.slice(0,6).map((question:any,index:number)=>{
-        const id="q"+(index+1),skillId=String(question?.skillId??"");
-        const target=examSafeText(question?.target,120),normalizedTarget=target.toLowerCase();
-        const options=Array.isArray(question?.options)?question.options.slice(0,4).map((option:any)=>examSafeText(option,100)):[];
-        const correctIndex=Number(question?.correctIndex);
-        const promptText=examSafeText(question?.prompt,240);
-        const explanation=examSafeText(question?.explanation,320);
-        const targetValid=skillId.startsWith("vocabulary:")?skillId==="vocabulary:"+normalizedTarget&&wordPairs.some((pair:any)=>pair.en.toLowerCase()===normalizedTarget):skillId==="grammar:sentence-building"&&sentences.some(sentence=>sentence.toLowerCase()===normalizedTarget);
-        const expectedAnswer=skillId.startsWith("vocabulary:")?wordPairs.find((pair:any)=>pair.en.toLowerCase()===normalizedTarget)?.ru:target;
-        const normalizeAnswer=(value:string)=>value.toLowerCase().replace(/[.!?]+$/,"").replace(/\s+/g," ").trim();
-        const correctMatches=!!expectedAnswer&&options[correctIndex]!==undefined&&normalizeAnswer(options[correctIndex])===normalizeAnswer(expectedAnswer);
-        if(!allowed.has(skillId)||!targetValid||!correctMatches||!promptText||options.length!==4||options.some((option:string)=>!option)||new Set(options.map((option:string)=>option.toLowerCase())).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
-        return {id,skillId,target,prompt:promptText,options,correctIndex,explanation};
-      });
-      if(questions.length!==6)throw new Error("Не удалось подготовить полный экзамен. Попробуй ещё раз.");
+      let questions:any[]=[];
+      try{
+        const generated=parseExamJson(routed.value.content);
+        const allowed=new Set(focus.map(skill=>skill.id));
+        const questions=generated.slice(0,6).map((question:any,index:number)=>{
+          const id="q"+(index+1),skillId=String(question?.skillId??"");
+          const target=examSafeText(question?.target,120),normalizedTarget=target.toLowerCase();
+          const options=Array.isArray(question?.options)?question.options.slice(0,4).map((option:any)=>examSafeText(option,100)):[];
+          const correctIndex=Number(question?.correctIndex);
+          const promptText=examSafeText(question?.prompt,240);
+          const explanation=examSafeText(question?.explanation,320);
+          const targetValid=skillId.startsWith("vocabulary:")?skillId==="vocabulary:"+normalizedTarget&&wordPairs.some((pair:any)=>pair.en.toLowerCase()===normalizedTarget):skillId==="grammar:sentence-building"&&sentences.some(sentence=>sentence.toLowerCase()===normalizedTarget);
+          const expectedAnswer=skillId.startsWith("vocabulary:")?wordPairs.find((pair:any)=>pair.en.toLowerCase()===normalizedTarget)?.ru:target;
+          const normalizeAnswer=(value:string)=>value.toLowerCase().replace(/[.!?]+$/,"").replace(/\s+/g," ").trim();
+          const correctMatches=!!expectedAnswer&&options[correctIndex]!==undefined&&normalizeAnswer(options[correctIndex])===normalizeAnswer(expectedAnswer);
+          if(!allowed.has(skillId)||!targetValid||!correctMatches||!promptText||options.length!==4||options.some((option:string)=>!option)||new Set(options.map((option:string)=>option.toLowerCase())).size!==4||!Number.isInteger(correctIndex)||correctIndex<0||correctIndex>3)throw new Error("ИИ составил вопрос вне изученного материала. Попробуй начать экзамен ещё раз.");
+          return {id,skillId,target,prompt:promptText,options,correctIndex,explanation};
+        });
+        if(questions.length!==6)throw new Error("ИИ вернул неполный экзамен.");
+      }catch(error){
+        console.warn("[cloudy-exam] invalid AI question payload; using verified lesson-based fallback");
+        questions=buildFallbackExamQuestions(wordPairs,sentences);
+      }
       const examId=crypto.randomUUID(),createdAt=Date.now();
       const nextProfile={...baseProfile,activeExam:{id:examId,level,createdAt,expiresAt:createdAt+30*60*1000,questions}};
       const {error:saveError}=await db.from("user_learning_profiles").upsert({user_id:user.id,profile:nextProfile,updated_at:new Date().toISOString()},{onConflict:"user_id"});
