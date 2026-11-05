@@ -55,6 +55,7 @@
     });
     if (data.events.length > MAX_EVENTS) data.events.splice(0, data.events.length - MAX_EVENTS);
     try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* progress app remains usable if storage is full */ }
+    try { window.dispatchEvent(new CustomEvent("cloudy:learning-updated", { detail: { scope: String(scope || "guest") } })); } catch { /* learning remains usable without event support */ }
     return { skillId, ...next };
   }
   function profile(scope) {
