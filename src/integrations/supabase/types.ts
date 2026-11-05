@@ -110,26 +110,59 @@ export type Database = {
         }
         Relationships: []
       }
+      community_posts: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          bio: string
           created_at: string
           display_name: string
           english_level: string | null
           id: string
+          is_public: boolean
           placement_test_completed: boolean
         }
         Insert: {
+          bio?: string
           created_at?: string
           display_name?: string
           english_level?: string | null
           id: string
+          is_public?: boolean
           placement_test_completed?: boolean
         }
         Update: {
+          bio?: string
           created_at?: string
           display_name?: string
           english_level?: string | null
           id?: string
+          is_public?: boolean
           placement_test_completed?: boolean
         }
         Relationships: []
@@ -238,7 +271,15 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      community_public_profiles: {
+        Row: {
+          bio: string
+          created_at: string
+          display_name: string
+          id: string
+        }
+        Relationships: []
+      }
     }
     Functions: {
       acquire_cloudy_ai_request: {
