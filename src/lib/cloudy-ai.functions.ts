@@ -558,10 +558,11 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { db: coreDb, user } = await ctx(data.accessToken);
+    const contentType = data.contentType as ContentModerationType;
     const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
     const contentDb = getCloudyContentAdmin();
-    const table = data.contentType === "short_comment" ? "shorts_comments" : "shorts_videos";
-    const bodyColumn = data.contentType === "short_comment" ? "body" : "caption";
+    const table = contentType === "short_comment" ? "shorts_comments" : "shorts_videos";
+    const bodyColumn = contentType === "short_comment" ? "body" : "caption";
     const { data: item, error } = await contentDb
       .from(table)
       .select("id,author_id,moderation_status," + bodyColumn)
@@ -577,7 +578,7 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
     let provider = "cloudy-ai";
     let model = "";
     try {
-      const result = await runCloudyContentTextModeration(coreDb, data.contentType as ContentModerationType, body);
+      const result = await runCloudyContentTextModeration(coreDb, contentType, body);
       decision = result;
       provider = result.provider;
       model = result.model;
@@ -593,7 +594,7 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
     }
 
     const { data: applied, error: applyError } = await contentDb.rpc("apply_shorts_text_moderation", {
-      p_content_type: data.contentType,
+      p_content_type: contentType,
       p_content_id: data.id,
       p_decision: decision.decision,
       p_reason: decision.reason,
@@ -603,7 +604,7 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
       p_policy_version: "cloudy-content-text-v1",
     });
     if (applyError) throw new Error("Не удалось сохранить решение модерации.");
-    const videoNeedsMediaReview = data.contentType === "short_video" && decision.decision === "allow";
+    const videoNeedsMediaReview = contentType === "short_video" && decision.decision === "allow";
     return {
       ok: true,
       decision: videoNeedsMediaReview ? "review" : decision.decision,
