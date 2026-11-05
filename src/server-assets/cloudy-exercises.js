@@ -208,7 +208,7 @@ async function askExerciseCoach(){
  delete box.dataset.loading;
 }
 function check(){if(done)return;const e=ex[i];
- const typed=e.k==="r"?String(document.getElementById("recallAnswer")?.value||"").trim().toLocaleLowerCase().replace(/[.!?]+$/g,"").replace(/\\s+/g," "):"";const good=e.k==="r"?typed===String(e.a).toLocaleLowerCase():e.k=="b"?built.map(j=>e.o[j]).join(" ").toLowerCase()==e.a.toLowerCase():e.o[sel]==e.a;
+ const typed=e.k==="r"?String(document.getElementById("recallAnswer")?.value||"").trim().toLocaleLowerCase().replace(/[.!?]+$/g,"").replace(/\s+/g," "):"";const good=e.k==="r"?typed===String(e.a).toLocaleLowerCase():e.k=="b"?built.map(j=>e.o[j]).join(" ").toLowerCase()==e.a.toLowerCase():e.o[sel]==e.a;
  if(window.CloudyLearning)CloudyLearning.record(KEY,e,good,{retry:!!rt,responseSeconds:(Date.now()-questionStartedAt)/1000,questionIndex:i,selectedAnswer:e.k==="r"?typed:e.k==="b"?built.map(j=>e.o[j]).join(" "):e.o[sel],correctAnswer:e.a});
  if(e.k!=="b"&&e.k!=="r")document.querySelectorAll(".opt").forEach((b,j)=>{if(e.o[j]==e.a)b.classList.add("good");else if(j==sel)b.classList.add("wrong")});
  if(good){ok++;tot++;cmb++;snd("ok",cmb);if(rv&&e.en&&S.mis[e.en]){if(--S.mis[e.en]<=0)delete S.mis[e.en];save()}if(cmb>=3){const t=$(".top");if(!$(".cb"))t.insertAdjacentHTML("beforeend",'<span class="cb"></span>');$(".cb").textContent="x"+cmb}}else{addMis(e.en);miss();$(".cb")&&$(".cb").remove()}
