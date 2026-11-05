@@ -458,3 +458,17 @@ h2{font-size:21px;margin:0 0 16px}
 .community-empty p{max-width:330px;margin:0;color:rgba(220,237,255,.66);font-size:12px;line-height:1.55}
 .community-profile-link{width:100%;margin-top:14px}
 @media(max-width:380px){nav{gap:2px;padding-left:7px;padding-right:7px}nav button{padding:7px 0}nav button span{font-size:9px}.community-hero{padding:17px 15px}}
+
+/* Community profile privacy controls */
+.community-settings-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.community-settings-head h3{margin:0 0 5px}
+.community-settings-head small,.community-settings-foot{color:rgba(220,237,255,.65);font-size:11px;line-height:1.45}
+.community-private-pill{flex:none;padding:6px 9px;border:1px solid rgba(137,207,255,.2);border-radius:99px;background:rgba(75,174,255,.1);color:#c6eaff;font-size:10px;font-weight:800}
+.community-privacy-note{margin:0 0 14px;color:rgba(220,237,255,.72);font-size:11px;line-height:1.5}
+.community-bio-label{display:flex;justify-content:space-between;gap:8px;margin:12px 0 7px;font-size:12px;font-weight:800}
+.community-bio-label small{color:rgba(220,237,255,.55);font-weight:500}
+.community-bio-input{display:block;width:100%;min-height:76px;resize:vertical;padding:11px 12px;border:1px solid rgba(163,218,255,.2);border-radius:13px;background:rgba(4,24,66,.35);color:#fff;font:inherit;font-size:12px;line-height:1.5;outline:none}
+.community-bio-input:focus{border-color:rgba(112,204,255,.72);box-shadow:0 0 0 3px rgba(91,181,255,.1)}
+.community-bio-input::placeholder{color:rgba(220,237,255,.42)}
+.community-settings-foot{display:block;margin-top:9px}
+.community-profile-settings .sw:disabled{opacity:.55}
