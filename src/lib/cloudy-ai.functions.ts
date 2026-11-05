@@ -332,7 +332,8 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       const lessons=lessonIds.map((id:number)=>D[id]).filter(Boolean);
       const wordPairs:Array<{en:string;ru:string}>=[...new Map<string,{en:string;ru:string}>(lessons.flatMap((lesson:any)=>lesson.w.map((pair:any)=>[String(pair[0]).trim().toLowerCase(),{en:String(pair[0]).trim(),ru:String(pair[1]).trim()}] as [string,{en:string;ru:string}]).filter((entry:any)=>entry[0]&&entry[1].en&&entry[1].ru))).values()].slice(0,180);
       const words=wordPairs.map((pair:any)=>pair.en);
-      const sentencePairs=[...new Map<string,{en:string;ru:string}>(lessons.flatMap((lesson:any)=>lesson.s.map((pair:any)=>[String(pair[1]).trim().toLowerCase(),{en:String(pair[1]).trim(),ru:String(pair[0]).trim()}] as [string,{en:string;ru:string}]).filter((entry:any)=>entry[1].en&&entry[1].ru))).values()].slice(0,100);\n      const sentences=sentencePairs.map((pair)=>pair.en);
+      const sentencePairs=[...new Map<string,{en:string;ru:string}>(lessons.flatMap((lesson:any)=>lesson.s.map((pair:any)=>[String(pair[1]).trim().toLowerCase(),{en:String(pair[1]).trim(),ru:String(pair[0]).trim()}] as [string,{en:string;ru:string}]).filter((entry:any)=>entry[1].en&&entry[1].ru))).values()].slice(0,100);
+      const sentences=sentencePairs.map((pair)=>pair.en);
       if(!words.length&&!sentences.length)throw new Error("В пройденных уроках пока нет материала для экзамена.");
       const evidence=new Map((baseProfile.skills??[]).map((skill:any)=>[skill.id,skill]));
       const candidates=words.map(word=>{
