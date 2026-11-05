@@ -26,7 +26,15 @@ The static lesson curriculum stays in application code for now. Do not move it i
 
 Core Auth is the only identity provider. Content does not create a second auth system and intentionally has no foreign keys to auth.users. The stable Core user UUID is stored as an opaque author_id/user_id/reporter_id/reviewed_by reference.
 
-All Content database calls must be server-side. The server validates the caller's Core access token with Core Supabase Auth (auth.getUser(token)), derives the user ID from that verified user, and only then accesses Content. Never trust a client-supplied user ID. Never expose a Content service-role key or privileged Content client to the browser.\n\n## Cloudy AI moderation\n\nCloudy AI remains in Core. The existing AI provider configuration and encrypted/provider-key vault stay in Core and are never copied into Content. A trusted server moderation service loads enabled providers from the Core AI Vault, calls the existing AI routing/provider layer, and passes only the minimum required content context. It writes the moderation decision, labels, reason, confidence, model and policy version to Content.\n\nThe first server moderation endpoint reviews an author's pending Shorts text using enabled providers from the Core AI Vault and writes the result atomically through a service-role-only Content RPC. Comments can be published only after a high-confidence allow decision; clear violations are removed; ambiguous cases remain pending for review. Video captions can be rejected, but even an allowed caption leaves the video in `needs_human_review`: actual video-frame and audio inspection is not implemented yet, so the video itself cannot be approved or published.\n\nUse a staged policy: clear allowed content can be approved; clear violations are rejected/hidden; uncertain or high-impact cases go to human review. Automatic account restrictions must be proportionate, reasoned, time-bounded where possible, recorded in an audit event, and reversible by an authorized moderator. Do not permanently ban solely on a low-confidence model result.
+All Content database calls must be server-side. The server validates the caller's Core access token with Core Supabase Auth (auth.getUser(token)), derives the user ID from that verified user, and only then accesses Content. Never trust a client-supplied user ID. Never expose a Content service-role key or privileged Content client to the browser.
+
+## Cloudy AI moderation
+
+Cloudy AI remains in Core. The existing AI provider configuration and encrypted/provider-key vault stay in Core and are never copied into Content. A trusted server moderation service loads enabled providers from the Core AI Vault, calls the existing AI routing/provider layer, and passes only the minimum required content context. It writes the moderation decision, labels, reason, confidence, model and policy version to Content.
+
+The first server moderation endpoint reviews an author's pending Shorts text using enabled providers from the Core AI Vault and writes the result atomically through a service-role-only Content RPC. Comments can be published only after a high-confidence allow decision; clear violations are removed; ambiguous cases remain pending for review. Video captions can be rejected, but even an allowed caption leaves the video in `needs_human_review`: actual video-frame and audio inspection is not implemented yet, so the video itself cannot be approved or published.
+
+Use a staged policy: clear allowed content can be approved; clear violations are rejected/hidden; uncertain or high-impact cases go to human review. Automatic account restrictions must be proportionate, reasoned, time-bounded where possible, recorded in an audit event, and reversible by an authorized moderator. Do not permanently ban solely on a low-confidence model result.
 
 Public feed eligibility is checked against Core profiles.is_public. Resolve display names and bios from Core's safe profile projection; do not copy private profile data into Content.
 
@@ -41,7 +49,8 @@ Public feed eligibility is checked against Core profiles.is_public. Resolve disp
 ## Migration and rollout
 
 - Keep existing community tables in Core until Content is provisioned, migrated and verified.
-- Export/import existing posts, comments, reactions and reports with original UUIDs and timestamps; preserve moderation statuses and rate-limit counters where possible.\n- Existing AI provider records and AI configuration remain in Core and are not migrated.
+- Export/import existing posts, comments, reactions and reports with original UUIDs and timestamps; preserve moderation statuses and rate-limit counters where possible.
+- Existing AI provider records and AI configuration remain in Core and are not migrated.
 - Verify row counts and sample records before switching reads/writes.
 - Switch server endpoints to Content behind an explicit server configuration/feature flag.
 - Keep a rollback window; do not drop Core community tables during initial cutover.
@@ -50,6 +59,8 @@ Public feed eligibility is checked against Core profiles.is_public. Resolve disp
 ## Security
 
 - Content RLS is enabled with no policies for browser roles; only service_role can access data.
-- The server enforces ownership, public visibility, input limits and rate limits before writes.\n- AI moderation is invoked server-side using Core AI Vault credentials; Content stores decisions, not provider secrets. The server uses conservative confidence thresholds and fails closed to human review when the AI is unavailable or returns invalid output.\n- A video is not considered fully AI-moderated until media frames/audio are actually inspected; caption-only moderation cannot approve the underlying video.
+- The server enforces ownership, public visibility, input limits and rate limits before writes.
+- AI moderation is invoked server-side using Core AI Vault credentials; Content stores decisions, not provider secrets. The server uses conservative confidence thresholds and fails closed to human review when the AI is unavailable or returns invalid output.
+- A video is not considered fully AI-moderated until media frames/audio are actually inspected; caption-only moderation cannot approve the underlying video.
 - Moderation RPC is callable only with service role and only after the Core admin check.
 - Service-role credentials must never be committed to the repository.
