@@ -213,6 +213,8 @@ describe("Cloudy learning progress", () => {
     const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
     const styles = readFileSync(join(process.cwd(), "src/server-assets/cloudy-english.css"), "utf8");
     expect(runtime).toContain('class="pronoun-grid"');
+    expect(runtime).toContain('L===25?[["I","Я"],["You","Ты / Вы"],["We","Мы"],["They","Они"]]');
+    expect(runtime).toContain('L===26?[["He","Он"],["She","Она"],["It","Оно / это"]]');
     expect(runtime).toContain('class="vocab-card"');
     expect(runtime).toContain('study-stage-enter');
     expect(runtime).toContain('stage.classList.add("is-leaving")');
