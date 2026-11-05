@@ -145,8 +145,8 @@ function renderInstallGate(){
 function checkCloudyInstall(){if(isInstalledCloudy()){try{localStorage.setItem('cloudyHomeInstalled','1')}catch(e){}view();return}const note=$('#installNote');if(note)note.textContent='Пока Cloudy открыт во вкладке Safari. Вернись на главный экран iPhone и запусти Cloudy с новой иконки — тогда установка подтвердится.';const panel=$('.install-panel');if(panel){panel.classList.remove('shk');void panel.offsetWidth;panel.classList.add('shk')}}
 function ensureCloudyInstallGate(){if(!isAppleMobile()||isInstalledCloudy())return;if(!document.querySelector('#app .install-gate'))renderInstallGate()}
 function bootCloudy(){if(isAppleMobile()&&!isInstalledCloudy()){renderInstallGate();setInterval(ensureCloudyInstallGate,20000);window.addEventListener('pageshow',ensureCloudyInstallGate);window.addEventListener('focus',ensureCloudyInstallGate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureCloudyInstallGate()});return}if(sessionHydrating){cloudLoader();return}view()}
-function view(a=1){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}">${[learn,quests,lg,prof][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile()}
-function tab(k){if(k!=T){snd("tab");T=k;view()}}
+function view(a=1,tabDirection=0){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile()}
+function tab(k){if(k!==T){const direction=k>T?1:-1;snd("tab");T=k;view(1,direction)}}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
 const pool=()=>LV[S.lv].s.flatMap(x=>x.l).flatMap(j=>D[j].w);
@@ -614,7 +614,7 @@ function ptr(){const level=LVS[PT.best];S.lv=level;S.tested=1;save();checkAch();
 function learn(){
  const g=S.set.goal,td=S.td,rdy=td.xp>=g&&!td.claim,dn=S.dn[S.lv]||0,tl=SEC.reduce((a,s)=>a+s.l.length,0);let n=0;
  const secs=SEC.map((s,si)=>{
-  const nodes=s.l.map(li=>{const st=n<dn?"done":n==dn?"cur":"lock",x=Math.round(Math.sin(n*1.15)*60),d=n*70;n++;
+  const nodes=s.l.map(li=>{const st=n<dn?"done":n==dn?"cur":"lock",x=Math.round(Math.sin(n*1.15)*60),d=Math.min(n,9)*24;n++;
    return `<div class="nw" style="--x:${x}px;--d:${d}ms">${st=="cur"?'<div class="tip">НАЧАТЬ</div>':""}<button class="node ${st}" onclick="${st=="lock"?"snd('bad')":`go(${li})`}">${st=="cur"?'<svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46"/></svg>':""}${ic(st=="done"?"check":st=="cur"?"star":"lock")}</button><div class="lb">${D[li].t}</div></div>`}).join("");
   return `<div class="ban"><div><small>РАЗДЕЛ ${si+1}</small><h3>${s.n}</h3></div><button class="gd" onclick="guide(${si})">${ic("book")}</button></div><div class="path">${nodes}<div class="deco">${mascot()}</div></div>`}).join("");
  return `<div class="stats"><button class="av" onclick="tab(3)">${ic("user")}</button><span class="pill"><b class="en" onclick="tab(3)">${S.lv}</b></span><span class="sp"></span><span class="pill">${ic("flame")}${S.streak}</span><span class="pill">${ic("bolt")}${S.xp}</span></div>
