@@ -176,7 +176,7 @@ describe("Cloudy learning progress", () => {
   it("introduces lesson vocabulary before graded practice", () => {
     const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
     expect(runtime).toContain('const vocabulary={k:"v",words:D[n].w};');
-    expect(runtime).toContain('ex=intro?[{k:"t",...intro},vocabulary,...practice]:[vocabulary,...practice];');
+    expect(runtime).toContain('ex=intro?[{k:"t",...intro},vocabulary,...recall,...practice]:[vocabulary,...recall,...practice];');
     expect(runtime).toContain('if(e.k=="v")b=');
     expect(runtime).toContain('e.k=="t"||e.k=="v"');
   });
