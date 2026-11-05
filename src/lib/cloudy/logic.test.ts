@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, normalizeState } from "./logic";
@@ -79,7 +80,7 @@ describe("Cloudy learning progress", () => {
   it("keeps the browser runtime catalog identical to the typed curriculum", () => {
     const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV } } = {};
     const browserCatalog = readFileSync(
-      new URL("../../server-assets/cloudy-catalog.js", import.meta.url),
+      join(process.cwd(), "src/server-assets/cloudy-catalog.js"),
       "utf8",
     );
     runInNewContext(browserCatalog, { window: browserWindow });
