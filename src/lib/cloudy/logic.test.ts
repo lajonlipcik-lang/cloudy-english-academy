@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { runInNewContext } from "node:vm";
+import { runInNewContext, Script } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, normalizeState } from "./logic";
 import { D, LV, levelLessons } from "./data";
@@ -8,6 +8,13 @@ import { isLessonInLevel, sanitizeCloudyProgress } from "./progress-policy";
 import type { Exercise, Lesson } from "./types";
 
 describe("Cloudy learning progress", () => {
+  it("keeps production browser learning runtimes syntactically valid", () => {
+    for (const file of ["cloudy-english-app.js", "cloudy-exercises.js", "cloudy-learning.js"]) {
+      const source = readFileSync(join(process.cwd(), "src/server-assets", file), "utf8");
+      expect(() => new Script(source, { filename: file })).not.toThrow();
+    }
+  });
+
   it("normalizes damaged or empty saved data without throwing", () => {
     expect(normalizeState(null)).toEqual(defaultState());
     const restored = normalizeState({ xp: "bad", streak: 4, set: { th: "light" } });
