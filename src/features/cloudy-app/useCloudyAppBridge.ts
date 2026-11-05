@@ -168,7 +168,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           if (profiles.error) throw profiles.error;
           const profileRows = (profiles.data ?? []) as { id: string; display_name: string | null }[];
           const names = new Map(profileRows.map(profile => [profile.id, profile.display_name || "Участник"]));
-          reply({ ok: true, result: rows.map(post => ({ ...post, author_name: post.author_id === uid ? "Вы" : names.get(post.author_id) || "Участник", is_own: post.author_id === uid })) });
+          reply({ ok: true, result: rows.map(post => ({ ...post, author_name: names.get(post.author_id) || (post.author_id === uid ? "Вы" : "Участник"), is_own: post.author_id === uid })) });
           return;
         }
         if (message.action === "community-post-create") {
