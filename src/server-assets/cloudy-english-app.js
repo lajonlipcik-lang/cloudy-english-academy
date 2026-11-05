@@ -27,6 +27,7 @@ function mergeCloudProgress(remote,local,base={}){
   const localChanged=JSON.stringify(localValue)!==JSON.stringify(baseValue);
   merged.set[key]=localChanged&&localValue!==undefined?localValue:remoteValue!==undefined?remoteValue:localValue;
  });
+ merged.set.th="dark";
  const levels=['A1','A2','B1','B2'];merged.dn={...(remote.dn||{}),...(local.dn||{})};
  levels.forEach(k=>merged.dn[k]=Math.max(progressNumber(remote.dn?.[k]),progressNumber(local.dn?.[k])));
  merged.done=Math.max(progressNumber(remote.done),progressNumber(local.done));
