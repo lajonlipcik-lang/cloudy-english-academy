@@ -237,7 +237,9 @@ function buildFallbackExamQuestions(wordPairs:Array<{en:string;ru:string}>,sente
   const questions:any[]=[];
   const vocab=wordPairs.filter((pair)=>pair.en&&pair.ru).slice(0,30);
   for(let index=0;index<Math.min(6,vocab.length);index++){
-    const pair=vocab[index],distractors=vocab.filter((item)=>item.en!==pair.en&&item.ru!==pair.ru).map((item)=>item.ru);
+    const pair=vocab[index];
+    if(!pair)continue;
+    const distractors=vocab.filter((item)=>item.en!==pair.en&&item.ru!==pair.ru).map((item)=>item.ru);
     const options=[pair.ru,...distractors].filter((value,position,array)=>array.indexOf(value)===position).slice(0,4);
     if(options.length!==4)continue;
     questions.push({id:"q"+(questions.length+1),skillId:"vocabulary:"+pair.en.toLowerCase(),target:pair.en,prompt:"Что означает английское слово «"+pair.en+"»?",options,correctIndex:0,explanation:"«"+pair.en+"» переводится как «"+pair.ru+"»."});
