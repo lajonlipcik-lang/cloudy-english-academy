@@ -10,7 +10,7 @@ const D=[
 {t:"Цвета",w:[["red","красный"],["blue","синий"],["green","зелёный"],["yellow","жёлтый"],["black","чёрный"],["white","белый"]],s:[["Это красное яблоко","This is a red apple","blue the"],["Небо синее","The sky is blue","red green"]]}
 ];
 D.push(
-{t:"Город",w:[["bank","банк"],["street","улица"],["station","вокзал"],["market","рынок"],["park","парк"],["bridge","мост"]],s:[["Я иду в парк","I go to the park","market a"],["Где находится вокзал","Where is the station","street a"]]},
+{t:"Город",w:[["bank","банк"],["street","улица"],["station","вокзал"],["market","рынок"],["park","парк"],["bridge","мост"]],s:[["Я иду в парк","I go to the park","market a"],["Где находится вокзал","Where is the station?","street a"]]},
 {t:"Покупки",w:[["cheap","дешёвый"],["expensive","дорогой"],["price","цена"],["shop","магазин"],["money","деньги"],["ticket","билет"]],s:[["Сколько это стоит","How much is it","cheap the"],["У меня нет денег","I have no money","shop a"]]},
 {t:"Время",w:[["morning","утро"],["evening","вечер"],["today","сегодня"],["tomorrow","завтра"],["week","неделя"],["always","всегда"]],s:[["Увидимся завтра","See you tomorrow","today the"],["Я всегда пью кофе утром","I always drink coffee in the morning","evening a"]]},
 {t:"Работа",w:[["job","работа"],["office","офис"],["meeting","встреча"],["boss","начальник"],["salary","зарплата"],["skill","навык"]],s:[["У меня завтра встреча","I have a meeting tomorrow","office the"],["Я ищу новую работу","I am looking for a new job","boss the"]]},
