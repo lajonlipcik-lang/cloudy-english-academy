@@ -92,6 +92,13 @@
       "when": 1793797200001,
       "tag": "0012_complete_a2_curriculum",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793800800000,
+      "tag": "0013_cloudy_learning_event_journal",
+      "breakpoints": true
     }
   ]
 }

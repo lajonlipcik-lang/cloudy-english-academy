@@ -3,10 +3,10 @@
  */
 const addMis=en=>{if(!en)return;S.mis[en]=(S.mis[en]||0)+1;if(!lm.includes(en))lm.push(en);save()};
 const cq=(en,ru,m)=>{const o=sh([[en,ru],...sh(pool().filter(x=>x[0]!=en)).slice(0,3)]);return m==2?{k:'l',a:en,en,o:o.map(x=>x[0]),title:'Что вы слышите?'}:{k:'c',q:m?en:ru,a:m?ru:en,en,spk:!!m,o:o.map(x=>m?x[1]:x[0]),title:m?'Что это значит?':'Переведите на английский'}};
-function review(){const w=Object.keys(S.mis).slice(0,8).map(en=>[en,ruOf(en)]).filter(x=>x[1]);if(!w.length)return snd('bad');snd('go');rv=1;rt=1;lm=[];L=-1;ex=mk({w,s:[]});i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
+function review(){const w=Object.keys(S.mis).slice(0,8).map(en=>[en,ruOf(en)]).filter(x=>x[1]);if(!w.length)return snd('bad');snd('go');rv=1;rt=1;lm=[];L=-1;if(window.CloudyLearning)CloudyLearning.beginSession(KEY,{level:S.lv,lessonIndex:-1,sessionType:'review'});ex=mk({w,s:[]});i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
 function again(){rv?review():go(L)}
 const PB=e=>`<h2>Скажите вслух</h2><div class="qq">${e.en}<button class="spk" onclick="say('${e.en}',1)">${ic('spk')}</button></div><button class="big" id="mic" onclick="rec()">${ic('mic')}</button><p id="rs" style="text-align:center;opacity:.85">Нажмите и произнесите слово</p><button class="btn ghost" onclick="skipP()">ПРОПУСТИТЬ</button>`;
-function skipP(){if(done)return;fx(true,'Пропущено')}
+function skipP(){if(done)return;if(window.CloudyLearning)CloudyLearning.track(KEY,'question_skipped',{exerciseType:'p',questionIndex:i});fx(true,'Пропущено')}
 let cloudyRecognition=null,cloudyRecognitionTimer=0,cloudyVoiceRetryTimer=0,cloudyVoiceRetryCount=0,cloudyVoiceHandled=false,lastVoiceTranscript='';
 const { normalizeSpeechText, speechDistance, speechMatches } = window.CloudySpeech;
 function clearCloudyRecognition(active=cloudyRecognition){
@@ -55,10 +55,10 @@ function rec(autoRetry=false){
   const heard=alternatives[0].text;lastVoiceTranscript=heard;
   clearCloudyRecognition(recognition);
   if(best){
-   if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,true,{retry:!!rt});
+   if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,true,{retry:!!rt,responseSeconds:(Date.now()-questionStartedAt)/1000,questionIndex:i,selectedAnswer:heard,correctAnswer:exercise.en});
    ok++;tot++;cmb++;snd('ok',cmb);fx(true,'Отлично! Распознано: '+best.text);
   }else{
-   if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,false,{retry:!!rt});
+   if(window.CloudyLearning)CloudyLearning.record(KEY,exercise,false,{retry:!!rt,responseSeconds:(Date.now()-questionStartedAt)/1000,questionIndex:i,selectedAnswer:heard,correctAnswer:exercise.en});
    addMis(exercise.en);miss();fx(false,'Распознано: '+heard+'. Нужно сказать: '+exercise.en);
   }
  };
@@ -105,7 +105,7 @@ function rec(autoRetry=false){
  }
 }
 
-let ex,i,hp,sel,built,done,ml,mc,cmb,ok,tot,L,rv=0,lm=[],rt=0;
+let ex,i,hp,sel,built,done,ml,mc,cmb,ok,tot,L,rv=0,lm=[],rt=0,questionStartedAt=Date.now();
 function mk(l){const r=[];
  const titles={
   ru:["Переведите на английский","Как сказать это по-английски?","Выберите английский перевод"],
@@ -131,14 +131,14 @@ function mk(l){const r=[];
   r.push({k:"b",q:ru,a:en,o:sh([...correctTokens,...distractors]),title:titles.bank[Math.random()*titles.bank.length|0]});
  });
  if(l.w.length&&(window.SpeechRecognition||window.webkitSpeechRecognition)&&S.set.mic)r.push({k:"p",en:sh(l.w)[0][0]});return sh(r)}
-function go(n){snd("go");rv=0;lm=[];rt=0;L=n;ex=window.CloudyLearning?CloudyLearning.prioritize(KEY,mk(D[n])):mk(D[n]);i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
+function go(n){snd("go");rv=0;lm=[];rt=0;L=n;if(window.CloudyLearning)CloudyLearning.beginSession(KEY,{level:S.lv,lessonIndex:n,sessionType:"lesson"});ex=window.CloudyLearning?CloudyLearning.prioritize(KEY,mk(D[n])):mk(D[n]);i=0;hp=5;cmb=0;ok=0;tot=0;draw()}
 const opts=e=>e.o.map((o,k)=>`<button class="opt" style="--i:${k}" onclick="pick(${k})">${o}</button>`).join("");
-function draw(){const e=ex[i];sel=null;built=[];done=false;ml=null;mc=0;let b;
+function draw(){const e=ex[i];questionStartedAt=Date.now();if(window.CloudyLearning)CloudyLearning.track(KEY,"question_opened",{exercise:e,questionIndex:i});sel=null;built=[];done=false;ml=null;mc=0;let b;
  if(e.k=="c")b=`<h2>${e.title}</h2><div class="qq">${e.q}${e.spk?`<button class="spk" onclick="say('${e.en}',1)">${ic("spk")}</button>`:""}</div>${opts(e)}`;
  else if(e.k=="l")b=`<h2>${e.title}</h2><button class="big" onclick="say('${e.en}',1)">${ic("spk")}</button>${opts(e)}`;
  else if(e.k=="b")b=`<h2>${e.title}</h2><div class="qq" style="font-size:24px">${e.q}</div><div class="ans" id="ans"></div><div class="bank">${e.o.map((o,k)=>`<button class="chip" id="c${k}" onclick="tog(${k})">${o}</button>`).join("")}</div>`;
  else if(e.k=="p")b=PB(e);else b=`<h2>${e.title||"Найдите пары"}</h2><div class="mt"><div>${e.L.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(0,'${id}',this)">${t}</button>`).join("")}</div><div>${e.R.map(([t,id],k)=>`<button class="opt" style="--i:${k}" onclick="mp(1,'${id}',this)">${t}</button>`).join("")}</div></div>`;
- app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="snd('tab');view()">${ic("x")}</button><div class="bar"><i style="width:${i/ex.length*100}%"></i></div><span class="hp" id="hp">${ic("heart")}${hp}</span></div><div class="body">${b}</div></div>`+(e.k=="m"||e.k=="p"?'<div class="foot" id="ft" style="display:none"></div>':`<div class="foot" id="ft"><button class="btn" id="go" disabled onclick="check()">ПРОВЕРИТЬ</button></div>`);
+ app.innerHTML=`<div class="scr"><div class="top"><button class="x" onclick="exitExercise()">${ic("x")}</button><div class="bar"><i style="width:${i/ex.length*100}%"></i></div><span class="hp" id="hp">${ic("heart")}${hp}</span></div><div class="body">${b}</div></div>`+(e.k=="m"||e.k=="p"?'<div class="foot" id="ft" style="display:none"></div>':`<div class="foot" id="ft"><button class="btn" id="go" disabled onclick="check()">ПРОВЕРИТЬ</button></div>`);
  requestAnimationFrame(()=>{const f=$(".bar i");if(f)f.style.width=i/ex.length*100+"%";
   const target=$(".body");if(!target)return;const rect=target.getBoundingClientRect();
   const footer=$(".foot"),visibleBottom=window.innerHeight-(footer&&footer.style.display!=="none"?footer.getBoundingClientRect().height:0)-12;
@@ -209,18 +209,19 @@ async function askExerciseCoach(){
 }
 function check(){if(done)return;const e=ex[i];
  const good=e.k=="b"?built.map(j=>e.o[j]).join(" ").toLowerCase()==e.a.toLowerCase():e.o[sel]==e.a;
- if(window.CloudyLearning)CloudyLearning.record(KEY,e,good,{retry:!!rt});
+ if(window.CloudyLearning)CloudyLearning.record(KEY,e,good,{retry:!!rt,responseSeconds:(Date.now()-questionStartedAt)/1000,questionIndex:i,selectedAnswer:e.k==="b"?built.map(j=>e.o[j]).join(" "):e.o[sel],correctAnswer:e.a});
  if(e.k!="b")document.querySelectorAll(".opt").forEach((b,j)=>{if(e.o[j]==e.a)b.classList.add("good");else if(j==sel)b.classList.add("wrong")});
  if(good){ok++;tot++;cmb++;snd("ok",cmb);if(rv&&e.en&&S.mis[e.en]){if(--S.mis[e.en]<=0)delete S.mis[e.en];save()}if(cmb>=3){const t=$(".top");if(!$(".cb"))t.insertAdjacentHTML("beforeend",'<span class="cb"></span>');$(".cb").textContent="x"+cmb}}else{addMis(e.en);miss();$(".cb")&&$(".cb").remove()}
  fx(good,good?["Отлично!","Верно!","Супер!","Так держать!"][Math.random()*4|0]:"Правильный ответ: "+e.a)}
 function mp(side,id,el){if(done||el.classList.contains("good"))return;
  if(side==0){snd("pick");ml=[id,el];document.querySelectorAll(".mt .opt").forEach(b=>b.classList.remove("sel"));el.classList.add("sel");return}
  if(!ml)return;const l=ml[1];
- if(ml[0]==id){if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:id},true,{retry:!!rt});l.classList.remove("sel");l.classList.add("good");el.classList.add("good");snd("match");ml=null;if(++mc==ex[i].L.length){ok++;tot++;cmb++;setTimeout(()=>{snd("ok",cmb);fx(true,"Все пары найдены!")},350)}}
- else{if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:ml[0]},false,{retry:!!rt});[l,el].forEach(b=>{b.classList.add("wrong");setTimeout(()=>b.classList.remove("wrong"),500)});l.classList.remove("sel");addMis(ml[0]);ml=null;miss();if(hp<=0)setTimeout(fail,800)}}
+ if(ml[0]==id){if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:id},true,{retry:!!rt,responseSeconds:(Date.now()-questionStartedAt)/1000,questionIndex:i,selectedAnswer:id,correctAnswer:id});l.classList.remove("sel");l.classList.add("good");el.classList.add("good");snd("match");ml=null;if(++mc==ex[i].L.length){ok++;tot++;cmb++;setTimeout(()=>{snd("ok",cmb);fx(true,"Все пары найдены!")},350)}}
+ else{if(window.CloudyLearning)CloudyLearning.record(KEY,{k:"c",en:ml[0]},false,{retry:!!rt,responseSeconds:(Date.now()-questionStartedAt)/1000,questionIndex:i,selectedAnswer:id,correctAnswer:ml[0]});[l,el].forEach(b=>{b.classList.add("wrong");setTimeout(()=>b.classList.remove("wrong"),500)});l.classList.remove("sel");addMis(ml[0]);ml=null;miss();if(hp<=0)setTimeout(fail,800)}}
 function next(){clearTimeout(cloudySuccessAdvanceTimer);cloudySuccessAdvanceTimer=0;document.querySelector(".cloudy-success-reaction")?.remove();if(hp<=0)return fail();snd("flip");if(++i>=ex.length&&!rt&&lm.length){rt=1;lm.slice(0,3).forEach(en=>ex.push(cq(en,ruOf(en),Math.random()*2|0)))}if(i>=ex.length)return fin();window.scrollTo({top:0,behavior:"instant"});draw()}
-function fail(){snd("bad");app.innerHTML=`<div class="scr res">${mascot("s")}<div class="big2">Жизни закончились</div><p style="opacity:.85">Ничего страшного, попробуем ещё раз.</p><br><button class="btn" onclick="again()">ПОПРОБОВАТЬ СНОВА</button><br><br><button class="btn" onclick="view()" style="background:rgba(255,255,255,.15);color:#fff;box-shadow:none">НА ГЛАВНУЮ</button></div>`}
-function fin(){roll();const t=new Date().toDateString(),y=new Date(Date.now()-864e5).toDateString(),gain=cloudUserId?24:15+hp*3,st=hp>=5?3:hp>=3?2:1,acc=Math.round(ok/Math.max(tot,1)*100);
+function exitExercise(){if(window.CloudyLearning)CloudyLearning.endSession(KEY,"lesson_abandoned");snd("tab");view()}
+function fail(){if(window.CloudyLearning)CloudyLearning.endSession(KEY,"lesson_failed");snd("bad");app.innerHTML=`<div class="scr res">${mascot("s")}<div class="big2">Жизни закончились</div><p style="opacity:.85">Ничего страшного, попробуем ещё раз.</p><br><button class="btn" onclick="again()">ПОПРОБОВАТЬ СНОВА</button><br><br><button class="btn" onclick="view()" style="background:rgba(255,255,255,.15);color:#fff;box-shadow:none">НА ГЛАВНУЮ</button></div>`}
+function fin(){if(window.CloudyLearning)CloudyLearning.endSession(KEY,"lesson_completed");roll();const t=new Date().toDateString(),y=new Date(Date.now()-864e5).toDateString(),gain=cloudUserId?24:15+hp*3,st=hp>=5?3:hp>=3?2:1,acc=Math.round(ok/Math.max(tot,1)*100);
  if(S.last!=t){S.streak=S.last==y?S.streak+1:1;S.last=t}
  if(!cloudUserId){S.xp+=gain;S.td.xp+=gain;track(gain)}
  S.td.les++;S.td.ok+=ok;S.acc[0]+=ok;S.acc[1]+=tot;const ps=SEC.flatMap(s=>s.l);if(ps.indexOf(L)==S.dn[S.lv]&&S.dn[S.lv]<ps.length)S.dn[S.lv]++;save();if(!cloudUserId)checkAch();
