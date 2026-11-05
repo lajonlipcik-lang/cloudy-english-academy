@@ -120,7 +120,7 @@ function mk(l){const r=[],modes=sh([0,0,1,1,2,2]);
  l.s.forEach(([ru,en],sentenceIndex)=>{
   const correctTokens=en.split(" "),used=new Set(correctTokens.map(token=>token.toLowerCase()));
   const candidates=[
-   ...l.w.map(([word])=>word).filter(word=>!/\\s/.test(word)),
+   ...l.w.map(([word])=>word).filter(word=>!/\s/.test(word)),
    ...l.s.filter((_,index)=>index!==sentenceIndex).flatMap(([,sentence])=>sentence.split(" "))
   ].filter(token=>token&&!used.has(token.toLowerCase())&&!/[.,!?]/.test(token));
   const distractors=[...new Set(candidates)].slice(0,2);
