@@ -92,6 +92,8 @@ describe("Cloudy learning progress", () => {
     expect(D[44]!.w.some(([word]) => word === "opposite")).toBe(true);
     expect(D[44]!.s.some(([, en]) => en.includes("opposite the station"))).toBe(true);
     expect(D[53]!.s.some(([ru, en]) => ru.includes("занимаюсь английским") && en.includes("practise English"))).toBe(true);
+    expect(D[34]!.w.some(([word, translation]) => word === "clock" && translation.includes("настенные"))).toBe(true);
+    expect(D[52]!.s.some(([ru, en]) => ru.includes("ошибся с адресом") && en.includes("mistake with the address"))).toBe(true);
   });
 
   it("keeps the browser runtime catalog identical to the typed curriculum", () => {
