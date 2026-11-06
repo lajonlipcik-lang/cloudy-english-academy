@@ -729,6 +729,31 @@ function shortsChooseFile(input){
  const drop=$("#shorts-upload-drop");if(drop)drop.classList.add("has-file");
 }
 function shortsRemoveFile(){if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;const input=$("#shorts-upload-file");if(input)input.value="";const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-upload-placeholder">'+mascot("h")+'<b>Здесь появится предпросмотр</b><small>Лучше всего смотрится вертикальное видео 9:16</small></div>';const info=$("#shorts-upload-file-info");if(info){info.hidden=true;info.innerHTML="";}const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Выбрать видео, чтобы продолжить";}const d=$("#shorts-upload-drop");if(d)d.classList.remove("has-file");}
+
+async function shortsCaptureFrames(file){
+ const url=URL.createObjectURL(file),video=document.createElement("video"),frames=[];
+ video.muted=true;video.playsInline=true;video.preload="auto";
+ try{
+  await new Promise((resolve,reject)=>{video.onloadedmetadata=resolve;video.onerror=()=>reject(new Error("Не удалось прочитать видео для проверки кадров."));video.src=url;video.load();});
+  const duration=Number(video.duration);
+  if(!Number.isFinite(duration)||duration<=0)throw new Error("Не удалось определить длительность видео.");
+  const canvas=document.createElement("canvas"),context=canvas.getContext("2d",{willReadFrequently:false});
+  if(!context)throw new Error("Браузер не поддерживает подготовку кадров.");
+  const points=[.08,.25,.42,.58,.75,.92],seen=new Set();
+  for(const point of points){
+   const time=Math.max(0,Math.min(Math.max(0,duration-.04),duration*point)),key=Math.round(time*10);
+   if(seen.has(key))continue;seen.add(key);
+   await new Promise((resolve,reject)=>{video.onseeked=resolve;video.onerror=()=>reject(new Error("Не удалось получить кадр видео."));video.currentTime=time;});
+   const scale=Math.min(1,384/Math.max(video.videoWidth||1,video.videoHeight||1));
+   canvas.width=Math.max(1,Math.round(video.videoWidth*scale));canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
+   context.drawImage(video,0,0,canvas.width,canvas.height);
+   const frame=canvas.toDataURL("image/jpeg",.55);
+   if(frame.length>420000)throw new Error("Кадр слишком большой для безопасной отправки.");
+   frames.push(frame);
+  }
+  return frames;
+ }finally{video.pause();video.removeAttribute("src");video.load();URL.revokeObjectURL(url);}
+}
 async function shortsSubmitUpload(){
  if(!shortsSelectedFile){toast("Сначала выбери видео.",false);return;}
  const caption=String($("#shorts-upload-caption")?.value||"").trim();
@@ -746,20 +771,32 @@ async function shortsSubmitUpload(){
   if(notice)notice.querySelector("small").textContent="Загружаем видео в приватное хранилище. Не закрывай это окно.";
   const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
   
-  const response=await fetch(uploadUrl,{method:"POST",headers:{"apikey":ticket.publishableKey,"Authorization":"Bearer "+ticket.publishableKey,"x-upsert":"false","Content-Type":file.type||"application/octet-stream"},body:file});
+  const uploadBody=new FormData();uploadBody.append("cacheControl","3600");uploadBody.append("",file);
+  const response=await fetch(uploadUrl,{method:"PUT",headers:{"apikey":ticket.publishableKey,"Authorization":"Bearer "+ticket.publishableKey,"x-upsert":"false"},body:uploadBody});
   if(!response.ok){let detail="";try{detail=(await response.json()).message||"";}catch{}throw new Error(detail||"Не удалось загрузить видео в защищённое хранилище.");}
   if(button)button.textContent="Отправляем на проверку…";
   const finalized=await authRequest("shorts-upload-finalize",{payload:{videoId:ticket.videoId}});
   if(!finalized?.result?.ok)throw new Error("Не удалось подтвердить загрузку видео.");
   let textReview=null;
   try{textReview=await authRequest("shorts-moderate",{payload:{id:ticket.videoId,contentType:"short_video"}});}catch(error){console.warn("[cloudy-shorts] caption moderation deferred",error);}
+  const captionRejected=textReview?.result?.decision==="reject";
+  let frameReview=null;
+  if(!captionRejected){
+   if(button)button.textContent="Cloudy AI проверяет кадры…";
+   if(notice)notice.querySelector("small").textContent="Извлекаем несколько кадров и отправляем их на предварительную визуальную проверку. Звук проверяется отдельно позже.";
+   let frames=[];
+   try{frames=await shortsCaptureFrames(file);}catch(error){console.warn("[cloudy-shorts] frame extraction deferred",error);}
+   try{frameReview=await authRequest("shorts-frame-review",{payload:{videoId:ticket.videoId,frames}});}catch(error){console.warn("[cloudy-shorts] frame triage deferred",error);}
+  }
   shortsRemoveFile();
   const captionField=$("#shorts-upload-caption");if(captionField)captionField.value="";shortsCaptionCount();
-  const captionRejected=textReview?.result?.decision==="reject";
   const captionDeferred=!textReview?.result;
-  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>'+(captionRejected?"Подпись отклонена": "Видео принято на проверку") +'</b><small>'+(captionRejected?"Cloudy AI отклонил подпись. Видео осталось приватным и не будет опубликовано.":captionDeferred?"Видео сохранено приватно. Проверка подписи временно недоступна; требуется повторная проверка.":"Подпись проверена Cloudy AI. Сам ролик остаётся приватным до отдельной проверки кадров и звука.")+'</small></div>';
-  if(button){button.disabled=true;button.textContent=captionRejected?"Подпись отклонена":"Ожидает проверки видео";}
-  toast(captionRejected?"Cloudy AI отклонил подпись видео.":"Видео загружено и отправлено на модерацию.");
+  const framesAnalyzed=frameReview?.result?.status==="completed";
+  const frameFlagged=framesAnalyzed&&frameReview?.result?.decision==="reject";
+  const frameUnavailable=!frameReview?.result||frameReview.result.status!=="completed";
+  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>'+(captionRejected?"Подпись отклонена":frameFlagged?"Кадры требуют особого внимания": "Видео принято на проверку") +'</b><small>'+(captionRejected?"Cloudy AI отклонил подпись. Видео осталось приватным и не будет опубликовано.":captionDeferred?"Проверка подписи отложена. Видео осталось приватным и требует ручной проверки.":frameUnavailable?"Не удалось завершить визуальную проверку кадров. Видео осталось приватным и ожидает ручной проверки.":frameFlagged?"Cloudy AI заметил возможные нарушения в выборочных кадрах. Видео осталось приватным и передано на ручную проверку.":"Cloudy AI предварительно проверил выборочные кадры. Это не полная проверка видео: звук ещё не проанализирован. Видео осталось приватным и ожидает ручной проверки.")+'</small></div>';
+  if(button){button.disabled=true;button.textContent=captionRejected?"Подпись отклонена":"Ожидает ручной проверки";}
+  toast(captionRejected?"Cloudy AI отклонил подпись видео.":frameFlagged?"Кадры переданы на ручную проверку.":"Видео загружено и отправлено на модерацию.");
  }catch(error){
   const message=error?.message||"Не удалось отправить видео.";
   if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Не удалось отправить видео</b><small>'+String(message).replace(/[&<>"']/g,"")+'</small></div>';

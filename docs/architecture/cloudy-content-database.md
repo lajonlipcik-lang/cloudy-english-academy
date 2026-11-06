@@ -83,3 +83,12 @@ The current three Shorts cards are clearly marked demonstration content with non
 3. The browser uploads the file directly to the private Storage bucket using the signed URL and the Content project's public publishable key.
 4. The UI asks the server to finalize. The server verifies ownership and confirms the object exists and is within the size limit, then sets the row to pending_review.
 5. No video is added to the public feed at this stage. Frame/audio inspection and a human-review workflow must be implemented before any video can be approved.
+
+
+## Shorts frame triage (initial media-review slice)
+
+- After upload and caption moderation, the browser samples up to six JPEG frames from the selected local video and sends them through the authenticated same-origin bridge.
+- The server verifies the Core account, video ownership and pending-review state, then sends only those sampled images to an enabled vision-capable provider from the Core AI Vault.
+- The result and labels are stored in the Content database with an audit event. If frame extraction or vision is unavailable, the row records an unavailable state for manual review.
+- Important trust boundary: browser-sampled frames are client-provided and are not a cryptographically verified decode of the stored object. This is triage only; the AI result cannot approve, reject, publish the video or restrict its author. Every video remains private and requires human review.
+- Audio/transcription and server-side decoding of the original uploaded file are not implemented in this slice. Do not describe this as complete video moderation or audio moderation.
