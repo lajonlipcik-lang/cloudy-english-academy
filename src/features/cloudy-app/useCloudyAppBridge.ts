@@ -138,15 +138,19 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
       try {
         if (message.action === "shorts-feed-get") { const feedApi = await import("@/lib/cloudy-shorts-feed.functions"); const feed = await feedApi.listShortsFeed({ data: {} }); reply({ ok: true, result: feed }); return; }
         const accessToken = accessTokenRef.current;
-        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","admin-shorts-queue","admin-shorts-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-moderate","shorts-frame-review","shorts-audio-review","shorts-comments-get","shorts-comment-create","shorts-upload-start","shorts-upload-finalize"].includes(String(message.action))) {
+        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","admin-shorts-queue","admin-shorts-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-moderate","shorts-frame-review","shorts-audio-review","shorts-comments-get","shorts-comment-create","shorts-upload-start","shorts-upload-finalize","shorts-upload-image-finalize","shorts-text-create"].includes(String(message.action))) {
           if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
           const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
           if (message.action === "shorts-feed-get") { const feedApi = await import("@/lib/cloudy-shorts-feed.functions"); reply({ ok: true, result: await feedApi.listShortsFeed({ data: payload as never }) }); return; }
-          if (message.action === "shorts-upload-start" || message.action === "shorts-upload-finalize") {
+          if (["shorts-upload-start","shorts-upload-finalize","shorts-upload-image-finalize","shorts-text-create"].includes(String(message.action))) {
             const uploadApi = await import("@/lib/cloudy-shorts-upload.functions");
             const uploadResult = message.action === "shorts-upload-start"
               ? await uploadApi.createShortVideoUpload({ data: payload as never })
-              : await uploadApi.finalizeShortVideoUpload({ data: payload as never });
+              : message.action === "shorts-upload-finalize"
+                ? await uploadApi.finalizeShortVideoUpload({ data: payload as never })
+                : message.action === "shorts-upload-image-finalize"
+                  ? await uploadApi.finalizeShortImageUpload({ data: payload as never })
+                  : await uploadApi.createShortTextPost({ data: payload as never });
             reply({ ok: true, result: uploadResult });
             return;
           }
