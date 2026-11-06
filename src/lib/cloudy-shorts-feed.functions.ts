@@ -29,7 +29,7 @@ export const listShortsFeed = createServerFn({ method: "POST" })
     const content = getCloudyContentAdmin();
     const { data: rows, error } = await content
       .from("shorts_videos")
-      .select("id,author_id,storage_path,caption,published_at,created_at,duration_seconds")
+      .select("id,author_id,storage_path,media_type,text_content,caption,published_at,created_at,duration_seconds")
       .eq("status", "approved")
       .not("published_at", "is", null)
       .order("published_at", { ascending: false })
@@ -48,17 +48,23 @@ export const listShortsFeed = createServerFn({ method: "POST" })
     ]));
 
     const videos = await Promise.all((rows ?? []).map(async (row: any) => {
-      const { data: signed, error: signedError } = await content.storage
-        .from("cloudy-shorts")
-        .createSignedUrl(row.storage_path, 3600);
-      if (signedError || !signed?.signedUrl) return null;
+      let mediaUrl: string | null = null;
+      if (row.media_type !== "text" && row.storage_path) {
+        const { data: signed, error: signedError } = await content.storage
+          .from("cloudy-shorts").createSignedUrl(row.storage_path, 3600);
+        if (signedError || !signed?.signedUrl) return null;
+        mediaUrl = signed.signedUrl;
+      }
       return {
         id: row.id,
+        mediaType: row.media_type || "video",
         authorName: names.get(row.author_id) || "Участник",
         caption: String(row.caption || "").slice(0, 500),
+        textContent: String(row.text_content || "").slice(0, 2000),
         publishedAt: row.published_at || row.created_at,
         durationSeconds: row.duration_seconds,
-        playbackUrl: signed.signedUrl,
+        playbackUrl: row.media_type === "video" ? mediaUrl : null,
+        imageUrl: row.media_type === "image" ? mediaUrl : null,
       };
     }));
     return { videos: videos.filter(Boolean) };
