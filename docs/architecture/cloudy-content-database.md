@@ -111,3 +111,12 @@ The current three Shorts cards are clearly marked demonstration content with non
 - This is the human decision layer, not an automatic AI ban system. AI labels are evidence for review, not a verdict about the author. The moderation panel does not automatically ban accounts.
 - Apply Content DB migration \`0007_shorts_human_moderation.sql\` after \`0001\`–\`0006\`.
 - The app is deployed on Cloudflare Workers. Its request runtime does not provide a general-purpose FFmpeg binary/process API; therefore server-side decoding of the original video cannot be honestly claimed or added as a normal Node subprocess. Current frame/audio samples remain client-extracted and untrusted. A trusted server media pipeline requires a separately deployed media-processing service (for example, a dedicated container/worker with FFmpeg) and a private service binding; until then, human review of the full private original is mandatory.
+
+
+## Trusted original-media extraction service
+
+- Cloudflare Workers cannot spawn a system FFmpeg process. The isolated container in \`services/cloudy-shorts-media\` performs FFmpeg extraction outside the Worker runtime.
+- The app server creates a five-minute signed URL for the exact private Storage object and sends it server-to-server with a bearer token. The processor validates the Supabase origin, private bucket path, video UUID and signed token before downloading; redirects and other origins are rejected.
+- The processor extracts six low-resolution frames or mono 16 kHz WAV chunks (20 seconds each), enforces size/duration/concurrency limits, and deletes temporary files after each request.
+- Configure \`CLOUDY_MEDIA_PROCESSOR_URL\` and \`CLOUDY_MEDIA_PROCESSOR_TOKEN\` only in the Cloudy server environment. Configure \`CLOUDY_CONTENT_SUPABASE_URL\` and the same token in the container. The processor does not need a Supabase service-role key.
+- Until the container is deployed and these server-side settings exist, frame/audio analysis returns unavailable and videos stay private in the human review queue. The app no longer extracts media in the browser.
