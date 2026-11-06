@@ -200,12 +200,12 @@ export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
    const {data:identity,error}=await auth.auth.getUser(data.accessToken);
    if(error||!identity.user)throw new Error("Unauthorized");
    const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
-   const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName!,bio:data.bio!,is_public:data.isPublic!}).eq("id",identity.user.id);
-   if(updateError)throw new Error("Не удалось сохранить профиль.");
    if ((data.avatarPath !== undefined && !data.avatarPath.startsWith(`profiles/${identity.user.id}/avatar/`)) ||
        (data.coverPath !== undefined && !data.coverPath.startsWith(`profiles/${identity.user.id}/cover/`))) {
      throw new Error("Нельзя менять изображения другого профиля.");
    }
+   const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName!,bio:data.bio!,is_public:data.isPublic!}).eq("id",identity.user.id);
+   if(updateError)throw new Error("Не удалось сохранить профиль.");
    if (data.avatarPath !== undefined || data.coverPath !== undefined) {
      const { data: current } = await supabaseAdmin.auth.admin.getUserById(identity.user.id);
      const metadata = { ...(current?.user?.user_metadata ?? {}) };
