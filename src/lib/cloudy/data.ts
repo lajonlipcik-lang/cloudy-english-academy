@@ -762,6 +762,18 @@ const A2_EXTRA = [
 ];
 D.push(...A2_EXTRA);
 
+ // Next CEFR block: question forms, possession, instructions, past forms, obligations and real conditions.
+const NEXT_A1_A2: Lesson[] = [
+  P("Вопросы о себе", "who=кто,what=что / какой,where=где,when=когда,why=почему,how=как,address=адрес,age=возраст,phone number=номер телефона,birthday=день рождения", "Как тебя зовут?=What is your name?=Where is your name;Где ты живёшь?=Where do you live?=When do you live;Сколько тебе лет?=How old are you?=How many are you;Когда у тебя день рождения?=When is your birthday?=Where is your birthday;Почему ты изучаешь английский?=Why do you study English?=When do you study English;Какой у тебя номер телефона?=What is your phone number?=How is your phone number"),
+  P("Чьи это вещи?", "mine=мой / моя / моё,yours=твой / ваш,his=его,hers=её,ours=наш / наше,theirs=их,owner=владелец,belong=принадлежать,backpack=рюкзак,umbrella=зонт", "Это сумка Анны.=This is Anna's bag.=This are Anna bag;Синий зонт мой.=The blue umbrella is mine.=The blue umbrella are mine;Этот телефон твой?=Is this phone yours?=Are this phone yours;Эти ключи его.=These keys are his.=This keys is him;Этот дом наш.=This house is ours.=This house are our;Рюкзак принадлежит моему брату.=The backpack belongs to my brother.=The backpack belong my brother"),
+  P("Инструкции и просьбы", "open=открывать,close=закрывать,turn=поворачивать,wait=ждать,follow=следовать,listen=слушать,repeat=повторять,bring=приносить,carefully=внимательно,quietly=тихо", "Открой окно, пожалуйста.=Open the window, please.=Opens the window;Не трогай мой телефон.=Don't touch my phone.=Doesn't touch my phone;Слушай внимательно.=Listen carefully.=Listens carefully;Поверни налево здесь.=Turn left here.=Turns left here;Давай начнём урок.=Let's start the lesson.=Let's starts the lesson;Подожди минуту, пожалуйста.=Wait a minute, please.=Waits a minute"),
+  P("Неправильные глаголы в прошлом", "went=ходил / ездил,saw=видел,took=взял / сел на транспорт,made=сделал,gave=дал,got=получил / добрался,found=нашёл,left=ушёл / оставил,felt=чувствовал,heard=слышал", "Вчера я ездил на работу на автобусе.=Yesterday I went to work by bus.=Yesterday I go to work by bus;Она посмотрела новый фильм вчера вечером.=She saw a new movie last night.=She see a new movie tomorrow;Мы взяли такси после концерта.=We took a taxi after the concert.=We take a taxi tomorrow;Он приготовил ужин для семьи.=He made dinner for his family.=He make dinner every day;Они добрались домой поздно.=They got home late.=They get home early tomorrow;Сегодня утром я нашёл ключи.=I found my keys this morning.=I find my keys tomorrow"),
+  P("Обязанности и правила", "must=должен,mustn't=нельзя / запрещено,have to=быть должным,don't have to=необязательно,should=следует,rule=правило,allowed=разрешено,required=обязательный,helmet=шлем,seat belt=ремень безопасности", "Ты должен пристегнуться.=You must wear a seat belt.=You must wears a seat belt;Здесь нельзя парковаться.=You mustn't park here.=You don't must park here;Мне нужно рано вставать завтра.=I have to get up early tomorrow.=I has to get up early;В воскресенье нам не нужно работать.=We don't have to work on Sunday.=We mustn't work on Sunday;Тебе следует пить больше воды.=You should drink more water.=You should drinks more water;Нам разрешено фотографировать здесь?=Are we allowed to take photos here?=Do we allowed take photos here"),
+  P("Если случится...", "if=если,unless=если не,weather=погода,rain=дождь,sunny=солнечно,miss=опоздать на / пропустить,catch=успеть на / поймать,hurry=торопиться,traffic=дорожное движение,cancel=отменять", "Если пойдёт дождь, мы останемся дома.=If it rains, we'll stay home.=If it will rain;Если поторопишься, успеешь на автобус.=If you hurry, you'll catch the bus.=If you will hurry;Мы не успеем на поезд, если опоздаем.=We'll miss the train if we're late.=We'll miss the train if we will be late;Если будет солнечно, мы погуляем.=If it's sunny, we'll go for a walk.=If it will be sunny;Если у меня будет время, я тебе позвоню.=If I have time, I'll call you.=If I will have time;Если на дорогах будут пробки, мы отменим поездку.=If there's a lot of traffic, we'll cancel the trip.=If traffic will be heavy")
+];
+D.push(...NEXT_A1_A2);
+
+
 const extendLesson = (index: number, words: Lesson["w"], sentences: Lesson["s"]) => {
   const lesson = D[index];
   if (!lesson) throw new Error("Missing Cloudy lesson at index " + index);
@@ -1147,7 +1159,7 @@ extendLesson(52, [], [
   ["Я потерял(а) ключи", "I lost my keys", "I lose my keys tomorrow"],
 ]);
 
-export interface FoundationNote { title: string; body: string; examples: [string, string][]; tip: string; }
+export interface FoundationNote { title: string; body: string; examples: [string, string][]; tip: string; level?: "A1" | "A2"; }
 
 export const A1_FOUNDATIONS: Record<number, FoundationNote> = {
   0: {
@@ -1568,7 +1580,84 @@ export const A1_FOUNDATIONS: Record<number, FoundationNote> = {
       ]
     ],
     tip: "Смысл важнее скорости. Проверяй подлежащее, форму глагола и порядок слов."
+  },
+  54: {
+    title: "Wh-вопросы: узнаём важную информацию",
+    body: "Вопросительные слова помогают уточнить, что именно мы хотим узнать: who — кто, what — что, where — где, when — когда, why — почему, how — как. С обычными глаголами в Present Simple ставь do или does перед подлежащим. С глаголом to be используй am, is или are.",
+    examples: [
+      ["What is your name?", "Как тебя зовут?"],
+      ["Where do you live?", "Где ты живёшь?"],
+      ["How old are you?", "Сколько тебе лет?"],
+      ["When is your birthday?", "Когда у тебя день рождения?"]
+    ],
+    tip: "Where do you live? · What does she like? · When is your class?"
+  },
+  55: {
+    title: "Чьи это вещи? Possessive pronouns",
+    body: "Перед существительным ставим my, your, his, her, our или their: my bag. Если существительное уже понятно, используем mine, yours, his, hers, ours или theirs: The bag is mine. Чтобы назвать владельца, добавь 's к имени: Anna's bag.",
+    examples: [
+      ["This is Anna's bag.", "Это сумка Анны."],
+      ["The blue umbrella is mine.", "Синий зонт мой."],
+      ["Is this phone yours?", "Этот телефон твой?"],
+      ["These keys are his.", "Эти ключи его."]
+    ],
+    tip: "my + noun · mine без существительного · Anna's = вещь Анны."
+  },
+  56: {
+    title: "Повелительные предложения и let's",
+    body: "Для короткой инструкции начинай с глагола в начальной форме: Open the door. Для запрета используй don't + глагол: Don't touch it. Чтобы предложить сделать что-то вместе, скажи let's + глагол: Let's start.",
+    examples: [
+      ["Open the window, please.", "Открой окно, пожалуйста."],
+      ["Don't touch my phone.", "Не трогай мой телефон."],
+      ["Listen carefully.", "Слушай внимательно."],
+      ["Let's start the lesson.", "Давай начнём урок."]
+    ],
+    tip: "Глагол без to: Wait here · Don't wait · Let's go."
+  },
+};
+
+export const A2_FOUNDATIONS: Record<number, FoundationNote> = {
+  57: {
+    level: "A2",
+    title: "Past Simple: неправильные глаголы",
+    body: "В Past Simple у многих частых глаголов особая форма: go → went, see → saw, take → took. Она не зависит от he, she или they. Для вопросов и отрицаний используй did / didn't и начальную форму глагола: Did you go? — I didn't go.",
+    examples: [
+      ["Yesterday I went to work by bus.", "Вчера я ездил на работу на автобусе."],
+      ["She saw a new movie last night.", "Она посмотрела новый фильм вчера вечером."],
+      ["We took a taxi after the concert.", "Мы взяли такси после концерта."],
+      ["He made dinner for his family.", "Он приготовил ужин для семьи."]
+    ],
+    tip: "После did / didn't всегда используй начальную форму: Did you see? · I didn't take it."
+  },
+  58: {
+    level: "A2",
+    title: "Must, have to и should: обязанности и советы",
+    body: "Must выражает сильную необходимость, mustn't — запрет. Have to говорит о необходимости из-за обстоятельств или правил. Don't have to значит «не обязательно», а не «нельзя». Should используют, когда дают совет.",
+    examples: [
+      ["You must wear a seat belt.", "Ты должен пристегнуться."],
+      ["You mustn't park here.", "Здесь нельзя парковаться."],
+      ["I have to get up early tomorrow.", "Мне нужно рано вставать завтра."],
+      ["We don't have to work on Sunday.", "В воскресенье нам не нужно работать."]
+    ],
+    tip: "mustn't = запрещено · don't have to = необязательно · should = совет."
+  },
+  59: {
+    level: "A2",
+    title: "First Conditional: реальное условие",
+    body: "Когда говорим о возможном будущем результате, используй if + Present Simple, а в главной части — will + начальную форму глагола. Не ставь will сразу после if: If it rains, we'll stay home.",
+    examples: [
+      ["If it rains, we'll stay home.", "Если пойдёт дождь, мы останемся дома."],
+      ["If you hurry, you'll catch the bus.", "Если поторопишься, успеешь на автобус."],
+      ["We'll miss the train if we're late.", "Мы не успеем на поезд, если опоздаем."],
+      ["If it's sunny, we'll go for a walk.", "Если будет солнечно, мы погуляем."]
+    ],
+    tip: "If + Present Simple, will + verb. Не говори: If it will rain."
   }
+};
+
+export const CLOUDY_FOUNDATIONS: Record<number, FoundationNote> = {
+  ...A1_FOUNDATIONS,
+  ...A2_FOUNDATIONS,
 };
 
 export const LV: Record<Level, LevelDef> = {
@@ -1580,6 +1669,7 @@ export const LV: Record<Level, LevelDef> = {
     { n: "Город и транспорт", l: [30, 31, 32] },
     { n: "Досуг и повседневность", l: [33, 34, 35] },
     { n: "Время и практика", l: [36, 37, 38] },
+    { n: "Вопросы и инструкции", l: [54, 55, 56] },
   ] },
   A2: { s: [
     { n: "Город и быт", l: [6, 7, 8] },
@@ -1589,6 +1679,7 @@ export const LV: Record<Level, LevelDef> = {
     { n: "Путешествия и здоровье", l: [45, 46, 47] },
     { n: "Общение и окружающий мир", l: [48, 49, 50] },
     { n: "Работа, общение и самостоятельность", l: [51, 52, 53] },
+    { n: "Прошедшее время и правила", l: [57, 58, 59] },
   ] },
   B1: { s: [{ n: "Работа и поездки", l: [9, 10, 11] }, { n: "Жизнь и технологии", l: [18, 19, 20] }] },
   B2: { s: [{ n: "Мнения и общество", l: [12, 13, 14] }, { n: "Культура и карьера", l: [21, 22, 23] }] },

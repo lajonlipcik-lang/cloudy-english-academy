@@ -23,7 +23,7 @@ describe("server XP policy", () => {
       ach: ["first", "not allowed!"], set: { vol: 4, goal: 9999, remT: "not-time" },
       unknownSecret: "must not survive", user: { id: "attacker" },
     });
-    expect(safe.dn).toEqual({ A1: 21, A2: 0, B1: 2, B2: 0 });
+    expect(safe.dn).toEqual({ A1: 24, A2: 0, B1: 2, B2: 0 });
     expect(safe.streak).toBe(3650);
     expect(safe.acc).toEqual([1_000_000, 0]);
     expect(safe.mis["hello"]).toBe(10_000);
@@ -37,8 +37,8 @@ describe("server XP policy", () => {
     expect(safe).not.toHaveProperty("user");
   });
 
-  it("bounds A2 progress to its complete 21-lesson path", () => {
-    expect(sanitizeCloudyProgress({ dn: { A2: 999 } }).dn.A2).toBe(21);
+  it("bounds A2 progress to its complete 24-lesson path", () => {
+    expect(sanitizeCloudyProgress({ dn: { A2: 999 } }).dn.A2).toBe(24);
   });
 
   it("keeps the A2 XP migration bounded, authorized, and registered", () => {
@@ -60,6 +60,25 @@ describe("server XP policy", () => {
     expect(journal.entries.some((entry) => entry.idx === 12 && entry.tag === "0012_complete_a2_curriculum")).toBe(true);
   });
 
+
+  it("registers the next A1/A2 lesson range in the server-authoritative XP ledger", () => {
+    const migration = readFileSync(
+      join(process.cwd(), "drizzle/migrations/0015_expand_a1_a2_curriculum.sql"),
+      "utf8",
+    );
+    const journal = JSON.parse(readFileSync(
+      join(process.cwd(), "drizzle/migrations/meta/_journal.json"),
+      "utf8",
+    )) as { entries: { idx: number; tag: string }[] };
+
+    expect(migration).toContain("CHECK (lesson_index BETWEEN 0 AND 59)");
+    expect(migration).toContain("_level = 'A1' AND (_lesson_index BETWEEN 0 AND 5 OR _lesson_index BETWEEN 24 AND 38 OR _lesson_index BETWEEN 54 AND 56)");
+    expect(migration).toContain("_level = 'A2' AND (_lesson_index BETWEEN 6 AND 8 OR _lesson_index BETWEEN 15 AND 17 OR _lesson_index BETWEEN 39 AND 53 OR _lesson_index BETWEEN 57 AND 59)");
+    expect(migration).toContain("IF v_xp.daily_lessons >= 5 THEN");
+    expect(migration).toContain("GRANT EXECUTE ON FUNCTION public.award_cloudy_lesson_xp(uuid, integer, text) TO service_role");
+    expect(journal.entries.some((entry) => entry.idx === 15 && entry.tag === "0015_expand_a1_a2_curriculum")).toBe(true);
+  });
+
   it("accepts only lessons assigned to the requested CEFR level", () => {
     expect(isLessonInLevel(0, "A1")).toBe(true);
     expect(isLessonInLevel(15, "A2")).toBe(true);
@@ -74,6 +93,10 @@ describe("server XP policy", () => {
     expect(isLessonInLevel(51, "A2")).toBe(true);
     expect(isLessonInLevel(52, "A2")).toBe(true);
     expect(isLessonInLevel(53, "A2")).toBe(true);
+    expect(isLessonInLevel(54, "A1")).toBe(true);
+    expect(isLessonInLevel(56, "A1")).toBe(true);
+    expect(isLessonInLevel(57, "A2")).toBe(true);
+    expect(isLessonInLevel(59, "A2")).toBe(true);
     expect(isLessonInLevel(51, "A1")).toBe(false);
     expect(isLessonInLevel(38, "A2")).toBe(false);
     expect(isLessonInLevel(6, "A1")).toBe(false);

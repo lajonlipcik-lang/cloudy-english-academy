@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { runInNewContext, Script } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, normalizeState } from "./logic";
-import { A1_FOUNDATIONS, D, LV, levelLessons } from "./data";
+import { A1_FOUNDATIONS, A2_FOUNDATIONS, CLOUDY_FOUNDATIONS, D, LV, levelLessons } from "./data";
 import { isLessonInLevel, sanitizeCloudyProgress } from "./progress-policy";
 import type { Exercise, Lesson } from "./types";
 
@@ -38,10 +38,10 @@ describe("Cloudy learning progress", () => {
   });
 
   it("advances the A2 path when a newly added lesson is completed in order", () => {
-    const state = { ...defaultState(), lv: "A2" as const, dn: { A1: 0, A2: 20, B1: 0, B2: 0 } };
-    const session = newSession(53, [{ k: "c", q: "hello", a: "привет", en: "hello", spk: false, o: ["привет"], title: "Перевод" }]);
+    const state = { ...defaultState(), lv: "A2" as const, dn: { A1: 0, A2: 23, B1: 0, B2: 0 } };
+    const session = newSession(59, [{ k: "c", q: "hello", a: "привет", en: "hello", spk: false, o: ["привет"], title: "Перевод" }]);
     const result = finishLesson(state, session, new Date("2026-11-05T12:00:00"));
-    expect(result.state.dn.A2).toBe(21);
+    expect(result.state.dn.A2).toBe(24);
   });
 
   it("awards lesson XP and updates the daily streak", () => {
@@ -111,11 +111,11 @@ describe("Cloudy learning progress", () => {
     }
   });
 
-  it("keeps A1 and A2 as seven complete sections with 21 lessons each", () => {
-    expect(LV.A1.s).toHaveLength(7);
-    expect(LV.A2.s).toHaveLength(7);
-    expect(levelLessons("A1")).toHaveLength(21);
-    expect(levelLessons("A2")).toHaveLength(21);
+  it("keeps A1 and A2 as eight complete sections with 24 lessons each", () => {
+    expect(LV.A1.s).toHaveLength(8);
+    expect(LV.A2.s).toHaveLength(8);
+    expect(levelLessons("A1")).toHaveLength(24);
+    expect(levelLessons("A2")).toHaveLength(24);
     for (const index of [...levelLessons("A1"), ...levelLessons("A2")]) {
       const lesson = D[index]!;
       expect(lesson.w.length).toBeGreaterThanOrEqual(10);
@@ -153,7 +153,7 @@ describe("Cloudy learning progress", () => {
   });
 
   it("keeps the browser runtime catalog identical to the typed curriculum", () => {
-    const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV; F: typeof A1_FOUNDATIONS } } = {};
+    const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV; F: typeof CLOUDY_FOUNDATIONS } } = {};
     const browserCatalog = readFileSync(
       join(process.cwd(), "src/server-assets/cloudy-catalog.js"),
       "utf8",
@@ -171,7 +171,7 @@ describe("Cloudy learning progress", () => {
         : "No lesson data mismatch",
     ).toBe(-1);
     expect(JSON.stringify(browserWindow.CloudyCatalog?.LV)).toBe(JSON.stringify(LV));
-    expect(JSON.stringify(browserWindow.CloudyCatalog?.F)).toBe(JSON.stringify(A1_FOUNDATIONS));
+    expect(JSON.stringify(browserWindow.CloudyCatalog?.F)).toBe(JSON.stringify(CLOUDY_FOUNDATIONS));
   });
 
   it("introduces lesson vocabulary before graded practice", () => {
@@ -202,9 +202,19 @@ describe("Cloudy learning progress", () => {
     expect(buildKnownGrammar([23], A1_FOUNDATIONS)).toEqual([]);
   });
 
+
+  it("adds the new A1 and A2 grammar topics to Cloudy's completed-material exam", () => {
+    const grammar = buildKnownGrammar([54, 55, 56, 57, 58, 59], CLOUDY_FOUNDATIONS);
+    expect(new Set(grammar.map((pair) => pair.skillId)).size).toBe(6);
+    expect(grammar.some((pair) => pair.skillId === "grammar:wh-questions" && pair.en === "Where do you live?")).toBe(true);
+    expect(grammar.some((pair) => pair.skillId === "grammar:past-simple-irregular" && pair.en === "Yesterday I went to work by bus.")).toBe(true);
+    expect(grammar.some((pair) => pair.skillId === "grammar:modals-obligation" && pair.en === "You mustn't park here.")).toBe(true);
+    expect(grammar.some((pair) => pair.skillId === "grammar:first-conditional" && pair.en === "If it rains, we'll stay home.")).toBe(true);
+  });
+
   it("validates grammar exam targets against completed lesson examples", () => {
     const source = readFileSync(join(process.cwd(), "src/lib/cloudy-ai.functions.ts"), "utf8");
-    expect(source).toContain("const knownGrammar=buildKnownGrammar(lessonIds,A1_FOUNDATIONS);");
+    expect(source).toContain("const knownGrammar=buildKnownGrammar(lessonIds,CLOUDY_FOUNDATIONS);");
     expect(source).toContain("knownGrammar.find((pair)=>pair.skillId===skillId&&pair.en.toLowerCase()===normalizedTarget)");
     expect(source).toContain("buildFallbackExamQuestions(wordPairs,sentencePairs,knownGrammar,focus)");
   });
@@ -255,13 +265,44 @@ describe("Cloudy learning progress", () => {
     expect(verbPath(30)).toHaveLength(0);
   });
 
+
+  it("teaches the next A1 and A2 grammar topics with distinct guided skills", () => {
+    const runtime = readFileSync(join(process.cwd(), "src/server-assets/cloudy-exercises.js"), "utf8");
+    const start = runtime.indexOf("function verbPath(n){");
+    const end = runtime.indexOf("\nfunction go", start);
+    const verbPath = runInNewContext(`${runtime.slice(start, end)}; verbPath`, {
+      sh: <T,>(items: T[]) => [...items].reverse(),
+    }) as (lesson: number) => { q: string; a: string; skillId: string; o: string[] }[];
+    const expected = new Map<number, string>([
+      [54, "grammar:wh-questions"],
+      [55, "grammar:possessive-pronouns"],
+      [56, "grammar:imperatives"],
+      [57, "grammar:past-simple-irregular"],
+      [58, "grammar:modals-obligation"],
+      [59, "grammar:first-conditional"],
+    ]);
+    for (const [index, skillId] of expected) {
+      const drills = verbPath(index);
+      expect(drills).toHaveLength(2);
+      expect(drills.every((drill) => drill.skillId === skillId)).toBe(true);
+      for (const drill of drills) {
+        expect(drill.q.trim()).not.toBe("");
+        expect(drill.a.trim()).not.toBe("");
+        expect(drill.o).toContain(drill.a.split(" ")[0]);
+        expect(drill.o.length).toBeGreaterThan(drill.a.split(" ").length);
+      }
+    }
+  });
+
   it("keeps guided grammar answers in separate learner skill records", () => {
     const learning = readFileSync(join(process.cwd(), "src/server-assets/cloudy-learning.js"), "utf8");
     expect(learning).toContain("if (exercise && exercise.skillId) return cleanText(exercise.skillId, 90);");
   });
 
-  it("provides a teach-before-test foundation note for every A1 lesson", () => {
+  it("provides teach-before-test notes for every A1 lesson and the new A2 grammar block", () => {
     expect(Object.keys(A1_FOUNDATIONS).map(Number)).toEqual(levelLessons("A1"));
+    expect(Object.keys(A2_FOUNDATIONS).map(Number)).toEqual([57, 58, 59]);
+    expect(Object.values(A2_FOUNDATIONS).every((note) => note.level === "A2")).toBe(true);
     for (const index of levelLessons("A1")) {
       const note = A1_FOUNDATIONS[index]!;
       expect(note.title.trim()).not.toBe("");
@@ -282,18 +323,20 @@ describe("Cloudy learning progress", () => {
     expect(levelLessons("A1").some((index) => levelLessons("A2").includes(index))).toBe(false);
   });
 
-  it("authorizes and preserves the three new A2 lessons in progress", () => {
-    expect([51, 52, 53].every((index) => isLessonInLevel(index, "A2"))).toBe(true);
-    for (const index of [51, 52, 53]) {
+  it("authorizes the next A1 and A2 lesson block without reassigning existing indices", () => {
+    expect([51, 52, 53, 57, 58, 59].every((index) => isLessonInLevel(index, "A2"))).toBe(true);
+    expect([54, 55, 56].every((index) => isLessonInLevel(index, "A1"))).toBe(true);
+    for (const index of [51, 52, 53, 57, 58, 59]) {
       expect(D[index]?.w).toHaveLength(10);
       expect(D[index]?.s.length).toBeGreaterThanOrEqual(6);
     }
     expect(isLessonInLevel(51, "A1")).toBe(false);
+    expect(isLessonInLevel(57, "A1")).toBe(false);
     const state = sanitizeCloudyProgress({
       ...defaultState(),
       dn: { A1: 0, A2: 99, B1: 0, B2: 0 },
     });
-    expect(state.dn.A2).toBe(21);
+    expect(state.dn.A2).toBe(24);
   });
 
   it("does not duplicate vocabulary words when sentence punctuation differs", () => {

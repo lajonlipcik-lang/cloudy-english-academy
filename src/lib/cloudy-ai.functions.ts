@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { runWithAiFallback } from "@/lib/ai/router";
-import { A1_FOUNDATIONS, D, LI, LV } from "@/lib/cloudy/data";
+import { CLOUDY_FOUNDATIONS, D, LI, LV } from "@/lib/cloudy/data";
 import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 const OWNER="lajonlipcik@gmail.com";
@@ -341,7 +341,7 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
       const sentences=sentencePairs.map((pair)=>pair.en);
       if(!words.length&&!sentences.length)throw new Error("В пройденных уроках пока нет материала для экзамена.");
       const evidence=new Map((baseProfile.skills??[]).map((skill:any)=>[skill.id,skill]));
-      const knownGrammar=buildKnownGrammar(lessonIds,A1_FOUNDATIONS);
+      const knownGrammar=buildKnownGrammar(lessonIds,CLOUDY_FOUNDATIONS);
       const candidates:Array<{id:string;mastery:number;evidence:number;incorrect:number;correct:number}> = words.map(word=>{
         const id="vocabulary:"+word.toLowerCase();
         const skill:any=evidence.get(id);
