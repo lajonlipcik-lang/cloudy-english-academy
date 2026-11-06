@@ -113,7 +113,7 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
         playbackUrl:row.media_type==="video"?mediaUrl:null,imageUrl:row.media_type==="image"?mediaUrl:null,
         status:row.status,isOwn:viewerId===data.authorId};
     }));
-    return {profile:{id:profile.id,displayName:String(profile.display_name||"Участник"),bio:String(profile.bio||""),
+    return {profile:{id:profile.id,displayName:String(profile.display_name||"Участник"),bio:(profile.is_public===true||viewerId===data.authorId)?String(profile.bio||""):"",
       isPublic:profile.is_public===true,isOwn:viewerId===data.authorId},posts};
   });
 
@@ -159,7 +159,7 @@ export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
    const {data:identity,error}=await auth.auth.getUser(data.accessToken);
    if(error||!identity.user)throw new Error("Unauthorized");
    const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
-   const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName,bio:data.bio,is_public:true}).eq("id",identity.user.id);
+   const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName,bio:data.bio}).eq("id",identity.user.id);
    if(updateError)throw new Error("Не удалось сохранить профиль.");
    return {ok:true,displayName:data.displayName,bio:data.bio};
  });
