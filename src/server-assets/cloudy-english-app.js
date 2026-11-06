@@ -730,58 +730,6 @@ function shortsChooseFile(input){
 }
 function shortsRemoveFile(){if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;const input=$("#shorts-upload-file");if(input)input.value="";const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-upload-placeholder">'+mascot("h")+'<b>Здесь появится предпросмотр</b><small>Лучше всего смотрится вертикальное видео 9:16</small></div>';const info=$("#shorts-upload-file-info");if(info){info.hidden=true;info.innerHTML="";}const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Выбрать видео, чтобы продолжить";}const d=$("#shorts-upload-drop");if(d)d.classList.remove("has-file");}
 
-async function shortsCaptureFrames(file){
- const url=URL.createObjectURL(file),video=document.createElement("video"),frames=[];
- video.muted=true;video.playsInline=true;video.preload="auto";
- try{
-  await new Promise((resolve,reject)=>{video.onloadedmetadata=resolve;video.onerror=()=>reject(new Error("Не удалось прочитать видео для проверки кадров."));video.src=url;video.load();});
-  const duration=Number(video.duration);
-  if(!Number.isFinite(duration)||duration<=0)throw new Error("Не удалось определить длительность видео.");
-  const canvas=document.createElement("canvas"),context=canvas.getContext("2d",{willReadFrequently:false});
-  if(!context)throw new Error("Браузер не поддерживает подготовку кадров.");
-  const points=[.08,.25,.42,.58,.75,.92],seen=new Set();
-  for(const point of points){
-   const time=Math.max(0,Math.min(Math.max(0,duration-.04),duration*point)),key=Math.round(time*10);
-   if(seen.has(key))continue;seen.add(key);
-   await new Promise((resolve,reject)=>{video.onseeked=resolve;video.onerror=()=>reject(new Error("Не удалось получить кадр видео."));video.currentTime=time;});
-   const scale=Math.min(1,384/Math.max(video.videoWidth||1,video.videoHeight||1));
-   canvas.width=Math.max(1,Math.round(video.videoWidth*scale));canvas.height=Math.max(1,Math.round(video.videoHeight*scale));
-   context.drawImage(video,0,0,canvas.width,canvas.height);
-   const frame=canvas.toDataURL("image/jpeg",.55);
-   if(frame.length>420000)throw new Error("Кадр слишком большой для безопасной отправки.");
-   frames.push(frame);
-  }
-  return frames;
- }finally{video.pause();video.removeAttribute("src");video.load();URL.revokeObjectURL(url);}
-}
-
-async function shortsCaptureAudioChunks(file){
- if(file.size>35*1024*1024)throw new Error("Для автоматической проверки аудио размер видео должен быть не больше 35 МБ. Ролик останется приватным и попадёт на ручную проверку.");
- const AudioContextClass=window.AudioContext||window.webkitAudioContext;
- if(!AudioContextClass)throw new Error("Браузер не поддерживает извлечение аудио.");
- const audioContext=new AudioContextClass();
- try{
-  const decoded=await audioContext.decodeAudioData(await file.arrayBuffer());
-  if(!decoded.duration||decoded.duration>180)throw new Error("Автоматическая проверка аудио поддерживает ролики длительностью до 3 минут. Нужна ручная проверка.");
-  const source=decoded.getChannelData(0),sourceRate=decoded.sampleRate,targetRate=16000,ratio=sourceRate/targetRate;
-  const totalSamples=Math.floor(source.length/ratio),chunks=[];
-  const encodeWav=(start,end)=>{
-   const count=end-start,buffer=new ArrayBuffer(44+count*2),view=new DataView(buffer);
-   const write=(offset,value)=>{for(let i=0;i<value.length;i++)view.setUint8(offset+i,value.charCodeAt(i));};
-   write(0,"RIFF");view.setUint32(4,36+count*2,true);write(8,"WAVE");write(12,"fmt ");view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,targetRate,true);view.setUint32(28,targetRate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);write(36,"data");view.setUint32(40,count*2,true);
-   for(let i=0;i<count;i++){const position=(start+i)*ratio,index=Math.floor(position),fraction=position-index,a=source[index]||0,b=source[Math.min(index+1,source.length-1)]||0,sample=Math.max(-1,Math.min(1,a+(b-a)*fraction));view.setInt16(44+i*2,sample<0?sample*32768:sample*32767,true);}
-   return new Uint8Array(buffer);
-  };
-  const samplesPerChunk=targetRate*20;
-  for(let start=0;start<totalSamples;start+=samplesPerChunk){
-   const wav=encodeWav(start,Math.min(totalSamples,start+samplesPerChunk));
-   let binary="";for(let offset=0;offset<wav.length;offset+=0x8000)binary+=String.fromCharCode(...wav.subarray(offset,Math.min(offset+0x8000,wav.length)));
-   chunks.push(btoa(binary));
-  }
-  if(!chunks.length||chunks.length>9)throw new Error("Не удалось подготовить аудиофрагменты.");
-  return chunks;
- }finally{await audioContext.close().catch(()=>{});}
-}
 async function shortsSubmitUpload(){
  if(!shortsSelectedFile){toast("Сначала выбери видео.",false);return;}
  const caption=String($("#shorts-upload-caption")?.value||"").trim();
@@ -810,16 +758,12 @@ async function shortsSubmitUpload(){
   const captionRejected=textReview?.result?.decision==="reject";
   let frameReview=null,audioReview=null;
   if(!captionRejected){
-   if(button)button.textContent="Cloudy AI проверяет кадры…";
-   if(notice)notice.querySelector("small").textContent="Извлекаем несколько кадров и отправляем их на предварительную визуальную проверку.";
-   let frames=[];
-   try{frames=await shortsCaptureFrames(file);}catch(error){console.warn("[cloudy-shorts] frame extraction deferred",error);}
-   try{frameReview=await authRequest("shorts-frame-review",{payload:{videoId:ticket.videoId,frames}});}catch(error){console.warn("[cloudy-shorts] frame triage deferred",error);}
-   if(button)button.textContent="Cloudy AI проверяет звук…";
-   if(notice)notice.querySelector("small").textContent="Извлекаем аудиодорожку, распознаём речь и проверяем текст. При недоступности анализа видео останется приватным.";
-   let chunks=[];
-   try{chunks=await shortsCaptureAudioChunks(file);}catch(error){console.warn("[cloudy-shorts] audio extraction deferred",error);}
-   if(chunks.length){try{audioReview=await authRequest("shorts-audio-review",{payload:{videoId:ticket.videoId,chunks}});}catch(error){console.warn("[cloudy-shorts] audio triage deferred",error);}}
+   if(button)button.textContent="Cloudy AI проверяет кадры исходного видео…";
+   if(notice)notice.querySelector("small").textContent="Cloudy AI извлекает кадры непосредственно из приватного оригинала на отдельном медиасервере.";
+   try{frameReview=await authRequest("shorts-frame-review",{payload:{videoId:ticket.videoId,frames:[]}});}catch(error){console.warn("[cloudy-shorts] trusted frame triage deferred",error);}
+   if(button)button.textContent="Cloudy AI проверяет звук исходного видео…";
+   if(notice)notice.querySelector("small").textContent="Cloudy AI извлекает аудио из приватного оригинала, распознаёт речь и проверяет её.";
+   try{audioReview=await authRequest("shorts-audio-review",{payload:{videoId:ticket.videoId,chunks:[]}});}catch(error){console.warn("[cloudy-shorts] trusted audio triage deferred",error);}
   }
   shortsRemoveFile();
   const captionField=$("#shorts-upload-caption");if(captionField)captionField.value="";shortsCaptionCount();
@@ -830,7 +774,7 @@ async function shortsSubmitUpload(){
   const audioAnalyzed=audioReview?.result?.status==="completed";
   const audioFlagged=audioAnalyzed&&audioReview?.result?.decision==="reject";
   const audioUnavailable=!audioReview?.result||audioReview.result.status!=="completed";
-  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>'+(captionRejected?"Подпись отклонена":frameFlagged||audioFlagged?"Материалы требуют особого внимания": "Видео принято на проверку") +'</b><small>'+(captionRejected?"Cloudy AI отклонил подпись. Видео осталось приватным и не будет опубликовано.":captionDeferred?"Проверка подписи отложена. Видео осталось приватным и требует ручной проверки.":frameUnavailable||audioUnavailable?"Не все проверки изображения и звука завершились. Видео осталось приватным и ожидает ручной проверки.":frameFlagged||audioFlagged?"Cloudy AI обнаружил возможные нарушения в выборочных кадрах или распознанной речи. Видео осталось приватным и передано на ручную проверку.":"Cloudy AI предварительно проверил выборочные кадры и распознанную речь. Это не полная серверная проверка оригинала. Видео осталось приватным и ожидает ручной проверки.")+'</small></div>';
+  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>'+(captionRejected?"Подпись отклонена":frameFlagged||audioFlagged?"Материалы требуют особого внимания": "Видео принято на проверку") +'</b><small>'+(captionRejected?"Cloudy AI отклонил подпись. Видео осталось приватным и не будет опубликовано.":captionDeferred?"Проверка подписи отложена. Видео осталось приватным и требует ручной проверки.":frameUnavailable||audioUnavailable?"Не все проверки изображения и звука завершились. Видео осталось приватным и ожидает ручной проверки.":frameFlagged||audioFlagged?"Cloudy AI обнаружил возможные нарушения в выборочных кадрах или распознанной речи. Видео осталось приватным и передано на ручную проверку.":"Cloudy AI предварительно проверил выборочные кадры и распознанную речь. Это выборочная проверка оригинала, а не окончательное решение. Видео осталось приватным и ожидает ручной проверки.")+'</small></div>';
   if(button){button.disabled=true;button.textContent=captionRejected?"Подпись отклонена":"Ожидает ручной проверки";}
   toast(captionRejected?"Cloudy AI отклонил подпись видео.":frameFlagged||audioFlagged?"Материалы переданы на ручную проверку.":"Видео загружено и отправлено на модерацию.");
  }catch(error){
