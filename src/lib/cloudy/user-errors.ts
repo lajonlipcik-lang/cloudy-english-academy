@@ -1,4 +1,4 @@
-export type UserErrorContext = "auth" | "ai" | "progress" | "generic";
+export type UserErrorContext = "auth" | "ai" | "progress" | "shorts" | "generic";
 
 function errorText(error: unknown): string {
   if (typeof error === "string") return error.toLowerCase();
@@ -50,6 +50,11 @@ export function toUserErrorMessage(error: unknown, context: UserErrorContext = "
   }
   if (/failed to fetch|networkerror|fetch failed|load failed|network request/i.test(text)) {
     return "Не удалось связаться с сервисом. Проверьте интернет и попробуйте ещё раз.";
+  }
+  if (context === "shorts") {
+    const safeProfileErrors = ["Этот профиль недоступен.", "Этот профиль закрыт.", "Не удалось загрузить публикации профиля.", "Не удалось загрузить подписки профиля.", "Не удалось загрузить статистику профиля.", "Некорректный профиль."];
+    if (error instanceof Error && safeProfileErrors.includes(error.message)) return error.message;
+    return "Не удалось загрузить профиль Cloudy Shorts. Попробуйте ещё раз.";
   }
   if (context === "ai") {
     return "Сейчас не удалось получить ответ. Ваше сообщение могло не отправиться — проверьте чат и при необходимости отправьте его ещё раз.";
