@@ -760,16 +760,7 @@ function validateShortsFrameReview(input: Partial<ShortsFrameReviewInput>): Shor
   if (!accessToken || accessToken.length > 8192 || accessToken.split(".").length !== 3) throw new Error("Unauthorized");
   if (!/^[0-9a-f-]{36}$/i.test(videoId)) throw new Error("Некорректное видео.");
   if (frames.length) throw new Error("Кадры извлекаются только из оригинала на доверенном медиасервере.");
-  let totalBytes = 0;
-  const safeFrames = frames.map((frame) => {
-    if (typeof frame !== "string" || frame.length > 420_000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(frame)) {
-      throw new Error("Некорректный формат кадра видео.");
-    }
-    totalBytes += frame.length;
-    return frame;
-  });
-  if (totalBytes > 1_900_000) throw new Error("Слишком большой набор кадров для проверки.");
-  return { accessToken, videoId, frames: safeFrames };
+  return { accessToken, videoId, frames: [] };
 }
 
 /**
@@ -891,16 +882,7 @@ function validateShortsAudioReview(input: Partial<ShortsAudioReviewInput>): Shor
   if (!accessToken || accessToken.length > 8192 || accessToken.split(".").length !== 3) throw new Error("Unauthorized");
   if (!/^[0-9a-f-]{36}$/i.test(videoId)) throw new Error("Некорректное видео.");
   if (chunks.length) throw new Error("Аудио извлекается только из оригинала на доверенном медиасервере.");
-  let total = 0;
-  const safeChunks = chunks.map((chunk) => {
-    if (typeof chunk !== "string" || chunk.length > 1_100_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(chunk)) {
-      throw new Error("Некорректный формат аудиофрагмента.");
-    }
-    total += chunk.length;
-    return chunk;
-  });
-  if (total > 8_500_000) throw new Error("Слишком большой объём аудио для проверки.");
-  return { accessToken, videoId, chunks: safeChunks };
+  return { accessToken, videoId, chunks: [] };
 }
 
 async function transcribeShortsAudio(provider: any, base64: string, index: number) {
