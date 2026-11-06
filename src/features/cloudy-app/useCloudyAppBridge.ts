@@ -454,7 +454,8 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
         }
       } catch (error) {
         const isAdminAction = String(message.action ?? "").startsWith("admin-");
-        const messageText = isAdminAction
+        const isShortsUploadAction = String(message.action ?? "").startsWith("shorts-upload-");
+        const messageText = isAdminAction || isShortsUploadAction
           ? (error instanceof Error ? error.message : "Не удалось выполнить действие.")
           : toUserErrorMessage(error, message.action === "ai-chat" ? "ai" : "auth");
         reply({ ok: false, error: messageText });
