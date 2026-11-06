@@ -864,3 +864,10 @@ body:has(.shorts-screen) .amb{display:none!important}
 .shorts-profile-tabs{height:42px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #242429;color:#fff}
 .shorts-profile-tabs span{height:42px;min-width:62px;display:grid;place-items:center;border-bottom:2px solid #fff;font-size:22px}
 @media(max-width:380px){.shorts-profile-head{gap:8px;padding:0 12px}.shorts-profile-avatar{width:72px;height:72px}.shorts-profile-title h2{font-size:18px}.shorts-profile-edit{padding:8px;font-size:10px}}
+
+/* Unified profile navigation and working media filters */
+.shorts-creator-profile.own .shorts-profile-back{display:none}
+.shorts-profile-tabs{gap:0;justify-content:space-around}
+.shorts-profile-tabs button{height:42px;min-width:54px;padding:0 12px;border:0;border-bottom:2px solid transparent;background:transparent;color:#8f8f98;font:inherit;font-size:12px;font-weight:750}
+.shorts-profile-tabs button.active{color:#fff;border-bottom-color:#fff}
+.shorts-profile-post video{pointer-events:none}
