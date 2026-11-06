@@ -90,7 +90,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.apply_shorts_audio_analysis(uuid, text, jsonb, numeric, text, integer, text)
+REVOKE ALL ON FUNCTION public.apply_shorts_audio_analysis(uuid, text, text, jsonb, numeric, text, integer, text)
   FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.apply_shorts_audio_analysis(uuid, text, jsonb, numeric, text, integer, text)
+GRANT EXECUTE ON FUNCTION public.apply_shorts_audio_analysis(uuid, text, text, jsonb, numeric, text, integer, text)
   TO service_role;
