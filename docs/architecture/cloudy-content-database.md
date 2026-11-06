@@ -41,10 +41,10 @@ Public feed eligibility is checked against Core profiles.is_public. Resolve disp
 ## Provisioning
 
 1. Create a separate Supabase project for Cloudy Content.
-2. Apply drizzle/migrations-content/0001_cloudy_content_core.sql, 0002_shorts_and_ai_moderation.sql and 0003_shorts_text_moderation_rpc.sql to the Content database only.
-3. Configure server secrets CLOUDY_CONTENT_SUPABASE_URL and CLOUDY_CONTENT_SUPABASE_SERVICE_ROLE_KEY.
+2. Apply drizzle/migrations-content/0001_cloudy_content_core.sql, 0002_shorts_and_ai_moderation.sql and 0003_shorts_text_moderation_rpc.sql and 0004_shorts_private_storage.sql to the Content database only.
+3. Configure server-only CLOUDY_CONTENT_SUPABASE_URL and CLOUDY_CONTENT_SUPABASE_SERVICE_ROLE_KEY. Also configure CLOUDY_CONTENT_SUPABASE_PUBLISHABLE_KEY (the public, non-secret project key) for the signed-upload browser request; it is never a service-role credential.
 4. Do not change existing SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY or SUPABASE_SERVICE_ROLE_KEY; those continue to point to Core.
-5. Configure a private Storage bucket for Shorts. Do not allow public uploads or publish media before the media moderation pipeline has approved them.
+5. Migration 0004 creates the private cloudy-shorts bucket (100 MB maximum; MP4, WebM and QuickTime). The server verifies Core Auth and upload restrictions, creates a draft row, and returns a two-hour signed upload capability. The embedded UI uploads the file directly to that signed URL and calls the server to verify the stored object; finalization moves it only to pending_review. This does not approve or publish media.
 
 ## Migration and rollout
 
@@ -74,3 +74,12 @@ Public feed eligibility is checked against Core profiles.is_public. Resolve disp
 5. Public comment reads return only rows with `status = 'published'`; pending or rejected text is never returned in the public thread.
 
 The current three Shorts cards are still demonstration content with non-database IDs. Live comment calls activate only for real UUID-backed Content videos after the Content project and migrations are provisioned. Demo comments remain clearly labelled as demonstration data. Replies, comment likes, and actual video upload/feed playback are not part of this slice.
+
+
+## Shorts video upload request flow
+
+1. The embedded UI sends file metadata and caption through the same-origin auth bridge; the bridge attaches the current Core access token.
+2. The server validates the Core user, checks active upload/community restrictions, creates a private draft row and returns a short-lived signed upload URL. The service-role key stays server-side.
+3. The browser uploads the file directly to the private Storage bucket using the signed URL and the Content project's public publishable key.
+4. The UI asks the server to finalize. The server verifies ownership and confirms the object exists and is within the size limit, then sets the row to pending_review.
+5. No video is added to the public feed at this stage. Frame/audio inspection and a human-review workflow must be implemented before any video can be approved.
