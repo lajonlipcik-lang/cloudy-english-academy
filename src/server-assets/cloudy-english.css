@@ -909,3 +909,10 @@ body:has(.shorts-screen) .amb{display:none!important}
 .shorts-profile-empty b{font-size:16px}
 .shorts-profile-empty span{font-size:13px;line-height:1.4}
 @media(max-width:380px){.shorts-profile-head{gap:10px;padding:0 14px}.shorts-profile-avatar{width:86px;height:86px}.shorts-profile-title h2{font-size:24px}.shorts-profile-stats{padding:0 14px;gap:8px}}
+
+.shorts-profile-head{display:flex;flex-wrap:wrap}
+.shorts-profile-edit,.shorts-profile-visibility{align-self:center;margin-left:auto;flex:none;border-radius:18px;padding:9px 13px;font-size:12px;font-weight:700}
+.shorts-profile-edit{background:#262628;color:#fff;border:1px solid #414145}
+.shorts-profile-edit:active{transform:scale(.96);background:#38383b}
+.shorts-profile-visibility{color:#b8b8bd;background:#202023}
+@media(max-width:360px){.shorts-profile-edit,.shorts-profile-visibility{font-size:11px;padding:8px 10px}}
