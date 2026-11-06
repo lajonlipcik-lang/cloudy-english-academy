@@ -218,8 +218,8 @@ function mountShortsIntro(){
  later(()=>cloud.classList.add("settled"),c0+1050);
  later(()=>{const bounds=stage.getBoundingClientRect(),cb=cloud.getBoundingClientRect();stage.style.transformOrigin=(cb.left+cb.width/2-bounds.left)+"px "+(cb.top+cb.height*.55-bounds.top)+"px";const zoom=Math.max(innerWidth,innerHeight)/(cb.width*.5);stage.style.setProperty("--zs",Math.max(zoom*1.6,14));stage.classList.add("zoom");tone(220,.65,.045);later(()=>{flash.classList.add("on");[1047,1319,1568,2093].forEach((n,i)=>tone(n,.22,.035,i*.06));},600);later(finish,950);},c0+1350);
 }
-function view(a=1,tabDirection=0){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof,shorts][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest){void loadCommunityProfile();if(!shortsProfileUserId)shortsOpenProfile(S.user.id);}if(T===4){void shortsLoadFeed();mountShortsIntro();initShortsPlayback();}}
-function tab(k){if(k===3&&S.user&&!S.user.guest&&shortsProfileUserId!==S.user.id){shortsOpenProfile(S.user.id);return;}if(k!==T){const direction=k>T?1:-1;snd("tab");if(k!==3){shortsProfileUserId=null;shortsProfileData=null;shortsProfileLoading=false;}T=k;if(k===4)shortsFeedUser=null;view(1,direction)}}
+function view(a=1,tabDirection=0){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof,shorts][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest)void loadCommunityProfile();if(T===4){void shortsLoadFeed();mountShortsIntro();initShortsPlayback();}}
+function tab(k){if(k!==T){const direction=k>T?1:-1;snd("tab");shortsProfileUserId=null;shortsProfileData=null;shortsProfileLoading=false;shortsProfileTab="all";T=k;if(k===4)shortsFeedUser=null;view(1,direction)}}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
 const pool=()=>LV[S.lv].s.flatMap(x=>x.l).flatMap(j=>D[j].w);
@@ -703,8 +703,10 @@ const shortsItems=[
 let shortsComposerMode="video",shortsSelectedImageUrl="",shortsSelectedImageFile=null;
 let shortsFeedMode="for-you",shortsLiked=new Set(),shortsSaved=new Set(),shortsFollowing=new Set(),shortsMuted=true,shortsSelectedUrl="",shortsSelectedFile=null,shortsUploadMeta=null,shortsLiveItems=[],shortsFeedLoading=false,shortsFeedUser=null; 
 let shortsProfileUserId=null,shortsProfileData=null,shortsProfileLoading=false,shortsProfileTab="all";
+function shortsOpenAccountProfile(){shortsProfileUserId=null;shortsProfileData=null;shortsProfileLoading=false;shortsProfileTab="all";T=3;shortsPauseAll();view(1,-1);}
 function shortsOpenProfile(userId){
  if(!/^[0-9a-f-]{36}$/i.test(String(userId||"")))return;
+ if(userId===S.user?.id){shortsOpenAccountProfile();return;}
  shortsProfileUserId=userId;shortsProfileData=null;shortsProfileLoading=true;shortsProfileTab="all";shortsPauseAll();T=3;view(0);
  authRequest("shorts-profile-get",{payload:{authorId:userId}}).then(r=>{if(shortsProfileUserId===userId)shortsProfileData=r.result||null;}).catch(e=>toast(e.message||"Не удалось открыть профиль.",false)).finally(()=>{if(shortsProfileUserId===userId){shortsProfileLoading=false;view(0);}});
 }
@@ -744,7 +746,7 @@ function shortsCount(base, inc){
 }
 function shorts(){
  const items=shortsFeedMode==="following"?shortsLiveItems.filter(x=>shortsFollowing.has(x.id)):shortsLiveItems;
- let h='<section class="shorts-screen"><div class="shorts-topbar"><div class="shorts-brand"><b>CLOUDY <i>SHORTS</i></b></div><button class="shorts-my-profile" onclick="shortsOpenProfile(S.user.id)">Профиль</button><div class="shorts-tabs"><button class="'+(shortsFeedMode==="following"?"active":"")+'" onclick="shortsSetMode(\'following\')">Подписки</button><button class="'+(shortsFeedMode==="for-you"?"active":"")+'" onclick="shortsSetMode(\'for-you\')">Для вас</button></div><button class="shorts-search" aria-label="Поиск" onclick="shortsSearch()">'+shortsIcon("search")+'</button></div><div class="shorts-feed" id="shorts-feed">';
+ let h='<section class="shorts-screen"><div class="shorts-topbar"><div class="shorts-brand"><b>CLOUDY <i>SHORTS</i></b></div><button class="shorts-my-profile" onclick="shortsOpenAccountProfile()">Профиль</button><div class="shorts-tabs"><button class="'+(shortsFeedMode==="following"?"active":"")+'" onclick="shortsSetMode(\'following\')">Подписки</button><button class="'+(shortsFeedMode==="for-you"?"active":"")+'" onclick="shortsSetMode(\'for-you\')">Для вас</button></div><button class="shorts-search" aria-label="Поиск" onclick="shortsSearch()">'+shortsIcon("search")+'</button></div><div class="shorts-feed" id="shorts-feed">';
  if(!items.length)h+='<div class="shorts-empty-state">'+(shortsFeedLoading?'Загружаем публикации…':shortsFeedMode==="following"?'Здесь появятся публикации авторов, на которых ты подпишешься.':'Пока нет публикаций. Поделись первым учебным материалом!')+'</div>';
  items.forEach(x=>{
   const id=shortsEscapeText(x.id),author=shortsEscapeText(x.author),handle=shortsEscapeText(x.handle),caption=shortsEscapeText(x.caption),url=shortsEscapeText(x.videoUrl||x.imageUrl||""),initial=shortsEscapeText(x.initial);
