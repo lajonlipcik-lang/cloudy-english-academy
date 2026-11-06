@@ -714,8 +714,9 @@ function shortsEditProfile(){
  if(!shortsProfileData?.profile?.isOwn)return;
  const p=shortsProfileData.profile,name=prompt("Имя профиля",p.displayName||"");
  if(name===null)return;
- const bio=prompt("Описание профиля",p.bio||"");if(bio===null)return;
- authRequest("shorts-profile-update",{payload:{displayName:name,bio}}).then(()=>{toast("Профиль сохранён.");shortsOpenProfile(S.user.id);}).catch(e=>toast(e.message||"Не удалось сохранить профиль.",false));
+ const bio=prompt("Описание профиля (до 240 символов)",p.bio||"");if(bio===null)return;
+ const isPublic=confirm("Открыть профиль для всех? Нажмите «Отмена», чтобы сделать профиль закрытым.");
+ authRequest("shorts-profile-update",{payload:{displayName:name,bio,isPublic}}).then(()=>{toast("Профиль сохранён.");shortsOpenProfile(S.user.id);}).catch(e=>toast(e.message||"Не удалось сохранить профиль.",false));
 }
 async function shortsDeletePost(postId){
  if(!confirm("Удалить публикацию? Это действие нельзя отменить."))return;
@@ -728,9 +729,10 @@ function shortsCreatorProfile(){
  const p=data.profile,posts=data.posts||[],stats=data.stats||{},own=!!p.isOwn;
  const initial=shortsEscapeText((p.displayName||"У").trim().charAt(0).toUpperCase());
  const avatar=p.avatarUrl?'<img src="'+shortsEscapeText(p.avatarUrl)+'" alt="" referrerpolicy="no-referrer">':initial;
+ const coverStyle=p.coverUrl?' style="background-image:linear-gradient(180deg,rgba(0,0,0,.05),rgba(0,0,0,.72)),url(\''+shortsEscapeText(p.coverUrl)+'\')"':"";
  const handle=p.username?'@'+shortsEscapeText(p.username):'Участник Cloudy Shorts';
  const tiles=posts.length?posts.map(x=>'<article class="shorts-profile-post">'+(x.mediaType==="video"&&x.playbackUrl?'<video src="'+shortsEscapeText(x.playbackUrl)+'" muted playsinline preload="none"></video>':x.mediaType==="image"&&x.imageUrl?'<img src="'+shortsEscapeText(x.imageUrl)+'" alt="" loading="lazy">':'<div class="shorts-profile-text">'+shortsEscapeText(x.textContent||x.caption||"Текстовая публикация")+'</div>')+(x.status!=="approved"?'<small class="shorts-profile-pending">На проверке</small>':'')+(own?'<button class="shorts-profile-delete" onclick="shortsDeletePost(\''+x.id+'\')">Удалить</button>':'')+'</article>').join(""):'<div class="shorts-profile-empty"><div>▧</div><b>Публикаций пока нет</b><span>Здесь появятся видео, фото и заметки автора</span></div>';
- return '<section class="shorts-creator-profile"><header class="shorts-profile-cover"><button class="shorts-profile-back" onclick="shortsCloseProfile()">‹</button><span>CLOUDY SHORTS</span></header><div class="shorts-profile-head"><div class="shorts-profile-avatar">'+avatar+'</div><div class="shorts-profile-title"><h2>'+shortsEscapeText(p.displayName||"Участник")+'</h2><span>'+handle+'</span></div>'+(own?'<button class="shorts-profile-edit" onclick="shortsEditProfile()">Изменить профиль</button>':'')+'</div><p class="shorts-profile-bio">'+shortsEscapeText(p.bio||"")+'</p><div class="shorts-profile-stats"><div><b>'+Number(stats.posts||0)+'</b><span>Публикации</span></div><div><b>'+shortsCount(stats.likes,false)+'</b><span>Лайки</span></div></div><div class="shorts-profile-tabs"><span class="active">▦</span></div><div class="shorts-profile-grid">'+tiles+'</div></section>';
+ return ' <section class="shorts-creator-profile"><header class="shorts-profile-cover"'+coverStyle+'><button class="shorts-profile-back" onclick="shortsCloseProfile()">‹</button><span>CLOUDY SHORTS</span></header><div class="shorts-profile-head"><div class="shorts-profile-avatar">'+avatar+'</div><div class="shorts-profile-title"><h2>'+shortsEscapeText(p.displayName||"Участник")+'</h2><span>'+handle+'</span></div>'+(own?'<button class="shorts-profile-edit" onclick="shortsEditProfile()">Изменить профиль</button>':'')+'</div><p class="shorts-profile-bio">'+shortsEscapeText(p.bio||"")+'</p><div class="shorts-profile-stats"><div><b>'+Number(stats.posts||0)+'</b><span>Публикации</span></div><div><b>'+shortsCount(stats.likes,false)+'</b><span>Лайки</span></div></div><div class="shorts-profile-tabs"><span class="active">▦</span></div><div class="shorts-profile-grid">'+tiles+'</div></section>';
 }
 function shortsCount(base, inc){
   const n = Number(base || 0) + (inc ? 1 : 0);
