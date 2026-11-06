@@ -140,3 +140,25 @@ export const deleteOwnShortPost = createServerFn({ method: "POST" })
     if(post.storage_path)await content.storage.from("cloudy-shorts").remove([post.storage_path]);
     return {ok:true,postId:data.postId};
   });
+
+
+type UpdateProfileInput = { accessToken?: string; displayName?: string; bio?: string };
+export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
+ .inputValidator((input:Partial<UpdateProfileInput>):UpdateProfileInput=>{
+   const accessToken=String(input?.accessToken??""),displayName=String(input?.displayName??"").trim(),bio=String(input?.bio??"").trim();
+   if(!accessToken||accessToken.length>8192||accessToken.split(".").length!==3)throw new Error("Unauthorized");
+   if(displayName.length<1||displayName.length>40)throw new Error("Имя должно содержать от 1 до 40 символов.");
+   if(bio.length>240)throw new Error("Описание не должно превышать 240 символов.");
+   return {accessToken,displayName,bio};
+ })
+ .handler(async({data})=>{
+   const url=process.env["SUPABASE_URL"],key=process.env["SUPABASE_PUBLISHABLE_KEY"];
+   if(!url||!key)throw new Error("Core Supabase is not configured.");
+   const auth=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+   const {data:identity,error}=await auth.auth.getUser(data.accessToken);
+   if(error||!identity.user)throw new Error("Unauthorized");
+   const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
+   const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName,bio:data.bio,is_public:true}).eq("id",identity.user.id);
+   if(updateError)throw new Error("Не удалось сохранить профиль.");
+   return {ok:true,displayName:data.displayName,bio:data.bio};
+ });
