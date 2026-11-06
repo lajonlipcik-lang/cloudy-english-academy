@@ -445,7 +445,7 @@ export const listShortsModerationQueue = createServerFn({ method: "POST" })
     const contentDb = getCloudyContentAdmin();
     const { data: videos, error } = await contentDb
       .from("shorts_videos")
-      .select("id,author_id,storage_path,caption,status,moderation_status,moderation_reason,moderation_labels,created_at,duration_seconds,frame_analysis_status,frame_analysis_labels,frame_analysis_reason,frame_analysis_confidence,frame_count,audio_analysis_status,audio_analysis_decision,audio_analysis_labels,audio_analysis_reason,audio_analysis_confidence,audio_chunk_count")
+      .select("id,author_id,storage_path,media_type,text_content,caption,status,moderation_status,moderation_reason,moderation_labels,created_at,duration_seconds,frame_analysis_status,frame_analysis_labels,frame_analysis_reason,frame_analysis_confidence,frame_count,audio_analysis_status,audio_analysis_decision,audio_analysis_labels,audio_analysis_reason,audio_analysis_confidence,audio_chunk_count")
       .in("status", ["pending_review", "approved"])
       .in("moderation_status", ["pending", "needs_human_review"])
       .order("created_at", { ascending: true })
@@ -460,19 +460,21 @@ export const listShortsModerationQueue = createServerFn({ method: "POST" })
     const names = new Map((profiles ?? []).map((profile: any) => [profile.id, profile.display_name || "Участник"]));
 
     const queue = await Promise.all((videos ?? []).map(async (video: any) => {
-      const { data: signed, error: signedError } = await contentDb.storage
-        .from("cloudy-shorts")
-        .createSignedUrl(video.storage_path, 300);
+      const signed = video.storage_path
+        ? await contentDb.storage.from("cloudy-shorts").createSignedUrl(video.storage_path, 300)
+        : { data: null, error: null };
       return {
         id: video.id,
+        mediaType: video.media_type || "video",
+        textContent: safeContextText(video.text_content, 2000),
         published: video.status === "approved",
         authorId: video.author_id,
         authorName: names.get(video.author_id) || "Участник",
         caption: safeContextText(video.caption, 500),
         createdAt: video.created_at,
         durationSeconds: video.duration_seconds,
-        previewUrl: signedError ? null : signed?.signedUrl ?? null,
-        previewUnavailable: Boolean(signedError || !signed?.signedUrl),
+        previewUrl: signed.error ? null : signed.data?.signedUrl ?? null,
+        previewUnavailable: Boolean(video.storage_path && (signed.error || !signed.data?.signedUrl)),
         textReason: safeContextText(video.moderation_reason, 500),
         textLabels: Array.isArray(video.moderation_labels) ? video.moderation_labels : [],
         frame: {
