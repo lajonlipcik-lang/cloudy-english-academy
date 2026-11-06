@@ -103,11 +103,13 @@ $('shut').onclick=()=>{
  (m.id==='photo'?$('capP'):$('capV')).click();
 };
 $('gal').onclick=()=>$('gfile').click();
-['capV','capP','gfile'].forEach(id=>$(id).addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)handle(f,id==='gfile')}));
-function handle(f,fromGallery){
+['capV','capP','gfile'].forEach(id=>$(id).addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)handle(f)}));
+function handle(f){
  const isImg=f.type.startsWith('image/'),isVid=f.type.startsWith('video/')||/\.(mp4|mov|webm)$/i.test(f.name);
  if(!isImg&&!isVid){toast('Нужен файл видео или фото');return}
- if(f.size>MAX_MB*1024*1024){toast('Файл больше 100 МБ');return}
+ if(isImg&&f.size>15*1024*1024){toast('Фотография должна быть не больше 15 МБ');return}
+ if(!isImg&&f.size>MAX_MB*1024*1024){toast('Видео больше 100 МБ');return}
+ if(isImg&&!['image/jpeg','image/png','image/webp'].includes(f.type)){toast('Поддерживаются JPG, PNG и WebP');return}
  if(isImg){if(S.url)URL.revokeObjectURL(S.url);review(f,'photo',0);return}
  const url=URL.createObjectURL(f),v=document.createElement('video');v.preload='metadata';v.muted=true;
  const limit=mode().max||180;
