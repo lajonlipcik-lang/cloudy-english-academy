@@ -699,13 +699,10 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
       p_policy_version: "cloudy-content-text-v1",
     });
     if (applyError) throw new Error("Не удалось сохранить решение модерации.");
-    const videoNeedsMediaReview = contentType === "short_video" && decision.decision === "allow";
     return {
       ok: true,
-      decision: videoNeedsMediaReview ? "review" : decision.decision,
-      reason: videoNeedsMediaReview
-        ? "Текст подписи прошёл проверку. Само видео ещё должно пройти проверку изображения и звука."
-        : decision.reason,
+      decision: decision.decision,
+      reason: decision.reason,
       moderationApplied: Boolean(applied),
       mediaReviewed: false,
     };
