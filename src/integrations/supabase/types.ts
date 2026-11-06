@@ -629,13 +629,15 @@ export type Database = {
           frame_analyzed_at: string | null
           frame_count: number
           id: string
+          media_type: string
+          text_content: string
           moderated_at: string | null
           moderation_labels: Json
           moderation_reason: string
           moderation_status: string
           published_at: string | null
           status: string
-          storage_path: string
+          storage_path: string | null
           updated_at: string
         }
         Insert: {
@@ -695,7 +697,7 @@ export type Database = {
           moderation_status?: string
           published_at?: string | null
           status?: string
-          storage_path?: string
+          storage_path?: string | null
           updated_at?: string
         }
         Relationships: []
