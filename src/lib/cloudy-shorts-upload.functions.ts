@@ -106,11 +106,11 @@ export const createShortVideoUpload = createServerFn({ method: "POST" })
 
     const contentUrl =
       process.env["CLOUDY_CONTENT_SUPABASE_URL"] ||
-      import.meta.env.VITE_SUPABASE_URL ||
+      import.meta.env["VITE_SUPABASE_URL"] ||
       process.env["SUPABASE_URL"];
     const publishableKey =
       process.env["CLOUDY_CONTENT_SUPABASE_PUBLISHABLE_KEY"] ||
-      import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+      import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
       process.env["SUPABASE_PUBLISHABLE_KEY"];
     if (!contentUrl || !publishableKey) {
       await content.from("shorts_videos").delete().eq("id", videoId).eq("author_id", user.id);
