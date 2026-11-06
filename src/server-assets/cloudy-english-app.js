@@ -702,13 +702,14 @@ const shortsItems=[
 {id:"th-sound",author:"Tom · Pronunciation",handle:"@tom.speaks",initial:"T",caption:"Как правильно произносить звук TH. Повтори за мной.",tags:"#pronunciation #sounds #a1",likes:1720,comments:0,shares:31,theme:"cyan",eyebrow:"ПРОИЗНОШЕНИЕ · A1",big:"TH",sub:"tongue between your teeth",big2:"THINK",sub2:"/θɪŋk/",note:"THINK · THREE · THANK YOU"}];
 let shortsComposerMode="video",shortsSelectedImageUrl="",shortsSelectedImageFile=null;
 let shortsFeedMode="for-you",shortsLiked=new Set(),shortsSaved=new Set(),shortsFollowing=new Set(),shortsMuted=true,shortsSelectedUrl="",shortsSelectedFile=null,shortsUploadMeta=null,shortsLiveItems=[],shortsFeedLoading=false,shortsFeedUser=null; 
-let shortsProfileUserId=null,shortsProfileData=null,shortsProfileLoading=false;
+let shortsProfileUserId=null,shortsProfileData=null,shortsProfileLoading=false,shortsProfileTab="all";
 function shortsOpenProfile(userId){
  if(!/^[0-9a-f-]{36}$/i.test(String(userId||"")))return;
- shortsProfileUserId=userId;shortsProfileData=null;shortsProfileLoading=true;shortsPauseAll();view(0);
+ shortsProfileUserId=userId;shortsProfileData=null;shortsProfileLoading=true;shortsProfileTab="all";shortsPauseAll();T=3;view(0);
  authRequest("shorts-profile-get",{payload:{authorId:userId}}).then(r=>{if(shortsProfileUserId===userId)shortsProfileData=r.result||null;}).catch(e=>toast(e.message||"Не удалось открыть профиль.",false)).finally(()=>{if(shortsProfileUserId===userId){shortsProfileLoading=false;view(0);}});
 }
-function shortsCloseProfile(){shortsProfileUserId=null;shortsProfileData=null;view(0);}
+function shortsCloseProfile(){shortsProfileUserId=null;shortsProfileData=null;shortsProfileTab="all";T=4;view(0);}
+function shortsSetProfileTab(tab){shortsProfileTab=["all","video","image","text"].includes(tab)?tab:"all";view(0);}
 document.addEventListener("click",function(event){const target=event.target?.closest?.("[data-short-author]");if(target)shortsOpenProfile(target.getAttribute("data-short-author"));});
 function shortsEditProfile(){
  if(!shortsProfileData?.profile?.isOwn)return;
