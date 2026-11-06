@@ -103,8 +103,14 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
       if (typeof value !== "string" || value.length > 2048) return null;
       try { const parsed = new URL(value); return parsed.protocol === "https:" ? value : null; } catch { return null; }
     };
-    const avatarUrl = safeImageUrl(metadata["avatar_url"] ?? metadata["picture"]);
-    const coverUrl = safeImageUrl(metadata["cover_url"]);
+    const avatarPath = typeof metadata["avatar_path"] === "string" ? metadata["avatar_path"] : "";
+    const coverPath = typeof metadata["cover_path"] === "string" ? metadata["cover_path"] : "";
+    const [{ data: avatarSigned }, { data: coverSigned }] = await Promise.all([
+      avatarPath.startsWith(`profiles/${authorId}/avatar/`) ? (await import("@/integrations/supabase/content.server")).getCloudyContentAdmin().storage.from("cloudy-shorts").createSignedUrl(avatarPath, 3600) : Promise.resolve({ data: null }),
+      coverPath.startsWith(`profiles/${authorId}/cover/`) ? (await import("@/integrations/supabase/content.server")).getCloudyContentAdmin().storage.from("cloudy-shorts").createSignedUrl(coverPath, 3600) : Promise.resolve({ data: null }),
+    ]);
+    const avatarUrl = avatarSigned?.signedUrl || safeImageUrl(metadata["avatar_url"] ?? metadata["picture"]);
+    const coverUrl = coverSigned?.signedUrl || safeImageUrl(metadata["cover_url"]);
     const username = typeof metadata["username"] === "string" && /^[a-zA-Z0-9_.]{3,24}$/.test(metadata["username"])
       ? metadata["username"] : null;
     const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
@@ -173,7 +179,7 @@ export const deleteOwnShortPost = createServerFn({ method: "POST" })
   });
 
 
-type UpdateProfileInput = { accessToken?: string; displayName?: string; bio?: string; isPublic?: boolean };
+type UpdateProfileInput = { accessToken?: string; displayName?: string; bio?: string; isPublic?: boolean; avatarPath?: string; coverPath?: string };
 export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
  .inputValidator((input:Partial<UpdateProfileInput>):UpdateProfileInput=>{
    const accessToken=String(input?.accessToken??""),displayName=String(input?.displayName??"").trim(),bio=String(input?.bio??"").trim(),isPublic=input?.isPublic;
@@ -181,7 +187,11 @@ export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
    if(displayName.length<1||displayName.length>40)throw new Error("Имя должно содержать от 1 до 40 символов.");
    if(bio.length>240)throw new Error("Описание не должно превышать 240 символов.");
    if(typeof isPublic!=="boolean")throw new Error("Выберите видимость профиля.");
-   return {accessToken,displayName,bio,isPublic};
+   const avatarPath = input?.avatarPath === undefined ? undefined : String(input.avatarPath);
+   const coverPath = input?.coverPath === undefined ? undefined : String(input.coverPath);
+   if (avatarPath !== undefined && !/^profiles\/[0-9a-f-]{36}\/avatar\/[a-f0-9-]+\.(jpg|png|webp)$/i.test(avatarPath)) throw new Error("Некорректный путь аватара.");
+   if (coverPath !== undefined && !/^profiles\/[0-9a-f-]{36}\/cover\/[a-f0-9-]+\.(jpg|png|webp)$/i.test(coverPath)) throw new Error("Некорректный путь обложки.");
+   return {accessToken,displayName,bio,isPublic,avatarPath,coverPath};
  })
  .handler(async({data})=>{
    const url=process.env["SUPABASE_URL"],key=process.env["SUPABASE_PUBLISHABLE_KEY"];
@@ -192,6 +202,14 @@ export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
    const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
    const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName!,bio:data.bio!,is_public:data.isPublic!}).eq("id",identity.user.id);
    if(updateError)throw new Error("Не удалось сохранить профиль.");
+   if (data.avatarPath !== undefined || data.coverPath !== undefined) {
+     const { data: current } = await supabaseAdmin.auth.admin.getUserById(identity.user.id);
+     const metadata = { ...(current?.user?.user_metadata ?? {}) };
+     if (data.avatarPath !== undefined) metadata["avatar_path"] = data.avatarPath;
+     if (data.coverPath !== undefined) metadata["cover_path"] = data.coverPath;
+     const { error: metadataError } = await supabaseAdmin.auth.admin.updateUserById(identity.user.id, { user_metadata: metadata });
+     if (metadataError) throw new Error("Не удалось сохранить изображения профиля.");
+   }
    return {ok:true,displayName:data.displayName,bio:data.bio,isPublic:data.isPublic};
  });
 
@@ -235,4 +253,33 @@ export const setShortsFollow = createServerFn({ method: "POST" })
       content.from("shorts_follows").select("following_id", { count: "exact", head: true }).eq("follower_id", data.authorId!),
     ]);
     return { ok: true, isFollowing: data.follow, followers: followers || 0, following: following || 0 };
+  });
+
+
+type ProfileImageUploadInput = { accessToken?: string; kind?: string; mimeType?: string; fileSize?: number };
+export const createShortsProfileImageUpload = createServerFn({ method: "POST" })
+  .inputValidator((input: Partial<ProfileImageUploadInput>): ProfileImageUploadInput => {
+    const accessToken = String(input?.accessToken ?? "");
+    const kind = String(input?.kind ?? "");
+    const mimeType = String(input?.mimeType ?? "");
+    const fileSize = Number(input?.fileSize);
+    if (!accessToken || accessToken.length > 8192 || accessToken.split(".").length !== 3) throw new Error("Unauthorized");
+    if (!["avatar", "cover"].includes(kind)) throw new Error("Некорректный тип изображения.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(mimeType)) throw new Error("Поддерживаются JPG, PNG и WebP.");
+    if (!Number.isInteger(fileSize) || fileSize < 1 || fileSize > 5 * 1024 * 1024) throw new Error("Размер изображения не должен превышать 5 МБ.");
+    return { accessToken, kind, mimeType, fileSize };
+  })
+  .handler(async ({ data }) => {
+    const url = process.env["SUPABASE_URL"], key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !key) throw new Error("Core Supabase is not configured.");
+    const auth = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+    const { data: identity, error } = await auth.auth.getUser(data.accessToken);
+    if (error || !identity.user) throw new Error("Unauthorized");
+    const extension = data.mimeType === "image/jpeg" ? "jpg" : data.mimeType === "image/png" ? "png" : "webp";
+    const path = `profiles/${identity.user.id}/${data.kind}/${crypto.randomUUID()}.${extension}`;
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const content = getCloudyContentAdmin();
+    const { data: signed, error: signedError } = await content.storage.from("cloudy-shorts").createSignedUploadUrl(path);
+    if (signedError || !signed?.signedUrl) throw new Error("Не удалось подготовить загрузку изображения.");
+    return { path, signedUrl: signed.signedUrl, token: signed.token };
   });
