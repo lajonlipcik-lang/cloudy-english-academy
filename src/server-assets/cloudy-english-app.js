@@ -729,7 +729,39 @@ function shortsChooseFile(input){
  const drop=$("#shorts-upload-drop");if(drop)drop.classList.add("has-file");
 }
 function shortsRemoveFile(){if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;const input=$("#shorts-upload-file");if(input)input.value="";const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-upload-placeholder">'+mascot("h")+'<b>Здесь появится предпросмотр</b><small>Лучше всего смотрится вертикальное видео 9:16</small></div>';const info=$("#shorts-upload-file-info");if(info){info.hidden=true;info.innerHTML="";}const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Выбрать видео, чтобы продолжить";}const d=$("#shorts-upload-drop");if(d)d.classList.remove("has-file");}
-function shortsSubmitUpload(){if(!shortsSelectedFile){toast("Сначала выбери видео.",false);return;}if(!$("#shorts-upload-caption")?.value.trim()){toast("Добавь описание видео.",false);$("#shorts-upload-caption")?.focus();return;}toast("Проверка оформления завершена. Это черновик: отправка и публикация пока недоступны.");}
+async function shortsSubmitUpload(){
+ if(!shortsSelectedFile){toast("Сначала выбери видео.",false);return;}
+ const caption=String($("#shorts-upload-caption")?.value||"").trim();
+ if(!caption){toast("Добавь описание видео.",false);$("#shorts-upload-caption")?.focus();return;}
+ if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы отправить видео на проверку.",false);return;}
+ if(!shortsUploadMeta||!Number.isFinite(shortsUploadMeta.duration)||shortsUploadMeta.duration<=0){toast("Дождись окончания подготовки предпросмотра видео.",false);return;}
+ const file=shortsSelectedFile,button=$("#shorts-upload-submit"),notice=document.querySelector(".shorts-ai-notice");
+ if(button){button.disabled=true;button.textContent="Готовим защищённую загрузку…";}
+ if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Подготавливаем загрузку</b><small>Проверяем аккаунт и создаём приватный черновик. Видео пока не опубликовано.</small></div>';
+ try{
+  const started=await authRequest("shorts-upload-start",{payload:{fileName:file.name,mimeType:file.type||(/\.webm$/i.test(file.name)?"video/webm":/\.mov$/i.test(file.name)?"video/quicktime":"video/mp4"),sizeBytes:file.size,caption,durationSeconds:Math.max(1,Math.round(shortsUploadMeta.duration))}});
+  const ticket=started?.result;
+  if(!ticket?.signedUrl||!ticket?.publishableKey||!ticket?.contentUrl||!ticket?.token)throw new Error("Сервер не выдал защищённую ссылку для загрузки.");
+  if(button)button.textContent="Загружаем видео…";
+  if(notice)notice.querySelector("small").textContent="Загружаем видео в приватное хранилище. Не закрывай это окно.";
+  const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
+  const response=await fetch(uploadUrl,{method:"PUT",headers:{"apikey":ticket.publishableKey,"Authorization":"Bearer "+ticket.publishableKey,"Content-Type":file.type||"application/octet-stream","x-upsert":"false"},body:file});
+  if(!response.ok){let detail="";try{detail=(await response.json()).message||"";}catch{}throw new Error(detail||"Не удалось загрузить видео в защищённое хранилище.");}
+  if(button)button.textContent="Отправляем на проверку…";
+  const finalized=await authRequest("shorts-upload-finalize",{payload:{videoId:ticket.videoId}});
+  if(!finalized?.result?.ok)throw new Error("Не удалось подтвердить загрузку видео.");
+  shortsRemoveFile();
+  const captionField=$("#shorts-upload-caption");if(captionField)captionField.value="";shortsCaptionCount();
+  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Видео принято на проверку</b><small>Ролик сохранён приватно и ожидает модерации. Он не появится в ленте, пока проверка не завершена.</small></div>';
+  if(button){button.disabled=true;button.textContent="Ожидает проверки Cloudy AI";}
+  toast("Видео загружено и отправлено на модерацию.");
+ }catch(error){
+  const message=error?.message||"Не удалось отправить видео.";
+  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Не удалось отправить видео</b><small>'+String(message).replace(/[&<>"']/g,"")+'</small></div>';
+  if(button){button.disabled=false;button.textContent="Повторить загрузку";}
+  toast(message,false);
+ }
+}
 
 
 let communityProfile=null,communityProfileUser=null,communityProfileLoading=false,communityProfileSaving=false,communityProfileError="";
