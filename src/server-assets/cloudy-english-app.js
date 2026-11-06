@@ -701,7 +701,33 @@ const shortsItems=[
 {id:"daily-phrases",author:"Speak Naturally",handle:"@speak.naturally",initial:"S",caption:"3 фразы, которые звучат естественнее, чем VERY GOOD.",tags:"#speaking #vocabulary #b1",likes:936,comments:0,shares:19,theme:"violet",eyebrow:"ЖИВАЯ РЕЧЬ · B1",big:"SO GOOD",sub:"Really good",big2:"AMAZING",sub2:"Потрясающе",note:"Try using one phrase today"},
 {id:"th-sound",author:"Tom · Pronunciation",handle:"@tom.speaks",initial:"T",caption:"Как правильно произносить звук TH. Повтори за мной.",tags:"#pronunciation #sounds #a1",likes:1720,comments:0,shares:31,theme:"cyan",eyebrow:"ПРОИЗНОШЕНИЕ · A1",big:"TH",sub:"tongue between your teeth",big2:"THINK",sub2:"/θɪŋk/",note:"THINK · THREE · THANK YOU"}];
 let shortsComposerMode="video",shortsSelectedImageUrl="",shortsSelectedImageFile=null;
-let shortsFeedMode="for-you",shortsLiked=new Set(),shortsSaved=new Set(),shortsFollowing=new Set(),shortsMuted=true,shortsSelectedUrl="",shortsSelectedFile=null,shortsUploadMeta=null,shortsLiveItems=[],shortsFeedLoading=false,shortsFeedUser=null;
+let shortsFeedMode="for-you",shortsLiked=new Set(),shortsSaved=new Set(),shortsFollowing=new Set(),shortsMuted=true,shortsSelectedUrl="",shortsSelectedFile=null,shortsUploadMeta=null,shortsLiveItems=[],shortsFeedLoading=false,shortsFeedUser=null; 
+let shortsProfileUserId=null,shortsProfileData=null,shortsProfileLoading=false;
+function shortsOpenProfile(userId){
+ if(!/^[0-9a-f-]{36}$/i.test(String(userId||"")))return;
+ shortsProfileUserId=userId;shortsProfileData=null;shortsProfileLoading=true;shortsPauseAll();view(0);
+ authRequest("shorts-profile-get",{payload:{authorId:userId}}).then(r=>{if(shortsProfileUserId===userId)shortsProfileData=r.result||null;}).catch(e=>toast(e.message||"Не удалось открыть профиль.",false)).finally(()=>{if(shortsProfileUserId===userId){shortsProfileLoading=false;view(0);}});
+}
+function shortsCloseProfile(){shortsProfileUserId=null;shortsProfileData=null;view(0);}
+function shortsEditProfile(){
+ if(!shortsProfileData?.profile?.isOwn)return;
+ const p=shortsProfileData.profile,name=prompt("Имя профиля",p.displayName||"");
+ if(name===null)return;
+ const bio=prompt("Описание профиля",p.bio||"");if(bio===null)return;
+ authRequest("shorts-profile-update",{payload:{displayName:name,bio}}).then(()=>{toast("Профиль сохранён.");shortsOpenProfile(S.user.id);}).catch(e=>toast(e.message||"Не удалось сохранить профиль.",false));
+}
+async function shortsDeletePost(postId){
+ if(!confirm("Удалить публикацию? Это действие нельзя отменить."))return;
+ try{await authRequest("shorts-post-delete",{payload:{postId}});shortsLiveItems=shortsLiveItems.filter(x=>x.id!==postId);toast("Публикация удалена.");if(shortsProfileUserId)shortsOpenProfile(shortsProfileUserId);else view(0);}
+ catch(e){toast(e.message||"Не удалось удалить публикацию.",false);}
+}
+function shortsCreatorProfile(){
+ if(shortsProfileLoading)return '<section class="shorts-creator-profile"><button class="shorts-profile-back" onclick="shortsCloseProfile()">‹ Назад</button><div class="shorts-profile-loading">Загружаем профиль…</div></section>';
+ const data=shortsProfileData;if(!data||!data.profile)return '<section class="shorts-creator-profile"><button class="shorts-profile-back" onclick="shortsCloseProfile()">‹ Назад</button><div class="shorts-profile-loading">Профиль недоступен.</div></section>';
+ const p=data.profile,posts=data.posts||[],own=p.isOwn,initial=shortsEscapeText((p.displayName||"У").trim().charAt(0).toUpperCase());
+ const tiles=posts.length?posts.map(x=>'<article class="shorts-profile-post">'+(x.mediaType==="video"&&x.playbackUrl?'<video src="'+shortsEscapeText(x.playbackUrl)+'" muted playsinline preload="metadata"></video>':x.mediaType==="image"&&x.imageUrl?'<img src="'+shortsEscapeText(x.imageUrl)+'" alt="">':'<div class="shorts-profile-text">'+shortsEscapeText(x.textContent||x.caption||"Текстовая публикация")+'</div>')+(x.status!=="approved"?'<small class="shorts-profile-pending">На проверке</small>':'')+(own?'<button class="shorts-profile-delete" onclick="shortsDeletePost(\''+x.id+'\')">Удалить</button>':'')+'</article>').join(""):'<div class="shorts-profile-empty"><b>Публикаций пока нет</b><span>Здесь появятся видео, фото и заметки автора</span></div>';
+ return '<section class="shorts-creator-profile"><header class="shorts-profile-cover"><button class="shorts-profile-back" onclick="shortsCloseProfile()">‹</button></header><div class="shorts-profile-head"><div class="shorts-profile-avatar">'+initial+'</div><div class="shorts-profile-title"><h2>'+shortsEscapeText(p.displayName||"Участник")+'</h2><span>@'+shortsEscapeText((p.displayName||"user").toLowerCase().replace(/[^a-z0-9а-яё]+/gi,"").slice(0,24)||"user")+'</span></div>'+(own?'<button class="shorts-profile-edit" onclick="shortsEditProfile()">Изменить профиль</button>':'')+'</div><p class="shorts-profile-bio">'+shortsEscapeText(p.bio||"")+'</p><div class="shorts-profile-stats"><b>'+posts.filter(x=>x.status==="approved").length+'</b><span>Публикации</span></div><div class="shorts-profile-grid">'+tiles+'</div></section>';
+}
 function shortsCount(base, inc){
   const n = Number(base || 0) + (inc ? 1 : 0);
   if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
