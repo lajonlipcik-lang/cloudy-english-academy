@@ -126,6 +126,14 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
         status:row.status,isOwn:viewerId===authorId};
     }));
     const postIds = posts.map((post) => post.id);
+    const [{ count: followersCount, error: followersError }, { count: followingCount, error: followingError }, viewerFollow] = await Promise.all([
+      content.from("shorts_follows").select("follower_id", { count: "exact", head: true }).eq("following_id", authorId),
+      content.from("shorts_follows").select("following_id", { count: "exact", head: true }).eq("follower_id", authorId),
+      viewerId && viewerId !== authorId
+        ? content.from("shorts_follows").select("follower_id").eq("follower_id", viewerId).eq("following_id", authorId).maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+    if (followersError || followingError || viewerFollow.error) throw new Error("Не удалось загрузить подписки профиля.");
     const { data: likeRows, error: likesError } = postIds.length
       ? await content.from("shorts_likes").select("video_id").in("video_id", postIds)
       : { data: [], error: null };
@@ -135,7 +143,8 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
     for (const post of posts) (post as any).likes = likeCounts.get(post.id) ?? 0;
     return {profile:{id:profile.id,displayName:String(profile.display_name||"Участник"),bio:String(profile.bio||""),
       username,avatarUrl,coverUrl,isPublic:profile.is_public===true,isOwn:viewerId===authorId},
-      stats:{posts:posts.filter((post) => post.status === "approved").length,likes:posts.reduce((sum,post) => sum + ((post as any).likes||0),0)},posts};
+      stats:{posts:posts.filter((post) => post.status === "approved").length,likes:posts.reduce((sum,post) => sum + ((post as any).likes||0),0),
+        followers:followersCount||0,following:followingCount||0},isFollowing:!!viewerFollow.data,posts};
   });
 
 type DeleteInput = { accessToken?: string; postId?: string };
@@ -185,3 +194,45 @@ export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
    if(updateError)throw new Error("Не удалось сохранить профиль.");
    return {ok:true,displayName:data.displayName,bio:data.bio,isPublic:data.isPublic};
  });
+
+
+type FollowInput = { accessToken?: string; authorId?: string; follow?: boolean };
+export const setShortsFollow = createServerFn({ method: "POST" })
+  .inputValidator((input: Partial<FollowInput>): FollowInput => {
+    const accessToken = String(input?.accessToken ?? "");
+    const authorId = String(input?.authorId ?? "");
+    if (!accessToken || accessToken.length > 8192 || accessToken.split(".").length !== 3) throw new Error("Unauthorized");
+    if (!/^[0-9a-f-]{36}$/i.test(authorId)) throw new Error("Некорректный профиль.");
+    if (typeof input?.follow !== "boolean") throw new Error("Некорректное действие.");
+    return { accessToken, authorId, follow: input.follow };
+  })
+  .handler(async ({ data }) => {
+    const url = process.env["SUPABASE_URL"], key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !key) throw new Error("Core Supabase is not configured.");
+    const auth = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+    const { data: identity, error: authError } = await auth.auth.getUser(data.accessToken);
+    if (authError || !identity.user) throw new Error("Unauthorized");
+    if (identity.user.id === data.authorId) throw new Error("Нельзя подписаться на собственный профиль.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile, error: profileError } = await supabaseAdmin.from("profiles")
+      .select("id,is_public").eq("id", data.authorId!).maybeSingle();
+    if (profileError || !profile || profile.is_public !== true) throw new Error("Подписаться можно только на открытый профиль.");
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const content = getCloudyContentAdmin();
+    if (data.follow) {
+      const { error } = await content.from("shorts_follows").upsert(
+        { follower_id: identity.user.id, following_id: data.authorId! },
+        { onConflict: "follower_id,following_id", ignoreDuplicates: true },
+      );
+      if (error) throw new Error("Не удалось подписаться.");
+    } else {
+      const { error } = await content.from("shorts_follows").delete()
+        .eq("follower_id", identity.user.id).eq("following_id", data.authorId!);
+      if (error) throw new Error("Не удалось отменить подписку.");
+    }
+    const [{ count: followers }, { count: following }] = await Promise.all([
+      content.from("shorts_follows").select("follower_id", { count: "exact", head: true }).eq("following_id", data.authorId!),
+      content.from("shorts_follows").select("following_id", { count: "exact", head: true }).eq("follower_id", data.authorId!),
+    ]);
+    return { ok: true, isFollowing: data.follow, followers: followers || 0, following: following || 0 };
+  });

@@ -916,3 +916,7 @@ body:has(.shorts-screen) .amb{display:none!important}
 .shorts-profile-edit:active{transform:scale(.96);background:#38383b}
 .shorts-profile-visibility{color:#b8b8bd;background:#202023}
 @media(max-width:360px){.shorts-profile-edit,.shorts-profile-visibility{font-size:11px;padding:8px 10px}}
+
+/* Shorts creator follow action */
+.shorts-profile-follow{border:0;border-radius:9px;padding:10px 15px;background:linear-gradient(135deg,#5bb8ff,#2f7bff);color:#fff;font:700 12px system-ui,-apple-system,sans-serif;white-space:nowrap;cursor:pointer;box-shadow:0 5px 18px rgba(47,123,255,.24)}
+.shorts-profile-follow.following{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);box-shadow:none}

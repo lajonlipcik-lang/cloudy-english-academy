@@ -713,6 +713,17 @@ function shortsOpenProfile(userId){
 function shortsCloseProfile(){shortsProfileUserId=null;shortsProfileData=null;shortsProfileTab="all";T=4;view(0);}
 function shortsSetProfileTab(tab){shortsProfileTab=["all","video","image","text"].includes(tab)?tab:"all";view(0);}
 document.addEventListener("click",function(event){const target=event.target?.closest?.("[data-short-author]");if(target)shortsOpenProfile(target.getAttribute("data-short-author"));});
+async function shortsToggleFollow(){
+ const p=shortsProfileData?.profile;if(!p||p.isOwn||!S.user||S.user.guest)return;
+ const next=!shortsProfileData.isFollowing;
+ try{
+  const response=await authRequest("shorts-follow-set",{payload:{authorId:p.id,follow:next}});
+  if(!shortsProfileData||shortsProfileData.profile.id!==p.id)return;
+  shortsProfileData.isFollowing=!!response.result?.isFollowing;
+  shortsProfileData.stats={...(shortsProfileData.stats||{}),followers:Number(response.result?.followers||0),following:Number(response.result?.following||0)};
+  view(0);
+ }catch(error){toast(error.message||"Не удалось изменить подписку.",false);}
+}
 function shortsEditProfile(){
  if(!shortsProfileData?.profile?.isOwn)return;
  const p=shortsProfileData.profile;
@@ -751,7 +762,7 @@ function shortsCreatorProfile(){
  ];
  const tabHtml=tabs.map(([key,path,label])=>'<button class="shorts-profile-tab '+(shortsProfileTab===key?'active':'')+'" aria-label="'+label+'" aria-pressed="'+(shortsProfileTab===key)+'" onclick="shortsSetProfileTab(&quot;'+key+'&quot;)"><svg viewBox="0 0 24 24">'+path+'</svg></button>').join("");
  const tiles=visiblePosts.length?visiblePosts.map(x=>'<article class="shorts-profile-post" data-profile-post="'+shortsEscapeText(x.id)+'">'+(x.mediaType==="video"&&x.playbackUrl?'<video src="'+shortsEscapeText(x.playbackUrl)+'" muted playsinline preload="none"></video>':x.mediaType==="image"&&x.imageUrl?'<img src="'+shortsEscapeText(x.imageUrl)+'" alt="" loading="lazy">':'<div class="shorts-profile-text">'+shortsEscapeText(x.textContent||x.caption||"Текстовая публикация")+'</div>')+(x.status!=="approved"?'<small class="shorts-profile-pending">На проверке</small>':'')+(own?'<button class="shorts-profile-delete" onclick="shortsDeletePost(&quot;'+x.id+'&quot;)">Удалить</button>':'')+'</article>').join(""):'<div class="shorts-profile-empty"><div>▧</div><b>Публикаций пока нет</b><span>Здесь появятся видео, фото и заметки автора</span></div>';
- return '<section class="shorts-creator-profile'+(own?' own':'')+'"><header class="shorts-profile-cover"'+coverStyle+'><button class="shorts-profile-back" onclick="shortsCloseProfile()" aria-label="Назад">‹</button><span class="shorts-profile-cover-label">CLOUDY SHORTS</span></header><div class="shorts-profile-head"><div class="shorts-profile-avatar">'+avatar+'</div><div class="shorts-profile-title"><h2>'+shortsEscapeText(p.displayName||"Участник")+'</h2><span>'+handle+'</span></div>'+(own?'<button class="shorts-profile-edit" onclick="shortsEditProfile()">Редактировать</button>':'<span class="shorts-profile-visibility">'+(p.isPublic?'Открытый профиль':'Закрытый профиль')+'</span>')+'</div><div class="shorts-profile-stats"><div><b>'+shortsCount(stats.posts,false)+'</b><span>Публикации</span></div><div><b>'+shortsCount(stats.likes,false)+'</b><span>Лайки</span></div><div><b>'+shortsCount(videoCount,false)+'</b><span>Видео</span></div></div>'+(p.bio?'<p class="shorts-profile-bio">'+shortsEscapeText(p.bio)+'</p>':'')+'<div class="shorts-profile-tabs" role="tablist" aria-label="Публикации автора">'+tabHtml+'</div><div class="shorts-profile-grid">'+tiles+'</div></section>';
+ return '<section class="shorts-creator-profile'+(own?' own':'')+'"><header class="shorts-profile-cover"'+coverStyle+'><button class="shorts-profile-back" onclick="shortsCloseProfile()" aria-label="Назад">‹</button><span class="shorts-profile-cover-label">CLOUDY SHORTS</span></header><div class="shorts-profile-head"><div class="shorts-profile-avatar">'+avatar+'</div><div class="shorts-profile-title"><h2>'+shortsEscapeText(p.displayName||"Участник")+'</h2><span>'+handle+'</span></div>'+(own?'<button class="shorts-profile-edit" onclick="shortsEditProfile()">Редактировать</button>':(p.isPublic?'<button class="shorts-profile-follow '+(data.isFollowing?'following':'')+'" onclick="shortsToggleFollow()">'+(data.isFollowing?'Вы подписаны':'Подписаться')+'</button>':'<span class="shorts-profile-visibility">Закрытый профиль</span>'))+'</div><div class="shorts-profile-stats"><div><b>'+shortsCount(stats.posts,false)+'</b><span>Публикации</span></div><div><b>'+shortsCount(stats.followers,false)+'</b><span>Подписчики</span></div><div><b>'+shortsCount(stats.following,false)+'</b><span>Подписки</span></div></div>'+(p.bio?'<p class="shorts-profile-bio">'+shortsEscapeText(p.bio)+'</p>':'')+'<div class="shorts-profile-tabs" role="tablist" aria-label="Публикации автора">'+tabHtml+'</div><div class="shorts-profile-grid">'+tiles+'</div></section>';
 }
 function shortsCount(base, inc){
   const n = Number(base || 0) + (inc ? 1 : 0);
