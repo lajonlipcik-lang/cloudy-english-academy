@@ -828,26 +828,24 @@ export const analyzeShortVideoAudio = createServerFn({ method: "POST" })
         .filter((provider: any) => provider.enabled && ["groq", "openai"].includes(String(provider.provider)))
         .sort((a: any, b: any) => Number(a.priority) - Number(b.priority));
       if (!providers.length) throw new Error("No enabled audio transcription provider.");
-      let transcript = "";
-      let selectedProvider = "";
-      let selectedModel = "";
-      for (let index = 0; index < data.chunks.length; index++) {
-        let chunkText = "";
+      const transcribedChunks = await Promise.all(data.chunks.map(async (chunk, index) => {
         let lastError: unknown = null;
         for (const provider of providers) {
           try {
-            chunkText = await transcribeShortsAudio(provider, data.chunks[index], index);
-            selectedProvider = String(provider.provider);
-            selectedModel = selectedProvider === "groq" ? "whisper-large-v3-turbo" : "gpt-4o-mini-transcribe";
-            break;
+            return {
+              text: await transcribeShortsAudio(provider, chunk, index),
+              provider: String(provider.provider),
+              model: String(provider.provider) === "groq" ? "whisper-large-v3-turbo" : "gpt-4o-mini-transcribe",
+            };
           } catch (error) {
             lastError = error;
           }
         }
-        if (!chunkText && lastError) throw lastError;
-        transcript += (transcript ? " " : "") + chunkText;
-        if (transcript.length > 12000) throw new Error("Transcript exceeds moderation limit.");
-      }
+        throw lastError ?? new Error("Audio transcription unavailable.");
+      }));
+      const transcript = transcribedChunks.map((chunk) => chunk.text).join(" ").slice(0, 12000);
+      const selectedProvider = [...new Set(transcribedChunks.map((chunk) => chunk.provider))].join("+");
+      const selectedModel = [...new Set(transcribedChunks.map((chunk) => chunk.model))].join("+");
       if (!transcript.trim()) throw new Error("No speech detected.");
       const moderation = await runCloudyContentTextModeration(coreDb, "short_video", transcript, 12000);
       decision = moderation;
