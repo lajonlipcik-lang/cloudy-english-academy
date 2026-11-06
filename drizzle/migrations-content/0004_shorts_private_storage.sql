@@ -1,5 +1,5 @@
 -- Private video storage for Cloudy Shorts. Apply only to the Cloudy Content database
--- after 0001 and 0002. Uploads use short-lived signed upload capabilities.
+-- after 0001–0003. Uploads use short-lived signed upload capabilities.
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'cloudy-shorts',
