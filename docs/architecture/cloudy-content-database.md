@@ -76,47 +76,32 @@ Public feed eligibility is checked against Core profiles.is_public. Resolve disp
 The current three Shorts cards are clearly marked demonstration content with non-database IDs and show no fabricated comments or comment counts. Live comment calls activate only for real UUID-backed Content videos after the Content project and migrations are provisioned. Replies, comment likes, and actual video upload/feed playback are not part of this slice.
 
 
-## Shorts video upload request flow
+## Shorts upload and moderation flow
 
 1. The embedded UI sends file metadata and caption through the same-origin auth bridge; the bridge attaches the current Core access token.
 2. The server validates the Core user, checks active upload/community restrictions, creates a private draft row and returns a short-lived signed upload URL. The service-role key stays server-side.
-3. The browser uploads the file directly to the private Storage bucket using the signed URL and the Content project's public publishable key.
-4. The UI asks the server to finalize. The server verifies ownership and confirms the object exists and is within the size limit, then sets the row to pending_review.
-5. No video is added to the public feed at this stage. Frame/audio inspection and a human-review workflow must be implemented before any video can be approved.
+3. The browser uploads the original file directly to the private Storage bucket using the signed URL and the Content project's publishable key.
+4. The server verifies ownership and object existence, then moves the upload to \`pending_review\`. It never publishes at finalize time.
+5. Cloudy AI checks the caption. A high-confidence rejection keeps the video unavailable; a successful caption check only advances the video to media review.
+6. The app server creates a five-minute signed URL for the stored original and calls the isolated FFmpeg container using a server-only bearer token. The browser no longer extracts or supplies frame/audio samples.
+7. The container validates the signed private-storage URL and extracts up to six frames or up to nine mono 16 kHz WAV chunks. It limits file size, duration, concurrency and output size, and deletes temporary files after each request.
+8. The app server sends frames to a vision-capable provider and audio chunks to Groq/OpenAI transcription from the Core AI Vault. It runs the transcript through the Cloudy AI content policy. The transcript itself is neither returned to the browser nor stored.
+9. The AI results are triage only. They are recorded with labels, confidence, model and audit events; they do not auto-publish, auto-reject the whole video, or restrict the author.
+10. A Core-authenticated administrator opens the private Shorts moderation queue, watches the original video and explicitly approves or rejects it. The Content DB RPC atomically updates the publication state and writes the human moderation event.
 
+## Shorts human moderation queue
 
-## Shorts frame triage (initial media-review slice)
-
-- After upload and caption moderation, the browser samples up to six JPEG frames from the selected local video and sends them through the authenticated same-origin bridge.
-- The server verifies the Core account, video ownership and pending-review state, then sends only those sampled images to an enabled vision-capable provider from the Core AI Vault.
-- The result and labels are stored in the Content database with an audit event. If frame extraction or vision is unavailable, the row records an unavailable state for manual review.
-- Important trust boundary: browser-sampled frames are client-provided and are not a cryptographically verified decode of the stored object. This is triage only; the AI result cannot approve, reject, publish the video or restrict its author. Every video remains private and requires human review.
-- Audio/transcription and server-side decoding of the original uploaded file are not implemented in this slice. Do not describe this as complete video moderation or audio moderation.
-
-
-## Shorts audio transcription and moderation (initial client-extracted slice)
-
-- After the frame triage, the browser decodes the selected local video, downmixes its first audio channel to mono 16 kHz PCM WAV, and sends up to nine 20-second chunks to the authenticated server bridge. This supports videos up to three minutes and 35 MB; unsupported codecs, larger files, or longer videos fail closed into manual review.
-- The server verifies Core identity, video ownership and pending-review state. It uses an enabled Groq or OpenAI provider stored in the Core AI Vault to transcribe chunks, then runs the transcript through the existing Cloudy AI content policy.
-- Transcript text is transient: it is neither returned to the browser nor persisted in Content DB. Only status, labels, decision, confidence, model and audit metadata are stored.
-- Audio results are triage only. They cannot approve, reject, publish a video or restrict its author. All videos remain private and require human review.
-- Audio extraction still happens in the browser and depends on codec support. This is not server-verified decoding of the stored original. A failed/unavailable transcription always stays in the manual-review path.
-
-
-## Human moderation queue for Shorts
-
-- The existing owner/admin panel exposes a private Shorts review queue. It creates five-minute signed preview URLs server-side; the Content Storage bucket remains private.
-- Queue entries include author display name, caption, text-moderation outcome, frame triage and audio triage metadata. A moderator must inspect the full video before making a decision.
-- Only a Core-authenticated administrator can list the queue or approve/reject a video. The Content DB RPC applies the decision atomically and writes a moderation event. Approving publishes the video; rejecting keeps it unavailable.
-- This is the human decision layer, not an automatic AI ban system. AI labels are evidence for review, not a verdict about the author. The moderation panel does not automatically ban accounts.
+- The existing owner/admin panel exposes a private review queue with five-minute signed preview URLs. The Storage bucket remains private.
+- Queue entries show author display name, caption, text-moderation outcome, frame triage and audio triage metadata. A moderator must inspect the complete original before deciding.
+- Only a Core-authenticated administrator can list the queue or approve/reject a video. Approving publishes it; rejecting keeps it unavailable.
+- AI labels are evidence for review, not a verdict about the author. This panel does not automatically ban accounts.
 - Apply Content DB migration \`0007_shorts_human_moderation.sql\` after \`0001\`–\`0006\`.
-- The app is deployed on Cloudflare Workers. Its request runtime does not provide a general-purpose FFmpeg binary/process API; therefore server-side decoding of the original video cannot be honestly claimed or added as a normal Node subprocess. Current frame/audio samples remain client-extracted and untrusted. A trusted server media pipeline requires a separately deployed media-processing service (for example, a dedicated container/worker with FFmpeg) and a private service binding; until then, human review of the full private original is mandatory.
 
+## Trusted media processor deployment
 
-## Trusted original-media extraction service
-
-- Cloudflare Workers cannot spawn a system FFmpeg process. The isolated container in \`services/cloudy-shorts-media\` performs FFmpeg extraction outside the Worker runtime.
-- The app server creates a five-minute signed URL for the exact private Storage object and sends it server-to-server with a bearer token. The processor validates the Supabase origin, private bucket path, video UUID and signed token before downloading; redirects and other origins are rejected.
-- The processor extracts six low-resolution frames or mono 16 kHz WAV chunks (20 seconds each), enforces size/duration/concurrency limits, and deletes temporary files after each request.
-- Configure \`CLOUDY_MEDIA_PROCESSOR_URL\` and \`CLOUDY_MEDIA_PROCESSOR_TOKEN\` only in the Cloudy server environment. Configure \`CLOUDY_CONTENT_SUPABASE_URL\` and the same token in the container. The processor does not need a Supabase service-role key.
-- Until the container is deployed and these server-side settings exist, frame/audio analysis returns unavailable and videos stay private in the human review queue. The app no longer extracts media in the browser.
+- The app runs on Cloudflare Workers, which cannot spawn a system FFmpeg process. The separate container source is in \`services/cloudy-shorts-media\`.
+- Deploy that Docker image to a private HTTPS-capable container host. Set \`CLOUDY_CONTENT_SUPABASE_URL\` and a random \`CLOUDY_MEDIA_PROCESSOR_TOKEN\` in the container.
+- Set \`CLOUDY_MEDIA_PROCESSOR_URL\` and the same \`CLOUDY_MEDIA_PROCESSOR_TOKEN\` as server-only Cloudy application environment variables. Do not expose the token to the browser or commit it.
+- The processor does not need the Content service-role key; it receives only a five-minute signed URL for the exact video.
+- Until the container is deployed and the server environment variables exist, media analysis safely reports unavailable and videos stay private in the human review queue.
+- The Content DB project must also be provisioned and migrations \`0001\`–\`0007\` applied in order. The repository contains these migrations, but merging code does not apply SQL to the remote database.
