@@ -134,10 +134,11 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
 
       if (message.type !== "request" || typeof message.id !== "string") return;
       const reply = (result: Record<string, unknown>) => send({ type: "response", id: message.id, ...result });
+        if (message.action === "shorts-feed-get") { const feedApi = await import("@/lib/cloudy-shorts-feed.functions"); const feed = await feedApi.listShortsFeed({ data: {} }); reply({ ok: true, result: feed }); return; }
 
       try {
         const accessToken = accessTokenRef.current;
-        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","admin-shorts-queue","admin-shorts-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-moderate","shorts-frame-review","shorts-audio-review","shorts-comments-get","shorts-comment-create","shorts-feed-get","shorts-upload-start","shorts-upload-finalize"].includes(String(message.action))) {
+        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","admin-shorts-queue","admin-shorts-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-moderate","shorts-frame-review","shorts-audio-review","shorts-comments-get","shorts-comment-create","shorts-upload-start","shorts-upload-finalize"].includes(String(message.action))) {
           if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
           const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
           if (message.action === "shorts-feed-get") { const feedApi = await import("@/lib/cloudy-shorts-feed.functions"); reply({ ok: true, result: await feedApi.listShortsFeed({ data: payload as never }) }); return; }
