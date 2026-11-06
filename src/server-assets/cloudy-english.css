@@ -794,3 +794,35 @@ body:has(.shorts-screen) .amb{display:none!important}
 @media(max-width:380px){
   .shorts-upload-panel{padding-left:13px;padding-right:13px}
 }
+
+/* Cloudy Shorts — true black theme, scoped to Shorts and its own sheets. */
+.scr:has(.shorts-screen){background:#000!important;color:#fff}
+.scr:has(.shorts-screen)+nav{background:rgba(0,0,0,.98)!important;border-color:#1d1d22!important}
+.shorts-screen{background:#000!important;color:#fff}
+.shorts-video{background:#000!important}
+.shorts-post-image .shorts-photo-media{position:absolute;inset:0;background:#000;display:grid;place-items:center}
+.shorts-photo-media img{width:100%;height:100%;object-fit:contain;background:#000}
+.shorts-post-text{background:#000!important}
+.shorts-text-media{position:absolute;inset:0;display:grid;place-items:center;padding:64px 22px 130px;background:radial-gradient(ellipse at 50% 25%,#17171c 0%,#070707 58%,#000 100%)}
+.shorts-text-card{position:relative;width:100%;max-width:440px;min-height:48%;display:flex;flex-direction:column;justify-content:center;padding:28px 24px;border:1px solid #303038;border-radius:24px;background:linear-gradient(155deg,#17171c,#09090b);box-shadow:0 24px 80px #0009}
+.shorts-text-kicker{font-size:10px;letter-spacing:.15em;font-weight:900;color:#8bdcff}
+.shorts-text-copy{margin:24px 0;color:#fff;font-size:clamp(20px,5.5vw,30px);font-weight:750;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.shorts-text-cloud{align-self:flex-end;color:#5bb8ff;font-size:28px;opacity:.8}
+.shorts-post-text .shorts-shade{background:linear-gradient(180deg,transparent 45%,rgba(0,0,0,.82))}
+.shorts-empty-state{background:#000!important;color:#9b9ba3!important}
+.sb:has(.shorts-camera-panel) .sh,.sb:has(.shorts-comments-panel) .sh{background:#050505!important;color:#fff!important}
+.shorts-camera-panel{background:#050505!important;color:#fff!important}
+.shorts-comments-panel{background:#050505!important;color:#fff!important}
+.shorts-comments-header{border-color:#25252b!important}
+.shorts-comments-header button,.shorts-comments-header b{color:#fff!important}
+.shorts-comments-sort{border-color:#25252b!important}
+.shorts-comments-sort button{color:#92929b!important}
+.shorts-comments-sort button.active{color:#fff!important}
+.shorts-comments-sort button.active:after{background:#5bb8ff!important}
+.shorts-comment-user,.shorts-comment-main>p{color:#eee!important}
+.shorts-comment-user span,.shorts-comment-meta,.shorts-comments-empty,.shorts-comments-loading{color:#92929b!important}
+.shorts-comment-compose{background:#080808!important;border-color:#25252b!important}
+.shorts-comment-compose input{background:#1b1b20!important;color:#fff!important}
+.shorts-comment-compose input::placeholder{color:#888!important}
+.shorts-comment-compose button{background:#162c40!important;color:#8bdcff!important}
+.shorts-demo-note{background:#050505!important;color:#85858e!important}
