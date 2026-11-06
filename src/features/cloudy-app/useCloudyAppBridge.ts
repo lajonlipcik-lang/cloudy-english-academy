@@ -464,11 +464,19 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           return;
         }
       } catch (error) {
-        const isAdminAction = String(message.action ?? "").startsWith("admin-");
-        const isShortsUploadAction = String(message.action ?? "").startsWith("shorts-upload-");
+        const action = String(message.action ?? "");
+        const isAdminAction = action.startsWith("admin-");
+        const isShortsAction = action.startsWith("shorts-");
+        const isShortsUploadAction = action.startsWith("shorts-upload-");
+        if (isShortsAction) {
+          console.error("[cloudy-shorts] request failed", {
+            action,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
         const messageText = isAdminAction || isShortsUploadAction
           ? (error instanceof Error ? error.message : "Не удалось выполнить действие.")
-          : toUserErrorMessage(error, message.action === "ai-chat" ? "ai" : "auth");
+          : toUserErrorMessage(error, isShortsAction ? "shorts" : action === "ai-chat" ? "ai" : "auth");
         reply({ ok: false, error: messageText });
       }
     };
