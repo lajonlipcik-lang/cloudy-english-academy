@@ -137,9 +137,17 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
 
       try {
         const accessToken = accessTokenRef.current;
-        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-moderate","shorts-comments-get","shorts-comment-create"].includes(String(message.action))) {
+        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-moderate","shorts-comments-get","shorts-comment-create","shorts-upload-start","shorts-upload-finalize"].includes(String(message.action))) {
           if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
           const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
+          if (message.action === "shorts-upload-start" || message.action === "shorts-upload-finalize") {
+            const uploadApi = await import("@/lib/cloudy-shorts-upload.functions");
+            const uploadResult = message.action === "shorts-upload-start"
+              ? await uploadApi.createShortVideoUpload({ data: payload as never })
+              : await uploadApi.finalizeShortVideoUpload({ data: payload as never });
+            reply({ ok: true, result: uploadResult });
+            return;
+          }
           const api = await import("@/lib/cloudy-ai.functions");
           let result: unknown;
           if (message.action === "admin-users") result = await api.listCloudyUsers({ data: payload });
