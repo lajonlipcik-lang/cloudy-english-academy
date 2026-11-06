@@ -920,3 +920,29 @@ body:has(.shorts-screen) .amb{display:none!important}
 /* Shorts creator follow action */
 .shorts-profile-follow{border:0;border-radius:9px;padding:10px 15px;background:linear-gradient(135deg,#5bb8ff,#2f7bff);color:#fff;font:700 12px system-ui,-apple-system,sans-serif;white-space:nowrap;cursor:pointer;box-shadow:0 5px 18px rgba(47,123,255,.24)}
 .shorts-profile-follow.following{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);box-shadow:none}
+
+
+/* Profile editor: compact mobile-first settings sheet */
+.shorts-profile-editor{position:fixed;inset:0;z-index:10020;display:grid;align-items:end;justify-items:center;color:#fff;font-family:inherit}
+.shorts-profile-editor-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}
+.shorts-profile-editor-panel{position:relative;width:min(100%,520px);max-height:92svh;overflow:auto;background:#111318;border:1px solid #292d35;border-radius:22px 22px 0 0;padding:18px 18px calc(20px + env(safe-area-inset-bottom));box-shadow:0 -12px 50px rgba(0,0,0,.4)}
+.shorts-profile-editor-panel header,.shorts-profile-editor-panel footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.shorts-profile-editor-panel header h2{font-size:19px;margin:0}
+.shorts-profile-editor-panel header button{border:0;border-radius:50%;width:34px;height:34px;background:#292d35;font-size:24px}
+.shorts-profile-editor-cover{height:112px;margin:16px 0 12px;border-radius:13px;background:linear-gradient(140deg,#18304a,#10141c);background-size:cover;background-position:center;display:flex;align-items:end;padding:10px;position:relative;overflow:hidden}
+.shorts-profile-editor-cover span{font-size:12px;font-weight:800;text-shadow:0 1px 5px #000}
+.shorts-profile-editor-cover input,.shorts-profile-editor-avatar input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.shorts-profile-editor-avatar-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;color:#aeb7c5;font-size:12px}
+.shorts-profile-editor-avatar{position:relative;width:64px;height:64px;border:2px solid #fff;border-radius:50%;background:#28394b;display:grid;place-items:center;overflow:hidden;font-size:22px;font-weight:800}
+.shorts-profile-editor-avatar img{width:100%;height:100%;object-fit:cover}
+.shorts-profile-editor-field{display:grid;gap:7px;margin:13px 0;font-size:12px;font-weight:750;color:#dce5f1}
+.shorts-profile-editor-field input,.shorts-profile-editor-field textarea{width:100%;border:1px solid #343b48;border-radius:11px;background:#1b2029;color:#fff;padding:12px;font:inherit;font-size:14px;outline:none}
+.shorts-profile-editor-field textarea{resize:vertical;min-height:76px}
+.shorts-profile-editor-visibility{display:flex;align-items:center;gap:9px;margin:14px 0;font-size:13px}
+.shorts-profile-editor-visibility input{width:18px;height:18px;accent-color:#55b9ff}
+.shorts-profile-editor-hint{font-size:11px;line-height:1.45;color:#8793a4}
+.shorts-profile-editor-panel footer{margin-top:18px}
+.shorts-profile-editor-panel footer button{border:0;border-radius:11px;padding:12px 16px;background:#282e39;font-weight:750}
+.shorts-profile-editor-panel footer #shortsProfileSave{background:linear-gradient(110deg,#4db3ff,#287cff);color:#06143a;min-width:130px}
+.shorts-profile-editor-panel footer #shortsProfileSave:disabled{opacity:.55}
+@media(min-width:600px){.shorts-profile-editor{align-items:center;padding:20px}.shorts-profile-editor-panel{border-radius:22px}}

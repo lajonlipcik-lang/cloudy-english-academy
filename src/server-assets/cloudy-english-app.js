@@ -704,6 +704,12 @@ let shortsComposerMode="video",shortsSelectedImageUrl="",shortsSelectedImageFile
 let shortsFeedMode="for-you",shortsLiked=new Set(),shortsSaved=new Set(),shortsFollowing=new Set(),shortsMuted=true,shortsSelectedUrl="",shortsSelectedFile=null,shortsUploadMeta=null,shortsLiveItems=[],shortsFeedLoading=false,shortsFeedUser=null; 
 let shortsProfileUserId=null,shortsProfileData=null,shortsProfileLoading=false,shortsProfileTab="all";
 function shortsOpenAccountProfile(){shortsProfileUserId=null;shortsProfileData=null;shortsProfileLoading=false;shortsProfileTab="all";T=3;shortsPauseAll();view(1,-1);}
+function shortsOpenMyCreatorProfile(){
+ if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы открыть профиль Cloudy Shorts.",false);return;}
+ const userId=S.user.id;
+ shortsProfileUserId=userId;shortsProfileData=null;shortsProfileLoading=true;shortsProfileTab="all";shortsPauseAll();T=4;view(0);
+ authRequest("shorts-profile-get",{payload:{authorId:userId}}).then(r=>{if(shortsProfileUserId===userId)shortsProfileData=r.result||null;}).catch(e=>toast(e.message||"Не удалось открыть профиль.",false)).finally(()=>{if(shortsProfileUserId===userId){shortsProfileLoading=false;view(0);}});
+}
 function shortsOpenProfile(userId){
  if(!/^[0-9a-f-]{36}$/i.test(String(userId||"")))return;
  if(userId===S.user?.id){shortsOpenAccountProfile();return;}
@@ -727,17 +733,37 @@ async function shortsToggleFollow(){
 function shortsEditProfile(){
  if(!shortsProfileData?.profile?.isOwn)return;
  const p=shortsProfileData.profile;
- const name=prompt("Имя профиля (до 40 символов)",p.displayName||"");
- if(name===null)return;
- const cleanName=name.trim();
- if(!cleanName||cleanName.length>40){toast("Имя должно содержать от 1 до 40 символов.",false);return;}
- const bio=prompt("Описание профиля (до 240 символов)",p.bio||"");
- if(bio===null)return;
- const cleanBio=bio.trim();
- if(cleanBio.length>240){toast("Описание не должно превышать 240 символов.",false);return;}
- const isPublic=confirm("Профиль будет открытым? Нажмите «Отмена», чтобы оставить его закрытым.");
- authRequest("shorts-profile-update",{payload:{displayName:cleanName,bio:cleanBio,isPublic}}).then(()=>{toast("Профиль сохранён.");shortsProfileData=null;shortsOpenProfile(S.user.id);}).catch(e=>toast(e.message||"Не удалось сохранить профиль.",false));
+ document.getElementById("shorts-profile-editor")?.remove();
+ const modal=document.createElement("div");modal.id="shorts-profile-editor";modal.className="shorts-profile-editor";
+ const avatarPreview=p.avatarUrl?'<img src="'+shortsEscapeText(p.avatarUrl)+'" alt="">':'<span>'+shortsEscapeText((p.displayName||"У").charAt(0).toUpperCase())+'</span>';
+ modal.innerHTML='<div class="shorts-profile-editor-backdrop" data-profile-editor-close></div><section class="shorts-profile-editor-panel" role="dialog" aria-modal="true" aria-labelledby="shortsProfileEditorTitle"><header><h2 id="shortsProfileEditorTitle">Настройки профиля</h2><button type="button" data-profile-editor-close aria-label="Закрыть">×</button></header><label class="shorts-profile-editor-cover" style="'+(p.coverUrl?'background-image:url(&quot;'+shortsEscapeText(p.coverUrl)+'&quot;)':'')+'"><span>Обложка профиля</span><input id="shortsProfileCoverFile" type="file" accept="image/jpeg,image/png,image/webp"></label><div class="shorts-profile-editor-avatar-row"><label class="shorts-profile-editor-avatar">'+avatarPreview+'<input id="shortsProfileAvatarFile" type="file" accept="image/jpeg,image/png,image/webp"></label><span>Нажмите на фото, чтобы сменить аватар</span></div><label class="shorts-profile-editor-field">Имя профиля<input id="shortsProfileName" maxlength="40" value="'+shortsEscapeText(p.displayName||"")+'"></label><label class="shorts-profile-editor-field">Описание<textarea id="shortsProfileBio" maxlength="240" rows="3">'+shortsEscapeText(p.bio||"")+'</textarea></label><label class="shorts-profile-editor-visibility"><input id="shortsProfilePublic" type="checkbox" '+(p.isPublic?'checked':'')+'> Открытый профиль</label><p class="shorts-profile-editor-hint">Изображения загружаются в закрытое хранилище Cloudy. В профиле отображаются только временные защищённые ссылки.</p><footer><button type="button" data-profile-editor-close>Отмена</button><button type="button" id="shortsProfileSave">Сохранить</button></footer></section>';
+ document.body.appendChild(modal);
+ modal.querySelectorAll("[data-profile-editor-close]").forEach(el=>el.addEventListener("click",()=>modal.remove()));
+ const saveButton=modal.querySelector("#shortsProfileSave");
+ saveButton.addEventListener("click",async()=>{
+  const name=modal.querySelector("#shortsProfileName").value.trim(),bio=modal.querySelector("#shortsProfileBio").value.trim();
+  if(!name||name.length>40){toast("Имя должно содержать от 1 до 40 символов.",false);return;}
+  if(bio.length>240){toast("Описание не должно превышать 240 символов.",false);return;}
+  const avatarFile=modal.querySelector("#shortsProfileAvatarFile").files[0],coverFile=modal.querySelector("#shortsProfileCoverFile").files[0];
+  saveButton.disabled=true;saveButton.textContent="Сохраняем…";
+  try{
+   const upload=async(file,kind)=>{
+    if(!file)return undefined;
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024)throw new Error("Выберите JPG, PNG или WebP размером до 5 МБ.");
+    const signed=await authRequest("shorts-profile-image-url",{payload:{kind,mimeType:file.type,fileSize:file.size}});
+    const url=signed.result?.signedUrl;
+    if(typeof url!=="string"||!url.startsWith("https://"))throw new Error("Не удалось подготовить загрузку изображения.");
+    const response=await fetch(url,{method:"PUT",headers:{"Content-Type":file.type,"x-upsert":"true"},body:file});
+    if(!response.ok)throw new Error("Не удалось загрузить изображение.");
+    return signed.result.path;
+   };
+   const avatarPath=await upload(avatarFile,"avatar"),coverPath=await upload(coverFile,"cover");
+   await authRequest("shorts-profile-update",{payload:{displayName:name,bio,isPublic:modal.querySelector("#shortsProfilePublic").checked,...(avatarPath?{avatarPath}:{}),...(coverPath?{coverPath}:{})}});
+   modal.remove();toast("Профиль сохранён.");shortsProfileData=null;shortsOpenProfile(S.user.id);
+  }catch(e){toast(e.message||"Не удалось сохранить профиль.",false);saveButton.disabled=false;saveButton.textContent="Сохранить";}
+ });
 }
+
 async function shortsDeletePost(postId){
  if(!confirm("Удалить публикацию? Это действие нельзя отменить."))return;
  try{await authRequest("shorts-post-delete",{payload:{postId}});shortsLiveItems=shortsLiveItems.filter(x=>x.id!==postId);toast("Публикация удалена.");if(shortsProfileUserId)shortsOpenProfile(shortsProfileUserId);else view(0);}
@@ -771,8 +797,9 @@ function shortsCount(base, inc){
   return String(n);
 }
 function shorts(){
+ if(shortsProfileUserId&&shortsProfileUserId===S.user?.id)return shortsCreatorProfile();
  const items=shortsFeedMode==="following"?shortsLiveItems.filter(x=>shortsFollowing.has(x.id)):shortsLiveItems;
- let h='<section class="shorts-screen"><div class="shorts-topbar"><div class="shorts-brand"><b>CLOUDY <i>SHORTS</i></b></div><button class="shorts-my-profile" onclick="shortsOpenAccountProfile()">Профиль</button><div class="shorts-tabs"><button class="'+(shortsFeedMode==="following"?"active":"")+'" onclick="shortsSetMode(\'following\')">Подписки</button><button class="'+(shortsFeedMode==="for-you"?"active":"")+'" onclick="shortsSetMode(\'for-you\')">Для вас</button></div><button class="shorts-search" aria-label="Поиск" onclick="shortsSearch()">'+shortsIcon("search")+'</button></div><div class="shorts-feed" id="shorts-feed">';
+ let h='<section class="shorts-screen"><div class="shorts-topbar"><div class="shorts-brand"><b>CLOUDY <i>SHORTS</i></b></div><button class="shorts-my-profile" onclick="shortsOpenMyCreatorProfile()">Профиль</button><div class="shorts-tabs"><button class="'+(shortsFeedMode==="following"?"active":"")+'" onclick="shortsSetMode(\'following\')">Подписки</button><button class="'+(shortsFeedMode==="for-you"?"active":"")+'" onclick="shortsSetMode(\'for-you\')">Для вас</button></div><button class="shorts-search" aria-label="Поиск" onclick="shortsSearch()">'+shortsIcon("search")+'</button></div><div class="shorts-feed" id="shorts-feed">';
  if(!items.length)h+='<div class="shorts-empty-state">'+(shortsFeedLoading?'Загружаем публикации…':shortsFeedMode==="following"?'Здесь появятся публикации авторов, на которых ты подпишешься.':'Пока нет публикаций. Поделись первым учебным материалом!')+'</div>';
  items.forEach(x=>{
   const id=shortsEscapeText(x.id),author=shortsEscapeText(x.author),handle=shortsEscapeText(x.handle),caption=shortsEscapeText(x.caption),url=shortsEscapeText(x.videoUrl||x.imageUrl||""),initial=shortsEscapeText(x.initial);
