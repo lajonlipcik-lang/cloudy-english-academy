@@ -153,7 +153,7 @@ function mountShortsIntro(){
  if(seen)return;
  if(!document.getElementById("cloudy-shorts-intro-style")){
   const style=document.createElement("style");style.id="cloudy-shorts-intro-style";
-  style.textContent=\`
+  style.textContent=`
   #cloudy-shorts-intro{position:fixed;inset:0;z-index:99999;overflow:hidden;background:linear-gradient(180deg,#050c24 0%,#0d2150 60%,#16336f 100%);color:#fff;font-family:Inter,"SF Pro Display",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;cursor:pointer;opacity:1;transition:opacity .9s ease}
   #cloudy-shorts-intro:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1.5px,transparent 1.5px);background-size:46px 46px;pointer-events:none}
   #cloudy-shorts-intro.is-hidden{opacity:0;pointer-events:none}
@@ -191,11 +191,11 @@ function mountShortsIntro(){
   #cloudy-shorts-intro .csi-sound.hint{animation:csiHint 1.4s ease-in-out infinite}
   @keyframes csiHint{0%,100%{box-shadow:0 0 0 0 rgba(159,212,255,.55)}50%{box-shadow:0 0 0 10px rgba(159,212,255,0)}}
   @media(prefers-reduced-motion:reduce){#cloudy-shorts-intro *,#cloudy-shorts-intro *:before{animation:none!important;transition:none!important}}
-  \`;
+  `;
   document.head.appendChild(style);
  }
  const root=document.createElement("div");root.id="cloudy-shorts-intro";
- root.innerHTML=\`<div class="csi-stage"><div class="csi-logo"><div class="csi-cloudslot"><div class="csi-cloud"><svg class="csi-ms" viewBox="0 0 100 80" aria-hidden="true"><defs><linearGradient id="csi-gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#bfe0ff"/></linearGradient></defs><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#csi-gb)"/><g class="csi-eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.8" fill="#fff"/><circle cx="64" cy="43" r="1.8" fill="#fff"/></g><path d="M44 54q7 8 14 0" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle class="csi-cheek" cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle class="csi-cheek" cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg></div></div><div class="csi-text"></div></div></div><div class="csi-flash"></div><button class="csi-sound" type="button" aria-label="Включить или выключить звук">🔇</button>\`;
+ root.innerHTML=`<div class="csi-stage"><div class="csi-logo"><div class="csi-cloudslot"><div class="csi-cloud"><svg class="csi-ms" viewBox="0 0 100 80" aria-hidden="true"><defs><linearGradient id="csi-gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#bfe0ff"/></linearGradient></defs><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#csi-gb)"/><g class="csi-eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.8" fill="#fff"/><circle cx="64" cy="43" r="1.8" fill="#fff"/></g><path d="M44 54q7 8 14 0" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle class="csi-cheek" cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle class="csi-cheek" cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg></div></div><div class="csi-text"></div></div></div><div class="csi-flash"></div><button class="csi-sound" type="button" aria-label="Включить или выключить звук">🔇</button>`;
  document.body.appendChild(root);
  const stage=root.querySelector(".csi-stage"),cloud=root.querySelector(".csi-cloud"),slot=root.querySelector(".csi-cloudslot"),txt=root.querySelector(".csi-text"),flash=root.querySelector(".csi-flash"),sound=root.querySelector(".csi-sound");
  const timers=[];let finished=false,AC=null,muted=false;
