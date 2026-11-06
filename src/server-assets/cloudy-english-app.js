@@ -816,14 +816,39 @@ async function shortsSendComment(){
 }
 function shortsFormatSize(bytes){if(!Number.isFinite(bytes)||bytes<0)return "—";return bytes>=1024*1024?(bytes/1024/1024).toFixed(1)+" МБ":Math.max(1,Math.round(bytes/1024))+" КБ";}
 function shortsFormatDuration(seconds){if(!Number.isFinite(seconds)||seconds<0)return "—";const total=Math.round(seconds),m=Math.floor(total/60),s=total%60;return m+":"+String(s).padStart(2,"0");}
+let shortsCaptureMode=15;
 function shortsUpload(){
  if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);
- shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;
- sheet('<div class="shorts-upload-panel"><div class="shorts-upload-grabber"></div><div class="shorts-upload-head"><div><span class="shorts-upload-kicker">CLOUDY SHORTS</span><b>Подготовка видео</b><small>Выбери видео и подготовь короткое описание для публикации в Cloudy Shorts.</small></div><button class="shorts-upload-close" aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></div><label class="shorts-upload-drop" id="shorts-upload-drop"><input id="shorts-upload-file" type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" onchange="shortsChooseFile(this)"><span class="shorts-upload-drop-icon">'+shortsIcon("plus")+'</span><b>Выбери видео с устройства</b><small>MP4, MOV или WebM · до 100 МБ</small><span class="shorts-upload-secondary">Можно выбрать из галереи или файлов</span></label><div class="shorts-upload-preview" id="shorts-upload-preview"><div class="shorts-upload-placeholder">'+mascot("h")+'<b>Здесь появится предпросмотр</b><small>Лучше всего смотрится вертикальное видео 9:16</small></div></div><div class="shorts-upload-file-info" id="shorts-upload-file-info" hidden></div><div class="shorts-upload-description"><div class="shorts-upload-label-row"><label class="shorts-upload-label" for="shorts-upload-caption">О чём это видео?</label><span id="shorts-caption-count">0 / 180</span></div><textarea id="shorts-upload-caption" maxlength="180" placeholder="Например: 3 способа запомнить неправильные глаголы…" oninput="shortsCaptionCount()"></textarea><small class="shorts-upload-hint">Добавь короткое и понятное описание видео.</small></div><div class="shorts-ai-notice"><span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Cloudy AI проверит публикацию</b><small>Cloudy AI блокирует только явный контент 18+. Если его нет, видео сразу появляется в ленте.</small></div></div><button class="btn shorts-upload-submit" id="shorts-upload-submit" onclick="shortsSubmitUpload()" disabled>Сначала выбери видео</button><small class="shorts-upload-footnote">Видео появится в ленте сразу, если Cloudy AI не обнаружит явный контент 18+. Ручная проверка может пройти позже.</small></div>');
+ shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;shortsCaptureMode=15;
+ sheet('<style>'+
+ '.shorts-camera-panel{height:min(92dvh,900px);display:flex;flex-direction:column;gap:12px;padding:8px 16px 18px;color:#fff;overflow:auto}'+
+ '.shorts-camera-head{display:flex;align-items:center;gap:12px}.shorts-camera-head b{font-size:19px}.shorts-camera-head small{display:block;color:#9fb3d9;font-size:12px;margin-top:3px}.shorts-camera-close{margin-left:auto;width:40px;height:40px;border-radius:50%;background:#ffffff12;display:grid;place-items:center;transform:rotate(45deg)}'+
+ '.shorts-camera-stage{position:relative;min-height:220px;flex:1;border-radius:24px;overflow:hidden;background:radial-gradient(120% 90% at 50% 20%,#14213f,#070b17);display:flex;align-items:center;justify-content:center;text-align:center}'+
+ '.shorts-camera-hero{display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px}.shorts-camera-hero .ms{width:145px;filter:drop-shadow(0 8px 22px #78beff70);animation:cloudyShortsFloat 3s ease-in-out infinite}.shorts-camera-hero b{font-size:18px}.shorts-camera-hero small{color:#9fb3d9;line-height:1.4;max-width:250px}@keyframes cloudyShortsFloat{50%{transform:translateY(-8px)}}'+
+ '.shorts-camera-stage video{width:100%;height:100%;max-height:46dvh;object-fit:contain;background:#000}.shorts-camera-modes{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}.shorts-camera-modes button{padding:9px 14px;border-radius:999px;font-weight:800;background:#ffffff14;color:#fff}.shorts-camera-modes button.active{background:#fff;color:#07142d}'+
+ '.shorts-camera-controls{display:flex;align-items:center;justify-content:center;gap:26px;padding:3px 0}.shorts-camera-gallery{width:52px;height:52px;border:2px solid #fff;border-radius:12px;background:#12285c;display:grid;place-items:center;font-size:23px}.shorts-camera-shutter{width:78px;height:78px;border:5px solid #fff;border-radius:50%;display:grid;place-items:center}.shorts-camera-shutter span{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#5bb8ff,#2f7bff);display:grid;place-items:center;font-size:24px}'+
+ '.shorts-camera-caption label{font-size:13px;font-weight:800}.shorts-camera-caption textarea{display:block;width:100%;min-height:68px;margin-top:7px;padding:12px;border-radius:14px;border:1px solid #ffffff20;background:#0c1730;color:#fff;font:inherit;resize:vertical;outline:none}.shorts-camera-caption textarea:focus{border-color:#5bb8ff}.shorts-camera-meta{font-size:12px;color:#9fb3d9}.shorts-camera-submit{width:100%;min-height:50px;border-radius:14px;background:linear-gradient(135deg,#5bb8ff,#2f7bff);font-weight:800}.shorts-camera-submit:disabled{opacity:.45}.shorts-camera-notice{font-size:12px;line-height:1.4;color:#9fb3d9;text-align:center}'+
+ '</style><div class="shorts-camera-panel">'+
+ '<div class="shorts-camera-head"><div><span class="shorts-upload-kicker">CLOUDY SHORTS</span><b>Создать видео</b><small>Сними ролик или выбери его из галереи</small></div><button class="shorts-camera-close" aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></div>'+
+ '<div class="shorts-camera-stage" id="shorts-upload-preview"><div class="shorts-camera-hero">'+mascot("h")+'<b>Твой следующий Shorts начинается здесь</b><small>Камера телефона откроется после нажатия на большую кнопку</small></div></div>'+
+ '<div class="shorts-camera-modes"><button class="active" data-limit="15" onclick="shortsSetCaptureMode(15,this)">15 с</button><button data-limit="60" onclick="shortsSetCaptureMode(60,this)">60 с</button><button data-limit="180" onclick="shortsSetCaptureMode(180,this)">3 мин</button></div>'+
+ '<div class="shorts-camera-controls"><button class="shorts-camera-gallery" onclick="$(\'#shorts-upload-gallery\').click()" aria-label="Выбрать из галереи">▧</button><button class="shorts-camera-shutter" onclick="$(\'#shorts-upload-camera\').click()" aria-label="Открыть камеру"><span>☁</span></button></div>'+
+ '<input id="shorts-upload-camera" type="file" accept="video/*" capture="environment" hidden onchange="shortsChooseFile(this,\'camera\')">'+
+ '<input id="shorts-upload-gallery" type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" hidden onchange="shortsChooseFile(this,\'gallery\')">'+
+ '<div class="shorts-camera-meta" id="shorts-upload-file-info">MP4, MOV или WebM · до 100 МБ</div>'+
+ '<div class="shorts-camera-caption"><label for="shorts-upload-caption">Описание видео</label><textarea id="shorts-upload-caption" maxlength="180" placeholder="Например: 3 способа запомнить неправильные глаголы…" oninput="shortsCaptionCount()"></textarea><div class="shorts-camera-meta" id="shorts-caption-count">0 / 180</div></div>'+
+ '<div class="shorts-ai-notice"><span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Проверка Cloudy AI</b><small>ИИ проверяет только явный контент 18+. Если его нет, видео публикуется сразу; ручная проверка может пройти позже.</small></div></div>'+
+ '<button class="shorts-camera-submit" id="shorts-upload-submit" onclick="shortsSubmitUpload()" disabled>Сначала сними или выбери видео</button>'+
+ '<div class="shorts-camera-notice">Видео до 100 МБ. Максимальная длительность зависит от выбранного режима.</div></div>');
+}
+function shortsSetCaptureMode(seconds,button){
+ shortsCaptureMode=seconds;
+ document.querySelectorAll(".shorts-camera-modes button").forEach(item=>item.classList.toggle("active",item===button));
+ if(shortsUploadMeta&&shortsUploadMeta.duration>seconds+.5){shortsRemoveFile();toast("Выбранный ролик длиннее нового лимита.");}
 }
 function shortsCaptionCount(){const input=$("#shorts-upload-caption"),count=$("#shorts-caption-count");if(count&&input)count.textContent=input.value.length+" / 180";}
-function shortsUploadError(message){const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-upload-error">'+shortsIcon("plus")+'<span>'+message+'</span></div>';const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Исправь видео, чтобы продолжить";}}
-function shortsChooseFile(input){
+function shortsUploadError(message){const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-upload-error">'+shortsIcon("plus")+'<span>'+shortsEscapeText(message)+'</span></div>';const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Исправь видео, чтобы продолжить";}}
+function shortsChooseFile(input,source="gallery"){
  const f=input?.files?.[0];if(!f)return;
  const allowed=/\.(mp4|mov|webm)$/i.test(f.name||"")||/^video\/(mp4|quicktime|webm)$/i.test(f.type||"");
  if(!allowed){shortsUploadError("Поддерживаются только MP4, MOV и WebM.");input.value="";return;}
@@ -831,18 +856,32 @@ function shortsChooseFile(input){
  if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);
  shortsSelectedFile=f;shortsSelectedUrl=URL.createObjectURL(f);shortsUploadMeta=null;
  const p=$("#shorts-upload-preview"),info=$("#shorts-upload-file-info");
- if(p)p.innerHTML='<video id="shorts-upload-video" controls playsinline preload="metadata" src="'+shortsSelectedUrl+'"></video><div class="shorts-upload-preview-actions"><span>Предпросмотр</span><button type="button" onclick="shortsRemoveFile()">Заменить видео</button></div>';
- if(info){info.hidden=false;info.innerHTML='<span>'+shortsIcon("music")+' '+shortsFormatSize(f.size)+'</span><span>Определяем длительность…</span><span class="shorts-file-name">'+String(f.name).replace(/[&<>"']/g,"")+'</span>';}
+ if(p)p.innerHTML='<video id="shorts-upload-video" controls playsinline preload="metadata" src="'+shortsSelectedUrl+'"></video>';
  const video=$("#shorts-upload-video");
  if(video){
-  video.onloadedmetadata=()=>{const ratio=video.videoWidth/video.videoHeight,vertical=ratio>0&&ratio<0.9;shortsUploadMeta={duration:video.duration,width:video.videoWidth,height:video.videoHeight,vertical};if(info)info.innerHTML='<span>'+shortsFormatSize(f.size)+'</span><span>'+video.videoWidth+' × '+video.videoHeight+'</span><span>'+shortsFormatDuration(video.duration)+'</span><span class="shorts-file-name">'+String(f.name).replace(/[&<>"']/g,"")+'</span>';if(!vertical&&p){const note=document.createElement("small");note.className="shorts-upload-ratio-note";note.textContent="Видео не вертикальное. Его можно выбрать, но формат 9:16 лучше подходит для Shorts.";p.appendChild(note);}};
-  video.onerror=()=>{shortsUploadError("Не удалось открыть этот файл для предпросмотра. Попробуй другое видео.");};
+  video.onloadedmetadata=()=>{
+   const duration=Number(video.duration||0),limit=source==="camera"?shortsCaptureMode:180;
+   if(!Number.isFinite(duration)||duration<=0){shortsUploadError("Не удалось определить длительность видео. Выбери другой файл.");return;}
+   if(duration>limit+.5){shortsUploadError("Видео длиннее выбранного лимита. Выбери режим подлиннее.");shortsSelectedFile=null;shortsSelectedUrl&&URL.revokeObjectURL(shortsSelectedUrl);shortsSelectedUrl="";return;}
+   const ratio=video.videoWidth/video.videoHeight,vertical=ratio>0&&ratio<.9;
+   shortsUploadMeta={duration,width:video.videoWidth,height:video.videoHeight,vertical,limit};
+   if(info)info.textContent=shortsFormatSize(f.size)+" · "+video.videoWidth+" × "+video.videoHeight+" · "+shortsFormatDuration(duration);
+   if(!vertical&&p){const note=document.createElement("small");note.className="shorts-upload-ratio-note";note.textContent="Горизонтальное видео тоже можно опубликовать; вертикальный формат лучше подходит для Shorts.";p.appendChild(note);}
+   const b=$("#shorts-upload-submit");if(b){b.disabled=false;b.textContent="Опубликовать видео";}
+  };
+  video.onerror=()=>shortsUploadError("Не удалось открыть этот файл для предпросмотра. Попробуй другое видео.");
  }
- const b=$("#shorts-upload-submit");if(b){b.disabled=false;b.textContent="Проверить видео и описание";}
- const drop=$("#shorts-upload-drop");if(drop)drop.classList.add("has-file");
+ const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Подготавливаем видео…";}
+ if(info)info.textContent=shortsFormatSize(f.size)+" · Определяем длительность…";
 }
-function shortsRemoveFile(){if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;const input=$("#shorts-upload-file");if(input)input.value="";const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-upload-placeholder">'+mascot("h")+'<b>Здесь появится предпросмотр</b><small>Лучше всего смотрится вертикальное видео 9:16</small></div>';const info=$("#shorts-upload-file-info");if(info){info.hidden=true;info.innerHTML="";}const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Выбрать видео, чтобы продолжить";}const d=$("#shorts-upload-drop");if(d)d.classList.remove("has-file");}
-
+function shortsRemoveFile(){
+ if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);
+ shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;
+ ["#shorts-upload-camera","#shorts-upload-gallery"].forEach(selector=>{const input=$(selector);if(input)input.value="";});
+ const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-camera-hero">'+mascot("h")+'<b>Твой следующий Shorts начинается здесь</b><small>Сними ролик или выбери его из галереи</small></div>';
+ const info=$("#shorts-upload-file-info");if(info)info.textContent="MP4, MOV или WebM · до 100 МБ";
+ const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Сначала сними или выбери видео";}
+}
 async function shortsSubmitUpload(){
  if(!shortsSelectedFile){toast("Сначала выбери видео.",false);return;}
  const caption=String($("#shorts-upload-caption")?.value||"").trim();
