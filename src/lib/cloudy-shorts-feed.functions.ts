@@ -95,6 +95,16 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles").select("id,display_name,bio,is_public").eq("id", data.authorId).maybeSingle();
     if (profileError || !profile) throw new Error("Этот профиль недоступен.");
+    if (profile.is_public !== true && viewerId !== data.authorId) throw new Error("Этот профиль закрыт.");
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(data.authorId);
+    const metadata = authUser?.user?.user_metadata ?? {};
+    const safeImageUrl = (value: unknown) => {
+      if (typeof value !== "string" || value.length > 2048) return null;
+      try { const parsed = new URL(value); return parsed.protocol === "https:" ? value : null; } catch { return null; }
+    };
+    const avatarUrl = safeImageUrl(metadata.avatar_url ?? metadata.picture);
+    const username = typeof metadata.username === "string" && /^[a-zA-Z0-9_.]{3,24}$/.test(metadata.username)
+      ? metadata.username : null;
     const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
     const content = getCloudyContentAdmin();
     const { data: rows, error } = await content.from("shorts_videos")
@@ -113,8 +123,17 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
         playbackUrl:row.media_type==="video"?mediaUrl:null,imageUrl:row.media_type==="image"?mediaUrl:null,
         status:row.status,isOwn:viewerId===data.authorId};
     }));
-    return {profile:{id:profile.id,displayName:String(profile.display_name||"Участник"),bio:(profile.is_public===true||viewerId===data.authorId)?String(profile.bio||""):"",
-      isPublic:profile.is_public===true,isOwn:viewerId===data.authorId},posts};
+    const postIds = posts.map((post) => post.id);
+    const { data: likeRows, error: likesError } = postIds.length
+      ? await content.from("shorts_likes").select("video_id").in("video_id", postIds)
+      : { data: [], error: null };
+    if (likesError) throw new Error("Не удалось загрузить статистику профиля.");
+    const likeCounts = new Map<string, number>();
+    for (const like of likeRows ?? []) likeCounts.set(like.video_id, (likeCounts.get(like.video_id) ?? 0) + 1);
+    for (const post of posts) (post as any).likes = likeCounts.get(post.id) ?? 0;
+    return {profile:{id:profile.id,displayName:String(profile.display_name||"Участник"),bio:String(profile.bio||""),
+      username,avatarUrl,isPublic:profile.is_public===true,isOwn:viewerId===data.authorId},
+      stats:{posts:posts.filter((post) => post.status === "approved").length,likes:posts.reduce((sum,post) => sum + ((post as any).likes||0),0)},posts};
   });
 
 type DeleteInput = { accessToken?: string; postId?: string };
