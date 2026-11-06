@@ -49,6 +49,19 @@ export const listShortsFeed = createServerFn({ method: "POST" })
       String(profile.display_name || "Участник").slice(0, 80),
     ]));
 
+    const postIds = (rows ?? []).map((row: any) => row.id);
+    const authorIds = [...new Set((rows ?? []).map((row: any) => row.author_id))];
+    const [{ data: likeRows, error: likesError }, { data: commentRows, error: commentsError }, { data: followRows, error: followsError }] = await Promise.all([
+      postIds.length ? content.from("shorts_likes").select("video_id,user_id").in("video_id", postIds) : Promise.resolve({ data: [], error: null }),
+      postIds.length ? content.from("shorts_comments").select("video_id").in("video_id", postIds).eq("status", "published") : Promise.resolve({ data: [], error: null }),
+      viewerId && authorIds.length ? content.from("shorts_follows").select("following_id").eq("follower_id", viewerId).in("following_id", authorIds) : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (likesError || commentsError || followsError) throw new Error("Не удалось загрузить статистику Shorts.");
+    const likeCounts = new Map<string, number>(), commentCounts = new Map<string, number>();
+    const likedIds = new Set<string>(), followedAuthorIds = new Set<string>();
+    for (const like of likeRows ?? []) { likeCounts.set(like.video_id, (likeCounts.get(like.video_id) ?? 0) + 1); if (viewerId && like.user_id === viewerId) likedIds.add(like.video_id); }
+    for (const comment of commentRows ?? []) commentCounts.set(comment.video_id, (commentCounts.get(comment.video_id) ?? 0) + 1);
+    for (const follow of followRows ?? []) followedAuthorIds.add(follow.following_id);
     const videos = await Promise.all((rows ?? []).map(async (row: any) => {
       let mediaUrl: string | null = null;
       if (row.media_type !== "text" && row.storage_path) {
@@ -69,6 +82,10 @@ export const listShortsFeed = createServerFn({ method: "POST" })
         durationSeconds: row.duration_seconds,
         playbackUrl: row.media_type === "video" ? mediaUrl : null,
         imageUrl: row.media_type === "image" ? mediaUrl : null,
+        likes: likeCounts.get(row.id) ?? 0,
+        comments: commentCounts.get(row.id) ?? 0,
+        isLiked: likedIds.has(row.id),
+        isFollowingAuthor: followedAuthorIds.has(row.author_id),
       };
     }));
     return { videos: videos.filter(Boolean) };
@@ -262,6 +279,39 @@ export const setShortsFollow = createServerFn({ method: "POST" })
     return { ok: true, isFollowing: data.follow, followers: followers || 0, following: following || 0 };
   });
 
+
+type LikeInput = { accessToken?: string; videoId?: string; like?: boolean };
+export const setShortsLike = createServerFn({ method: "POST" })
+  .inputValidator((input: Partial<LikeInput>): LikeInput => {
+    const accessToken = String(input?.accessToken ?? ""), videoId = String(input?.videoId ?? "");
+    if (!accessToken || accessToken.length > 8192 || accessToken.split(".").length !== 3) throw new Error("Unauthorized");
+    if (!/^[0-9a-f-]{36}$/i.test(videoId) || typeof input?.like !== "boolean") throw new Error("Некорректное действие с лайком.");
+    return { accessToken, videoId, like: input.like };
+  })
+  .handler(async ({ data }) => {
+    const url = process.env["SUPABASE_URL"], key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !key) throw new Error("Core Supabase is not configured.");
+    const auth = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
+    const { data: identity, error: authError } = await auth.auth.getUser(data.accessToken);
+    if (authError || !identity.user) throw new Error("Unauthorized");
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const content = getCloudyContentAdmin();
+    const { data: video, error: videoError } = await content.from("shorts_videos").select("id,status").eq("id", data.videoId).maybeSingle();
+    if (videoError || !video || video.status !== "approved") throw new Error("Публикация недоступна для оценки.");
+    if (data.like) {
+      const { error } = await content.from("shorts_likes").upsert({ video_id: data.videoId, user_id: identity.user.id }, { onConflict: "video_id,user_id", ignoreDuplicates: true });
+      if (error) throw new Error("Не удалось поставить лайк.");
+    } else {
+      const { error } = await content.from("shorts_likes").delete().eq("video_id", data.videoId).eq("user_id", identity.user.id);
+      if (error) throw new Error("Не удалось убрать лайк.");
+    }
+    const [{ count: likes }, { data: mine, error: mineError }] = await Promise.all([
+      content.from("shorts_likes").select("user_id", { count: "exact", head: true }).eq("video_id", data.videoId),
+      content.from("shorts_likes").select("video_id").eq("video_id", data.videoId).eq("user_id", identity.user.id).maybeSingle(),
+    ]);
+    if (mineError) throw new Error("Не удалось проверить состояние лайка.");
+    return { ok: true, isLiked: !!mine, likes: likes ?? 0 };
+  });
 
 type ProfileImageUploadInput = { accessToken?: string; kind?: string; mimeType?: string; fileSize?: number };
 export const createShortsProfileImageUpload = createServerFn({ method: "POST" })
