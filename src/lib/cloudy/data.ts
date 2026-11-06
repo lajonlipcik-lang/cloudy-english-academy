@@ -767,9 +767,9 @@ const NEXT_A1_A2: Lesson[] = [
   P("Вопросы о себе", "who=кто,what=что / какой,where=где,when=когда,why=почему,how=как,address=адрес,age=возраст,phone number=номер телефона,birthday=день рождения", "Как тебя зовут?=What is your name?=Where is your name;Где ты живёшь?=Where do you live?=When do you live;Сколько тебе лет?=How old are you?=How many are you;Когда у тебя день рождения?=When is your birthday?=Where is your birthday;Почему ты изучаешь английский?=Why do you study English?=When do you study English;Какой у тебя номер телефона?=What is your phone number?=How is your phone number"),
   P("Чьи это вещи?", "mine=мой / моя / моё,yours=твой / ваш,his=его,hers=её,ours=наш / наше,theirs=их,owner=владелец,belong=принадлежать,backpack=рюкзак,umbrella=зонт", "Это сумка Анны.=This is Anna's bag.=This are Anna bag;Синий зонт мой.=The blue umbrella is mine.=The blue umbrella are mine;Этот телефон твой?=Is this phone yours?=Are this phone yours;Эти ключи его.=These keys are his.=This keys is him;Этот дом наш.=This house is ours.=This house are our;Рюкзак принадлежит моему брату.=The backpack belongs to my brother.=The backpack belong my brother"),
   P("Инструкции и просьбы", "open=открывать,close=закрывать,turn=поворачивать,wait=ждать,follow=следовать,listen=слушать,repeat=повторять,bring=приносить,carefully=внимательно,quietly=тихо", "Открой окно, пожалуйста.=Open the window, please.=Opens the window;Не трогай мой телефон.=Don't touch my phone.=Doesn't touch my phone;Слушай внимательно.=Listen carefully.=Listens carefully;Поверни налево здесь.=Turn left here.=Turns left here;Давай начнём урок.=Let's start the lesson.=Let's starts the lesson;Подожди минуту, пожалуйста.=Wait a minute, please.=Waits a minute"),
-  P("Неправильные глаголы в прошлом", "went=ходил / ездил,saw=видел,took=взял / сел на транспорт,made=сделал,gave=дал,got=получил / добрался,found=нашёл,left=ушёл / оставил,felt=чувствовал,heard=слышал", "Вчера я ездил на работу на автобусе.=Yesterday I went to work by bus.=Yesterday I go to work by bus;Она посмотрела новый фильм прошлой ночью.=She saw a new movie last night.=She see a new movie tomorrow;Мы взяли такси после концерта.=We took a taxi after the concert.=We take a taxi tomorrow;Он приготовил ужин для семьи.=He made dinner for his family.=He make dinner every day;Они добрались домой поздно.=They got home late.=They get home early tomorrow;Сегодня утром я нашёл ключи.=I found my keys this morning.=I find my keys tomorrow"),
+  P("Неправильные глаголы в прошлом", "went=ходил / ездил,saw=видел,took=взял / сел на транспорт,made=сделал,gave=дал,got=получил / добрался,found=нашёл,left=ушёл / оставил,felt=чувствовал,heard=слышал", "Вчера я ездил на работу на автобусе.=Yesterday I went to work by bus.=Yesterday I go to work by bus;Она посмотрела новый фильм вчера вечером.=She saw a new movie last night.=She see a new movie tomorrow;Мы взяли такси после концерта.=We took a taxi after the concert.=We take a taxi tomorrow;Он приготовил ужин для семьи.=He made dinner for his family.=He make dinner every day;Они добрались домой поздно.=They got home late.=They get home early tomorrow;Сегодня утром я нашёл ключи.=I found my keys this morning.=I find my keys tomorrow"),
   P("Обязанности и правила", "must=должен,mustn't=нельзя / запрещено,have to=быть должным,don't have to=необязательно,should=следует,rule=правило,allowed=разрешено,required=обязательный,helmet=шлем,seat belt=ремень безопасности", "Ты должен пристегнуться.=You must wear a seat belt.=You must wears a seat belt;Здесь нельзя парковаться.=You mustn't park here.=You don't must park here;Мне нужно рано вставать завтра.=I have to get up early tomorrow.=I has to get up early;В воскресенье нам не нужно работать.=We don't have to work on Sunday.=We mustn't work on Sunday;Тебе следует пить больше воды.=You should drink more water.=You should drinks more water;Нам разрешено фотографировать здесь?=Are we allowed to take photos here?=Do we allowed take photos here"),
-  P("Если случится...", "if=если,unless=если не,weather=погода,rain=дождь,sunny=солнечно,miss=опоздать на / пропустить,catch=успеть на / поймать,hurry=торопиться,traffic=дорожное движение,cancel=отменять", "Если пойдёт дождь, мы останемся дома.=If it rains, we'll stay home.=If it will rain;Если поторопишься, успеешь на автобус.=If you hurry, you'll catch the bus.=If you will hurry;Мы опоздаем на поезд, если будем поздно.=We'll miss the train if we're late.=We'll miss the train if we will be late;Если будет солнечно, мы погуляем.=If it's sunny, we'll go for a walk.=If it will be sunny;Если у меня будет время, я тебе позвоню.=If I have time, I'll call you.=If I will have time;Если движение будет сильным, мы отменим поездку.=If traffic is heavy, we'll cancel the trip.=If traffic will be heavy")
+  P("Если случится...", "if=если,unless=если не,weather=погода,rain=дождь,sunny=солнечно,miss=опоздать на / пропустить,catch=успеть на / поймать,hurry=торопиться,traffic=дорожное движение,cancel=отменять", "Если пойдёт дождь, мы останемся дома.=If it rains, we'll stay home.=If it will rain;Если поторопишься, успеешь на автобус.=If you hurry, you'll catch the bus.=If you will hurry;Мы не успеем на поезд, если опоздаем.=We'll miss the train if we're late.=We'll miss the train if we will be late;Если будет солнечно, мы погуляем.=If it's sunny, we'll go for a walk.=If it will be sunny;Если у меня будет время, я тебе позвоню.=If I have time, I'll call you.=If I will have time;Если на дорогах будут пробки, мы отменим поездку.=If there's a lot of traffic, we'll cancel the trip.=If traffic will be heavy")
 ];
 D.push(...NEXT_A1_A2);
 
@@ -1159,7 +1159,7 @@ extendLesson(52, [], [
   ["Я потерял(а) ключи", "I lost my keys", "I lose my keys tomorrow"],
 ]);
 
-export interface FoundationNote { title: string; body: string; examples: [string, string][]; tip: string; }
+export interface FoundationNote { title: string; body: string; examples: [string, string][]; tip: string; level?: "A1" | "A2"; }
 
 export const A1_FOUNDATIONS: Record<number, FoundationNote> = {
   0: {
@@ -1580,8 +1580,7 @@ export const A1_FOUNDATIONS: Record<number, FoundationNote> = {
       ]
     ],
     tip: "Смысл важнее скорости. Проверяй подлежащее, форму глагола и порядок слов."
-  }
-
+  },
   54: {
     title: "Wh-вопросы: узнаём важную информацию",
     body: "Вопросительные слова помогают уточнить, что именно мы хотим узнать: who — кто, what — что, where — где, when — когда, why — почему, how — как. С обычными глаголами в Present Simple ставь do или does перед подлежащим. С глаголом to be используй am, is или are.",
@@ -1624,7 +1623,7 @@ export const A2_FOUNDATIONS: Record<number, FoundationNote> = {
     body: "В Past Simple у многих частых глаголов особая форма: go → went, see → saw, take → took. Она не зависит от he, she или they. Для вопросов и отрицаний используй did / didn't и начальную форму глагола: Did you go? — I didn't go.",
     examples: [
       ["Yesterday I went to work by bus.", "Вчера я ездил на работу на автобусе."],
-      ["She saw a new movie last night.", "Она посмотрела новый фильм прошлой ночью."],
+      ["She saw a new movie last night.", "Она посмотрела новый фильм вчера вечером."],
       ["We took a taxi after the concert.", "Мы взяли такси после концерта."],
       ["He made dinner for his family.", "Он приготовил ужин для семьи."]
     ],
@@ -1649,7 +1648,7 @@ export const A2_FOUNDATIONS: Record<number, FoundationNote> = {
     examples: [
       ["If it rains, we'll stay home.", "Если пойдёт дождь, мы останемся дома."],
       ["If you hurry, you'll catch the bus.", "Если поторопишься, успеешь на автобус."],
-      ["We'll miss the train if we're late.", "Мы опоздаем на поезд, если будем поздно."],
+      ["We'll miss the train if we're late.", "Мы не успеем на поезд, если опоздаем."],
       ["If it's sunny, we'll go for a walk.", "Если будет солнечно, мы погуляем."]
     ],
     tip: "If + Present Simple, will + verb. Не говори: If it will rain."
