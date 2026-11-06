@@ -218,8 +218,8 @@ function mountShortsIntro(){
  later(()=>cloud.classList.add("settled"),c0+1050);
  later(()=>{const bounds=stage.getBoundingClientRect(),cb=cloud.getBoundingClientRect();stage.style.transformOrigin=(cb.left+cb.width/2-bounds.left)+"px "+(cb.top+cb.height*.55-bounds.top)+"px";const zoom=Math.max(innerWidth,innerHeight)/(cb.width*.5);stage.style.setProperty("--zs",Math.max(zoom*1.6,14));stage.classList.add("zoom");tone(220,.65,.045);later(()=>{flash.classList.add("on");[1047,1319,1568,2093].forEach((n,i)=>tone(n,.22,.035,i*.06));},600);later(finish,950);},c0+1350);
 }
-function view(a=1,tabDirection=0){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof,shorts][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest)void loadCommunityProfile();if(T===4){void shortsLoadFeed();mountShortsIntro();initShortsPlayback();}}
-function tab(k){if(k!==T){const direction=k>T?1:-1;snd("tab");T=k;if(k===4)shortsFeedUser=null;view(1,direction)}}
+function view(a=1,tabDirection=0){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof,shorts][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest){void loadCommunityProfile();if(!shortsProfileUserId)shortsOpenProfile(S.user.id);}if(T===4){void shortsLoadFeed();mountShortsIntro();initShortsPlayback();}}
+function tab(k){if(k!==T){const direction=k>T?1:-1;snd("tab");if(k!==3){shortsProfileUserId=null;shortsProfileData=null;shortsProfileLoading=false;}T=k;if(k===4)shortsFeedUser=null;view(1,direction)}}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
 const pool=()=>LV[S.lv].s.flatMap(x=>x.l).flatMap(j=>D[j].w);
@@ -742,7 +742,6 @@ function shortsCount(base, inc){
   return String(n);
 }
 function shorts(){
- if(shortsProfileUserId)return shortsCreatorProfile();
  const items=shortsFeedMode==="following"?shortsLiveItems.filter(x=>shortsFollowing.has(x.id)):shortsLiveItems;
  let h='<section class="shorts-screen"><div class="shorts-topbar"><div class="shorts-brand"><b>CLOUDY <i>SHORTS</i></b></div><button class="shorts-my-profile" onclick="shortsOpenProfile(S.user.id)">Профиль</button><div class="shorts-tabs"><button class="'+(shortsFeedMode==="following"?"active":"")+'" onclick="shortsSetMode(\'following\')">Подписки</button><button class="'+(shortsFeedMode==="for-you"?"active":"")+'" onclick="shortsSetMode(\'for-you\')">Для вас</button></div><button class="shorts-search" aria-label="Поиск" onclick="shortsSearch()">'+shortsIcon("search")+'</button></div><div class="shorts-feed" id="shorts-feed">';
  if(!items.length)h+='<div class="shorts-empty-state">'+(shortsFeedLoading?'Загружаем публикации…':shortsFeedMode==="following"?'Здесь появятся публикации авторов, на которых ты подпишешься.':'Пока нет публикаций. Поделись первым учебным материалом!')+'</div>';
@@ -1190,6 +1189,7 @@ async function saveCommunityProfile(patch){
 function toggleCommunityPublic(){if(!communityProfile)return;snd("tap");void saveCommunityProfile({is_public:!communityProfile.is_public});}
 function saveCommunityBio(value){if(!communityProfile)return;const bio=String(value||"").trim().slice(0,240);if(bio===communityProfile.bio)return;void saveCommunityProfile({bio});}
 function prof(){const g=S.set.goal,C=2*Math.PI*40,p=Math.min(S.td.xp/g,1),s=S.set,a=S.acc[1]?Math.round(S.acc[0]/S.acc[1]*100):0;
+ if(shortsProfileUserId&&shortsProfileUserId!==S.user.id)return shortsCreatorProfile();
  const sw=k=>`<button class="sw ${s[k]?"on":""}" onclick="tg(this,'${k}')"><i></i></button>`;
  return `<div class="pc">${mascot()}<h2>${S.user.name||'Ученик'}</h2><p>${S.user.email||'Режим гостя'}</p></div>
  <div class="grid">${[["flame",S.streak,"дней подряд"],["bolt",S.xp,"XP всего"],["check",Object.values(S.dn).reduce((a,b)=>a+b,0),"уроков"],["target",a+"%","точность"]].map(([i,v,l])=>`<div class="card">${ic(i)}<div><b>${v}</b><small>${l}</small></div></div>`).join("")}</div>
