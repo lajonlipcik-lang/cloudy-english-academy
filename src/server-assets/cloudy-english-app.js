@@ -1002,6 +1002,59 @@ async function shortsSubmitUpload(){
 }
 
 
+/**
+ * Receives the File produced by the original full-screen Shorts publishing HTML.
+ * The event is cancelled synchronously so its demo/fallback publisher never runs.
+ */
+async function shortsPublishExternal(detail){
+ const file=detail?.file,type=detail?.type==="video"?"video":"image";
+ if(!(file instanceof Blob)||!file.size)throw new Error("Не удалось получить выбранный файл.");
+ if(!S.user||S.user.guest)throw new Error("Войди в аккаунт, чтобы опубликовать Shorts.");
+ const image=type==="image",caption=String(detail?.caption||"").trim().slice(0,500);
+ const mimeType=String(file.type|| (image?"image/jpeg":"video/mp4")).toLowerCase();
+ const allowed=image?["image/jpeg","image/png","image/webp"]:["video/mp4","video/webm","video/quicktime"];
+ const maxBytes=image?15*1024*1024:100*1024*1024;
+ if(!allowed.includes(mimeType))throw new Error(image?"Поддерживаются JPG, PNG и WebP.":"Поддерживаются MP4, MOV и WebM.");
+ if(file.size>maxBytes)throw new Error(image?"Фотография должна быть не больше 15 МБ.":"Видео должно быть не больше 100 МБ.");
+ const progress=value=>{try{if(typeof window.cloudyPublishProgress==="function")window.cloudyPublishProgress(value);}catch(_){}};
+ progress(3);
+ const started=await authRequest("shorts-upload-start",{payload:{
+  mediaType:image?"image":"video",
+  fileName:String(file.name|| (image?"cloudy-short.jpg":"cloudy-short.mp4")).slice(0,180),
+  mimeType,sizeBytes:file.size,caption,
+  durationSeconds:image?0:Math.max(0,Math.round(Number(detail?.durationSeconds||detail?.duration||0)))
+ }});
+ const ticket=started?.result;
+ if(!ticket?.signedUrl||!ticket?.publishableKey||!ticket?.contentUrl||!ticket?.token)throw new Error("Сервер не подготовил защищённую загрузку.");
+ progress(12);
+ const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
+ const body=new FormData();body.append("cacheControl","3600");body.append("",file);
+ const response=await fetch(uploadUrl,{method:"PUT",headers:{apikey:ticket.publishableKey,Authorization:"Bearer "+ticket.publishableKey,"x-upsert":"false"},body});
+ if(!response.ok){let message="";try{message=(await response.json()).message||"";}catch(_){}throw new Error(message||"Не удалось загрузить файл в защищённое хранилище.");}
+ progress(78);
+ const finalized=await authRequest(image?"shorts-upload-image-finalize":"shorts-upload-finalize",{payload:{videoId:ticket.videoId}});
+ if(!finalized?.result?.ok)throw new Error("Не удалось завершить публикацию.");
+ progress(100);
+ await shortsLoadFeed(true);
+ try{if(typeof window.cloudyPublishDone==="function")window.cloudyPublishDone();}catch(_){}
+ toast(finalized.result.published?(image?"Фотография опубликована в Shorts!":"Видео опубликовано в Shorts!"):"Публикация отправлена на проверку Cloudy AI.");
+ return finalized.result;
+}
+if(!window.__cloudyShortsPublishBridge){
+ window.__cloudyShortsPublishBridge=true;
+ window.addEventListener("cloudy:publish",event=>{
+  const detail=event?.detail;
+  if(!detail?.file)return;
+  event.preventDefault();
+  shortsPublishExternal(detail).catch(error=>{
+   const message=error?.message||"Не удалось опубликовать Shorts.";
+   toast(message,false);
+   console.warn("[cloudy-shorts] external publish failed",error);
+  });
+ });
+}
+
+
 let communityProfile=null,communityProfileUser=null,communityProfileLoading=false,communityProfileSaving=false,communityProfileError="";
 let communityFeed=[],communityFeedLoading=false,communityFeedUser=null,communityPostSaving=false;
 let communityInteractions={comments:[],reactions:[]},communityInteractionsLoading=false;
