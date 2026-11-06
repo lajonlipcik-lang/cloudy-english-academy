@@ -101,3 +101,13 @@ The current three Shorts cards are clearly marked demonstration content with non
 - Transcript text is transient: it is neither returned to the browser nor persisted in Content DB. Only status, labels, decision, confidence, model and audit metadata are stored.
 - Audio results are triage only. They cannot approve, reject, publish a video or restrict its author. All videos remain private and require human review.
 - Audio extraction still happens in the browser and depends on codec support. This is not server-verified decoding of the stored original. A failed/unavailable transcription always stays in the manual-review path.
+
+
+## Human moderation queue for Shorts
+
+- The existing owner/admin panel exposes a private Shorts review queue. It creates five-minute signed preview URLs server-side; the Content Storage bucket remains private.
+- Queue entries include author display name, caption, text-moderation outcome, frame triage and audio triage metadata. A moderator must inspect the full video before making a decision.
+- Only a Core-authenticated administrator can list the queue or approve/reject a video. The Content DB RPC applies the decision atomically and writes a moderation event. Approving publishes the video; rejecting keeps it unavailable.
+- This is the human decision layer, not an automatic AI ban system. AI labels are evidence for review, not a verdict about the author. The moderation panel does not automatically ban accounts.
+- Apply Content DB migration \`0007_shorts_human_moderation.sql\` after \`0001\`–\`0006\`.
+- The app is deployed on Cloudflare Workers. Its request runtime does not provide a general-purpose FFmpeg binary/process API; therefore server-side decoding of the original video cannot be honestly claimed or added as a normal Node subprocess. Current frame/audio samples remain client-extracted and untrusted. A trusted server media pipeline requires a separately deployed media-processing service (for example, a dedicated container/worker with FFmpeg) and a private service binding; until then, human review of the full private original is mandatory.
