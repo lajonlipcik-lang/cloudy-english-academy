@@ -745,7 +745,8 @@ async function shortsSubmitUpload(){
   if(button)button.textContent="Загружаем видео…";
   if(notice)notice.querySelector("small").textContent="Загружаем видео в приватное хранилище. Не закрывай это окно.";
   const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
-  const response=await fetch(uploadUrl,{method:"PUT",headers:{"apikey":ticket.publishableKey,"Authorization":"Bearer "+ticket.publishableKey,"Content-Type":file.type||"application/octet-stream","x-upsert":"false"},body:file});
+  const uploadBody=new FormData();uploadBody.append("cacheControl","3600");uploadBody.append("",file);
+  const response=await fetch(uploadUrl,{method:"PUT",headers:{"apikey":ticket.publishableKey,"Authorization":"Bearer "+ticket.publishableKey,"x-upsert":"false"},body:uploadBody});
   if(!response.ok){let detail="";try{detail=(await response.json()).message||"";}catch{}throw new Error(detail||"Не удалось загрузить видео в защищённое хранилище.");}
   if(button)button.textContent="Отправляем на проверку…";
   const finalized=await authRequest("shorts-upload-finalize",{payload:{videoId:ticket.videoId}});
