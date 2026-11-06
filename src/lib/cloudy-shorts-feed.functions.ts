@@ -162,14 +162,15 @@ export const deleteOwnShortPost = createServerFn({ method: "POST" })
   });
 
 
-type UpdateProfileInput = { accessToken?: string; displayName?: string; bio?: string };
+type UpdateProfileInput = { accessToken?: string; displayName?: string; bio?: string; isPublic?: boolean };
 export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
  .inputValidator((input:Partial<UpdateProfileInput>):UpdateProfileInput=>{
-   const accessToken=String(input?.accessToken??""),displayName=String(input?.displayName??"").trim(),bio=String(input?.bio??"").trim();
+   const accessToken=String(input?.accessToken??""),displayName=String(input?.displayName??"").trim(),bio=String(input?.bio??"").trim(),isPublic=input?.isPublic;
    if(!accessToken||accessToken.length>8192||accessToken.split(".").length!==3)throw new Error("Unauthorized");
    if(displayName.length<1||displayName.length>40)throw new Error("Имя должно содержать от 1 до 40 символов.");
    if(bio.length>240)throw new Error("Описание не должно превышать 240 символов.");
-   return {accessToken,displayName,bio};
+   if(typeof isPublic!=="boolean")throw new Error("Выберите видимость профиля.");
+   return {accessToken,displayName,bio,isPublic};
  })
  .handler(async({data})=>{
    const url=process.env["SUPABASE_URL"],key=process.env["SUPABASE_PUBLISHABLE_KEY"];
@@ -178,7 +179,7 @@ export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
    const {data:identity,error}=await auth.auth.getUser(data.accessToken);
    if(error||!identity.user)throw new Error("Unauthorized");
    const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
-   const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName!,bio:data.bio!}).eq("id",identity.user.id);
+   const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName!,bio:data.bio!,is_public:data.isPublic!}).eq("id",identity.user.id);
    if(updateError)throw new Error("Не удалось сохранить профиль.");
-   return {ok:true,displayName:data.displayName,bio:data.bio};
+   return {ok:true,displayName:data.displayName,bio:data.bio,isPublic:data.isPublic};
  });
