@@ -715,11 +715,17 @@ function shortsSetProfileTab(tab){shortsProfileTab=["all","video","image","text"
 document.addEventListener("click",function(event){const target=event.target?.closest?.("[data-short-author]");if(target)shortsOpenProfile(target.getAttribute("data-short-author"));});
 function shortsEditProfile(){
  if(!shortsProfileData?.profile?.isOwn)return;
- const p=shortsProfileData.profile,name=prompt("Имя профиля",p.displayName||"");
+ const p=shortsProfileData.profile;
+ const name=prompt("Имя профиля (до 40 символов)",p.displayName||"");
  if(name===null)return;
- const bio=prompt("Описание профиля (до 240 символов)",p.bio||"");if(bio===null)return;
- const isPublic=confirm("Открыть профиль для всех? Нажмите «Отмена», чтобы сделать профиль закрытым.");
- authRequest("shorts-profile-update",{payload:{displayName:name,bio,isPublic}}).then(()=>{toast("Профиль сохранён.");shortsOpenProfile(S.user.id);}).catch(e=>toast(e.message||"Не удалось сохранить профиль.",false));
+ const cleanName=name.trim();
+ if(!cleanName||cleanName.length>40){toast("Имя должно содержать от 1 до 40 символов.",false);return;}
+ const bio=prompt("Описание профиля (до 240 символов)",p.bio||"");
+ if(bio===null)return;
+ const cleanBio=bio.trim();
+ if(cleanBio.length>240){toast("Описание не должно превышать 240 символов.",false);return;}
+ const isPublic=confirm("Профиль будет открытым? Нажмите «Отмена», чтобы оставить его закрытым.");
+ authRequest("shorts-profile-update",{payload:{displayName:cleanName,bio:cleanBio,isPublic}}).then(()=>{toast("Профиль сохранён.");shortsProfileData=null;shortsOpenProfile(S.user.id);}).catch(e=>toast(e.message||"Не удалось сохранить профиль.",false));
 }
 async function shortsDeletePost(postId){
  if(!confirm("Удалить публикацию? Это действие нельзя отменить."))return;
@@ -745,7 +751,7 @@ function shortsCreatorProfile(){
  ];
  const tabHtml=tabs.map(([key,path,label])=>'<button class="shorts-profile-tab '+(shortsProfileTab===key?'active':'')+'" aria-label="'+label+'" aria-pressed="'+(shortsProfileTab===key)+'" onclick="shortsSetProfileTab(&quot;'+key+'&quot;)"><svg viewBox="0 0 24 24">'+path+'</svg></button>').join("");
  const tiles=visiblePosts.length?visiblePosts.map(x=>'<article class="shorts-profile-post" data-profile-post="'+shortsEscapeText(x.id)+'">'+(x.mediaType==="video"&&x.playbackUrl?'<video src="'+shortsEscapeText(x.playbackUrl)+'" muted playsinline preload="none"></video>':x.mediaType==="image"&&x.imageUrl?'<img src="'+shortsEscapeText(x.imageUrl)+'" alt="" loading="lazy">':'<div class="shorts-profile-text">'+shortsEscapeText(x.textContent||x.caption||"Текстовая публикация")+'</div>')+(x.status!=="approved"?'<small class="shorts-profile-pending">На проверке</small>':'')+(own?'<button class="shorts-profile-delete" onclick="shortsDeletePost(&quot;'+x.id+'&quot;)">Удалить</button>':'')+'</article>').join(""):'<div class="shorts-profile-empty"><div>▧</div><b>Публикаций пока нет</b><span>Здесь появятся видео, фото и заметки автора</span></div>';
- return '<section class="shorts-creator-profile'+(own?' own':'')+'"><header class="shorts-profile-cover"'+coverStyle+'><button class="shorts-profile-back" onclick="shortsCloseProfile()" aria-label="Назад">‹</button><span class="shorts-profile-cover-label">CLOUDY SHORTS</span></header><div class="shorts-profile-head"><div class="shorts-profile-avatar">'+avatar+'</div><div class="shorts-profile-title"><h2>'+shortsEscapeText(p.displayName||"Участник")+'</h2><span>'+handle+'</span></div></div><div class="shorts-profile-stats"><div><b>'+shortsCount(stats.posts,false)+'</b><span>Публикации</span></div><div><b>'+shortsCount(stats.likes,false)+'</b><span>Лайки</span></div><div><b>'+shortsCount(videoCount,false)+'</b><span>Видео</span></div></div>'+(p.bio?'<p class="shorts-profile-bio">'+shortsEscapeText(p.bio)+'</p>':'')+'<div class="shorts-profile-tabs" role="tablist" aria-label="Публикации автора">'+tabHtml+'</div><div class="shorts-profile-grid">'+tiles+'</div></section>';
+ return '<section class="shorts-creator-profile'+(own?' own':'')+'"><header class="shorts-profile-cover"'+coverStyle+'><button class="shorts-profile-back" onclick="shortsCloseProfile()" aria-label="Назад">‹</button><span class="shorts-profile-cover-label">CLOUDY SHORTS</span></header><div class="shorts-profile-head"><div class="shorts-profile-avatar">'+avatar+'</div><div class="shorts-profile-title"><h2>'+shortsEscapeText(p.displayName||"Участник")+'</h2><span>'+handle+'</span></div>'+(own?'<button class="shorts-profile-edit" onclick="shortsEditProfile()">Редактировать</button>':'<span class="shorts-profile-visibility">'+(p.isPublic?'Открытый профиль':'Закрытый профиль')+'</span>')+'</div><div class="shorts-profile-stats"><div><b>'+shortsCount(stats.posts,false)+'</b><span>Публикации</span></div><div><b>'+shortsCount(stats.likes,false)+'</b><span>Лайки</span></div><div><b>'+shortsCount(videoCount,false)+'</b><span>Видео</span></div></div>'+(p.bio?'<p class="shorts-profile-bio">'+shortsEscapeText(p.bio)+'</p>':'')+'<div class="shorts-profile-tabs" role="tablist" aria-label="Публикации автора">'+tabHtml+'</div><div class="shorts-profile-grid">'+tiles+'</div></section>';
 }
 function shortsCount(base, inc){
   const n = Number(base || 0) + (inc ? 1 : 0);
