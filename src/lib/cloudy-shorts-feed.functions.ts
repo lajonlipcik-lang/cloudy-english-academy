@@ -57,6 +57,7 @@ export const listShortsFeed = createServerFn({ method: "POST" })
       }
       return {
         id: row.id,
+        authorId: row.author_id,
         mediaType: row.media_type || "video",
         authorName: names.get(row.author_id) || "Участник",
         caption: String(row.caption || "").slice(0, 500),
@@ -93,12 +94,12 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
     }
     const { data: profile, error: profileError } = await supabaseAdmin
       .from("profiles").select("id,display_name,bio,is_public").eq("id", data.authorId).maybeSingle();
-    if (profileError || !profile || (!profile.is_public && viewerId !== data.authorId)) throw new Error("Этот профиль недоступен.");
+    if (profileError || !profile) throw new Error("Этот профиль недоступен.");
     const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
     const content = getCloudyContentAdmin();
     const { data: rows, error } = await content.from("shorts_videos")
       .select("id,author_id,storage_path,media_type,text_content,caption,published_at,created_at,duration_seconds,status")
-      .eq("author_id", data.authorId).in("status", ["approved","pending_review"])
+      .eq("author_id", data.authorId).in("status", viewerId === data.authorId ? ["approved","pending_review"] : ["approved"])
       .order("created_at", { ascending:false }).limit(60);
     if (error) throw new Error("Не удалось загрузить публикации профиля.");
     const posts = await Promise.all((rows ?? []).map(async (row:any) => {
