@@ -435,6 +435,96 @@ export const cloudyPersonalExam=createServerFn({method:"POST"}).inputValidator(v
   }
 });
 
+
+/** Admin-only Shorts queue. Preview links are short-lived and private. */
+export const listShortsModerationQueue = createServerFn({ method: "POST" })
+  .inputValidator(validate)
+  .handler(async ({ data }) => {
+    const { db, user } = await ctx(data.accessToken, true);
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const contentDb = getCloudyContentAdmin();
+    const { data: videos, error } = await contentDb
+      .from("shorts_videos")
+      .select("id,author_id,storage_path,caption,status,moderation_status,moderation_reason,moderation_labels,created_at,duration_seconds,frame_analysis_status,frame_analysis_labels,frame_analysis_reason,frame_analysis_confidence,frame_count,audio_analysis_status,audio_analysis_decision,audio_analysis_labels,audio_analysis_reason,audio_analysis_confidence,audio_chunk_count")
+      .eq("status", "pending_review")
+      .in("moderation_status", ["pending", "needs_human_review"])
+      .order("created_at", { ascending: true })
+      .limit(30);
+    if (error) throw new Error("Не удалось загрузить очередь Shorts. Проверьте миграции Content DB 0001–0007.");
+
+    const authorIds = [...new Set((videos ?? []).map((item: any) => item.author_id))];
+    const { data: profiles, error: profileError } = authorIds.length
+      ? await db.from("community_public_profiles").select("id,display_name").in("id", authorIds)
+      : { data: [], error: null };
+    if (profileError) throw new Error("Не удалось загрузить имена авторов.");
+    const names = new Map((profiles ?? []).map((profile: any) => [profile.id, profile.display_name || "Участник"]));
+
+    const queue = await Promise.all((videos ?? []).map(async (video: any) => {
+      const { data: signed, error: signedError } = await contentDb.storage
+        .from("cloudy-shorts")
+        .createSignedUrl(video.storage_path, 300);
+      return {
+        id: video.id,
+        authorId: video.author_id,
+        authorName: names.get(video.author_id) || "Участник",
+        caption: safeContextText(video.caption, 500),
+        createdAt: video.created_at,
+        durationSeconds: video.duration_seconds,
+        previewUrl: signedError ? null : signed?.signedUrl ?? null,
+        previewUnavailable: Boolean(signedError || !signed?.signedUrl),
+        textReason: safeContextText(video.moderation_reason, 500),
+        textLabels: Array.isArray(video.moderation_labels) ? video.moderation_labels : [],
+        frame: {
+          status: video.frame_analysis_status ?? "pending",
+          reason: safeContextText(video.frame_analysis_reason, 500),
+          labels: Array.isArray(video.frame_analysis_labels) ? video.frame_analysis_labels : [],
+          confidence: video.frame_analysis_confidence,
+          count: video.frame_count ?? 0,
+        },
+        audio: {
+          status: video.audio_analysis_status ?? "pending",
+          decision: video.audio_analysis_decision ?? "review",
+          reason: safeContextText(video.audio_analysis_reason, 500),
+          labels: Array.isArray(video.audio_analysis_labels) ? video.audio_analysis_labels : [],
+          confidence: video.audio_analysis_confidence,
+          chunks: video.audio_chunk_count ?? 0,
+        },
+      };
+    }));
+    return { videos: queue, checkedBy: user.id, limit: 30 };
+  });
+
+/** A human moderator is the only actor allowed to publish or reject a Shorts video. */
+export const moderateShortsVideo = createServerFn({ method: "POST" })
+  .inputValidator((input: Input): Input => {
+    const token = String(input?.accessToken ?? "");
+    const id = String(input?.id ?? "");
+    const status = String(input?.status ?? "");
+    const moderationNote = typeof input?.moderationNote === "string" ? input.moderationNote.trim() : "";
+    if (!token || token.length > 8192 || token.split(".").length !== 3) throw new Error("Unauthorized");
+    if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Некорректное видео.");
+    if (status !== "approve" && status !== "reject") throw new Error("Некорректное решение.");
+    if (moderationNote.length > 1000) throw new Error("Причина не должна превышать 1000 символов.");
+    if (status === "reject" && moderationNote.length < 3) throw new Error("Укажите причину отклонения.");
+    return { ...input, accessToken: token, id, status, moderationNote };
+  })
+  .handler(async ({ data }) => {
+    const { user } = await ctx(data.accessToken, true);
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const contentDb = getCloudyContentAdmin();
+    const decision = data.status === "approve" ? "approve" : "reject";
+    const reason = safeContextText(data.moderationNote, 1000) || "Проверено модератором Cloudy English.";
+    const { data: applied, error } = await contentDb.rpc("moderate_shorts_video", {
+      p_video_id: data.id,
+      p_decision: decision,
+      p_moderator_id: user.id,
+      p_reason: reason,
+    });
+    if (error) throw new Error("Не удалось сохранить решение. Проверьте миграцию Content DB 0007.");
+    if (!applied) throw new Error("Видео уже обработано или больше не ожидает проверки.");
+    return { ok: true, decision, videoId: data.id };
+  });
+
 export const listCommunityReports=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db}=await ctx(data.accessToken,true);
   const {data:reports,error}=await db.from("community_reports").select("id,reporter_id,post_id,comment_id,reason,details,status,created_at,reviewed_by,reviewed_at,moderation_note").order("created_at",{ascending:false}).limit(100);
