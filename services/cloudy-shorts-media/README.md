@@ -28,7 +28,7 @@ Frame mode returns up to six low-resolution JPEG data URLs. Audio mode returns m
 docker build -t cloudy-shorts-media .
 docker run --rm -p 8787:8787 \
   -e CLOUDY_MEDIA_PROCESSOR_TOKEN="$CLOUDY_MEDIA_PROCESSOR_TOKEN" \
-  -e CLOUDY_CONTENT_SUPABASE_URL="$CLOUDY_CONTENT_SUPABASE_URL" \
+  -e SUPABASE_URL="$SUPABASE_URL" \
   cloudy-shorts-media
 \`\`\`
 

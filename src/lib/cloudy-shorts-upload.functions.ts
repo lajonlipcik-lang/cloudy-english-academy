@@ -44,7 +44,7 @@ async function getAuthenticatedContentContext(token: string) {
 }
 
 /**
- * Reserves a private Content DB row and returns a short-lived signed upload token.
+ * Reserves a private Shorts row and returns a short-lived signed upload token.
  * The Core identity is verified first; no service-role credential reaches the browser.
  */
 export const createShortVideoUpload = createServerFn({ method: "POST" })
@@ -104,8 +104,14 @@ export const createShortVideoUpload = createServerFn({ method: "POST" })
     });
     if (insertError) throw new Error("Не удалось создать черновик видео.");
 
-    const contentUrl = process.env["CLOUDY_CONTENT_SUPABASE_URL"];
-    const publishableKey = process.env["CLOUDY_CONTENT_SUPABASE_PUBLISHABLE_KEY"];
+    const contentUrl =
+      process.env["CLOUDY_CONTENT_SUPABASE_URL"] ||
+      import.meta.env["VITE_SUPABASE_URL"] ||
+      process.env["SUPABASE_URL"];
+    const publishableKey =
+      process.env["CLOUDY_CONTENT_SUPABASE_PUBLISHABLE_KEY"] ||
+      import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+      process.env["SUPABASE_PUBLISHABLE_KEY"];
     if (!contentUrl || !publishableKey) {
       await content.from("shorts_videos").delete().eq("id", videoId).eq("author_id", user.id);
       throw new Error("Для защищённой загрузки не настроен публичный ключ Cloudy Content.");

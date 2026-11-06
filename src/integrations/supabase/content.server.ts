@@ -3,7 +3,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 let contentClient: SupabaseClient | undefined;
 
 /**
- * Server-only client for the separate Cloudy Content Supabase project.
+ * Server-only client for Shorts/community content.
+ * Prefer the dedicated Content project when configured; otherwise use the
+ * existing Core Supabase project so Shorts works without a second project.
  * Core Auth must be validated before using this service-role client.
  * Never import this module from browser code or expose the service key.
  */
@@ -14,12 +16,13 @@ export function getCloudyContentAdmin(): SupabaseClient {
 
   if (contentClient) return contentClient;
 
-  const url = process.env["CLOUDY_CONTENT_SUPABASE_URL"];
-  const serviceRoleKey = process.env["CLOUDY_CONTENT_SUPABASE_SERVICE_ROLE_KEY"];
+  const url = process.env["CLOUDY_CONTENT_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+  const serviceRoleKey =
+    process.env["CLOUDY_CONTENT_SUPABASE_SERVICE_ROLE_KEY"] || process.env["SUPABASE_SERVICE_ROLE_KEY"];
 
   if (!url || !serviceRoleKey) {
     throw new Error(
-      "Cloudy Content database is not configured. Set CLOUDY_CONTENT_SUPABASE_URL and CLOUDY_CONTENT_SUPABASE_SERVICE_ROLE_KEY.",
+      "Supabase server credentials are not configured for Shorts content access.",
     );
   }
 

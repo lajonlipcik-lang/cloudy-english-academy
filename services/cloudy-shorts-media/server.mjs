@@ -7,7 +7,7 @@ import path from "node:path";
 
 const PORT = Number(process.env.PORT || 8787);
 const TOKEN = String(process.env.CLOUDY_MEDIA_PROCESSOR_TOKEN || "");
-const CONTENT_URL = String(process.env.CLOUDY_CONTENT_SUPABASE_URL || "").replace(/\/+$/, "");
+const CONTENT_URL = String(process.env.CLOUDY_CONTENT_SUPABASE_URL || process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const BUCKET = "cloudy-shorts";
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const MAX_AUDIO_BYTES = 8_000_000;

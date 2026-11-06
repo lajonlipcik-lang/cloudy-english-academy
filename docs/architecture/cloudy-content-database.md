@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A separate data store for Cloudy community and Shorts. The existing Supabase project remains the identity, learning and AI Core. Cloudy AI is NOT moved to Content.
+Shorts tables and private video storage currently live in the existing Cloudy Core Supabase project so uploads work without provisioning a second Supabase project. Community tables already existed in Core. The dedicated Content project remains an optional future separation; when configured, the server prefers it. Cloudy AI and its provider secrets remain in Core.
 
 ## Ownership boundaries
 
@@ -13,12 +13,11 @@ A separate data store for Cloudy community and Shorts. The existing Supabase pro
 - Privacy requests and optional-consent records.
 - Public-profile opt-in and canonical display name/bio.
 
-### Content (new project)
-- Community posts, comments, reactions and reports.
-- Moderation state and moderation audit fields.
-- Community post/comment rate limits.
+### Content data (currently co-located in Core)
+- Existing community posts, comments, reactions, reports and rate limits.
 - Shorts video metadata, comments and likes.
 - AI moderation decisions, review queues, moderation events and user restrictions.
+- Private `cloudy-shorts` Storage bucket.
 
 The static lesson curriculum stays in application code for now. Do not move it into Content until there is a concrete content-authoring/versioning requirement.
 
