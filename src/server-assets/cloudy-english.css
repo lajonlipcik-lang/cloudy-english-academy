@@ -826,3 +826,41 @@ body:has(.shorts-screen) .amb{display:none!important}
 .shorts-comment-compose input::placeholder{color:#888!important}
 .shorts-comment-compose button{background:#162c40!important;color:#8bdcff!important}
 .shorts-demo-note{background:#050505!important;color:#85858e!important}
+
+/* Cloudy Shorts creator profile */
+.shorts-my-profile{border:1px solid #34343a;border-radius:999px;background:#18181d;color:#fff;padding:8px 12px;font:inherit;font-size:11px;font-weight:750;white-space:nowrap}
+.shorts-author-avatar{cursor:pointer;border:0}
+.shorts-creator-profile{position:absolute;inset:0;z-index:8;overflow-y:auto;background:#000;color:#fff;padding-bottom:24px}
+.shorts-profile-cover{height:190px;position:relative;background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.75)),radial-gradient(ellipse at 50% 0%,#253b4b,#090b0f 72%);background-size:cover;background-position:center}
+.shorts-profile-back{position:absolute;left:16px;top:16px;border:0;background:rgba(0,0,0,.48);color:#fff;border-radius:50%;width:38px;height:38px;font-size:27px;line-height:1}
+.shorts-profile-head{display:flex;align-items:center;gap:12px;padding:0 18px;margin-top:-42px;position:relative}
+.shorts-profile-avatar{width:84px;height:84px;flex:none;border:3px solid #000;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#4c5966,#17191e);font-size:30px;font-weight:850}
+.shorts-profile-title{min-width:0;flex:1}
+.shorts-profile-title h2{font-size:21px;margin:0 0 4px;line-height:1.15}
+.shorts-profile-title span{color:#a0a0a8;font-size:13px}
+.shorts-profile-edit{border:1px solid #414149;background:#1b1b20;color:#fff;border-radius:8px;padding:9px 11px;font-size:11px;font-weight:750}
+.shorts-profile-bio{margin:14px 20px 18px;color:#e5e5e8;font-size:13px;line-height:1.45;white-space:pre-wrap}
+.shorts-profile-stats{display:flex;gap:24px;padding:0 20px 16px;align-items:baseline}
+.shorts-profile-stats b{font-size:20px}.shorts-profile-stats span{font-size:12px;color:#9999a1;margin-left:6px}
+.shorts-profile-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;border-top:1px solid #29292e}
+.shorts-profile-post{position:relative;aspect-ratio:3/4;overflow:hidden;background:#17171b}
+.shorts-profile-post video,.shorts-profile-post img{width:100%;height:100%;object-fit:cover;display:block}
+.shorts-profile-text{height:100%;padding:10px;display:grid;place-items:center;text-align:center;font-size:12px;font-weight:750;line-height:1.35;overflow:hidden;background:linear-gradient(145deg,#152535,#090a0d)}
+.shorts-profile-pending{position:absolute;top:5px;left:5px;padding:4px 6px;border-radius:5px;background:#8b5a13;color:#fff;font-size:9px}
+.shorts-profile-delete{position:absolute;bottom:6px;right:6px;border:0;border-radius:6px;padding:6px 8px;background:rgba(0,0,0,.78);color:#fff;font-size:10px;font-weight:750}
+.shorts-profile-empty{grid-column:1/-1;min-height:210px;display:grid;align-content:center;justify-items:center;gap:8px;color:#aaa;padding:24px;text-align:center}
+.shorts-profile-empty b{color:#fff;font-size:16px}.shorts-profile-empty span{font-size:12px;color:#85858d}
+.shorts-profile-loading{padding:80px 20px;text-align:center;color:#aaa}
+.shorts-profile-cover-label{position:absolute;right:16px;bottom:14px;font-size:10px;font-weight:900;letter-spacing:2px;color:rgba(255,255,255,.55)}
+
+.shorts-profile-avatar{overflow:hidden}
+.shorts-profile-avatar img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+.shorts-profile-cover{background-size:cover;background-position:center}
+.shorts-profile-post video{object-fit:cover}
+.shorts-profile-post{cursor:default}
+.shorts-profile-post video[preload="none"]{pointer-events:none}
+.shorts-profile-edit{white-space:nowrap}
+.shorts-profile-stats>div{display:flex;align-items:baseline;gap:5px}
+.shorts-profile-tabs{height:42px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #242429;color:#fff}
+.shorts-profile-tabs span{height:42px;min-width:62px;display:grid;place-items:center;border-bottom:2px solid #fff;font-size:22px}
+@media(max-width:380px){.shorts-profile-head{gap:8px;padding:0 12px}.shorts-profile-avatar{width:72px;height:72px}.shorts-profile-title h2{font-size:18px}.shorts-profile-edit{padding:8px;font-size:10px}}
