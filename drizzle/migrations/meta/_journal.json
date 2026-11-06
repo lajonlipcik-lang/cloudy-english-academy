@@ -113,6 +113,13 @@
       "when": 1794003600000,
       "tag": "0015_expand_a1_a2_curriculum",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794003600001,
+      "tag": "0016_shorts_publication_and_post_publish_review",
+      "breakpoints": true
     }
   ]
 }

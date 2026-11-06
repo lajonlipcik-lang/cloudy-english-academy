@@ -873,6 +873,20 @@ export type Database = {
         Args: { _lesson_index: number; _level: string; _user_id: string }
         Returns: Json
       }
+      finalize_shorts_publication: {
+        Args: {
+          p_author_id: string
+          p_blocked: boolean
+          p_confidence: number
+          p_frame_count: number
+          p_labels: Json
+          p_model: string
+          p_reason: string
+          p_status: string
+          p_video_id: string
+        }
+        Returns: boolean
+      }
       get_weekly_league: {
         Args: { _week: string }
         Returns: {
