@@ -1019,6 +1019,7 @@ async function shortsSubmitUpload(){
  * Receives the File produced by the original full-screen Shorts publishing HTML.
  * The event is cancelled synchronously so its demo/fallback publisher never runs.
  */
+let shortsExternalPublishInProgress=false;
 async function shortsPublishExternal(detail){
  const file=detail?.file,type=detail?.type==="video"?"video":"image";
  if(!file||typeof file.size!=="number"||file.size<1||typeof file.slice!=="function")throw new Error("Не удалось получить выбранный файл.");
@@ -1060,12 +1061,14 @@ if(!window.__cloudyShortsPublishBridge){
   const detail=event?.detail;
   if(!detail?.file)return;
   event.preventDefault();
+  if(shortsExternalPublishInProgress)return;
+  shortsExternalPublishInProgress=true;
   shortsPublishExternal(detail).catch(error=>{
    const message=error?.message||"Не удалось опубликовать Shorts.";
    try{const frame=shortsFlowFrame?.contentWindow;if(typeof frame?.cloudyPublishError==="function")frame.cloudyPublishError(message);}catch(_){}
    toast(message,false);
    console.warn("[cloudy-shorts] external publish failed",error);
-  });
+  }).finally(()=>{shortsExternalPublishInProgress=false;});
  });
 }
 
