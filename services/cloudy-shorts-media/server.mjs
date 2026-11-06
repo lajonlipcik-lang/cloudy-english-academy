@@ -11,14 +11,14 @@ const CONTENT_URL = String(process.env.CLOUDY_CONTENT_SUPABASE_URL || "").replac
 const BUCKET = "cloudy-shorts";
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
 const MAX_AUDIO_BYTES = 8_000_000;
-const MAX_FRAME_BYTES = 420_000;
+const MAX_FRAME_BYTES = 200_000;
 const MAX_DURATION_SECONDS = 180;
 const MAX_CONCURRENT_JOBS = 2;
 let activeJobs = 0;
 
 function authorized(value) {
   const supplied = String(value || "").replace(/^Bearer\s+/i, "");
-  if (!TOKEN || !supplied) return false;
+  if (TOKEN.length < 32 || !supplied) return false;
   const a = Buffer.from(TOKEN);
   const b = Buffer.from(supplied);
   return a.length === b.length && timingSafeEqual(a, b);
@@ -181,7 +181,7 @@ async function handleExtract(req, res) {
 
 const server = createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/health") {
-    return json(res, TOKEN && CONTENT_URL ? 200 : 503, { ok: Boolean(TOKEN && CONTENT_URL) });
+    return json(res, TOKEN.length >= 32 && CONTENT_URL ? 200 : 503, { ok: Boolean(TOKEN.length >= 32 && CONTENT_URL) });
   }
   if (req.method === "POST" && req.url === "/v1/extract") return handleExtract(req, res);
   return json(res, 404, { error: "Not found." });
