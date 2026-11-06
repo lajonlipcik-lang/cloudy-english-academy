@@ -45,6 +45,9 @@ export function toUserErrorMessage(error: unknown, context: UserErrorContext = "
       ? "Ответ не успел прийти. Проверьте соединение и отправьте сообщение ещё раз."
       : "Операция заняла слишком много времени. Проверьте соединение и повторите попытку.";
   }
+  if (/cloudy content database is not configured|не настроен публичный ключ cloudy content|cloudy content.*(not configured|missing)|relation .*shorts_videos.*does not exist|bucket.*not found/i.test(text)) {
+    return "Публикация Shorts пока не настроена на сервере. Видео не отправлено. Попробуйте позже.";
+  }
   if (/failed to fetch|networkerror|fetch failed|load failed|network request/i.test(text)) {
     return "Не удалось связаться с сервисом. Проверьте интернет и попробуйте ещё раз.";
   }
