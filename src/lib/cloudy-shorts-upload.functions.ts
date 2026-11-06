@@ -104,8 +104,17 @@ export const createShortVideoUpload = createServerFn({ method: "POST" })
     });
     if (insertError) throw new Error("Не удалось создать черновик видео.");
 
+    const contentUrl = process.env["CLOUDY_CONTENT_SUPABASE_URL"];
+    const publishableKey = process.env["CLOUDY_CONTENT_SUPABASE_PUBLISHABLE_KEY"];
+    if (!contentUrl || !publishableKey) {
+      await content.from("shorts_videos").delete().eq("id", videoId).eq("author_id", user.id);
+      throw new Error("Для защищённой загрузки не настроен публичный ключ Cloudy Content.");
+    }
+
     return {
       videoId,
+      contentUrl,
+      publishableKey,
       bucket: BUCKET,
       path: storagePath,
       token: signed.token,
