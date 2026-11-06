@@ -127,6 +127,13 @@
       "when": 1794003600002,
       "tag": "0017_shorts_caption_nonblocking",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794003600003,
+      "tag": "0018_shorts_feed_and_review_rpc",
+      "breakpoints": true
     }
   ]
 }
