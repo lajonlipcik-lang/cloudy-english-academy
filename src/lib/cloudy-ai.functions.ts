@@ -759,7 +759,7 @@ function validateShortsFrameReview(input: Partial<ShortsFrameReviewInput>): Shor
   const frames = Array.isArray(input?.frames) ? input.frames : [];
   if (!accessToken || accessToken.length > 8192 || accessToken.split(".").length !== 3) throw new Error("Unauthorized");
   if (!/^[0-9a-f-]{36}$/i.test(videoId)) throw new Error("Некорректное видео.");
-  if (frames.length > 6) throw new Error("Можно проверить не более шести кадров за один запрос.");
+  if (frames.length) throw new Error("Кадры извлекаются только из оригинала на доверенном медиасервере.");
   let totalBytes = 0;
   const safeFrames = frames.map((frame) => {
     if (typeof frame !== "string" || frame.length > 420_000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(frame)) {
@@ -773,9 +773,9 @@ function validateShortsFrameReview(input: Partial<ShortsFrameReviewInput>): Shor
 }
 
 /**
- * Performs a preliminary AI triage of browser-sampled frames.
- * These samples are untrusted client input: the result is audit-only and can
- * never approve, reject, publish, or restrict an account. Audio is not analyzed.
+ * Performs preliminary AI triage of frames extracted from the private original
+ * by the isolated FFmpeg service. Results remain audit-only and cannot approve,
+ * reject, publish, or restrict an account.
  */
 export const analyzeShortVideoFrames = createServerFn({ method: "POST" })
   .inputValidator(validateShortsFrameReview)
@@ -802,9 +802,9 @@ export const analyzeShortVideoFrames = createServerFn({ method: "POST" })
     let model = "cloudy-ai";
     let analysisStatus: "completed" | "unavailable" = "unavailable";
 
-    let frames = data.frames;
+    let frames: string[] = [];
     try {
-      if (!frames.length) {
+      {
         const extracted = await extractStoredShortsMedia(contentDb, video.storage_path, data.videoId, "frames");
         frames = extracted.frames;
       }
@@ -890,7 +890,7 @@ function validateShortsAudioReview(input: Partial<ShortsAudioReviewInput>): Shor
   const chunks = Array.isArray(input?.chunks) ? input.chunks : [];
   if (!accessToken || accessToken.length > 8192 || accessToken.split(".").length !== 3) throw new Error("Unauthorized");
   if (!/^[0-9a-f-]{36}$/i.test(videoId)) throw new Error("Некорректное видео.");
-  if (chunks.length > 9) throw new Error("Для проверки аудио нужны аудиофрагменты.");
+  if (chunks.length) throw new Error("Аудио извлекается только из оригинала на доверенном медиасервере.");
   let total = 0;
   const safeChunks = chunks.map((chunk) => {
     if (typeof chunk !== "string" || chunk.length > 1_100_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(chunk)) {
@@ -958,9 +958,9 @@ export const analyzeShortVideoAudio = createServerFn({ method: "POST" })
       confidence: 0,
     };
     let model = "cloudy-ai";
-    let chunks = data.chunks;
+    let chunks: string[] = [];
     try {
-      if (!chunks.length) {
+      {
         const extracted = await extractStoredShortsMedia(contentDb, video.storage_path, data.videoId, "audio");
         chunks = extracted.chunks;
       }
