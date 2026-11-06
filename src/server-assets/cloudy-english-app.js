@@ -754,9 +754,11 @@ async function shortsSubmitUpload(){
   try{textReview=await authRequest("shorts-moderate",{payload:{id:ticket.videoId,contentType:"short_video"}});}catch(error){console.warn("[cloudy-shorts] caption moderation deferred",error);}
   shortsRemoveFile();
   const captionField=$("#shorts-upload-caption");if(captionField)captionField.value="";shortsCaptionCount();
-  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Видео принято на проверку</b><small>Подпись отправлена Cloudy AI. Сам ролик остаётся приватным до отдельной проверки кадров и звука.</small></div>';
-  if(button){button.disabled=true;button.textContent="Ожидает проверки видео";}
-  toast("Видео загружено и отправлено на модерацию.");
+  const captionRejected=textReview?.result?.decision==="reject";
+  const captionDeferred=!textReview?.result;
+  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>'+(captionRejected?"Подпись отклонена": "Видео принято на проверку") +'</b><small>'+(captionRejected?"Cloudy AI отклонил подпись. Видео осталось приватным и не будет опубликовано.":captionDeferred?"Видео сохранено приватно. Проверка подписи временно недоступна; требуется повторная проверка.":"Подпись проверена Cloudy AI. Сам ролик остаётся приватным до отдельной проверки кадров и звука.")+'</small></div>';
+  if(button){button.disabled=true;button.textContent=captionRejected?"Подпись отклонена":"Ожидает проверки видео";}
+  toast(captionRejected?"Cloudy AI отклонил подпись видео.":"Видео загружено и отправлено на модерацию.");
  }catch(error){
   const message=error?.message||"Не удалось отправить видео.";
   if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Не удалось отправить видео</b><small>'+String(message).replace(/[&<>"']/g,"")+'</small></div>';
