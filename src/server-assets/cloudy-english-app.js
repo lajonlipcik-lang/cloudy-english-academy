@@ -135,7 +135,7 @@ async function say(t,f){
 function conf(n=40){const c=["#fff","#bfe0ff","#4db3ff","#ffd35a","#38d39a"];for(let k=0;k<n;k++){const d=document.createElement("i");d.className="cf";d.style.cssText=`left:${Math.random()*100}%;width:${6+Math.random()*6}px;height:${10+Math.random()*8}px;background:${c[k%5]};--t:${2.4+Math.random()*1.6}s;--dx:${(Math.random()-.5)*160}px;--r:${Math.random()*900}deg;animation-delay:${Math.random()*.5}s`;document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}}
 const mascot=(m="h")=>`<svg class="ms" viewBox="0 0 100 80"><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#gb)"/><g class="eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.800" fill="#fff"/><circle cx="64" cy="43" r="1.800" fill="#fff"/></g><path d="${m=="s"?"M44 60q7-7 14 0":"M44 54q7 8 14 0"}" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg>`;
 function sheet(h){const s=document.createElement("div");s.className="sb";s.innerHTML=`<div class="sh">${h}</div>`;s.onclick=e=>{if(e.target==s)closeSh()};document.body.appendChild(s);snd("sheet")}
-function closeSh(){const s=$(".sb");if(!s)return;s.classList.add("out");setTimeout(()=>s.remove(),300)}
+function closeSh(){const s=$(".sb");if(!s)return;if(s.dataset.shortsUpload==="1")shortsDisposeUpload();s.classList.add("out");setTimeout(()=>s.remove(),300)}
 const nav=()=>`<nav>${["Учёба","Задания","Лига","Профиль","Видео"].map((n,k)=>`<button class="${T==k?"on":""}" onclick="tab(${k})">${ic(["home","target","medal","user","play"][k])}<span>${n}</span></button>`).join("")}</nav>`;
 
 const isAppleMobile=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
@@ -818,8 +818,7 @@ function shortsFormatSize(bytes){if(!Number.isFinite(bytes)||bytes<0)return "—
 function shortsFormatDuration(seconds){if(!Number.isFinite(seconds)||seconds<0)return "—";const total=Math.round(seconds),m=Math.floor(total/60),s=total%60;return m+":"+String(s).padStart(2,"0");}
 let shortsCaptureMode=15;
 function shortsUpload(){
- if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);
- shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;shortsCaptureMode=15;
+ shortsDisposeUpload();shortsCaptureMode=15;
  sheet('<style>'+
  '.shorts-camera-panel{height:min(92dvh,900px);display:flex;flex-direction:column;gap:12px;padding:8px 16px 18px;color:#fff;overflow:auto}'+
  '.shorts-camera-head{display:flex;align-items:center;gap:12px}.shorts-camera-head b{font-size:19px}.shorts-camera-head small{display:block;color:#9fb3d9;font-size:12px;margin-top:3px}.shorts-camera-close{margin-left:auto;width:40px;height:40px;border-radius:50%;background:#ffffff12;display:grid;place-items:center;transform:rotate(45deg)}'+
@@ -839,44 +838,63 @@ function shortsUpload(){
  '<div class="shorts-camera-caption"><label for="shorts-upload-caption">Описание видео</label><textarea id="shorts-upload-caption" maxlength="180" placeholder="Например: 3 способа запомнить неправильные глаголы…" oninput="shortsCaptionCount()"></textarea><div class="shorts-camera-meta" id="shorts-caption-count">0 / 180</div></div>'+
  '<div class="shorts-ai-notice"><span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Проверка Cloudy AI</b><small>ИИ проверяет только явный контент 18+. Если его нет, видео публикуется сразу; ручная проверка может пройти позже.</small></div></div>'+
  '<button class="shorts-camera-submit" id="shorts-upload-submit" onclick="shortsSubmitUpload()" disabled>Сначала сними или выбери видео</button>'+
- '<div class="shorts-camera-notice">Видео до 100 МБ. Максимальная длительность зависит от выбранного режима.</div></div>');
+ '<div class="shorts-camera-notice">Видео до 100 МБ. Режим задаёт максимальную длительность для видео из камеры и галереи. Камера телефона может не применять лимит во время записи — Cloudy проверит его после выбора.</div></div>');
+ const uploadSheet=document.querySelector(".sb");if(uploadSheet)uploadSheet.dataset.shortsUpload="1";
 }
 function shortsSetCaptureMode(seconds,button){
  shortsCaptureMode=seconds;
- document.querySelectorAll(".shorts-camera-modes button").forEach(item=>item.classList.toggle("active",item===button));
- if(shortsUploadMeta&&shortsUploadMeta.duration>seconds+.5){shortsRemoveFile();toast("Выбранный ролик длиннее нового лимита.");}
+ document.querySelectorAll(".shorts-camera-modes button").forEach(item=>item.classList.toggle("active",Number(item.dataset.limit)===seconds));
+ if(shortsUploadMeta&&shortsUploadMeta.duration>seconds+.5){shortsRemoveFile();toast("Видео длиннее выбранного режима. Выбери более длинный режим.");}
 }
 function shortsCaptionCount(){const input=$("#shorts-upload-caption"),count=$("#shorts-caption-count");if(count&&input)count.textContent=input.value.length+" / 180";}
-function shortsUploadError(message){const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-upload-error">'+shortsIcon("plus")+'<span>'+shortsEscapeText(message)+'</span></div>';const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Исправь видео, чтобы продолжить";}}
+function shortsDisposeUpload(){
+ const video=$("#shorts-upload-video");
+ if(video){try{video.pause();video.removeAttribute("src");video.load();}catch(_){}}
+ if(shortsSelectedUrl){try{URL.revokeObjectURL(shortsSelectedUrl);}catch(_){}}
+ shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;
+}
+function shortsUploadError(message){
+ const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-upload-error">'+shortsIcon("plus")+'<span>'+shortsEscapeText(message)+'</span></div>';
+ const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Исправь видео, чтобы продолжить";}
+}
 function shortsChooseFile(input,source="gallery"){
  const f=input?.files?.[0];if(!f)return;
+ shortsDisposeUpload();
+ if(input)input.value="";
  const allowed=/\.(mp4|mov|webm)$/i.test(f.name||"")||/^video\/(mp4|quicktime|webm)$/i.test(f.type||"");
- if(!allowed){shortsUploadError("Поддерживаются только MP4, MOV и WebM.");input.value="";return;}
- if(f.size>100*1024*1024){shortsUploadError("Файл больше 100 МБ. Выбери видео меньшего размера.");input.value="";return;}
- if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);
- shortsSelectedFile=f;shortsSelectedUrl=URL.createObjectURL(f);shortsUploadMeta=null;
+ if(!allowed){shortsUploadError("Поддерживаются только MP4, MOV и WebM.");return;}
+ if(f.size>100*1024*1024){shortsUploadError("Файл больше 100 МБ. Выбери видео меньшего размера.");return;}
+ const fileUrl=URL.createObjectURL(f);
+ shortsSelectedFile=f;shortsSelectedUrl=fileUrl;shortsUploadMeta=null;
  const p=$("#shorts-upload-preview"),info=$("#shorts-upload-file-info");
- if(p)p.innerHTML='<video id="shorts-upload-video" controls playsinline preload="metadata" src="'+shortsSelectedUrl+'"></video>';
+ if(p)p.innerHTML='<video id="shorts-upload-video" controls playsinline preload="metadata" src="'+fileUrl+'"></video>';
  const video=$("#shorts-upload-video");
- if(video){
-  video.onloadedmetadata=()=>{
-   const duration=Number(video.duration||0),limit=source==="camera"?shortsCaptureMode:180;
-   if(!Number.isFinite(duration)||duration<=0){shortsUploadError("Не удалось определить длительность видео. Выбери другой файл.");return;}
-   if(duration>limit+.5){shortsUploadError("Видео длиннее выбранного лимита. Выбери режим подлиннее.");shortsSelectedFile=null;shortsSelectedUrl&&URL.revokeObjectURL(shortsSelectedUrl);shortsSelectedUrl="";return;}
-   const ratio=video.videoWidth/video.videoHeight,vertical=ratio>0&&ratio<.9;
-   shortsUploadMeta={duration,width:video.videoWidth,height:video.videoHeight,vertical,limit};
-   if(info)info.textContent=shortsFormatSize(f.size)+" · "+video.videoWidth+" × "+video.videoHeight+" · "+shortsFormatDuration(duration);
-   if(!vertical&&p){const note=document.createElement("small");note.className="shorts-upload-ratio-note";note.textContent="Горизонтальное видео тоже можно опубликовать; вертикальный формат лучше подходит для Shorts.";p.appendChild(note);}
-   const b=$("#shorts-upload-submit");if(b){b.disabled=false;b.textContent="Опубликовать видео";}
-  };
-  video.onerror=()=>shortsUploadError("Не удалось открыть этот файл для предпросмотра. Попробуй другое видео.");
- }
- const b=$("#shorts-upload-submit");if(b){b.disabled=true;b.textContent="Подготавливаем видео…";}
+ const button=$("#shorts-upload-submit");
+ if(button){button.disabled=true;button.textContent="Подготавливаем видео…";}
  if(info)info.textContent=shortsFormatSize(f.size)+" · Определяем длительность…";
+ if(!video){shortsUploadError("Не удалось открыть предпросмотр видео.");shortsDisposeUpload();return;}
+ const fail=(message)=>{
+  if(shortsSelectedUrl!==fileUrl)return;
+  shortsDisposeUpload();
+  shortsUploadError(message);
+ };
+ video.onloadedmetadata=()=>{
+  if(shortsSelectedUrl!==fileUrl)return;
+  const duration=Number(video.duration||0);
+  if(!Number.isFinite(duration)||duration<=0){fail("Не удалось определить длительность видео. Выбери другой файл.");return;}
+  const limit=shortsCaptureMode;
+  if(duration>limit+.5){fail("Видео длиннее выбранного режима ("+shortsFormatDuration(limit)+"). Выбери более длинный режим.");return;}
+  if(!video.videoWidth||!video.videoHeight){fail("Не удалось определить размер видео. Попробуй другой файл.");return;}
+  const ratio=video.videoWidth/video.videoHeight,vertical=ratio>0&&ratio<.9;
+  shortsUploadMeta={duration,width:video.videoWidth,height:video.videoHeight,vertical,limit,source};
+  if(info)info.textContent=shortsFormatSize(f.size)+" · "+video.videoWidth+" × "+video.videoHeight+" · "+shortsFormatDuration(duration);
+  if(!vertical&&p){const note=document.createElement("small");note.className="shorts-upload-ratio-note";note.textContent="Горизонтальное видео тоже можно опубликовать; вертикальный формат лучше подходит для Shorts.";p.appendChild(note);}
+  if(button){button.disabled=false;button.textContent="Опубликовать видео";}
+ };
+ video.onerror=()=>fail("Не удалось открыть этот файл для предпросмотра. Попробуй другое видео.");
 }
 function shortsRemoveFile(){
- if(shortsSelectedUrl)URL.revokeObjectURL(shortsSelectedUrl);
- shortsSelectedUrl="";shortsSelectedFile=null;shortsUploadMeta=null;
+ shortsDisposeUpload();
  ["#shorts-upload-camera","#shorts-upload-gallery"].forEach(selector=>{const input=$(selector);if(input)input.value="";});
  const p=$("#shorts-upload-preview");if(p)p.innerHTML='<div class="shorts-camera-hero">'+mascot("h")+'<b>Твой следующий Shorts начинается здесь</b><small>Сними ролик или выбери его из галереи</small></div>';
  const info=$("#shorts-upload-file-info");if(info)info.textContent="MP4, MOV или WebM · до 100 МБ";
