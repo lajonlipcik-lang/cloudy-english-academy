@@ -727,17 +727,37 @@ async function shortsToggleFollow(){
 function shortsEditProfile(){
  if(!shortsProfileData?.profile?.isOwn)return;
  const p=shortsProfileData.profile;
- const name=prompt("Имя профиля (до 40 символов)",p.displayName||"");
- if(name===null)return;
- const cleanName=name.trim();
- if(!cleanName||cleanName.length>40){toast("Имя должно содержать от 1 до 40 символов.",false);return;}
- const bio=prompt("Описание профиля (до 240 символов)",p.bio||"");
- if(bio===null)return;
- const cleanBio=bio.trim();
- if(cleanBio.length>240){toast("Описание не должно превышать 240 символов.",false);return;}
- const isPublic=confirm("Профиль будет открытым? Нажмите «Отмена», чтобы оставить его закрытым.");
- authRequest("shorts-profile-update",{payload:{displayName:cleanName,bio:cleanBio,isPublic}}).then(()=>{toast("Профиль сохранён.");shortsProfileData=null;shortsOpenProfile(S.user.id);}).catch(e=>toast(e.message||"Не удалось сохранить профиль.",false));
+ document.getElementById("shorts-profile-editor")?.remove();
+ const modal=document.createElement("div");modal.id="shorts-profile-editor";modal.className="shorts-profile-editor";
+ const avatarPreview=p.avatarUrl?'<img src="'+shortsEscapeText(p.avatarUrl)+'" alt="">':'<span>'+shortsEscapeText((p.displayName||"У").charAt(0).toUpperCase())+'</span>';
+ modal.innerHTML='<div class="shorts-profile-editor-backdrop" data-profile-editor-close></div><section class="shorts-profile-editor-panel" role="dialog" aria-modal="true" aria-labelledby="shortsProfileEditorTitle"><header><h2 id="shortsProfileEditorTitle">Настройки профиля</h2><button type="button" data-profile-editor-close aria-label="Закрыть">×</button></header><label class="shorts-profile-editor-cover" style="'+(p.coverUrl?'background-image:url(&quot;'+shortsEscapeText(p.coverUrl)+'&quot;)':'')+'"><span>Обложка профиля</span><input id="shortsProfileCoverFile" type="file" accept="image/jpeg,image/png,image/webp"></label><div class="shorts-profile-editor-avatar-row"><label class="shorts-profile-editor-avatar">'+avatarPreview+'<input id="shortsProfileAvatarFile" type="file" accept="image/jpeg,image/png,image/webp"></label><span>Нажмите на фото, чтобы сменить аватар</span></div><label class="shorts-profile-editor-field">Имя профиля<input id="shortsProfileName" maxlength="40" value="'+shortsEscapeText(p.displayName||"")+'"></label><label class="shorts-profile-editor-field">Описание<textarea id="shortsProfileBio" maxlength="240" rows="3">'+shortsEscapeText(p.bio||"")+'</textarea></label><label class="shorts-profile-editor-visibility"><input id="shortsProfilePublic" type="checkbox" '+(p.isPublic?'checked':'')+'> Открытый профиль</label><p class="shorts-profile-editor-hint">Изображения загружаются в закрытое хранилище Cloudy. В профиле отображаются только временные защищённые ссылки.</p><footer><button type="button" data-profile-editor-close>Отмена</button><button type="button" id="shortsProfileSave">Сохранить</button></footer></section>';
+ document.body.appendChild(modal);
+ modal.querySelectorAll("[data-profile-editor-close]").forEach(el=>el.addEventListener("click",()=>modal.remove()));
+ const saveButton=modal.querySelector("#shortsProfileSave");
+ saveButton.addEventListener("click",async()=>{
+  const name=modal.querySelector("#shortsProfileName").value.trim(),bio=modal.querySelector("#shortsProfileBio").value.trim();
+  if(!name||name.length>40){toast("Имя должно содержать от 1 до 40 символов.",false);return;}
+  if(bio.length>240){toast("Описание не должно превышать 240 символов.",false);return;}
+  const avatarFile=modal.querySelector("#shortsProfileAvatarFile").files[0],coverFile=modal.querySelector("#shortsProfileCoverFile").files[0];
+  saveButton.disabled=true;saveButton.textContent="Сохраняем…";
+  try{
+   const upload=async(file,kind)=>{
+    if(!file)return undefined;
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024)throw new Error("Выберите JPG, PNG или WebP размером до 5 МБ.");
+    const signed=await authRequest("shorts-profile-image-url",{payload:{kind,mimeType:file.type,fileSize:file.size}});
+    const url=signed.result?.signedUrl;
+    if(typeof url!=="string"||!url.startsWith("https://"))throw new Error("Не удалось подготовить загрузку изображения.");
+    const response=await fetch(url,{method:"PUT",headers:{"Content-Type":file.type,"x-upsert":"true"},body:file});
+    if(!response.ok)throw new Error("Не удалось загрузить изображение.");
+    return signed.result.path;
+   };
+   const avatarPath=await upload(avatarFile,"avatar"),coverPath=await upload(coverFile,"cover");
+   await authRequest("shorts-profile-update",{payload:{displayName:name,bio,isPublic:modal.querySelector("#shortsProfilePublic").checked,...(avatarPath?{avatarPath}:{}),...(coverPath?{coverPath}:{})}});
+   modal.remove();toast("Профиль сохранён.");shortsProfileData=null;shortsOpenProfile(S.user.id);
+  }catch(e){toast(e.message||"Не удалось сохранить профиль.",false);saveButton.disabled=false;saveButton.textContent="Сохранить";}
+ });
 }
+
 async function shortsDeletePost(postId){
  if(!confirm("Удалить публикацию? Это действие нельзя отменить."))return;
  try{await authRequest("shorts-post-delete",{payload:{postId}});shortsLiveItems=shortsLiveItems.filter(x=>x.id!==postId);toast("Публикация удалена.");if(shortsProfileUserId)shortsOpenProfile(shortsProfileUserId);else view(0);}
