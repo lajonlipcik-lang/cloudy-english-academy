@@ -83,6 +83,7 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const authorId = data.authorId!;
     let viewerId: string | null = null;
     if (data.accessToken) {
       const url = process.env["SUPABASE_URL"], key = process.env["SUPABASE_PUBLISHABLE_KEY"];
@@ -93,24 +94,24 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
       viewerId = identity.user.id;
     }
     const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles").select("id,display_name,bio,is_public").eq("id", data.authorId).maybeSingle();
+      .from("profiles").select("id,display_name,bio,is_public").eq("id", authorId).maybeSingle();
     if (profileError || !profile) throw new Error("Этот профиль недоступен.");
-    if (profile.is_public !== true && viewerId !== data.authorId) throw new Error("Этот профиль закрыт.");
-    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(data.authorId!);
+    if (profile.is_public !== true && viewerId !== authorId) throw new Error("Этот профиль закрыт.");
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(authorId!);
     const metadata = authUser?.user?.user_metadata ?? {};
     const safeImageUrl = (value: unknown) => {
       if (typeof value !== "string" || value.length > 2048) return null;
       try { const parsed = new URL(value); return parsed.protocol === "https:" ? value : null; } catch { return null; }
     };
-    const avatarUrl = safeImageUrl(metadata.avatar_url ?? metadata.picture);
-    const coverUrl = safeImageUrl(metadata.cover_url);
-    const username = typeof metadata.username === "string" && /^[a-zA-Z0-9_.]{3,24}$/.test(metadata.username)
+    const avatarUrl = safeImageUrl(metadata["avatar_url"] ?? metadata["picture"]);
+    const coverUrl = safeImageUrl(metadata["cover_url"]);
+    const username = typeof metadata["username"] === "string" && /^[a-zA-Z0-9_.]{3,24}$/.test(metadata.username)
       ? metadata.username : null;
     const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
     const content = getCloudyContentAdmin();
     const { data: rows, error } = await content.from("shorts_videos")
       .select("id,author_id,storage_path,media_type,text_content,caption,published_at,created_at,duration_seconds,status")
-      .eq("author_id", data.authorId).in("status", viewerId === data.authorId ? ["approved","pending_review"] : ["approved"])
+      .eq("author_id", authorId).in("status", viewerId === authorId ? ["approved","pending_review"] : ["approved"])
       .order("created_at", { ascending:false }).limit(60);
     if (error) throw new Error("Не удалось загрузить публикации профиля.");
     const posts = await Promise.all((rows ?? []).map(async (row:any) => {
@@ -122,7 +123,7 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
       return {id:row.id,mediaType:row.media_type||"video",caption:String(row.caption||"").slice(0,500),
         textContent:String(row.text_content||"").slice(0,2000),publishedAt:row.published_at||row.created_at,
         playbackUrl:row.media_type==="video"?mediaUrl:null,imageUrl:row.media_type==="image"?mediaUrl:null,
-        status:row.status,isOwn:viewerId===data.authorId};
+        status:row.status,isOwn:viewerId===authorId};
     }));
     const postIds = posts.map((post) => post.id);
     const { data: likeRows, error: likesError } = postIds.length
@@ -133,7 +134,7 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
     for (const like of likeRows ?? []) likeCounts.set(like.video_id, (likeCounts.get(like.video_id) ?? 0) + 1);
     for (const post of posts) (post as any).likes = likeCounts.get(post.id) ?? 0;
     return {profile:{id:profile.id,displayName:String(profile.display_name||"Участник"),bio:String(profile.bio||""),
-      username,avatarUrl,coverUrl,isPublic:profile.is_public===true,isOwn:viewerId===data.authorId},
+      username,avatarUrl,coverUrl,isPublic:profile.is_public===true,isOwn:viewerId===authorId},
       stats:{posts:posts.filter((post) => post.status === "approved").length,likes:posts.reduce((sum,post) => sum + ((post as any).likes||0),0)},posts};
   });
 
