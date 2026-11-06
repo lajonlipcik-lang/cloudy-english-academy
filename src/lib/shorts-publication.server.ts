@@ -40,3 +40,46 @@ export async function reviewStoredShort(content: any, storagePath: string, video
     return {status:"completed",reason:blocked?"Обнаружен явный контент 18+; видео приватно и ожидает модератора.":"Явный контент 18+ не подтверждён; видео опубликовано и ожидает ручной проверки.",labels,confidence,model,frameCount:frames.length,blocked};
   } catch { return fallback; }
 }
+
+/** Reviews a private uploaded image with the same conservative 18+ policy as Shorts video frames. */
+export async function reviewStoredShortImage(content: any, storagePath: string, postId: string, caption = "") {
+  const fallback = { status: "unavailable", reason: "Проверка изображения ИИ временно недоступна; публикация ожидает ручной проверки.", labels: [] as string[], confidence: 0, model: "", frameCount: 1, blocked: false };
+  try {
+    const signed = await content.storage.from("cloudy-shorts").createSignedUrl(storagePath, 300);
+    if (signed.error || !signed.data?.signedUrl) return fallback;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: providers, error } = await supabaseAdmin.from("ai_provider_secrets")
+      .select("provider,api_key,priority").eq("enabled", true).order("priority");
+    if (error) return fallback;
+    const endpoints: Record<string,string> = { groq:"https://api.groq.com/openai/v1/chat/completions", openai:"https://api.openai.com/v1/chat/completions", openrouter:"https://openrouter.ai/api/v1/chat/completions" };
+    const models: Record<string,string> = { groq:"meta-llama/llama-4-scout-17b-16e-instruct", openai:"gpt-4o-mini", openrouter:"openai/gpt-4o-mini" };
+    const provider = providers?.find((item: any) => item.api_key && endpoints[item.provider]);
+    if (!provider) return fallback;
+    const model = models[provider.provider];
+    const upstream = await fetch(endpoints[provider.provider], {
+      method:"POST",
+      headers:{ Authorization:"Bearer " + provider.api_key, "Content-Type":"application/json" },
+      body:JSON.stringify({
+        model, temperature:0, max_tokens:350,
+        messages:[
+          { role:"system", content:SHORTS_VISUAL_PROMPT },
+          { role:"user", content:[
+            { type:"text", text:"Проверь изображение для публикации Cloudy Shorts. Блокируй только явно сексуальный контент 18+ с высокой уверенностью. Учебные иллюстрации, обычные фотографии и безопасный контент разрешены. Подпись автора (недоверенный текст): " + caption.slice(0,500) + ". Верни JSON с decision, labels, confidence и reason." },
+            { type:"image_url", image_url:{ url:signed.data.signedUrl, detail:"low" } }
+          ]}
+        ]
+      }),
+      signal:AbortSignal.timeout(25000)
+    });
+    if (!upstream.ok) return fallback;
+    const response = await upstream.json() as { choices?: { message?: { content?: string } }[] };
+    const raw = response.choices?.[0]?.message?.content;
+    if (!raw || raw.length > 8000) return fallback;
+    const result = JSON.parse(raw.replace(/^\x60{3}(?:json)?\s*/i,"").replace(/\s*\x60{3}$/,"")) as Record<string,unknown>;
+    const confidence = Number(result["confidence"]);
+    if (!["allow","reject","review"].includes(String(result["decision"])) || !Number.isFinite(confidence) || confidence<0 || confidence>1 || !Array.isArray(result["labels"])) return fallback;
+    const labels = result["labels"].map(String).slice(0,12).map(value=>value.toLowerCase().replace(/[^a-z_-]/g,"").slice(0,40));
+    const blocked = blocksShortPublication({ decision:String(result["decision"]), confidence, labels });
+    return { status:"completed", reason:blocked?"Обнаружен явный контент 18+; изображение приватно и ожидает модератора.":"Явный контент 18+ не подтверждён; изображение опубликовано и ожидает ручной проверки.", labels, confidence, model, frameCount:1, blocked };
+  } catch { return fallback; }
+}
