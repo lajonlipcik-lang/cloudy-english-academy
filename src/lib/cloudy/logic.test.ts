@@ -153,7 +153,7 @@ describe("Cloudy learning progress", () => {
   });
 
   it("keeps the browser runtime catalog identical to the typed curriculum", () => {
-    const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV; F: typeof A1_FOUNDATIONS } } = {};
+    const browserWindow: { CloudyCatalog?: { D: Lesson[]; LV: typeof LV; F: typeof CLOUDY_FOUNDATIONS } } = {};
     const browserCatalog = readFileSync(
       join(process.cwd(), "src/server-assets/cloudy-catalog.js"),
       "utf8",
@@ -302,6 +302,7 @@ describe("Cloudy learning progress", () => {
   it("provides teach-before-test notes for every A1 lesson and the new A2 grammar block", () => {
     expect(Object.keys(A1_FOUNDATIONS).map(Number)).toEqual(levelLessons("A1"));
     expect(Object.keys(A2_FOUNDATIONS).map(Number)).toEqual([57, 58, 59]);
+    expect(Object.values(A2_FOUNDATIONS).every((note) => note.level === "A2")).toBe(true);
     for (const index of levelLessons("A1")) {
       const note = A1_FOUNDATIONS[index]!;
       expect(note.title.trim()).not.toBe("");
