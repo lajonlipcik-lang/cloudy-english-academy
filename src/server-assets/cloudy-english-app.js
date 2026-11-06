@@ -738,6 +738,13 @@ function shortsSave(id){if(shortsSaved.has(id))shortsSaved.delete(id);else short
 function shortsFollow(id){if(shortsFollowing.has(id))shortsFollowing.delete(id);else shortsFollowing.add(id);const card=document.querySelector('[data-short-id="'+id+'"]');const btn=card?.querySelector(".shorts-follow");if(btn){btn.classList.toggle("following",shortsFollowing.has(id));btn.textContent=shortsFollowing.has(id)?"Вы подписаны":"+ Подписаться";}snd("tap");}
 let shortsPlaybackObserver=null,shortsActiveVideo=null;
 function shortsPauseAll(except=null){document.querySelectorAll(".shorts-real-video").forEach(video=>{if(video!==except){video.pause();video.closest(".shorts-video")?.classList.remove("is-playing");}});}
+ function shortsStopFeedPlayback(){
+  if(shortsPlaybackObserver){shortsPlaybackObserver.disconnect();shortsPlaybackObserver=null;}
+  shortsPauseAll();shortsActiveVideo=null;
+ }
+ function shortsResumeFeedPlayback(){
+  if(T===4&&!shortsFlowOverlay)initShortsPlayback();
+ }
 function shortsPlayVideo(video){if(!video||!video.isConnected)return;shortsPauseAll(video);video.muted=shortsMuted;const card=video.closest(".shorts-video");card?.classList.add("is-playing");const result=video.play();if(result&&typeof result.catch==="function")result.catch(()=>card?.classList.remove("is-playing"));shortsActiveVideo=video;}
 function initShortsPlayback(){
  const feed=document.querySelector("#shorts-feed");if(!feed)return;
@@ -823,13 +830,15 @@ function shortsFormatSize(bytes){if(!Number.isFinite(bytes)||bytes<0)return "—
 function shortsFormatDuration(seconds){if(!Number.isFinite(seconds)||seconds<0)return "—";const total=Math.round(seconds),m=Math.floor(total/60),s=total%60;return m+":"+String(s).padStart(2,"0");}
 let shortsCaptureMode=15;
 let shortsFlowFrame=null,shortsFlowOverlay=null,shortsFlowFile=null;
-function shortsFlowClose(){
+function shortsFlowClose(resumeFeed=true){
  if(shortsFlowFrame){try{shortsFlowFrame.src="about:blank";}catch(_){}}
  shortsFlowOverlay?.remove();shortsFlowFrame=null;shortsFlowOverlay=null;shortsFlowFile=null;
+ if(resumeFeed)shortsResumeFeedPlayback();
 }
 function shortsUpload(){
+ shortsStopFeedPlayback();
  shortsDisposeUpload();
- if(shortsFlowOverlay)shortsFlowClose();
+ if(shortsFlowOverlay)shortsFlowClose(false);
  const overlay=document.createElement("div");
  overlay.id="cloudy-shorts-fullscreen";
  overlay.style.cssText="position:fixed;inset:0;z-index:2147483000;background:#050c24;overflow:hidden";
