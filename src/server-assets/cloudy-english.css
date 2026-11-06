@@ -879,3 +879,33 @@ body:has(.shorts-screen) .amb{display:none!important}
 .shorts-app-settings[open]>summary:after{content:"−"}
 .shorts-app-settings>div{padding:0 10px 12px}
 .shorts-creator-profile.own .shorts-profile-back{display:none}
+
+
+/* Feed creator profile — adapted from the supplied TikTok-style profile */
+.shorts-creator-profile{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));background:#000;color:#fff}
+.shorts-profile-cover{height:190px;min-height:190px;position:relative;overflow:hidden;background-color:#1d2b14;background-image:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.68)),radial-gradient(ellipse at 40% 75%,rgba(230,240,200,.34),transparent 32%),radial-gradient(ellipse at 15% 20%,#4d7a22,transparent 55%),radial-gradient(ellipse at 85% 25%,#355a1a,transparent 55%),linear-gradient(#25401a,#0e1a0a);background-size:cover;background-position:center}
+.shorts-profile-cover:after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 42%,#000);pointer-events:none}
+.shorts-profile-cover-label{position:absolute;right:16px;bottom:14px;z-index:1;font-size:10px;font-weight:900;letter-spacing:2px;color:rgba(255,255,255,.58)}
+.shorts-profile-back{z-index:2;left:16px;top:calc(env(safe-area-inset-top,0px) + 14px);width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.48);font-size:28px;display:grid;place-items:center}
+.shorts-profile-head{align-items:flex-end;gap:12px;padding:0 18px;margin-top:-48px;z-index:2}
+.shorts-profile-avatar{width:94px;height:94px;border:2px solid #303030;background:#2b231d;box-shadow:0 0 0 3px #000;font-size:32px}
+.shorts-profile-title{padding-bottom:8px}
+.shorts-profile-title h2{font-size:27px;line-height:1.05;font-weight:800;letter-spacing:-.4px;margin-bottom:7px}
+.shorts-profile-title span{font-size:14px;color:#999}
+.shorts-profile-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:0 18px;margin:20px 0 0;align-items:start}
+.shorts-profile-stats>div{display:flex;flex-direction:column;gap:2px;align-items:flex-start}
+.shorts-profile-stats b{font-size:20px;line-height:1.15;font-weight:800;font-variant-numeric:tabular-nums}
+.shorts-profile-stats span{font-size:12px;color:#929297}
+.shorts-profile-bio{margin:18px 18px 14px;padding:10px 13px;border-radius:18px;background:#262628;color:#d0d0d3;font-size:13px;line-height:1.4;white-space:pre-wrap}
+.shorts-profile-tabs{height:48px;margin-top:20px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));justify-content:stretch;align-items:stretch;border-bottom:1px solid #242429}
+.shorts-profile-tab{display:grid;place-items:center;min-width:0;height:48px;border:0;border-bottom:2px solid transparent;background:transparent;color:#85858b}
+.shorts-profile-tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.shorts-profile-tab.active{color:#fff;border-bottom-color:#fff}
+.shorts-profile-grid{gap:2px;border-top:0}
+.shorts-profile-post{aspect-ratio:3/4;background:#17171b}
+.shorts-profile-post video,.shorts-profile-post img{object-fit:cover}
+.shorts-profile-empty{min-height:250px;gap:9px}
+.shorts-profile-empty>div{font-size:36px;color:#555}
+.shorts-profile-empty b{font-size:16px}
+.shorts-profile-empty span{font-size:13px;line-height:1.4}
+@media(max-width:380px){.shorts-profile-head{gap:10px;padding:0 14px}.shorts-profile-avatar{width:86px;height:86px}.shorts-profile-title h2{font-size:24px}.shorts-profile-stats{padding:0 14px;gap:8px}}
