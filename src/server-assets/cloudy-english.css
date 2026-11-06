@@ -537,6 +537,8 @@ h2{font-size:21px;margin:0 0 16px}
 .shorts-feed{height:100%;overflow-y:auto;overscroll-behavior-y:contain;scroll-snap-type:y mandatory;scrollbar-width:none}
 .shorts-feed::-webkit-scrollbar{display:none}
 .shorts-video{position:relative;isolation:isolate;height:100%;min-height:100%;scroll-snap-align:start;overflow:hidden;background:#102b5b}
+.shorts-real-video{pointer-events:none}
+.shorts-video.is-paused:after{content:"▶";position:absolute;z-index:3;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;display:grid;place-items:center;padding-left:4px;border-radius:50%;background:rgba(4,13,37,.58);border:1px solid rgba(255,255,255,.38);color:#fff;font-size:25px;box-shadow:0 8px 28px rgba(0,0,0,.28);pointer-events:none}
 .shorts-art{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:72px 44px 132px;text-align:center;background:radial-gradient(ellipse at 50% 42%,rgba(118,213,255,.34),transparent 46%),linear-gradient(155deg,#0a2354 0%,#145a9a 46%,#071638 100%)}
 .shorts-theme-violet .shorts-art{background:radial-gradient(ellipse at 50% 42%,rgba(206,166,255,.28),transparent 46%),linear-gradient(155deg,#24134f 0%,#593c9c 48%,#100c2e 100%)}
 .shorts-theme-cyan .shorts-art{background:radial-gradient(ellipse at 50% 42%,rgba(113,255,239,.27),transparent 46%),linear-gradient(155deg,#063f5a 0%,#087f91 48%,#041c3a 100%)}
