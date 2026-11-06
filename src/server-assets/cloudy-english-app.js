@@ -1024,7 +1024,8 @@ async function shortsPublishExternal(detail){
  if(!file||typeof file.size!=="number"||file.size<1||typeof file.slice!=="function")throw new Error("Не удалось получить выбранный файл.");
  if(!S.user||S.user.guest)throw new Error("Войди в аккаунт, чтобы опубликовать Shorts.");
  const image=type==="image",caption=String(detail?.caption||"").trim().slice(0,500);
- const mimeType=String(file.type|| (image?"image/jpeg":"video/mp4")).toLowerCase();
+ const fallbackMime=image?"image/jpeg":(/\.mov$/i.test(file.name||"")?"video/quicktime":/\.webm$/i.test(file.name||"")?"video/webm":"video/mp4");
+ const mimeType=String(file.type||fallbackMime).toLowerCase();
  const allowed=image?["image/jpeg","image/png","image/webp"]:["video/mp4","video/webm","video/quicktime"];
  const maxBytes=image?15*1024*1024:100*1024*1024;
  if(!allowed.includes(mimeType))throw new Error(image?"Поддерживаются JPG, PNG и WebP.":"Поддерживаются MP4, MOV и WebM.");
@@ -1048,7 +1049,7 @@ async function shortsPublishExternal(detail){
  const finalized=await authRequest(image?"shorts-upload-image-finalize":"shorts-upload-finalize",{payload:{videoId:ticket.videoId}});
  if(!finalized?.result?.ok)throw new Error("Не удалось завершить публикацию.");
  progress(100);
- await shortsLoadFeed(true);
+ try{await shortsLoadFeed(true);}catch(feedError){console.warn("[cloudy-shorts] feed refresh after publish failed",feedError);}
  try{const frame=shortsFlowFrame?.contentWindow;if(typeof frame?.cloudyPublishDone==="function")frame.cloudyPublishDone(finalized.result);}catch(_){}
  toast(finalized.result.published?(image?"Фотография опубликована в Shorts!":"Видео опубликовано в Shorts!"):"Публикация отправлена на проверку Cloudy AI.");
  return finalized.result;
