@@ -92,3 +92,12 @@ The current three Shorts cards are clearly marked demonstration content with non
 - The result and labels are stored in the Content database with an audit event. If frame extraction or vision is unavailable, the row records an unavailable state for manual review.
 - Important trust boundary: browser-sampled frames are client-provided and are not a cryptographically verified decode of the stored object. This is triage only; the AI result cannot approve, reject, publish the video or restrict its author. Every video remains private and requires human review.
 - Audio/transcription and server-side decoding of the original uploaded file are not implemented in this slice. Do not describe this as complete video moderation or audio moderation.
+
+
+## Shorts audio transcription and moderation (initial client-extracted slice)
+
+- After the frame triage, the browser decodes the selected local video, downmixes its first audio channel to mono 16 kHz PCM WAV, and sends up to nine 20-second chunks to the authenticated server bridge. This supports videos up to three minutes and 35 MB; unsupported codecs, larger files, or longer videos fail closed into manual review.
+- The server verifies Core identity, video ownership and pending-review state. It uses an enabled Groq or OpenAI provider stored in the Core AI Vault to transcribe chunks, then runs the transcript through the existing Cloudy AI content policy.
+- Transcript text is transient: it is neither returned to the browser nor persisted in Content DB. Only status, labels, decision, confidence, model and audit metadata are stored.
+- Audio results are triage only. They cannot approve, reject, publish a video or restrict its author. All videos remain private and require human review.
+- Audio extraction still happens in the browser and depends on codec support. This is not server-verified decoding of the stored original. A failed/unavailable transcription always stays in the manual-review path.
