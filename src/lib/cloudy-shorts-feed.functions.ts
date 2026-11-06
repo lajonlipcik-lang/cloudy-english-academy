@@ -105,8 +105,8 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
     };
     const avatarUrl = safeImageUrl(metadata["avatar_url"] ?? metadata["picture"]);
     const coverUrl = safeImageUrl(metadata["cover_url"]);
-    const username = typeof metadata["username"] === "string" && /^[a-zA-Z0-9_.]{3,24}$/.test(metadata.username)
-      ? metadata.username : null;
+    const username = typeof metadata["username"] === "string" && /^[a-zA-Z0-9_.]{3,24}$/.test(metadata["username"])
+      ? metadata["username"] : null;
     const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
     const content = getCloudyContentAdmin();
     const { data: rows, error } = await content.from("shorts_videos")
