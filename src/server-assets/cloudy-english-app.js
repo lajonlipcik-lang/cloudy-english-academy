@@ -147,7 +147,78 @@ function renderInstallGate(){
 function checkCloudyInstall(){if(isInstalledCloudy()){try{localStorage.setItem('cloudyHomeInstalled','1')}catch(e){}view();return}const note=$('#installNote');if(note)note.textContent='Пока Cloudy открыт во вкладке Safari. Вернись на главный экран iPhone и запусти Cloudy с новой иконки — тогда установка подтвердится.';const panel=$('.install-panel');if(panel){panel.classList.remove('shk');void panel.offsetWidth;panel.classList.add('shk')}}
 function ensureCloudyInstallGate(){if(!isAppleMobile()||isInstalledCloudy())return;if(!document.querySelector('#app .install-gate'))renderInstallGate()}
 function bootCloudy(){if(isAppleMobile()&&!isInstalledCloudy()){renderInstallGate();setInterval(ensureCloudyInstallGate,20000);window.addEventListener('pageshow',ensureCloudyInstallGate);window.addEventListener('focus',ensureCloudyInstallGate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureCloudyInstallGate()});return}if(sessionHydrating){cloudLoader();return}view()}
-function view(a=1,tabDirection=0){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof,shorts][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest)void loadCommunityProfile();}
+function mountShortsIntro(){
+ if(T!==4||document.getElementById("cloudy-shorts-intro"))return;
+ let seen=false;try{seen=sessionStorage.getItem("cloudyIntro")==="1"&&!/[?&]intro(?:=|&|$)/.test(location.search);}catch(_){}
+ if(seen)return;
+ if(!document.getElementById("cloudy-shorts-intro-style")){
+  const style=document.createElement("style");style.id="cloudy-shorts-intro-style";
+  style.textContent=`
+  #cloudy-shorts-intro{position:fixed;inset:0;z-index:99999;overflow:hidden;background:linear-gradient(180deg,#050c24 0%,#0d2150 60%,#16336f 100%);color:#fff;font-family:Inter,"SF Pro Display",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;cursor:pointer;opacity:1;transition:opacity .9s ease}
+  #cloudy-shorts-intro:before{content:"";position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1.5px,transparent 1.5px);background-size:46px 46px;pointer-events:none}
+  #cloudy-shorts-intro.is-hidden{opacity:0;pointer-events:none}
+  #cloudy-shorts-intro .csi-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;will-change:transform}
+  #cloudy-shorts-intro .csi-stage.zoom{transition:transform .9s cubic-bezier(.75,0,.95,.45);transform:scale(var(--zs,40))}
+  #cloudy-shorts-intro .csi-logo{display:flex;flex-direction:column;align-items:center;gap:clamp(8px,2vw,20px);padding:0 16px;text-align:center}
+  #cloudy-shorts-intro .csi-text{font-weight:800;letter-spacing:.06em;font-size:clamp(28px,8vw,84px);white-space:nowrap;display:flex;align-items:center;justify-content:center;transition:opacity .5s}
+  #cloudy-shorts-intro .zoom .csi-text{opacity:0}
+  #cloudy-shorts-intro .csi-char{opacity:0;display:inline-block;transform:translateY(8px);transition:opacity .08s,transform .08s}
+  #cloudy-shorts-intro .csi-char.on{opacity:1;transform:none}
+  #cloudy-shorts-intro .csi-white{color:#fff}#cloudy-shorts-intro .csi-blue{color:#9fd4ff}
+  #cloudy-shorts-intro .csi-space{width:.3em}
+  #cloudy-shorts-intro .csi-caret{display:inline-block;width:.07em;height:.85em;margin-left:.08em;background:#9fd4ff;animation:csiBlink .6s steps(1) infinite}
+  #cloudy-shorts-intro .csi-caret.off{animation:none;opacity:0}
+  @keyframes csiBlink{50%{opacity:0}}
+  #cloudy-shorts-intro .csi-cloudslot{order:-1;width:clamp(130px,30vw,320px);aspect-ratio:100/80;position:relative}
+  #cloudy-shorts-intro .csi-cloud{position:absolute;inset:0;opacity:0}
+  #cloudy-shorts-intro .csi-cloud.fly{animation:csiFly 1s cubic-bezier(.25,.8,.3,1) forwards}
+  @keyframes csiFly{0%{opacity:0;transform:translate(-70vw,-40vh) rotate(-25deg) scale(.5)}15%{opacity:1}60%{opacity:1;transform:translate(6vw,3vh) rotate(8deg) scale(1.05)}78%{transform:translate(-2vw,-1vh) rotate(-4deg) scale(.97,1.06)}90%{transform:translate(0,2px) rotate(0) scale(1.08,.9)}100%{opacity:1;transform:none}}
+  #cloudy-shorts-intro .csi-ms{width:100%;display:block;filter:drop-shadow(0 8px 22px rgba(120,190,255,.5));transform-origin:50% 90%}
+  #cloudy-shorts-intro .csi-cloud.settled .csi-ms{animation:csiFloat 3s ease-in-out infinite,csiSway 6s ease-in-out infinite}
+  #cloudy-shorts-intro .csi-eyes{transform-box:fill-box;transform-origin:center;animation:csiEyeBlink 4.5s infinite}
+  #cloudy-shorts-intro .csi-cheek{animation:csiCheek 3s ease-in-out infinite}
+  @keyframes csiFloat{50%{transform:translateY(-10px)}}@keyframes csiSway{0%,100%{rotate:-3deg}50%{rotate:3deg}}
+  @keyframes csiEyeBlink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}@keyframes csiCheek{50%{opacity:.85}}
+  #cloudy-shorts-intro .csi-trail{position:absolute;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,rgba(191,224,255,.7));opacity:0;pointer-events:none}
+  #cloudy-shorts-intro .csi-trail.go{animation:csiTrail 1s ease-out forwards}
+  @keyframes csiTrail{0%{opacity:0;transform:translate(-45vw,-25vh) rotate(-22deg) scaleX(.2)}20%{opacity:.8}100%{opacity:0;transform:translate(0,0) rotate(-22deg) scaleX(1)}}
+  #cloudy-shorts-intro .csi-puff{position:absolute;border-radius:50%;background:#bfe0ff;opacity:0;pointer-events:none}
+  #cloudy-shorts-intro .csi-puff.go{animation:csiPuff .8s ease-out forwards}
+  @keyframes csiPuff{0%{opacity:.8;transform:translate(0,0) scale(.4)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(1.2)}}
+  #cloudy-shorts-intro .csi-flash{position:absolute;inset:0;background:radial-gradient(circle,#fff 0%,#bfe0ff 70%);opacity:0;pointer-events:none;transition:opacity .45s ease-in}
+  #cloudy-shorts-intro .csi-flash.on{opacity:1}
+  #cloudy-shorts-intro .csi-sound{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;z-index:2;width:44px;height:44px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.12);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  #cloudy-shorts-intro .csi-sound.hint{animation:csiHint 1.4s ease-in-out infinite}
+  @keyframes csiHint{0%,100%{box-shadow:0 0 0 0 rgba(159,212,255,.55)}50%{box-shadow:0 0 0 10px rgba(159,212,255,0)}}
+  @media(prefers-reduced-motion:reduce){#cloudy-shorts-intro *,#cloudy-shorts-intro *:before{animation:none!important;transition:none!important}}
+  `;
+  document.head.appendChild(style);
+ }
+ const root=document.createElement("div");root.id="cloudy-shorts-intro";
+ root.innerHTML=`<div class="csi-stage"><div class="csi-logo"><div class="csi-cloudslot"><div class="csi-cloud"><svg class="csi-ms" viewBox="0 0 100 80" aria-hidden="true"><defs><linearGradient id="csi-gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#bfe0ff"/></linearGradient></defs><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#csi-gb)"/><g class="csi-eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.8" fill="#fff"/><circle cx="64" cy="43" r="1.8" fill="#fff"/></g><path d="M44 54q7 8 14 0" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle class="csi-cheek" cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle class="csi-cheek" cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg></div></div><div class="csi-text"></div></div></div><div class="csi-flash"></div><button class="csi-sound" type="button" aria-label="Включить или выключить звук">🔇</button>`;
+ document.body.appendChild(root);
+ const stage=root.querySelector(".csi-stage"),cloud=root.querySelector(".csi-cloud"),slot=root.querySelector(".csi-cloudslot"),txt=root.querySelector(".csi-text"),flash=root.querySelector(".csi-flash"),sound=root.querySelector(".csi-sound");
+ const timers=[];let finished=false,AC=null,muted=false;
+ try{muted=localStorage.getItem("cloudyMute")==="1";}catch(_){}
+ const later=(fn,ms)=>timers.push(setTimeout(fn,ms));
+ function audio(){if(!AC){try{AC=new(window.AudioContext||window.webkitAudioContext)();}catch(_){}}return AC;}
+ function tone(freq,duration=.08,peak=.045,delay=0){if(muted)return;const a=audio();if(!a||a.state!=="running")return;const t=a.currentTime+delay,o=a.createOscillator(),g=a.createGain();o.type="sine";o.frequency.setValueAtTime(freq,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(peak,t+.008);g.gain.exponentialRampToValueAtTime(.0001,t+duration);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+duration+.02);}
+ function updateSound(){sound.textContent=muted?"🔇":"🔊";sound.classList.toggle("hint",!muted);}
+ function finish(){if(finished)return;finished=true;timers.forEach(clearTimeout);try{sessionStorage.setItem("cloudyIntro","1");}catch(_){}window.dispatchEvent(new CustomEvent("cloudy:enter"));root.classList.add("is-hidden");setTimeout(()=>root.remove(),950);}
+ sound.addEventListener("click",e=>{e.stopPropagation();muted=!muted;try{localStorage.setItem("cloudyMute",muted?"1":"0");}catch(_){}const a=audio();if(a&&a.state!=="running")a.resume().then(()=>tone(880,.05,.04));updateSound();});
+ root.addEventListener("pointerdown",()=>{const a=audio();if(a&&a.state!=="running")a.resume().catch(()=>{});},{once:true});
+ root.addEventListener("click",e=>{if(e.target!==sound)finish();});
+ updateSound();
+ const chars=[];[["CLOUDY","csi-white"],[" ","space"],["SHORTS","csi-blue"]].forEach(([word,kind])=>{if(kind==="space"){const span=document.createElement("span");span.className="csi-space";txt.appendChild(span);return;}[...word].forEach(ch=>{const span=document.createElement("span");span.className="csi-char "+kind;span.textContent=ch;txt.appendChild(span);chars.push(span);});});
+ const caret=document.createElement("span");caret.className="csi-caret";txt.appendChild(caret);
+ let t=150;chars.forEach(el=>{later(()=>{el.classList.add("on");tone(1550,.04,.025);},t);t+=28+Math.random()*14;});
+ later(()=>caret.classList.add("off"),t+50);const c0=t-200;
+ later(()=>{for(let i=0;i<4;i++){const trail=document.createElement("span");trail.className="csi-trail";trail.style.cssText="width:"+(60+Math.random()*60)+"px;left:"+(10+Math.random()*60)+"%;top:"+(20+i*18)+"%;animation-delay:"+(i*.08)+"s";slot.appendChild(trail);requestAnimationFrame(()=>trail.classList.add("go"));}cloud.classList.add("fly");tone(300,.45,.035);},c0);
+ later(()=>{for(let i=0;i<8;i++){const puff=document.createElement("span"),size=6+Math.random()*12,angle=Math.random()*Math.PI*2,distance=50+Math.random()*70;puff.className="csi-puff";puff.style.cssText="width:"+size+"px;height:"+size+"px;left:50%;top:60%;--dx:"+(Math.cos(angle)*distance)+"px;--dy:"+(Math.sin(angle)*distance*.6)+"px";slot.appendChild(puff);requestAnimationFrame(()=>puff.classList.add("go"));}tone(520,.16,.05);},c0+950);
+ later(()=>cloud.classList.add("settled"),c0+1050);
+ later(()=>{const bounds=stage.getBoundingClientRect(),cb=cloud.getBoundingClientRect();stage.style.transformOrigin=(cb.left+cb.width/2-bounds.left)+"px "+(cb.top+cb.height*.55-bounds.top)+"px";const zoom=Math.max(innerWidth,innerHeight)/(cb.width*.5);stage.style.setProperty("--zs",Math.max(zoom*1.6,14));stage.classList.add("zoom");tone(220,.65,.045);later(()=>{flash.classList.add("on");[1047,1319,1568,2093].forEach((n,i)=>tone(n,.22,.035,i*.06));},600);later(finish,950);},c0+1350);
+}
+function view(a=1,tabDirection=0){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof,shorts][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest)void loadCommunityProfile();if(T===4)mountShortsIntro();}
 function tab(k){if(k!==T){const direction=k>T?1:-1;snd("tab");T=k;view(1,direction)}}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
