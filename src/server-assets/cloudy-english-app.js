@@ -1021,7 +1021,7 @@ async function shortsSubmitUpload(){
  */
 async function shortsPublishExternal(detail){
  const file=detail?.file,type=detail?.type==="video"?"video":"image";
- if(!(file instanceof Blob)||!file.size)throw new Error("Не удалось получить выбранный файл.");
+ if(!file||typeof file.size!=="number"||file.size<1||typeof file.slice!=="function")throw new Error("Не удалось получить выбранный файл.");
  if(!S.user||S.user.guest)throw new Error("Войди в аккаунт, чтобы опубликовать Shorts.");
  const image=type==="image",caption=String(detail?.caption||"").trim().slice(0,500);
  const mimeType=String(file.type|| (image?"image/jpeg":"video/mp4")).toLowerCase();
@@ -1049,7 +1049,7 @@ async function shortsPublishExternal(detail){
  if(!finalized?.result?.ok)throw new Error("Не удалось завершить публикацию.");
  progress(100);
  await shortsLoadFeed(true);
- try{const frame=shortsFlowFrame?.contentWindow;if(typeof frame?.cloudyPublishDone==="function")frame.cloudyPublishDone();}catch(_){}
+ try{const frame=shortsFlowFrame?.contentWindow;if(typeof frame?.cloudyPublishDone==="function")frame.cloudyPublishDone(finalized.result);}catch(_){}
  toast(finalized.result.published?(image?"Фотография опубликована в Shorts!":"Видео опубликовано в Shorts!"):"Публикация отправлена на проверку Cloudy AI.");
  return finalized.result;
 }
