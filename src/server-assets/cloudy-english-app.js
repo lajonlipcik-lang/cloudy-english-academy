@@ -822,33 +822,44 @@ async function shortsSendComment(){
 function shortsFormatSize(bytes){if(!Number.isFinite(bytes)||bytes<0)return "—";return bytes>=1024*1024?(bytes/1024/1024).toFixed(1)+" МБ":Math.max(1,Math.round(bytes/1024))+" КБ";}
 function shortsFormatDuration(seconds){if(!Number.isFinite(seconds)||seconds<0)return "—";const total=Math.round(seconds),m=Math.floor(total/60),s=total%60;return m+":"+String(s).padStart(2,"0");}
 let shortsCaptureMode=15;
+let shortsFlowFrame=null,shortsFlowOverlay=null,shortsFlowFile=null;
+function shortsFlowClose(){
+ if(shortsFlowFrame){try{shortsFlowFrame.src="about:blank";}catch(_){}}
+ shortsFlowOverlay?.remove();shortsFlowFrame=null;shortsFlowOverlay=null;shortsFlowFile=null;
+}
 function shortsUpload(){
- shortsDisposeUpload();shortsCaptureMode=15;shortsComposerMode="video";
- sheet('<style>'+
- '.shorts-camera-panel{height:min(92dvh,900px);display:flex;flex-direction:column;gap:12px;padding:8px 16px 18px;color:#fff;overflow:auto;background:#050505}'+
- '.shorts-camera-head{display:flex;align-items:center;gap:12px}.shorts-camera-head b{font-size:19px;display:block}.shorts-camera-head small{display:block;color:#a6a6ad;font-size:12px;margin-top:3px}.shorts-camera-close{margin-left:auto;width:40px;height:40px;border-radius:50%;background:#1c1c20;color:#fff;display:grid;place-items:center;transform:rotate(45deg)}'+
- '.shorts-create-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:5px;background:#17171b;border-radius:13px}.shorts-create-tabs button{padding:10px 4px;border-radius:9px;color:#aaa;font-weight:800;font-size:12px}.shorts-create-tabs button.active{background:#2b2b31;color:#fff}'+
- '.shorts-camera-stage{position:relative;min-height:220px;flex:1;border-radius:20px;overflow:hidden;background:#111114;display:flex;align-items:center;justify-content:center;text-align:center}.shorts-camera-hero{display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px}.shorts-camera-hero .ms{width:130px;filter:drop-shadow(0 8px 22px #78beff45);animation:cloudyShortsFloat 3s ease-in-out infinite}.shorts-camera-hero b{font-size:18px}.shorts-camera-hero small{color:#aaa;line-height:1.4;max-width:250px}@keyframes cloudyShortsFloat{50%{transform:translateY(-8px)}}'+
- '.shorts-camera-stage video,.shorts-image-preview{width:100%;height:100%;max-height:42dvh;object-fit:contain;background:#000}.shorts-camera-modes{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}.shorts-camera-modes button{padding:9px 14px;border-radius:999px;font-weight:800;background:#242429;color:#eee}.shorts-camera-modes button.active{background:#fff;color:#111}'+
- '.shorts-camera-controls{display:flex;align-items:center;justify-content:center;gap:26px;padding:3px 0}.shorts-camera-gallery{width:52px;height:52px;border:2px solid #eee;border-radius:12px;background:#242429;display:grid;place-items:center;font-size:23px;color:#fff}.shorts-camera-shutter{width:78px;height:78px;border:5px solid #eee;border-radius:50%;display:grid;place-items:center}.shorts-camera-shutter span{width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#5bb8ff,#2f7bff);display:grid;place-items:center;font-size:24px}'+
- '.shorts-camera-caption label{font-size:13px;font-weight:800;color:#eee}.shorts-camera-caption textarea{display:block;width:100%;min-height:68px;margin-top:7px;padding:12px;border-radius:13px;border:1px solid #303036;background:#17171b;color:#fff;font:inherit;resize:vertical;outline:none}.shorts-camera-caption textarea:focus{border-color:#5bb8ff}.shorts-camera-meta{font-size:12px;color:#999}.shorts-camera-submit{width:100%;min-height:50px;border-radius:14px;background:linear-gradient(135deg,#5bb8ff,#2f7bff);color:#041326;font-weight:850}.shorts-camera-submit:disabled{opacity:.45}.shorts-camera-notice{font-size:12px;line-height:1.4;color:#999;text-align:center}.shorts-image-preview-wrap{width:100%;height:100%;display:grid;place-items:center;padding:12px}.shorts-text-entry{width:100%;min-height:240px;resize:vertical;border:1px solid #303036;border-radius:18px;padding:18px;background:#111114;color:#fff;font:inherit;font-size:17px;font-weight:500;line-height:1.55;outline:0}.shorts-text-entry:focus{border-color:#5bb8ff}'+
- '</style><div class="shorts-camera-panel">'+
- '<div class="shorts-camera-head"><div><span class="shorts-upload-kicker">CLOUDY SHORTS</span><b>Создать публикацию</b><small>Поделись полезным материалом по английскому</small></div><button class="shorts-camera-close" aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></div>'+
- '<div class="shorts-create-tabs"><button class="active" data-mode="video" onclick="shortsSetComposerMode(\'video\')">Видео</button><button data-mode="image" onclick="shortsSetComposerMode(\'image\')">Фото</button><button data-mode="text" onclick="shortsSetComposerMode(\'text\')">Текст</button></div>'+
- '<div class="shorts-composer-video">'+
- '<div class="shorts-camera-stage" id="shorts-upload-preview"><div class="shorts-camera-hero">'+mascot("h")+'<b>Твой следующий Shorts начинается здесь</b><small>Сними ролик или выбери его из галереи</small></div></div>'+
- '<div class="shorts-camera-modes"><button class="active" data-limit="15" onclick="shortsSetCaptureMode(15,this)">15 с</button><button data-limit="60" onclick="shortsSetCaptureMode(60,this)">60 с</button><button data-limit="180" onclick="shortsSetCaptureMode(180,this)">3 мин</button></div>'+
- '<div class="shorts-camera-controls"><button class="shorts-camera-gallery" onclick="$(\'#shorts-upload-gallery\').click()" aria-label="Выбрать из галереи">▧</button><button class="shorts-camera-shutter" onclick="$(\'#shorts-upload-camera\').click()" aria-label="Открыть камеру"><span>☁</span></button></div>'+
- '<input id="shorts-upload-camera" type="file" accept="video/*" capture="environment" hidden onchange="shortsChooseFile(this,\'camera\')"><input id="shorts-upload-gallery" type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm" hidden onchange="shortsChooseFile(this,\'gallery\')">'+
- '<div class="shorts-camera-meta" id="shorts-upload-file-info">MP4, MOV или WebM · до 100 МБ</div>'+
- '<div class="shorts-camera-caption"><label for="shorts-upload-caption">Описание видео</label><textarea id="shorts-upload-caption" maxlength="180" placeholder="Например: 3 способа запомнить неправильные глаголы…" oninput="shortsCaptionCount()"></textarea><div class="shorts-camera-meta" id="shorts-caption-count">0 / 180</div></div>'+
- '<button class="shorts-camera-submit" id="shorts-upload-submit" onclick="shortsSubmitUpload()" disabled>Сначала сними или выбери видео</button>'+
- '<div class="shorts-camera-notice">До 100 МБ. Лимит длительности проверяется после выбора видео.</div></div>'+
- '<div class="shorts-composer-image" hidden><div class="shorts-camera-stage" id="shorts-image-preview"><div class="shorts-camera-hero">'+mascot("h")+'<b>Добавь фотографию</b><small>Учебные карточки, заметки, иллюстрации и полезные материалы</small></div></div><input id="shorts-image-file" type="file" accept="image/jpeg,image/png,image/webp" hidden onchange="shortsChooseImage(this)"><button class="shorts-camera-gallery" style="width:100%;height:48px" onclick="$(\'#shorts-image-file\').click()">Выбрать фото</button><div class="shorts-camera-caption"><label for="shorts-image-caption">Подпись</label><textarea id="shorts-image-caption" maxlength="180" placeholder="Расскажи, что изображено…"></textarea></div><div class="shorts-camera-meta">JPG, PNG или WebP · до 15 МБ</div><button class="shorts-camera-submit" id="shorts-image-submit" onclick="shortsSubmitImage()" disabled>Сначала выбери фото</button></div>'+
- '<div class="shorts-composer-text" hidden><div class="shorts-camera-caption"><label for="shorts-text-content">Текст публикации</label><textarea class="shorts-text-entry" id="shorts-text-content" maxlength="500" placeholder="Поделись правилом английского, новой фразой или полезным советом…" oninput="shortsTextCount()"></textarea><div class="shorts-camera-meta" id="shorts-text-count">0 / 500</div></div><button class="shorts-camera-submit" id="shorts-text-submit" onclick="shortsSubmitTextPost()" disabled>Опубликовать текст</button></div>'+
- '<div class="shorts-ai-notice"><span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Проверка Cloudy AI</b><small>Фото проверяются на явный контент 18+, текст — на безопасность и соответствие учебному сообществу. При недоступности ИИ публикация отправляется на ручную проверку.</small></div></div>'+
- '</div>');
- const uploadSheet=document.querySelector(".sb");if(uploadSheet)uploadSheet.dataset.shortsUpload="1";
+ shortsDisposeUpload();
+ if(shortsFlowOverlay)shortsFlowClose();
+ const overlay=document.createElement("div");
+ overlay.id="cloudy-shorts-fullscreen";
+ overlay.style.cssText="position:fixed;inset:0;z-index:2147483000;background:#050c24;overflow:hidden";
+ const frame=document.createElement("iframe");
+ frame.title="Cloudy Shorts — съёмка";
+ frame.allow="camera;microphone;autoplay";
+ frame.referrerPolicy="same-origin";
+ frame.style.cssText="display:block;width:100%;height:100%;border:0;background:#050c24";
+ overlay.appendChild(frame);document.body.appendChild(overlay);
+ shortsFlowOverlay=overlay;shortsFlowFrame=frame;
+ frame.src="/cloudy-shorts-capture.html";
+}
+if(!window.__cloudyShortsFlowNavigation){
+ window.__cloudyShortsFlowNavigation=true;
+ window.addEventListener("cloudy:captured",event=>{
+  const detail=event?.detail;if(!detail?.file||!shortsFlowFrame)return;
+  shortsFlowFile=detail.file;
+  const frame=shortsFlowFrame;frame.onload=()=>{
+   try{frame.contentWindow.cloudyPublishOpen(shortsFlowFile,detail.type,detail.durationSeconds||0);}
+   catch(error){toast("Не удалось открыть экран публикации.",false);console.warn(error);}
+  };
+  frame.src="/cloudy-shorts-publish.html";
+ });
+ window.addEventListener("cloudy:back",()=>{
+  if(!shortsFlowFrame)return;
+  const frame=shortsFlowFrame;frame.onload=()=>{shortsFlowFile=null;};
+  frame.src="/cloudy-shorts-capture.html";
+ });
+ window.addEventListener("cloudy:close",shortsFlowClose);
+ window.addEventListener("cloudy:published",shortsFlowClose);
 }
 function shortsSetComposerMode(mode){
  if(!["video","image","text"].includes(mode))return;
@@ -1016,7 +1027,7 @@ async function shortsPublishExternal(detail){
  const maxBytes=image?15*1024*1024:100*1024*1024;
  if(!allowed.includes(mimeType))throw new Error(image?"Поддерживаются JPG, PNG и WebP.":"Поддерживаются MP4, MOV и WebM.");
  if(file.size>maxBytes)throw new Error(image?"Фотография должна быть не больше 15 МБ.":"Видео должно быть не больше 100 МБ.");
- const progress=value=>{try{if(typeof window.cloudyPublishProgress==="function")window.cloudyPublishProgress(value);}catch(_){}};
+ const progress=value=>{try{const frame=shortsFlowFrame?.contentWindow;if(typeof frame?.cloudyPublishProgress==="function")frame.cloudyPublishProgress(value);}catch(_){}};
  progress(3);
  const started=await authRequest("shorts-upload-start",{payload:{
   mediaType:image?"image":"video",
@@ -1036,7 +1047,7 @@ async function shortsPublishExternal(detail){
  if(!finalized?.result?.ok)throw new Error("Не удалось завершить публикацию.");
  progress(100);
  await shortsLoadFeed(true);
- try{if(typeof window.cloudyPublishDone==="function")window.cloudyPublishDone();}catch(_){}
+ try{const frame=shortsFlowFrame?.contentWindow;if(typeof frame?.cloudyPublishDone==="function")frame.cloudyPublishDone();}catch(_){}
  toast(finalized.result.published?(image?"Фотография опубликована в Shorts!":"Видео опубликовано в Shorts!"):"Публикация отправлена на проверку Cloudy AI.");
  return finalized.result;
 }
