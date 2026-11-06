@@ -167,19 +167,21 @@ export const finalizeShortVideoUpload = createServerFn({ method: "POST" })
       throw new Error("Размер загруженного видео недопустим.");
     }
 
-    const { error: updateError } = await content
-      .from("shorts_videos")
-      .update({ status: "pending_review", updated_at: new Date().toISOString() })
-      .eq("id", video.id)
-      .eq("author_id", user.id)
-      .eq("status", "draft");
-    if (updateError) throw new Error("Не удалось отправить видео на проверку.");
+    const { reviewStoredShort } = await import("./shorts-publication.server");
+    const review = await reviewStoredShort(content, video.storage_path, video.id);
+    const {data: applied, error: updateError} = await content.rpc("finalize_shorts_publication", {
+      p_video_id:video.id,p_author_id:user.id,p_blocked:review.blocked,p_status:review.status,
+      p_reason:review.reason,p_labels:review.labels,p_confidence:review.confidence,p_model:review.model,p_frame_count:review.frameCount,
+    });
+    if (updateError || !applied) throw new Error("Не удалось завершить публикацию видео. Попробуйте снова.");
 
     return {
       ok: true,
       videoId: video.id,
-      status: "pending_review",
+      status: review.blocked ? "pending_review" : "approved",
+      published: !review.blocked,
+      needsHumanReview: true,
       mediaReviewed: false,
-      message: "Видео загружено и ожидает проверки Cloudy AI.",
+      message: review.reason,
     };
   });

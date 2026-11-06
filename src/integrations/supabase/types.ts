@@ -110,22 +110,141 @@ export type Database = {
         }
         Relationships: []
       }
+      cloudy_learning_events: {
+        Row: {
+          correct_answer: string | null
+          created_at: string
+          event_id: string
+          event_type: string
+          exercise_type: string | null
+          id: number
+          is_correct: boolean | null
+          lesson_index: number | null
+          level: string | null
+          occurred_at: string
+          question_index: number | null
+          response_seconds: number | null
+          retry: boolean
+          selected_answer: string | null
+          session_id: string | null
+          session_type: string | null
+          skill_id: string | null
+          user_id: string
+        }
+        Insert: {
+          correct_answer?: string | null
+          created_at?: string
+          event_id: string
+          event_type: string
+          exercise_type?: string | null
+          id?: never
+          is_correct?: boolean | null
+          lesson_index?: number | null
+          level?: string | null
+          occurred_at: string
+          question_index?: number | null
+          response_seconds?: number | null
+          retry?: boolean
+          selected_answer?: string | null
+          session_id?: string | null
+          session_type?: string | null
+          skill_id?: string | null
+          user_id: string
+        }
+        Update: {
+          correct_answer?: string | null
+          created_at?: string
+          event_id?: string
+          event_type?: string
+          exercise_type?: string | null
+          id?: never
+          is_correct?: boolean | null
+          lesson_index?: number | null
+          level?: string | null
+          occurred_at?: string
+          question_index?: number | null
+          response_seconds?: number | null
+          retry?: boolean
+          selected_answer?: string | null
+          session_id?: string | null
+          session_type?: string | null
+          skill_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      community_comment_rate_limits: {
+        Row: {
+          comment_count: number
+          user_id: string
+          window_started_at: string
+        }
+        Insert: {
+          comment_count?: number
+          user_id: string
+          window_started_at: string
+        }
+        Update: {
+          comment_count?: number
+          user_id?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       community_comments: {
-        Row: { author_id: string; body: string; created_at: string; id: string; post_id: string; status: string; updated_at: string }
-        Insert: { author_id: string; body: string; created_at?: string; id?: string; post_id: string; status?: string; updated_at?: string }
-        Update: { author_id?: string; body?: string; created_at?: string; id?: string; post_id?: string; status?: string; updated_at?: string }
-        Relationships: []
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          post_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          post_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          post_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_comments_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      community_reactions: {
-        Row: { created_at: string; post_id: string; reaction: string; user_id: string }
-        Insert: { created_at?: string; post_id: string; reaction?: string; user_id: string }
-        Update: { created_at?: string; post_id?: string; reaction?: string; user_id?: string }
-        Relationships: []
-      }
-      community_reports: {
-        Row: { comment_id: string | null; created_at: string; details: string; id: string; moderation_note: string; post_id: string | null; reason: string; reporter_id: string; reviewed_at: string | null; reviewed_by: string | null; status: string }
-        Insert: { comment_id?: string | null; created_at?: string; details?: string; id?: string; moderation_note?: string; post_id?: string | null; reason: string; reporter_id: string; reviewed_at?: string | null; reviewed_by?: string | null; status?: string }
-        Update: { comment_id?: string | null; created_at?: string; details?: string; id?: string; moderation_note?: string; post_id?: string | null; reason?: string; reporter_id?: string; reviewed_at?: string | null; reviewed_by?: string | null; status?: string }
+      community_post_rate_limits: {
+        Row: {
+          post_count: number
+          user_id: string
+          window_started_at: string
+        }
+        Insert: {
+          post_count?: number
+          user_id: string
+          window_started_at: string
+        }
+        Update: {
+          post_count?: number
+          user_id?: string
+          window_started_at?: string
+        }
         Relationships: []
       }
       community_posts: {
@@ -152,6 +271,233 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      community_reactions: {
+        Row: {
+          created_at: string
+          post_id: string
+          reaction: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          reaction?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          reaction?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_reactions_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_reports: {
+        Row: {
+          comment_id: string | null
+          created_at: string
+          details: string
+          id: string
+          moderation_note: string
+          post_id: string | null
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          comment_id?: string | null
+          created_at?: string
+          details?: string
+          id?: string
+          moderation_note?: string
+          post_id?: string | null
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          comment_id?: string | null
+          created_at?: string
+          details?: string
+          id?: string
+          moderation_note?: string
+          post_id?: string | null
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_reports_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "community_comments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_reports_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_moderation_events: {
+        Row: {
+          action: string
+          actor_type: string
+          confidence: number | null
+          content_id: string | null
+          content_type: string
+          created_at: string
+          id: string
+          labels: Json
+          model: string
+          policy_version: string
+          reason: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_type: string
+          confidence?: number | null
+          content_id?: string | null
+          content_type: string
+          created_at?: string
+          id?: string
+          labels?: Json
+          model?: string
+          policy_version?: string
+          reason?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_type?: string
+          confidence?: number | null
+          content_id?: string | null
+          content_type?: string
+          created_at?: string
+          id?: string
+          labels?: Json
+          model?: string
+          policy_version?: string
+          reason?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      content_user_restrictions: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          reason: string
+          restriction_type: string
+          source: string
+          starts_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          reason: string
+          restriction_type: string
+          source: string
+          starts_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          reason?: string
+          restriction_type?: string
+          source?: string
+          starts_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      optional_consent_events: {
+        Row: {
+          action: string
+          created_at: string
+          document_version: string
+          id: string
+          purpose: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          document_version: string
+          id?: string
+          purpose: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          document_version?: string
+          id?: string
+          purpose?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      privacy_requests: {
+        Row: {
+          created_at: string
+          details: string
+          id: string
+          request_type: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string
+          id?: string
+          request_type: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: string
+          id?: string
+          request_type?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -182,6 +528,175 @@ export type Database = {
           id?: string
           is_public?: boolean
           placement_test_completed?: boolean
+        }
+        Relationships: []
+      }
+      shorts_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          moderated_at: string | null
+          moderation_labels: Json
+          moderation_reason: string
+          moderation_status: string
+          status: string
+          updated_at: string
+          video_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          moderated_at?: string | null
+          moderation_labels?: Json
+          moderation_reason?: string
+          moderation_status?: string
+          status?: string
+          updated_at?: string
+          video_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          moderated_at?: string | null
+          moderation_labels?: Json
+          moderation_reason?: string
+          moderation_status?: string
+          status?: string
+          updated_at?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shorts_comments_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "shorts_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shorts_likes: {
+        Row: {
+          created_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shorts_likes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "shorts_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shorts_videos: {
+        Row: {
+          audio_analysis_confidence: number | null
+          audio_analysis_decision: string
+          audio_analysis_labels: Json
+          audio_analysis_model: string
+          audio_analysis_reason: string
+          audio_analysis_status: string
+          audio_analyzed_at: string | null
+          audio_chunk_count: number
+          author_id: string
+          caption: string
+          created_at: string
+          duration_seconds: number | null
+          frame_analysis_confidence: number | null
+          frame_analysis_labels: Json
+          frame_analysis_model: string
+          frame_analysis_reason: string
+          frame_analysis_status: string
+          frame_analyzed_at: string | null
+          frame_count: number
+          id: string
+          moderated_at: string | null
+          moderation_labels: Json
+          moderation_reason: string
+          moderation_status: string
+          published_at: string | null
+          status: string
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          audio_analysis_confidence?: number | null
+          audio_analysis_decision?: string
+          audio_analysis_labels?: Json
+          audio_analysis_model?: string
+          audio_analysis_reason?: string
+          audio_analysis_status?: string
+          audio_analyzed_at?: string | null
+          audio_chunk_count?: number
+          author_id: string
+          caption?: string
+          created_at?: string
+          duration_seconds?: number | null
+          frame_analysis_confidence?: number | null
+          frame_analysis_labels?: Json
+          frame_analysis_model?: string
+          frame_analysis_reason?: string
+          frame_analysis_status?: string
+          frame_analyzed_at?: string | null
+          frame_count?: number
+          id?: string
+          moderated_at?: string | null
+          moderation_labels?: Json
+          moderation_reason?: string
+          moderation_status?: string
+          published_at?: string | null
+          status?: string
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          audio_analysis_confidence?: number | null
+          audio_analysis_decision?: string
+          audio_analysis_labels?: Json
+          audio_analysis_model?: string
+          audio_analysis_reason?: string
+          audio_analysis_status?: string
+          audio_analyzed_at?: string | null
+          audio_chunk_count?: number
+          author_id?: string
+          caption?: string
+          created_at?: string
+          duration_seconds?: number | null
+          frame_analysis_confidence?: number | null
+          frame_analysis_labels?: Json
+          frame_analysis_model?: string
+          frame_analysis_reason?: string
+          frame_analysis_status?: string
+          frame_analyzed_at?: string | null
+          frame_count?: number
+          id?: string
+          moderated_at?: string | null
+          moderation_labels?: Json
+          moderation_reason?: string
+          moderation_status?: string
+          published_at?: string | null
+          status?: string
+          storage_path?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -291,10 +806,22 @@ export type Database = {
     Views: {
       community_public_profiles: {
         Row: {
-          bio: string
-          created_at: string
-          display_name: string
-          id: string
+          bio: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
         }
         Relationships: []
       }
@@ -304,9 +831,61 @@ export type Database = {
         Args: { _request_id: string; _user_id: string }
         Returns: Json
       }
+      apply_shorts_audio_analysis: {
+        Args: {
+          p_chunk_count: number
+          p_confidence: number
+          p_decision: string
+          p_labels: Json
+          p_model: string
+          p_reason: string
+          p_status: string
+          p_video_id: string
+        }
+        Returns: boolean
+      }
+      apply_shorts_frame_analysis: {
+        Args: {
+          p_confidence: number
+          p_frame_count: number
+          p_labels: Json
+          p_model: string
+          p_reason: string
+          p_status: string
+          p_video_id: string
+        }
+        Returns: boolean
+      }
+      apply_shorts_text_moderation: {
+        Args: {
+          p_confidence: number
+          p_content_id: string
+          p_content_type: string
+          p_decision: string
+          p_labels: Json
+          p_model?: string
+          p_policy_version?: string
+          p_reason: string
+        }
+        Returns: boolean
+      }
       award_cloudy_lesson_xp: {
         Args: { _lesson_index: number; _level: string; _user_id: string }
         Returns: Json
+      }
+      finalize_shorts_publication: {
+        Args: {
+          p_author_id: string
+          p_blocked: boolean
+          p_confidence: number
+          p_frame_count: number
+          p_labels: Json
+          p_model: string
+          p_reason: string
+          p_status: string
+          p_video_id: string
+        }
+        Returns: boolean
       }
       get_weekly_league: {
         Args: { _week: string }
@@ -315,6 +894,25 @@ export type Database = {
           is_me: boolean
           week_xp: number
         }[]
+      }
+      moderate_community_report: {
+        Args: {
+          p_content_action?: string
+          p_moderation_note?: string
+          p_moderator_id?: string
+          p_report_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      moderate_shorts_video: {
+        Args: {
+          p_decision: string
+          p_moderator_id: string
+          p_reason: string
+          p_video_id: string
+        }
+        Returns: boolean
       }
       release_cloudy_ai_request: {
         Args: { _request_id: string; _user_id: string }
