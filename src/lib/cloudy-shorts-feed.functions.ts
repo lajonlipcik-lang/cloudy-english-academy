@@ -103,6 +103,7 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
       try { const parsed = new URL(value); return parsed.protocol === "https:" ? value : null; } catch { return null; }
     };
     const avatarUrl = safeImageUrl(metadata.avatar_url ?? metadata.picture);
+    const coverUrl = safeImageUrl(metadata.cover_url);
     const username = typeof metadata.username === "string" && /^[a-zA-Z0-9_.]{3,24}$/.test(metadata.username)
       ? metadata.username : null;
     const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
@@ -132,7 +133,7 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
     for (const like of likeRows ?? []) likeCounts.set(like.video_id, (likeCounts.get(like.video_id) ?? 0) + 1);
     for (const post of posts) (post as any).likes = likeCounts.get(post.id) ?? 0;
     return {profile:{id:profile.id,displayName:String(profile.display_name||"Участник"),bio:String(profile.bio||""),
-      username,avatarUrl,isPublic:profile.is_public===true,isOwn:viewerId===data.authorId},
+      username,avatarUrl,coverUrl,isPublic:profile.is_public===true,isOwn:viewerId===data.authorId},
       stats:{posts:posts.filter((post) => post.status === "approved").length,likes:posts.reduce((sum,post) => sum + ((post as any).likes||0),0)},posts};
   });
 
