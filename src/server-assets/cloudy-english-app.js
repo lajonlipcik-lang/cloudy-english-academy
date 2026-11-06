@@ -750,10 +750,12 @@ async function shortsSubmitUpload(){
   if(button)button.textContent="Отправляем на проверку…";
   const finalized=await authRequest("shorts-upload-finalize",{payload:{videoId:ticket.videoId}});
   if(!finalized?.result?.ok)throw new Error("Не удалось подтвердить загрузку видео.");
+  let textReview=null;
+  try{textReview=await authRequest("shorts-moderate",{payload:{id:ticket.videoId,contentType:"short_video"}});}catch(error){console.warn("[cloudy-shorts] caption moderation deferred",error);}
   shortsRemoveFile();
   const captionField=$("#shorts-upload-caption");if(captionField)captionField.value="";shortsCaptionCount();
-  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Видео принято на проверку</b><small>Ролик сохранён приватно и ожидает модерации. Он не появится в ленте, пока проверка не завершена.</small></div>';
-  if(button){button.disabled=true;button.textContent="Ожидает проверки Cloudy AI";}
+  if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Видео принято на проверку</b><small>Подпись отправлена Cloudy AI. Сам ролик остаётся приватным до отдельной проверки кадров и звука.</small></div>';
+  if(button){button.disabled=true;button.textContent="Ожидает проверки видео";}
   toast("Видео загружено и отправлено на модерацию.");
  }catch(error){
   const message=error?.message||"Не удалось отправить видео.";
