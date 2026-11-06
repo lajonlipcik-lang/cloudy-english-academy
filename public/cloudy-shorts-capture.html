@@ -1,4 +1,150 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"><title>Cloudy Shorts — съёмка</title><style>
-:root{--ac:#5bb8ff;--ac2:#2f7bff}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}html,body{height:100%;margin:0;background:#050c24;color:#fff;font-family:Inter,"SF Pro Display",system-ui,-apple-system,"Segoe UI",sans-serif}body{overflow:hidden}.app{height:100dvh;max-width:480px;margin:auto;background:#050c24;display:flex;flex-direction:column;padding:calc(12px + env(safe-area-inset-top)) 16px calc(14px + env(safe-area-inset-bottom));gap:12px}.top{height:42px;display:flex;align-items:center;justify-content:space-between}.top b{font-size:16px}.x{width:40px;height:40px;border:0;border-radius:50%;background:#ffffff18;color:#fff;font-size:25px}.pv{position:relative;flex:1;min-height:190px;border-radius:22px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#173c67,#0a1831 70%);display:grid;place-items:center}.hero{text-align:center;padding:20px}.cloud{font-size:82px;filter:drop-shadow(0 0 22px #5bb8ff88);animation:float 3s ease-in-out infinite}@keyframes float{50%{transform:translateY(-8px)}}.hero b{display:block;font-size:18px;margin:10px}.hero small{color:#b9cce0;line-height:1.4}.txtmode{display:none;width:100%;height:100%;padding:14px}.txtmode textarea{width:100%;height:100%;resize:none;background:#10213c;color:#fff;border:1px solid #315477;border-radius:16px;padding:18px;font:600 20px/1.5 system-ui;outline:none}.bgdot{position:absolute;right:14px;top:14px;border:0;border-radius:50%;width:34px;height:34px;background:#ffffff24;color:white}.modes{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.modes button{border:0;border-radius:20px;padding:9px 13px;background:#1c3150;color:#c7d7e8;font-weight:800;font-size:12px}.modes button.active{background:#fff;color:#10213c}.controls{height:84px;display:flex;align-items:center;justify-content:center;gap:32px}.gallery{width:50px;height:50px;border:1px solid #8ca9c8;border-radius:13px;background:#1b304c;color:white;font-size:22px}.shutter{width:76px;height:76px;border:5px solid white;border-radius:50%;background:transparent;display:grid;place-items:center}.shutter span{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2))}.rv{position:fixed;inset:0;z-index:5;background:#050c24;display:none;flex-direction:column;padding:calc(12px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));gap:14px}.rv.show{display:flex}.preview{flex:1;min-height:0;border-radius:20px;background:#000;overflow:hidden;display:grid;place-items:center}.preview video,.preview img{width:100%;height:100%;object-fit:contain}.actions{display:flex;gap:12px}.actions button{height:52px;border:0;border-radius:15px;font-weight:850;flex:1;background:#203957;color:#fff}.actions #rvNext{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#041326}.toast{position:fixed;bottom:20px;left:20px;right:20px;text-align:center;background:#263a54;padding:12px;border-radius:12px;opacity:0}.toast.show{opacity:1}.hidden{display:none!important}
-</style></head><body><main class="app"><header class="top"><button class="x" id="xBtn">×</button><b>Cloudy Shorts</b><span style="width:40px"></span></header><section class="pv"><div class="hero" id="hero"><div class="cloud">☁</div><b id="hT">Создай свой Shorts</b><small id="hS">Сними видео или выбери его из галереи</small></div><div class="txtmode" id="txtmode"><textarea id="txt" maxlength="500" placeholder="Напиши текст публикации…"></textarea></div><button class="bgdot" id="bgdot">◐</button></section><nav class="modes" id="modes"><button data-mode="v180">3 мин</button><button data-mode="v60">60 с</button><button class="active" data-mode="v15">15 с</button><button data-mode="photo">ФОТО</button><button data-mode="text">ТЕКСТ</button></nav><div class="controls"><button class="gallery" id="gal">▧</button><button class="shutter" id="shut"><span></span></button><span style="width:50px"></span></div><input id="capV" type="file" accept="video/*" capture="environment" hidden><input id="capP" type="file" accept="image/*" capture="environment" hidden><input id="gfile" type="file" accept="video/*,image/*" hidden></main><section class="rv" id="rv"><header class="top"><button class="x" id="rvBack">‹</button><b>Предпросмотр</b><span style="width:40px"></span></header><div class="preview"><video id="rvVid" playsinline controls hidden></video><img id="rvImg" hidden></div><div class="actions"><button id="rvCancel">Назад</button><button id="rvNext">Далее</button></div></section><div class="toast" id="toast"></div>
-<script>(()=>{const $=id=>document.getElementById(id),S={mode:"v15",bg:0,last:null,url:null};const lim={v15:15,v60:60,v180:180};function toast(t){$("toast").textContent=t;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2200)}function clear(){if(S.url)URL.revokeObjectURL(S.url);S.url=null;S.last=null;$("rvVid").pause();$("rvVid").removeAttribute("src");$("rvImg").removeAttribute("src")}function review(file,type,duration){clear();S.last={file,type,duration};S.url=URL.createObjectURL(file);$("rvVid").hidden=type!=="video";$("rvImg").hidden=type==="video";if(type==="video")$("rvVid").src=S.url;else $("rvImg").src=S.url;$("rv").classList.add("show")}function handle(f){if(!f)return;const image=f.type.startsWith("image/");if(image){if(!["image/jpeg","image/png","image/webp"].includes(f.type)||f.size>15*1024*1024){toast("JPG, PNG или WebP до 15 МБ");return}review(f,S.mode==="text"?"text":"photo",0);return}if(!f.type.startsWith("video/")||f.size>100*1024*1024){toast("Видео должно быть до 100 МБ");return}const v=document.createElement("video");v.preload="metadata";const url=URL.createObjectURL(f);v.onloadedmetadata=()=>{const d=v.duration;URL.revokeObjectURL(url);if(!Number.isFinite(d)||d<=0){toast("Не удалось определить длительность");return}if(d>(lim[S.mode]||180)+.5){toast("Видео длиннее выбранного режима");return}review(f,"video",d)};v.onerror=()=>{URL.revokeObjectURL(url);toast("Не удалось прочитать видео")};v.src=url}function mode(m){S.mode=m;document.querySelectorAll(".modes button").forEach(b=>b.classList.toggle("active",b.dataset.mode===m));$("txtmode").style.display=m==="text"?"block":"none";$("hero").style.display=m==="text"?"none":"block";$("bgdot").classList.toggle("hidden",m!=="text");$("hT").textContent=m==="photo"?"Добавь фотографию":"Создай свой Shorts";$("hS").textContent=m==="photo"?"Сними фото или выбери из галереи":"Сними видео или выбери его из галереи"}document.querySelectorAll(".modes button").forEach(b=>b.onclick=()=>mode(b.dataset.mode));$("gal").onclick=()=>{$("gfile").accept=S.mode==="photo"||S.mode==="text"?"image/*":"video/*,image/*";$("gfile").click()};$("gfile").onchange=e=>handle(e.target.files[0]);$("capV").onchange=e=>handle(e.target.files[0]);$("capP").onchange=e=>handle(e.target.files[0]);$("shut").onclick=()=>{if(S.mode==="photo")$("capP").click();else if(S.mode!=="text")$("capV").click();else{const value=$("txt").value.trim();if(!value){toast("Напиши текст публикации");return}const c=document.createElement("canvas");c.width=1080;c.height=1920;const x=c.getContext("2d");x.fillStyle=["#08152d","#102a4c","#101018"][S.bg%3];x.fillRect(0,0,1080,1920);x.fillStyle="#fff";x.font="bold 64px system-ui";x.textAlign="center";const words=value.split(/\s+/);let lines=[],line="";for(const w of words){const t=line?line+" "+w:w;if(x.measureText(t).width>850&&line){lines.push(line);line=w}else line=t}if(line)lines.push(line);lines.forEach((l,i)=>x.fillText(l,540,900+(i-lines.length/2)*90));c.toBlob(b=>review(new File([b],"cloudy-text.jpg",{type:"image/jpeg"}),"text",0),"image/jpeg",.92)}};$("bgdot").onclick=()=>{S.bg++;$("hero").style.filter="hue-rotate("+(S.bg*45)+"deg)"};function back(){clear();$("rv").classList.remove("show")}$("rvBack").onclick=back;$("rvCancel").onclick=back;$("rvNext").onclick=()=>{if(!S.last)return;window.parent.dispatchEvent(new CustomEvent("cloudy:captured",{detail:{file:S.last.file,type:S.last.type==="video"?"video":"photo",durationSeconds:S.last.duration}}));back()};$("xBtn").onclick=()=>{clear();window.parent.dispatchEvent(new CustomEvent("cloudy:close"))};window.addEventListener("pagehide",clear)})();</script></body></html>
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Cloudy Shorts — съёмка</title>
+<style>
+:root{--ac:#5bb8ff;--ac2:#2f7bff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{height:100%;margin:0;background:#000;overscroll-behavior:none}
+body{display:flex;justify-content:center;color:#fff;font-family:Inter,"SF Pro Text",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;touch-action:manipulation}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer;padding:0}
+svg.i{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.app{position:relative;width:100%;max-width:480px;height:100vh;height:100dvh;background:#000;display:flex;flex-direction:column;overflow:hidden}
+.top{height:calc(64px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 14px 0;display:flex;align-items:center;flex:none}
+.top .x{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.pv{position:relative;flex:1;min-height:0;border-radius:26px;overflow:hidden;background:radial-gradient(120% 90% at 50% 20%,#14213f 0%,#070b17 70%)}
+.hero{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:0 36px 60px}
+.hero svg{width:min(52vw,220px);filter:drop-shadow(0 8px 22px rgba(120,190,255,.45));animation:fl 3s ease-in-out infinite}
+@keyframes fl{50%{transform:translateY(-10px)}}
+.eyes{transform-box:fill-box;transform-origin:center;animation:bk 4.5s infinite}
+@keyframes bk{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
+.hero b{font-size:20px}.hero small{color:#9fb3d9;font-size:15px;line-height:1.4}
+.txtmode{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:2;padding:30px 30px 70px}
+.txtmode.on{display:flex}
+.txtmode textarea{width:100%;height:60%;background:transparent;border:0;outline:0;resize:none;color:#fff;font-weight:800;font-size:34px;line-height:1.25;font-family:inherit;text-align:center;text-shadow:0 2px 12px rgba(0,0,0,.25);-webkit-user-select:text;user-select:text}
+.txtmode textarea::placeholder{color:rgba(255,255,255,.6)}
+.bgdot{position:absolute;left:16px;bottom:64px;width:36px;height:36px;border-radius:50%;border:3px solid #fff;z-index:3;display:none}
+.txtmode.on ~ .bgdot{display:block}
+.modes{position:absolute;left:0;right:0;bottom:10px;display:flex;gap:4px;overflow-x:auto;padding:0 50%;scrollbar-width:none;scroll-snap-type:x proximity;z-index:3}
+.modes::-webkit-scrollbar{display:none}
+.mode{flex:none;padding:9px 16px;border-radius:999px;font-weight:800;font-size:16px;scroll-snap-align:center;white-space:nowrap;text-shadow:0 1px 4px #000a}
+.mode.sel{background:#fff;color:#000;text-shadow:none}
+.shrow{flex:none;height:112px;display:flex;align-items:center;justify-content:center;padding-top:6px}
+.shut{width:96px;height:96px;border-radius:50%;border:5px solid #fff;display:flex;align-items:center;justify-content:center;transition:transform .12s}
+.shut:active{transform:scale(.94)}
+.shut .cl{width:58px;height:auto;overflow:visible}
+.shut .cl path{fill:rgba(255,255,255,.14);stroke:rgba(255,255,255,.9);stroke-width:3;stroke-linejoin:round;transition:fill .15s,stroke .15s,filter .15s}
+.shut:active .cl path,.shut.pressed .cl path{fill:#5bb8ff;stroke:#bfe6ff;filter:drop-shadow(0 0 8px rgba(91,184,255,.8))}
+.nav{flex:none;height:calc(76px + env(safe-area-inset-bottom));padding:6px 18px env(safe-area-inset-bottom);display:flex;align-items:center;position:relative}
+.gal{position:absolute;left:18px;top:50%;transform:translateY(-62%);width:52px;height:52px;border-radius:10px;border:3px solid #fff;background:#12285c center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:20px}
+.tabs{display:flex;margin:0 auto;gap:34px;padding-left:44px;font-weight:800;font-size:19px}
+.tabs button{opacity:.55}.tabs button.on{opacity:1}
+.rv{position:absolute;inset:0;background:#000;z-index:30;display:none;flex-direction:column}
+.rv.on{display:flex}
+.rv .m{flex:1;min-height:0;position:relative;margin-top:calc(8px + env(safe-area-inset-top));border-radius:26px;overflow:hidden;background:#111}
+.rv video,.rv img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.rv .bar{display:flex;gap:10px;padding:12px 16px calc(14px + env(safe-area-inset-bottom))}
+.btn{flex:1;height:50px;border-radius:14px;font-weight:700;font-size:16px;background:#2a2a2a;display:flex;align-items:center;justify-content:center}
+.btn.main{background:linear-gradient(135deg,var(--ac),var(--ac2))}
+.toast{position:absolute;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-90px);background:#fff;color:#0a2a73;padding:11px 16px;border-radius:14px;font-weight:700;z-index:50;transition:transform .3s;max-width:90%;text-align:center}
+.toast.on{transform:translate(-50%,0)}
+.hid{display:none!important}
+</style></head><body>
+<div class="app video" id="app">
+  <div class="top"><button class="x" id="xBtn" aria-label="Закрыть"><svg class="i" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19"/></svg></button></div>
+  <div class="pv">
+    <div class="hero" id="hero">
+      <svg viewBox="0 0 100 80"><defs><linearGradient id="gb" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#bfe0ff"/></linearGradient></defs>
+        <path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#gb)"/>
+        <g class="eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.8" fill="#fff"/><circle cx="64" cy="43" r="1.8" fill="#fff"/></g>
+        <path d="M44 54q7 8 14 0" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <circle cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg>
+      <b id="hT">Сними видео</b><small id="hS">Нажми на большую кнопку. Откроется камера телефона, сайт к ней доступа не получает.</small>
+    </div>
+    <div class="txtmode" id="txtmode"><textarea id="txt" maxlength="220" placeholder="Напиши, что хочешь сказать…"></textarea></div>
+    <button class="bgdot" id="bgdot" aria-label="Фон"></button>
+    <div class="modes" id="modes"></div>
+  </div>
+  <div class="shrow"><button class="shut" id="shut" aria-label="Снять"><svg class="cl" viewBox="0 0 100 80" aria-hidden="true"><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z"/></svg></button></div>
+  <div class="nav">
+    <button class="gal" id="gal" aria-label="Галерея">☁️</button>
+    <div class="tabs"><button data-n="stream">СТРИМ</button><button class="on" data-n="camera">КАМЕРА</button></div>
+  </div>
+  <input type="file" id="capV" accept="video/*" capture class="hid">
+  <input type="file" id="capP" accept="image/*" capture class="hid">
+  <input type="file" id="gfile" accept="video/mp4,video/quicktime,video/webm,image/*,.mp4,.mov,.webm" class="hid">
+  <div class="rv" id="rv"><div class="m"><video id="rvVid" playsinline loop autoplay></video><img id="rvImg" alt=""></div>
+    <div class="bar"><button class="btn" id="rvBack">‹ Назад</button><button class="btn main" id="rvNext">Далее ›</button></div></div>
+  <div class="toast" id="toast"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id), app=$('app');
+const S={mode:'v15',bg:0,last:null,url:null};
+const MAX_MB=100;
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2800)}
+const MODES=[{id:'v180',l:'3 мин',max:180},{id:'v60',l:'60 с',max:60},{id:'v15',l:'15 с',max:15},{id:'photo',l:'ФОТО'},{id:'text',l:'ТЕКСТ'}];
+const mode=()=>MODES.find(m=>m.id===S.mode);
+function renderModes(){
+ $('modes').innerHTML=MODES.map(m=>'<button class="mode '+(m.id===S.mode?'sel':'')+'" data-m="'+m.id+'">'+m.l+'</button>').join('');
+ const sel=$('modes').querySelector('.sel');sel&&sel.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'});
+ const t=S.mode==='text',p=S.mode==='photo';
+ app.classList.toggle('text',t);app.classList.toggle('video',!t&&!p);
+ $('txtmode').classList.toggle('on',t);$('hero').classList.toggle('hid',t);
+ $('hT').textContent=p?'Сделай фото':'Сними видео';
+ $('hS').textContent=p?'Нажми на большую кнопку, чтобы сделать фото.':'Нажми на большую кнопку. Откроется камера телефона, сайт к ней доступа не получает.';
+}
+$('modes').addEventListener('click',e=>{const b=e.target.closest('.mode');if(b){S.mode=b.dataset.m;renderModes()}});
+const shutEl=$('shut');
+shutEl.addEventListener('pointerdown',()=>shutEl.classList.add('pressed'));
+['pointerup','pointercancel','pointerleave'].forEach(ev=>shutEl.addEventListener(ev,()=>setTimeout(()=>shutEl.classList.remove('pressed'),350)));
+$('shut').onclick=()=>{
+ const m=mode();
+ if(m.id==='text'){if(!$('txt').value.trim()){toast('Сначала напиши текст');return}renderText();return}
+ (m.id==='photo'?$('capP'):$('capV')).click();
+};
+$('gal').onclick=()=>$('gfile').click();
+['capV','capP','gfile'].forEach(id=>$(id).addEventListener('change',e=>{const f=e.target.files[0];e.target.value='';if(f)handle(f,id==='gfile')}));
+function handle(f,fromGallery){
+ const isImg=f.type.startsWith('image/'),isVid=f.type.startsWith('video/')||/\.(mp4|mov|webm)$/i.test(f.name);
+ if(!isImg&&!isVid){toast('Нужен файл видео или фото');return}
+ if(f.size>MAX_MB*1024*1024){toast('Файл больше 100 МБ');return}
+ if(isImg){if(S.url)URL.revokeObjectURL(S.url);review(f,'photo',0);return}
+ const url=URL.createObjectURL(f),v=document.createElement('video');v.preload='metadata';v.muted=true;
+ const limit=mode().max||180;
+ v.onloadedmetadata=()=>{const d=v.duration||0;URL.revokeObjectURL(url);
+  if(!Number.isFinite(d)||d<=0){toast('Не удалось определить длительность видео. Выбери другой файл.');return}
+  if(d>limit+.5){toast('Видео длиннее '+(limit>=60?limit/60+' мин':limit+' с')+'. Выбери режим подлиннее.');return}
+  review(f,'video',d)};
+ v.onerror=()=>{URL.revokeObjectURL(url);toast('Не удалось прочитать длительность видео. Попробуй другой файл.')};
+ v.src=url;
+}
+const BGS=[['#2f7bff','#5bb8ff'],['#7c3aed','#ec4899'],['#0f766e','#22d3ee'],['#ea580c','#facc15'],['#111827','#374151']];
+function setBg(){const b=BGS[S.bg%BGS.length];$('txtmode').style.background='linear-gradient(160deg,'+b[0]+','+b[1]+')';$('bgdot').style.background='linear-gradient(135deg,'+b[0]+','+b[1]+')'}
+$('bgdot').onclick=()=>{S.bg++;setBg()};
+function renderText(){
+ const T=1080,V=1920,k=document.createElement('canvas');k.width=T;k.height=V;const x=k.getContext('2d'),b=BGS[S.bg%BGS.length];
+ const g=x.createLinearGradient(0,0,T*.5,V);g.addColorStop(0,b[0]);g.addColorStop(1,b[1]);x.fillStyle=g;x.fillRect(0,0,T,V);
+ x.fillStyle='#fff';x.font='800 84px Inter,system-ui,sans-serif';x.textAlign='center';x.textBaseline='middle';x.shadowColor='rgba(0,0,0,.25)';x.shadowBlur=16;
+ const lines=[];$('txt').value.trim().split('\n').forEach(p=>{let cur='';p.split(' ').forEach(w=>{const t=cur?cur+' '+w:w;if(x.measureText(t).width>900&&cur){lines.push(cur);cur=w}else cur=t});lines.push(cur)});
+ const lh=108,y0=V/2-(lines.length-1)*lh/2;lines.forEach((l,i)=>x.fillText(l,T/2,y0+i*lh));
+ k.toBlob(bl=>{if(!bl){toast('Не удалось подготовить текстовую публикацию');return}review(new File([bl],'cloudy-'+Date.now()+'.jpg',{type:'image/jpeg'}),'text',0,k.toDataURL('image/jpeg',.3))},'image/jpeg',.92);
+}
+function review(file,type,dur,thumb){
+ S.last={file,type,dur,thumb};if(S.url)URL.revokeObjectURL(S.url);S.url=URL.createObjectURL(file);
+ const v=$('rvVid'),i=$('rvImg');if(type==='video'){i.style.display='none';v.style.display='block';v.src=S.url;v.play().catch(()=>{})}
+ else{v.pause();v.style.display='none';i.style.display='block';i.src=S.url}
+ $('rv').classList.add('on');
+}
+$('rvBack').onclick=()=>{$('rvVid').pause();$('rv').classList.remove('on');if(S.url){URL.revokeObjectURL(S.url);S.url=null}S.last=null};
+$('rvNext').onclick=()=>{
+ const d=S.last;if(!d)return;$('rvVid').pause();
+ const parent=window.parent||window;
+ const ok=parent.dispatchEvent(new CustomEvent('cloudy:captured',{detail:{file:d.file,type:d.type,duration:d.dur},cancelable:true}));
+ $('rv').classList.remove('on');
+ if(ok)toast('Не удалось открыть экран публикации. Попробуй ещё раз.');
+};
+$('xBtn').onclick=()=>{const parent=window.parent||window;if(parent.dispatchEvent(new CustomEvent('cloudy:close',{cancelable:true})))toast('Не удалось закрыть экран.');};
+document.querySelector('.tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.dataset.n==='camera')return;const parent=window.parent||window;if(parent.dispatchEvent(new CustomEvent('cloudy:nav',{detail:b.dataset.n,cancelable:true})))toast('Скоро будет доступно')});
+window.addEventListener('pagehide',()=>{if(S.url)URL.revokeObjectURL(S.url)});
+setBg();renderModes();
+</script></body></html>
