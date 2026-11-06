@@ -96,7 +96,7 @@ export const getShortsCreatorProfile = createServerFn({ method: "POST" })
       .from("profiles").select("id,display_name,bio,is_public").eq("id", data.authorId).maybeSingle();
     if (profileError || !profile) throw new Error("Этот профиль недоступен.");
     if (profile.is_public !== true && viewerId !== data.authorId) throw new Error("Этот профиль закрыт.");
-    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(data.authorId);
+    const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(data.authorId!);
     const metadata = authUser?.user?.user_metadata ?? {};
     const safeImageUrl = (value: unknown) => {
       if (typeof value !== "string" || value.length > 2048) return null;
@@ -178,7 +178,7 @@ export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
    const {data:identity,error}=await auth.auth.getUser(data.accessToken);
    if(error||!identity.user)throw new Error("Unauthorized");
    const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
-   const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName,bio:data.bio}).eq("id",identity.user.id);
+   const {error:updateError}=await supabaseAdmin.from("profiles").update({display_name:data.displayName!,bio:data.bio!}).eq("id",identity.user.id);
    if(updateError)throw new Error("Не удалось сохранить профиль.");
    return {ok:true,displayName:data.displayName,bio:data.bio};
  });
