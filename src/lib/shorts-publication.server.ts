@@ -56,7 +56,9 @@ export async function reviewStoredShortImage(content: any, storagePath: string, 
     const provider = providers?.find((item: any) => item.api_key && endpoints[item.provider]);
     if (!provider) return fallback;
     const model = models[provider.provider];
-    const upstream = await fetch(endpoints[provider.provider], {
+    const endpoint = endpoints[provider.provider];
+    if (!endpoint || !model) return fallback;
+    const upstream = await fetch(endpoint, {
       method:"POST",
       headers:{ Authorization:"Bearer " + provider.api_key, "Content-Type":"application/json" },
       body:JSON.stringify({
