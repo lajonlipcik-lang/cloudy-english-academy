@@ -137,7 +137,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
 
       try {
         const accessToken = accessTokenRef.current;
-        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-moderate","shorts-frame-review","shorts-comments-get","shorts-comment-create","shorts-upload-start","shorts-upload-finalize"].includes(String(message.action))) {
+        if (["admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-moderate","shorts-frame-review","shorts-audio-review","shorts-comments-get","shorts-comment-create","shorts-upload-start","shorts-upload-finalize"].includes(String(message.action))) {
           if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
           const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
           if (message.action === "shorts-upload-start" || message.action === "shorts-upload-finalize") {
@@ -161,6 +161,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           else if (message.action === "learning-events") result = await api.syncCloudyLearningEvents({ data: payload as never });
           else if (message.action === "shorts-moderate") result = await api.moderateOwnShortContent({ data: payload as never });
           else if (message.action === "shorts-frame-review") result = await api.analyzeShortVideoFrames({ data: payload as never });
+          else if (message.action === "shorts-audio-review") result = await api.analyzeShortVideoAudio({ data: payload as never });
           else if (message.action === "shorts-comments-get") result = await api.getShortsComments({ data: payload as never });
           else if (message.action === "shorts-comment-create") result = await api.createShortComment({ data: payload as never });
           else if (String(message.action).startsWith("learning-exam-")) result = await api.cloudyPersonalExam({ data: { ...payload, accessToken, examAction: String(message.action).replace("learning-exam-", "") } as never });
