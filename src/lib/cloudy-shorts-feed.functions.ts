@@ -14,6 +14,7 @@ export const listShortsFeed = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     // Published Shorts are readable without an account; every playback URL is
     // short-lived and the underlying Storage bucket remains private.
+    let viewerId: string | null = null;
     if (data.accessToken) {
       const url = process.env["SUPABASE_URL"];
       const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
@@ -23,6 +24,7 @@ export const listShortsFeed = createServerFn({ method: "POST" })
       });
       const { data: identity, error: authError } = await auth.auth.getUser(data.accessToken);
       if (authError || !identity.user) throw new Error("Unauthorized");
+      viewerId = identity.user.id;
     }
 
     const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
@@ -58,6 +60,7 @@ export const listShortsFeed = createServerFn({ method: "POST" })
       return {
         id: row.id,
         authorId: row.author_id,
+        isOwn: viewerId === row.author_id,
         mediaType: row.media_type || "video",
         authorName: names.get(row.author_id) || "Участник",
         caption: String(row.caption || "").slice(0, 500),

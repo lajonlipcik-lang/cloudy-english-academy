@@ -815,7 +815,7 @@ async function shortsLoadFeed(force=false){
  if(!S.user)return;
  const uid=S.user.id;if(shortsFeedLoading||(!force&&shortsFeedUser===uid))return;
  shortsFeedLoading=true;
- try{const response=await authRequest("shorts-feed-get");if(S.user?.id!==uid)return;const rows=Array.isArray(response.result?.videos)?response.result.videos:[];shortsLiveItems=rows.map(v=>({id:v.id,authorId:v.authorId||"",isOwn:v.authorId===S.user?.id,mediaType:v.mediaType||"video",author:v.authorName||"Участник",handle:"",initial:String(v.authorName||"У").trim().charAt(0).toUpperCase(),caption:v.caption||"",textContent:v.textContent||"",likes:0,comments:0,shares:0,videoUrl:v.playbackUrl,imageUrl:v.imageUrl,createdAt:v.publishedAt})).filter(v=>v.mediaType==="text"||v.videoUrl||v.imageUrl);shortsFeedUser=uid;}
+ try{const response=await authRequest("shorts-feed-get");if(S.user?.id!==uid)return;const rows=Array.isArray(response.result?.videos)?response.result.videos:[];shortsLiveItems=rows.map(v=>({id:v.id,authorId:v.authorId||"",isOwn:v.isOwn===true,mediaType:v.mediaType||"video",author:v.authorName||"Участник",handle:"",initial:String(v.authorName||"У").trim().charAt(0).toUpperCase(),caption:v.caption||"",textContent:v.textContent||"",likes:0,comments:0,shares:0,videoUrl:v.playbackUrl,imageUrl:v.imageUrl,createdAt:v.publishedAt})).filter(v=>v.mediaType==="text"||v.videoUrl||v.imageUrl);shortsFeedUser=uid;}
  catch(error){console.warn("[cloudy-shorts] feed load failed",error);if(force)toast(error.message||"Не удалось загрузить ленту Shorts.",false);}
  finally{shortsFeedLoading=false;if(T===4&&S.user?.id===uid)view(0);}
 }
