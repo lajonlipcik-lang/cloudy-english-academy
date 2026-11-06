@@ -73,7 +73,7 @@ Public feed eligibility is checked against Core profiles.is_public. Resolve disp
 4. A high-confidence allow decision publishes the comment. A clear high-confidence violation removes it. Uncertain results or AI outages leave it pending for additional review.
 5. Public comment reads return only rows with `status = 'published'`; pending or rejected text is never returned in the public thread.
 
-The current three Shorts cards are still demonstration content with non-database IDs. Live comment calls activate only for real UUID-backed Content videos after the Content project and migrations are provisioned. Demo comments remain clearly labelled as demonstration data. Replies, comment likes, and actual video upload/feed playback are not part of this slice.
+The current three Shorts cards are clearly marked demonstration content with non-database IDs and show no fabricated comments or comment counts. Live comment calls activate only for real UUID-backed Content videos after the Content project and migrations are provisioned. Replies, comment likes, and actual video upload/feed playback are not part of this slice.
 
 
 ## Shorts video upload request flow
