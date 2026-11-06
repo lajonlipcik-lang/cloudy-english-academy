@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "lint": "eslint src/routes/index.tsx src/routes/__root.tsx src/lib/cloudy/logic.ts src/lib/cloudy/data.ts src/lib/cloudy/logic.test.ts --rule 'prettier/prettier: off'",
     "format": "prettier --write .",
-    "test": "vitest run",
+    "test": "vitest run && node --check services/cloudy-shorts-media/server.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
