@@ -832,7 +832,7 @@ async function shortsSubmitUpload(){
   const audioUnavailable=!audioReview?.result||audioReview.result.status!=="completed";
   if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>'+(captionRejected?"Подпись отклонена":frameFlagged||audioFlagged?"Материалы требуют особого внимания": "Видео принято на проверку") +'</b><small>'+(captionRejected?"Cloudy AI отклонил подпись. Видео осталось приватным и не будет опубликовано.":captionDeferred?"Проверка подписи отложена. Видео осталось приватным и требует ручной проверки.":frameUnavailable||audioUnavailable?"Не все проверки изображения и звука завершились. Видео осталось приватным и ожидает ручной проверки.":frameFlagged||audioFlagged?"Cloudy AI обнаружил возможные нарушения в выборочных кадрах или распознанной речи. Видео осталось приватным и передано на ручную проверку.":"Cloudy AI предварительно проверил выборочные кадры и распознанную речь. Это не полная серверная проверка оригинала. Видео осталось приватным и ожидает ручной проверки.")+'</small></div>';
   if(button){button.disabled=true;button.textContent=captionRejected?"Подпись отклонена":"Ожидает ручной проверки";}
-  toast(captionRejected?"Cloudy AI отклонил подпись видео.":frameFlagged?"Кадры переданы на ручную проверку.":"Видео загружено и отправлено на модерацию.");
+  toast(captionRejected?"Cloudy AI отклонил подпись видео.":frameFlagged||audioFlagged?"Материалы переданы на ручную проверку.":"Видео загружено и отправлено на модерацию.");
  }catch(error){
   const message=error?.message||"Не удалось отправить видео.";
   if(notice)notice.innerHTML='<span class="shorts-ai-cloud">'+mascot("h")+'</span><div><b>Не удалось отправить видео</b><small>'+String(message).replace(/[&<>"']/g,"")+'</small></div>';
