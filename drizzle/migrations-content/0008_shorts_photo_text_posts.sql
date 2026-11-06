@@ -12,7 +12,7 @@ ALTER TABLE public.shorts_videos ADD CONSTRAINT shorts_videos_text_content_lengt
   CHECK (char_length(text_content) <= 2000);
 ALTER TABLE public.shorts_videos DROP CONSTRAINT IF EXISTS shorts_videos_media_shape_check;
 ALTER TABLE public.shorts_videos ADD CONSTRAINT shorts_videos_media_shape_check CHECK (
-  (media_type = 'video' AND storage_path IS NOT NULL AND duration_seconds IS NOT NULL)
+  (media_type = 'video' AND storage_path IS NOT NULL)
   OR (media_type = 'image' AND storage_path IS NOT NULL AND duration_seconds IS NULL AND text_content = '')
   OR (media_type = 'text' AND storage_path IS NULL AND duration_seconds IS NULL
       AND char_length(btrim(text_content)) BETWEEN 1 AND 2000)
