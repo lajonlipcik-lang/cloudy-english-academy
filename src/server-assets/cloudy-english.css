@@ -871,3 +871,11 @@ body:has(.shorts-screen) .amb{display:none!important}
 .shorts-profile-tabs button{height:42px;min-width:54px;padding:0 12px;border:0;border-bottom:2px solid transparent;background:transparent;color:#8f8f98;font:inherit;font-size:12px;font-weight:750}
 .shorts-profile-tabs button.active{color:#fff;border-bottom-color:#fff}
 .shorts-profile-post video{pointer-events:none}
+
+.shorts-app-settings{margin:18px 14px 30px;border:1px solid #303039;border-radius:14px;background:#101014;color:#fff;overflow:hidden}
+.shorts-app-settings>summary{padding:15px 16px;cursor:pointer;list-style:none;font-size:13px;font-weight:750}
+.shorts-app-settings>summary::-webkit-details-marker{display:none}
+.shorts-app-settings>summary:after{content:"＋";float:right;color:#aaa}
+.shorts-app-settings[open]>summary:after{content:"−"}
+.shorts-app-settings>div{padding:0 10px 12px}
+.shorts-creator-profile.own .shorts-profile-back{display:none}
