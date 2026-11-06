@@ -846,20 +846,22 @@ if(!window.__cloudyShortsFlowNavigation){
  window.__cloudyShortsFlowNavigation=true;
  window.addEventListener("cloudy:captured",event=>{
   const detail=event?.detail;if(!detail?.file||!shortsFlowFrame)return;
+  event.preventDefault();
   shortsFlowFile=detail.file;
   const frame=shortsFlowFrame;frame.onload=()=>{
-   try{frame.contentWindow.cloudyPublishOpen(shortsFlowFile,detail.type,detail.durationSeconds||0);}
+   try{frame.contentWindow.cloudyPublishOpen(shortsFlowFile,detail.type,detail.duration||detail.durationSeconds||0);}
    catch(error){toast("Не удалось открыть экран публикации.",false);console.warn(error);}
   };
   frame.src="/cloudy-shorts-publish.html";
  });
- window.addEventListener("cloudy:back",()=>{
+ window.addEventListener("cloudy:back",event=>{
   if(!shortsFlowFrame)return;
+  event.preventDefault();
   const frame=shortsFlowFrame;frame.onload=()=>{shortsFlowFile=null;};
   frame.src="/cloudy-shorts-capture.html";
  });
- window.addEventListener("cloudy:close",shortsFlowClose);
- window.addEventListener("cloudy:published",shortsFlowClose);
+ window.addEventListener("cloudy:close",event=>{event.preventDefault();shortsFlowClose();});
+ window.addEventListener("cloudy:published",event=>{event.preventDefault();shortsFlowClose();});
 }
 function shortsSetComposerMode(mode){
  if(!["video","image","text"].includes(mode))return;
@@ -1036,7 +1038,7 @@ async function shortsPublishExternal(detail){
   durationSeconds:image?0:Math.max(0,Math.round(Number(detail?.durationSeconds||detail?.duration||0)))
  }});
  const ticket=started?.result;
- if(!ticket?.signedUrl||!ticket?.publishableKey||!ticket?.contentUrl||!ticket?.token)throw new Error("Сервер не подготовил защищённую загрузку.");
+ if(!ticket?.signedUrl||!ticket?.publishableKey||!ticket?.contentUrl||!ticket?.videoId||!ticket?.token)throw new Error("Сервер не подготовил защищённую загрузку.");
  progress(12);
  const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
  const body=new FormData();body.append("cacheControl","3600");body.append("",file);
@@ -1059,6 +1061,7 @@ if(!window.__cloudyShortsPublishBridge){
   event.preventDefault();
   shortsPublishExternal(detail).catch(error=>{
    const message=error?.message||"Не удалось опубликовать Shorts.";
+   try{const frame=shortsFlowFrame?.contentWindow;if(typeof frame?.cloudyPublishError==="function")frame.cloudyPublishError(message);}catch(_){}
    toast(message,false);
    console.warn("[cloudy-shorts] external publish failed",error);
   });
