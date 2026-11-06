@@ -191,7 +191,7 @@ export const updateShortsCreatorProfile = createServerFn({ method:"POST" })
    const coverPath = input?.coverPath === undefined ? undefined : String(input.coverPath);
    if (avatarPath !== undefined && !/^profiles\/[0-9a-f-]{36}\/avatar\/[a-f0-9-]+\.(jpg|png|webp)$/i.test(avatarPath)) throw new Error("Некорректный путь аватара.");
    if (coverPath !== undefined && !/^profiles\/[0-9a-f-]{36}\/cover\/[a-f0-9-]+\.(jpg|png|webp)$/i.test(coverPath)) throw new Error("Некорректный путь обложки.");
-   return {accessToken,displayName,bio,isPublic,avatarPath,coverPath};
+   return {accessToken,displayName,bio,isPublic,...(avatarPath !== undefined ? {avatarPath} : {}),...(coverPath !== undefined ? {coverPath} : {})};
  })
  .handler(async({data})=>{
    const url=process.env["SUPABASE_URL"],key=process.env["SUPABASE_PUBLISHABLE_KEY"];
