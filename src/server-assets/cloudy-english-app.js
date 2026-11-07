@@ -939,6 +939,36 @@ function shortsRenderComments(id){
   sheetEl.innerHTML='<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><header class="shorts-comments-header"><div><b>Комментарии</b><span>'+shortsCount(live?samples.length:0,false)+'</span></div><button aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></header>'+(live?'<div class="shorts-comments-sort"><button class="'+(shortsCommentSort==="top"?"active":"")+'" onclick="shortsSortComments(\'top\',\''+id+'\')">Популярные</button><button class="'+(shortsCommentSort==="new"?"active":"")+'" onclick="shortsSortComments(\'new\',\''+id+'\')">Сначала новые</button></div>':'')+'<div class="shorts-comments-scroll">'+(rows||'<div class="shorts-comments-empty">'+(live?'Пока нет комментариев. Будь первым!':'Комментарии появятся вместе с реальными публикациями.')+'</div>')+'</div>'+(live?'<div class="shorts-comment-compose"><div class="shorts-compose-avatar">☁</div><input id="shorts-comment-input" maxlength="500" placeholder="Добавить комментарий…" onkeydown="if(event.key===\'Enter\')shortsSendComment()"><button aria-label="Отправить комментарий" onclick="shortsSendComment()">'+shortsIcon("share")+'</button></div>':'')+'</div>';
  }
 }
+function shortsBindCommentSheetDismiss(){
+ const sheetEl=$(".sb .sh"),grabber=sheetEl?.querySelector(".shorts-comments-grabber");
+ if(!sheetEl||!grabber||grabber.dataset.dismissBound==="1")return;
+ grabber.dataset.dismissBound="1";
+ let startY=0,lastY=0,lastTime=0,dragging=false;
+ grabber.style.touchAction="none";
+ grabber.addEventListener("pointerdown",event=>{
+  if(event.pointerType==="mouse"&&event.button!==0)return;
+  startY=lastY=event.clientY;lastTime=performance.now();dragging=true;
+  sheetEl.style.transition="none";
+  try{grabber.setPointerCapture(event.pointerId)}catch(_){}
+ });
+ grabber.addEventListener("pointermove",event=>{
+  if(!dragging)return;
+  sheetEl.style.transform="translateY("+Math.max(0,event.clientY-startY)+"px)";
+ });
+ const finish=event=>{
+  if(!dragging)return;
+  dragging=false;
+  const y=event?.clientY??lastY,delta=Math.max(0,y-startY);
+  const velocity=Math.max(0,(y-lastY)/Math.max(1,performance.now()-lastTime));
+  sheetEl.style.transition="transform .24s cubic-bezier(.2,.8,.2,1)";
+  if(delta>110||velocity>.65){closeSh();return;}
+  sheetEl.style.transform="";
+  const reset=()=>{sheetEl.style.transition="";sheetEl.removeEventListener("transitionend",reset)};
+  sheetEl.addEventListener("transitionend",reset);
+ };
+ grabber.addEventListener("pointerup",finish);
+ grabber.addEventListener("pointercancel",()=>{if(!dragging)return;dragging=false;sheetEl.style.transition="transform .2s ease";sheetEl.style.transform="";});
+}
 function shortsComments(id){shortsCommentSort="top";shortsReplyTo=null;shortsLiveCommentsVideoId=null;shortsLiveComments=[];sheet('<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><header class="shorts-comments-header"><div><b>Комментарии</b><span>'+shortsCount((shortsItems.find(v=>v.id===id)||{}).comments||0,false)+'</span></div><button aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></header><div class="shorts-comments-loading">Загружаем обсуждение…</div></div>');shortsRenderComments(id);}
 function shortsSortComments(sort,id){shortsCommentSort=sort;shortsRenderComments(id);}
 function shortsCommentLike(id){if(shortsCommentLikes.has(id))shortsCommentLikes.delete(id);else shortsCommentLikes.add(id);const videoId=$(".sb")?.dataset?.videoId||"say-tell";shortsRenderComments(videoId);}
@@ -994,6 +1024,7 @@ if(!window.__cloudyShortsFlowNavigation){
   const frame=shortsFlowFrame;frame.onload=()=>{
    try{frame.contentWindow.cloudyPublishOpen(shortsFlowFile,detail.type,detail.duration||detail.durationSeconds||0);}
    catch(error){toast("Не удалось открыть экран публикации.",false);console.warn(error);}
+   shortsBindCommentSheetDismiss();
   };
   frame.src="/cloudy-shorts-publish.html";
  });
