@@ -12,9 +12,11 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   return <div className="flex min-h-screen items-center justify-center bg-background px-4"><div className="max-w-md text-center"><h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1><p className="mt-2 text-sm text-muted-foreground">Something went wrong on our end. You can try refreshing or head back home.</p><div className="mt-6 flex flex-wrap justify-center gap-2"><button onClick={() => { router.invalidate(); reset(); }} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">Try again</button><a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">Go home</a></div></div></div>;
 }
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+ staticData: { sitemap: false },
  head: () => ({
   meta: [
    { charSet: "utf-8" }, { name: "viewport", content: "width=device-width, initial-scale=1" },
+    { name: "google-site-verification", content: "Ry_Jj1RQYtx-Irq2DnRa_zniBie7GeAKBProavpbHE0" },
    { title: "Cloudy English Academy — учи английский каждый день" },
    { name: "description", content: "Изучай английский с короткими уроками, практикой и игровым прогрессом." },
    { name: "author", content: "Cloudy English Academy" }, { property: "og:title", content: "Cloudy English Academy" },

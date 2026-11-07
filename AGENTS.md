@@ -11,3 +11,4 @@
 
 - Shorts publication is finalized server-side through an atomic RPC after trusted-original visual review; only explicit sexual 18+ can prevent publication, so caption/audio RPCs cannot override publication.
 - Shorts feed and moderation reads use authenticated server functions with private signed media URLs; the embedded client refreshes through the existing auth bridge after mutations.
+- Sitemap URLs derive from explicit route staticData decisions; exclude APIs and keep the configured published origin so private endpoints never enter the sitemap.

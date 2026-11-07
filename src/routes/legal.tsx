@@ -242,4 +242,15 @@ export function LegalPage() {
   );
 }
 
-export const Route = createFileRoute("/legal")({ component: LegalPage });
+export const Route = createFileRoute("/legal")({
+  staticData: { sitemap: true },
+  head: () => ({ meta: [
+    { title: "Правила и документы — Cloudy English Academy" },
+    { name: "description", content: "Правила использования, конфиденциальности и безопасности Cloudy English Academy." },
+    { property: "og:title", content: "Правила и документы — Cloudy English Academy" },
+    { property: "og:description", content: "Юридические документы и контакты поддержки Cloudy English Academy." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
+  component: LegalPage,
+});
