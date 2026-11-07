@@ -1,5 +1,5 @@
 # Shorts repair
-- [ ] Complete Search Console verification and sitemap submission (requires approved publication).
+- [x] Complete Search Console verification and sitemap submission.
 - [ ] Diagnose approved videos missing from feed.
 - [ ] Implement explicit-18+-only publication, post-publication review and live refresh.
 - [ ] Apply atomic RPC migration and add regression tests.
