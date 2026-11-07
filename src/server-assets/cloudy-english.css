@@ -946,3 +946,18 @@ body:has(.shorts-screen) .amb{display:none!important}
 .shorts-profile-editor-panel footer #shortsProfileSave{background:linear-gradient(110deg,#4db3ff,#287cff);color:#06143a;min-width:130px}
 .shorts-profile-editor-panel footer #shortsProfileSave:disabled{opacity:.55}
 @media(min-width:600px){.shorts-profile-editor{align-items:center;padding:20px}.shorts-profile-editor-panel{border-radius:22px}}
+
+
+/* Cloudy Shorts — responsive motion and tactile feedback */
+.shorts-feed{scroll-behavior:smooth;-webkit-overflow-scrolling:touch;scroll-snap-type:y mandatory;overscroll-behavior-y:contain}
+.shorts-video{scroll-snap-align:start;scroll-snap-stop:always;transition:opacity .28s ease,filter .28s ease}
+.shorts-action{transition:transform .18s cubic-bezier(.2,.8,.2,1),opacity .18s ease,background-color .2s ease,color .2s ease}
+.shorts-action:active{transform:scale(.88)}
+.shorts-like .shorts-cloud-like{display:inline-flex;transform-origin:50% 65%;transition:transform .22s cubic-bezier(.2,.8,.2,1),filter .22s ease}
+.shorts-like.liked .shorts-cloud-like{transform:scale(1.06);filter:drop-shadow(0 0 9px rgba(91,184,255,.65))}
+.shorts-like .shorts-cloud-like.cloud-pop{animation:shortsLikePop .42s cubic-bezier(.16,1.35,.35,1) both}
+@keyframes shortsLikePop{0%{transform:scale(.68)}45%{transform:scale(1.28)}72%{transform:scale(.94)}100%{transform:scale(1.06)}}
+.shorts-post-menu{transform-origin:bottom right;animation:shortsMenuIn .2s cubic-bezier(.2,.8,.2,1) both}
+@keyframes shortsMenuIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+.shorts-caption{transition:opacity .24s ease,transform .24s ease}
+@media(prefers-reduced-motion:reduce){.shorts-feed{scroll-behavior:auto}.shorts-video,.shorts-action,.shorts-like .shorts-cloud-like,.shorts-caption{transition:none!important;animation:none!important}}
