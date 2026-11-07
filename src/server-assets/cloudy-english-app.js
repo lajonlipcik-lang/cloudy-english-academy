@@ -826,39 +826,79 @@ function shortsPaintLike(x,animate=true){const card=document.querySelector('[dat
 async function shortsLike(id){const x=shortsLiveItems.find(v=>v.id===id);if(!x)return;if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы ставить лайки.",false);return;}const previousLiked=!!x.isLiked,previousLikes=Number(x.likes||0);x.isLiked=!previousLiked;x.likes=Math.max(0,previousLikes+(x.isLiked?1:-1));if(x.isLiked)shortsLiked.add(id);else shortsLiked.delete(id);shortsPaintLike(x,true);x.likeDesired=x.isLiked;if(x.likePending)return;x.likePending=true;try{while(x.likeSynced!==x.likeDesired){const target=x.likeDesired;const response=await authRequest("shorts-like-set",{payload:{videoId:id,like:target}});x.likeSynced=response.result?.isLiked===true;if(x.likeSynced!==target){x.likeDesired=x.likeSynced;break;}x.likes=Number(response.result?.likes??x.likes);if(x.likeDesired!==target)continue;}if(x.isLiked!==x.likeSynced){x.isLiked=x.likeSynced;x.likes=Math.max(0,Number(x.likes||0)+(x.isLiked?1:-1));if(x.isLiked)shortsLiked.add(id);else shortsLiked.delete(id);shortsPaintLike(x,false);}}catch(error){x.isLiked=previousLiked;x.likes=previousLikes;if(x.isLiked)shortsLiked.add(id);else shortsLiked.delete(id);shortsPaintLike(x,false);toast(error.message||"Не удалось сохранить лайк.",false);}finally{x.likePending=false;delete x.likeDesired;delete x.likeSynced;}}
 async function shortsSave(id){if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы сохранять публикации.",false);return;}const item=shortsLiveItems.find(v=>v.id===id);if(!item||item.savePending)return;item.savePending=true;const desired=!shortsSaved.has(id);try{const response=await authRequest("shorts-save-set",{payload:{videoId:id,saved:desired}});if(response.result?.isSaved===true)shortsSaved.add(id);else shortsSaved.delete(id);item.isSaved=desired;const card=document.querySelector('[data-short-id="'+id+'"]');const btn=card?.querySelector('[aria-label="Сохранить"]');if(btn){btn.classList.toggle("saved",desired);const label=btn.querySelector("small");if(label)label.textContent=desired?"Сохранено":"Сохранить";}}catch(error){toast(error.message||"Не удалось изменить сохранённые публикации.",false);}finally{item.savePending=false;}}
 async function shortsFollow(id){const x=shortsLiveItems.find(v=>v.id===id);if(!x?.authorId||x.isOwn)return;if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы подписываться.",false);return;}const next=!shortsFollowing.has(x.authorId);try{const response=await authRequest("shorts-follow-set",{payload:{authorId:x.authorId,follow:next}});if(response.result?.isFollowing)shortsFollowing.add(x.authorId);else shortsFollowing.delete(x.authorId);shortsLiveItems.forEach(item=>{if(item.authorId===x.authorId)item.isFollowingAuthor=!!response.result?.isFollowing;});document.querySelectorAll('[data-short-id="'+id+'"] .shorts-follow').forEach(btn=>{btn.classList.toggle("following",!!response.result?.isFollowing);btn.textContent=response.result?.isFollowing?"Вы подписаны":"+ Подписаться";});if(shortsFeedMode==="following")view(0);}catch(error){toast(error.message||"Не удалось изменить подписку.",false);}}
-let shortsPlaybackObserver=null,shortsActiveVideo=null;
-function shortsPauseAll(except=null){document.querySelectorAll(".shorts-real-video").forEach(video=>{if(video!==except){video.pause();video.closest(".shorts-video")?.classList.remove("is-playing");}});}
- function shortsStopFeedPlayback(){
-  if(shortsPlaybackObserver){shortsPlaybackObserver.disconnect();shortsPlaybackObserver=null;}
-  shortsPauseAll();shortsActiveVideo=null;
- }
- function shortsResumeFeedPlayback(){
-  if(T===4&&!shortsFlowOverlay)initShortsPlayback();
- }
-function shortsPlayVideo(video){if(!video||!video.isConnected)return;shortsPauseAll(video);video.muted=shortsMuted;const card=video.closest(".shorts-video");card?.classList.remove("is-paused");card?.classList.add("is-playing");const result=video.play();if(result&&typeof result.catch==="function")result.catch(()=>{card?.classList.remove("is-playing");});shortsActiveVideo=video;}
+let shortsPlaybackObserver=null,shortsActiveVideo=null,shortsActiveCard=null,shortsCardVisibility=new Map();
+function shortsPauseAll(except=null){document.querySelectorAll(".shorts-real-video").forEach(video=>{if(video!==except){video.pause();video.closest(".shorts-video")?.classList.remove("is-playing");}});if(!except)shortsActiveVideo=null;}
+function shortsStopFeedPlayback(){
+ if(shortsPlaybackObserver){shortsPlaybackObserver.disconnect();shortsPlaybackObserver=null;}
+ shortsCardVisibility.clear();shortsPauseAll();shortsActiveVideo=null;shortsActiveCard=null;
+}
+function shortsResumeFeedPlayback(){
+ if(T===4&&!shortsFlowOverlay)initShortsPlayback();
+}
+function shortsActivateCard(card){
+ if(!card||!card.isConnected)return;
+ const changed=shortsActiveCard!==card;
+ if(changed){shortsPauseAll();shortsActiveCard=card;}
+ const video=card.querySelector(".shorts-real-video");
+ if(!video){shortsPauseAll();shortsActiveVideo=null;return;}
+ if(video.dataset.userPaused==="1"){video.pause();card.classList.remove("is-playing");shortsActiveVideo=null;return;}
+ if(shortsActiveVideo!==video||video.paused)shortsPlayVideo(video);
+}
+function shortsEvaluateVisibleCard(){
+ if(document.visibilityState==="hidden"){shortsPauseAll();shortsActiveVideo=null;return;}
+ const feed=document.querySelector("#shorts-feed");if(!feed)return;
+ const visible=Array.from(shortsCardVisibility.entries()).filter(([card,ratio])=>card.isConnected&&ratio>=0.65).sort((a,b)=>b[1]-a[1])[0];
+ if(!visible){shortsPauseAll();shortsActiveVideo=null;shortsActiveCard=null;return;}
+ shortsActivateCard(visible[0]);
+}
+function shortsPlayVideo(video){
+ if(!video||!video.isConnected)return;
+ const card=video.closest(".shorts-video");
+ if(!card)return;
+ shortsPauseAll(video);shortsActiveCard=card;video.muted=shortsMuted;
+ card.classList.remove("is-paused");card.classList.add("is-playing");
+ const result=video.play();
+ if(result&&typeof result.catch==="function")result.catch(()=>{card.classList.remove("is-playing");if(shortsActiveVideo===video)shortsActiveVideo=null;});
+ shortsActiveVideo=video;
+}
 function initShortsPlayback(){
  const feed=document.querySelector("#shorts-feed");if(!feed)return;
  if(shortsPlaybackObserver){shortsPlaybackObserver.disconnect();shortsPlaybackObserver=null;}
- shortsPauseAll();shortsActiveVideo=null;
- const videos=Array.from(feed.querySelectorAll(".shorts-real-video"));
- videos.forEach(video=>{video.pause();video.muted=shortsMuted;video.closest(".shorts-video")?.classList.remove("is-playing","is-paused");});
- if(!videos.length)return;
+ shortsPauseAll();shortsActiveVideo=null;shortsActiveCard=null;shortsCardVisibility.clear();
+ const cards=Array.from(feed.querySelectorAll(".shorts-video"));
+ cards.forEach(card=>{
+  const video=card.querySelector(".shorts-real-video");
+  if(video){video.pause();video.muted=shortsMuted;}
+  card.classList.remove("is-playing","is-paused");
+ });
+ if(!cards.length)return;
  if("IntersectionObserver" in window){
   shortsPlaybackObserver=new IntersectionObserver(entries=>{
-   const visible=entries.filter(entry=>entry.isIntersecting&&entry.intersectionRatio>=0.65).sort((x,y)=>y.intersectionRatio-x.intersectionRatio)[0];
-   if(visible&&visible.target.dataset.userPaused!=="1")shortsPlayVideo(visible.target);
+   entries.forEach(entry=>shortsCardVisibility.set(entry.target,entry.isIntersecting?entry.intersectionRatio:0));
+   shortsEvaluateVisibleCard();
   },{root:feed,threshold:[0,0.25,0.5,0.65,0.8,1]});
-  videos.forEach(video=>shortsPlaybackObserver.observe(video));
- }else{shortsPlayVideo(videos[0]);}
+  cards.forEach(card=>shortsPlaybackObserver.observe(card));
+ }else{
+  const evaluate=()=>{
+   const rect=feed.getBoundingClientRect(),mid=rect.top+rect.height/2;
+   const card=cards.filter(x=>{const r=x.getBoundingClientRect();return r.bottom>rect.top&&r.top<rect.bottom;}).sort((a,b)=>Math.abs((a.getBoundingClientRect().top+a.getBoundingClientRect().height/2)-mid)-Math.abs((b.getBoundingClientRect().top+b.getBoundingClientRect().height/2)-mid))[0];
+   if(card)shortsActivateCard(card);else{shortsPauseAll();shortsActiveCard=null;}
+  };
+  feed.addEventListener("scroll",evaluate,{passive:true});evaluate();
+ }
  if(feed.dataset.playbackClickBound!=="1"){
   feed.dataset.playbackClickBound="1";
   feed.addEventListener("click",event=>{
    if(event.target.closest("button,a,input,textarea"))return;
-   const card=event.target.closest("#shorts-feed .shorts-video");const video=card?.querySelector(".shorts-real-video");if(!video)return;
+   const card=event.target.closest("#shorts-feed .shorts-video"),video=card?.querySelector(".shorts-real-video");if(!video)return;
    if(video.paused){video.dataset.userPaused="0";shortsPlayVideo(video);card.classList.remove("is-paused");}
-   else{video.dataset.userPaused="1";video.pause();card.classList.remove("is-playing");card.classList.add("is-paused");}
+   else{video.dataset.userPaused="1";video.pause();card.classList.remove("is-playing");card.classList.add("is-paused");shortsActiveVideo=null;}
   });
  }
+}
+if(!window.__cloudyShortsVisibilityBound){
+ window.__cloudyShortsVisibilityBound=true;
+ document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden"){shortsPauseAll();shortsActiveVideo=null;}else shortsEvaluateVisibleCard();});
 }
 function shortsToggleSound(){shortsMuted=!shortsMuted;if(shortsActiveVideo)shortsActiveVideo.muted=shortsMuted;document.querySelectorAll(".sound-toggle .shorts-action-icon").forEach(x=>x.innerHTML=shortsIcon(shortsMuted?"muted":"volume"));}
 async function shortsShare(id){const item=shortsLiveItems.find(x=>x.id===id);const url=location.href.split("#")[0]+"#short-"+encodeURIComponent(id);try{if(navigator.share){await navigator.share({title:"Cloudy Shorts",text:item?.caption||"Посмотри видео в Cloudy Shorts",url});}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);toast("Ссылка на видео скопирована.");}else{toast("Поделиться сейчас не удалось.",false);}}catch(error){if(error?.name!=="AbortError")toast("Не удалось поделиться видео.",false);}}
