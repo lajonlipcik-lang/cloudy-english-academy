@@ -959,3 +959,7 @@ body:has(.shorts-screen) .amb{display:none!important}
 @keyframes shortsMenuIn{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
 .shorts-caption{transition:opacity .24s ease,transform .24s ease}
 @media(prefers-reduced-motion:reduce){.shorts-feed{scroll-behavior:auto}.shorts-video,.shorts-action,.shorts-like .shorts-cloud-like,.shorts-caption{transition:none!important;animation:none!important}}
+
+/* Shorts comments sheet: larger touch target and native drag gesture. */
+.shorts-comments-grabber{padding:10px 28px!important;margin:0 auto 2px!important;box-sizing:content-box;cursor:grab;touch-action:none;}
+.shorts-comments-grabber:active{cursor:grabbing}
