@@ -581,6 +581,24 @@ export type Database = {
           },
         ]
       }
+      shorts_follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+        }
+        Relationships: []
+      }
       shorts_likes: {
         Row: {
           created_at: string
@@ -630,7 +648,6 @@ export type Database = {
           frame_count: number
           id: string
           media_type: string
-          text_content: string
           moderated_at: string | null
           moderation_labels: Json
           moderation_reason: string
@@ -638,6 +655,7 @@ export type Database = {
           published_at: string | null
           status: string
           storage_path: string | null
+          text_content: string
           updated_at: string
         }
         Insert: {
@@ -661,13 +679,15 @@ export type Database = {
           frame_analyzed_at?: string | null
           frame_count?: number
           id?: string
+          media_type?: string
           moderated_at?: string | null
           moderation_labels?: Json
           moderation_reason?: string
           moderation_status?: string
           published_at?: string | null
           status?: string
-          storage_path: string
+          storage_path?: string | null
+          text_content?: string
           updated_at?: string
         }
         Update: {
@@ -691,6 +711,7 @@ export type Database = {
           frame_analyzed_at?: string | null
           frame_count?: number
           id?: string
+          media_type?: string
           moderated_at?: string | null
           moderation_labels?: Json
           moderation_reason?: string
@@ -698,6 +719,7 @@ export type Database = {
           published_at?: string | null
           status?: string
           storage_path?: string | null
+          text_content?: string
           updated_at?: string
         }
         Relationships: []
@@ -874,6 +896,19 @@ export type Database = {
       award_cloudy_lesson_xp: {
         Args: { _lesson_index: number; _level: string; _user_id: string }
         Returns: Json
+      }
+      finalize_shorts_nonvideo_publication: {
+        Args: {
+          p_author_id: string
+          p_blocked: boolean
+          p_confidence: number
+          p_labels: Json
+          p_model: string
+          p_post_id: string
+          p_reason: string
+          p_status: string
+        }
+        Returns: boolean
       }
       finalize_shorts_publication: {
         Args: {
