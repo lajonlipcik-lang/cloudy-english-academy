@@ -953,9 +953,9 @@ async function shortsSendComment(){
   const response=await authRequest("shorts-comment-create",{payload:{videoId,body}});
   if(input)input.value="";
   const status=response.result?.status;
-  if(status==="published")toast("Cloudy AI проверил комментарий — он опубликован.");
-  else if(status==="removed")toast("Cloudy AI отклонил комментарий. "+String(response.result?.reason||""),false);
-  else toast("Комментарий отправлен Cloudy AI и ожидает проверки.");
+  if(status==="published")toast("Комментарий опубликован и виден всем.");
+  
+  else toast("Комментарий опубликован и виден всем.");
   shortsLiveCommentsVideoId=null;await shortsLoadLiveComments(videoId);
  }catch(error){toast(error.message||"Не удалось отправить комментарий.",false);}
  finally{if(button){button.disabled=false;button.innerHTML=shortsIcon("share");}}
