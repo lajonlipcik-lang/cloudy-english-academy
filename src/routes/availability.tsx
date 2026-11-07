@@ -78,4 +78,15 @@ export function AvailabilityPage() {
   );
 }
 
-export const Route = createFileRoute("/availability")({ component: AvailabilityPage });
+export const Route = createFileRoute("/availability")({
+  staticData: { sitemap: true },
+  head: () => ({ meta: [
+    { title: "Доступность по странам — Cloudy English Academy" },
+    { name: "description", content: "Страны и территории, где доступна Cloudy English Academy." },
+    { property: "og:title", content: "Доступность по странам — Cloudy English Academy" },
+    { property: "og:description", content: "Актуальная информация о доступности Cloudy English Academy по странам." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
+  component: AvailabilityPage,
+});

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AvailabilityRouteImport } from './routes/availability'
 import { Route as LegalRouteImport } from './routes/legal'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ApiInternalSupportAiRouteImport } from './routes/api/internal/support-ai'
 
 const IndexRoute = IndexRouteImport.update({
@@ -29,6 +30,11 @@ const LegalRoute = LegalRouteImport.update({
   path: '/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiInternalSupportAiRoute = ApiInternalSupportAiRouteImport.update({
   id: '/api/internal/support-ai',
   path: '/api/internal/support-ai',
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/availability': typeof AvailabilityRoute
   '/legal': typeof LegalRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/availability': typeof AvailabilityRoute
   '/legal': typeof LegalRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,38 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/availability': typeof AvailabilityRoute
   '/legal': typeof LegalRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/availability' | '/legal' | '/api/internal/support-ai'
+  fullPaths:
+    | '/'
+    | '/availability'
+    | '/legal'
+    | '/sitemap.xml'
+    | '/api/internal/support-ai'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/availability' | '/legal' | '/api/internal/support-ai'
-  id: '__root__' | '/' | '/availability' | '/legal' | '/api/internal/support-ai'
+  to:
+    | '/'
+    | '/availability'
+    | '/legal'
+    | '/sitemap.xml'
+    | '/api/internal/support-ai'
+  id:
+    | '__root__'
+    | '/'
+    | '/availability'
+    | '/legal'
+    | '/sitemap.xml'
+    | '/api/internal/support-ai'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AvailabilityRoute: typeof AvailabilityRoute
   LegalRoute: typeof LegalRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiInternalSupportAiRoute: typeof ApiInternalSupportAiRoute
 }
 
@@ -92,6 +118,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LegalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/support-ai': {
       id: '/api/internal/support-ai'
       path: '/api/internal/support-ai'
@@ -106,6 +139,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AvailabilityRoute: AvailabilityRoute,
   LegalRoute: LegalRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiInternalSupportAiRoute: ApiInternalSupportAiRoute,
 }
 export const routeTree = rootRouteImport
