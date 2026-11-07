@@ -567,7 +567,7 @@ export const moderateCommunityReport=createServerFn({method:"POST"}).inputValida
 });
 
 
-type ContentModerationType = "short_comment" | "short_video";
+type ContentModerationType = "short_video";
 type ContentModerationDecision = {
   decision: "allow" | "reject" | "review";
   reason: string;
@@ -647,67 +647,12 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
     const contentType = String(input?.contentType ?? "");
     if (!token || token.length > 8192 || token.split(".").length !== 3) throw new Error("Unauthorized");
     if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Некорректная публикация.");
-    if (contentType !== "short_comment" && contentType !== "short_video") throw new Error("Неизвестный тип содержимого.");
+    if (contentType !== "short_video") throw new Error("Модерация комментариев отключена.");
     return { ...input, accessToken: token, id, contentType };
   })
   .handler(async ({ data }) => {
-    const { db: coreDb, user } = await ctx(data.accessToken);
-    const contentType = data.contentType as ContentModerationType;
-    // Video captions and speech cannot block or change publication.
-    if (contentType === "short_video") return {ok:true,decision:"allow",reason:"Подпись не ограничивает публикацию видео.",moderationApplied:false,mediaReviewed:false};
-    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
-    const contentDb = getCloudyContentAdmin();
-    const table = contentType === "short_comment" ? "shorts_comments" : "shorts_videos";
-    const bodyColumn = contentType === "short_comment" ? "body" : "caption";
-    const { data: item, error } = await contentDb
-      .from(table)
-      .select("id,author_id,moderation_status," + bodyColumn)
-      .eq("id", data.id)
-      .maybeSingle();
-    if (error || !item) throw new Error("Публикация не найдена.");
-    const contentItem = item as any;
-    if (contentItem.author_id !== user.id) throw new Error("Нельзя модерировать чужую публикацию.");
-    if (contentItem.moderation_status !== "pending") throw new Error("Эта публикация уже отправлена на проверку.");
-    const body = safeContextText(contentItem[bodyColumn], 1200);
-    if (!body) throw new Error("Нет текста для проверки.");
-
-    let decision: ContentModerationDecision;
-    let provider = "cloudy-ai";
-    let model = "";
-    try {
-      const result = await runCloudyContentTextModeration(coreDb, contentType, body);
-      decision = result;
-      provider = result.provider;
-      model = result.model;
-    } catch (error) {
-      // Fail closed: do not publish if AI is unavailable or returns malformed output.
-      decision = {
-        decision: "review",
-        reason: "Автоматическая проверка временно недоступна; требуется дополнительная проверка.",
-        labels: ["moderation_unavailable"],
-        confidence: 0,
-      };
-      console.warn("[cloudy-content-moderation] AI review deferred", error instanceof Error ? error.name : "unknown");
-    }
-
-    const { data: applied, error: applyError } = await contentDb.rpc("apply_shorts_text_moderation", {
-      p_content_type: contentType,
-      p_content_id: data.id,
-      p_decision: decision.decision,
-      p_reason: decision.reason,
-      p_labels: decision.labels,
-      p_confidence: decision.confidence,
-      p_model: model || provider,
-      p_policy_version: "cloudy-content-text-v1",
-    });
-    if (applyError) throw new Error("Не удалось сохранить решение модерации.");
-    return {
-      ok: true,
-      decision: decision.decision,
-      reason: decision.reason,
-      moderationApplied: Boolean(applied),
-      mediaReviewed: false,
-    };
+    await ctx(data.accessToken);
+    return { ok: true, decision: "allow", reason: "Подписи и комментарии не проходят предварительную модерацию.", moderationApplied: false, mediaReviewed: false };
   });
 
 
@@ -1017,7 +962,7 @@ function validateShortsCommentInput(input: Partial<ShortsCommentInput>): ShortsC
   return { accessToken: token, videoId, body };
 }
 
-/** Returns only comments already approved by Cloudy AI or a moderator. */
+/** Returns published comments and legacy comments that were waiting for review. */
 export const getShortsComments = createServerFn({ method: "POST" })
   .inputValidator((input: Partial<ShortsCommentLookupInput>): ShortsCommentLookupInput => {
     const token = String(input?.accessToken ?? "");
@@ -1039,7 +984,7 @@ export const getShortsComments = createServerFn({ method: "POST" })
       .from("shorts_comments")
       .select("id,author_id,body,created_at")
       .eq("video_id", data.videoId)
-      .eq("status", "published")
+      .in("status", ["published", "pending_review"])
       .order("created_at", { ascending: true })
       .limit(100);
     if (error) throw new Error("Не удалось загрузить комментарии.");
@@ -1063,13 +1008,13 @@ export const getShortsComments = createServerFn({ method: "POST" })
   });
 
 /**
- * Creates a pending comment, then asks the same Cloudy AI router backed by Core AI Vault.
- * No comment is visible in the public thread until a high-confidence allow decision is stored.
+ * Publishes comments immediately without AI or human pre-moderation.
+ * Existing account restrictions and per-user rate limits remain in force.
  */
 export const createShortComment = createServerFn({ method: "POST" })
   .inputValidator(validateShortsCommentInput)
   .handler(async ({ data }) => {
-    const { db: coreDb, user } = await ctx(data.accessToken);
+    const { user } = await ctx(data.accessToken);
     const body = String(data.body ?? "").trim();
     if (!body || body.length > 500) throw new Error("Комментарий должен содержать от 1 до 500 символов.");
     const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
@@ -1096,42 +1041,9 @@ export const createShortComment = createServerFn({ method: "POST" })
 
     const { data: inserted, error: insertError } = await contentDb
       .from("shorts_comments")
-      .insert({ video_id: data.videoId, author_id: user.id, body, status: "pending_review", moderation_status: "pending" })
+      .insert({ video_id: data.videoId, author_id: user.id, body, status: "published", moderation_status: "approved", moderated_at: new Date(now).toISOString() })
       .select("id")
       .single();
-    if (insertError || !inserted) throw new Error("Не удалось отправить комментарий на проверку.");
-
-    let decision: ContentModerationDecision;
-    let model = "cloudy-ai";
-    try {
-      const result = await runCloudyContentTextModeration(coreDb, "short_comment", body);
-      decision = result;
-      model = result.model || result.provider;
-    } catch (error) {
-      decision = {
-        decision: "review",
-        reason: "Автоматическая проверка временно недоступна; комментарий ожидает дополнительной проверки.",
-        labels: ["moderation_unavailable"],
-        confidence: 0,
-      };
-      console.warn("[cloudy-shorts-comments] AI review deferred", error instanceof Error ? error.name : "unknown");
-    }
-
-    const { data: applied, error: applyError } = await contentDb.rpc("apply_shorts_text_moderation", {
-      p_content_type: "short_comment",
-      p_content_id: inserted.id,
-      p_decision: decision.decision,
-      p_reason: decision.reason,
-      p_labels: decision.labels,
-      p_confidence: decision.confidence,
-      p_model: model,
-      p_policy_version: "cloudy-content-text-v1",
-    });
-    if (applyError || !applied) throw new Error("Комментарий сохранён, но его статус проверки пока не удалось обновить.");
-    return {
-      id: inserted.id,
-      status: decision.decision === "allow" ? "published" : decision.decision === "reject" ? "removed" : "pending_review",
-      decision: decision.decision,
-      reason: decision.reason,
-    };
+    if (insertError || !inserted) throw new Error("Не удалось отправить комментарий.");
+    return { id: inserted.id, status: "published" };
   });
