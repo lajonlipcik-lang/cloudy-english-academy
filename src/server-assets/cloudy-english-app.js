@@ -657,7 +657,16 @@ function saveChatHistory(){
 function renderChatHistory(){
  const list=$("#chatHistoryList");if(!list)return;
  if(!chatThreads.length){list.innerHTML='<div class="chat-history-empty">Диалоги появятся здесь</div>';return}
- list.innerHTML=chatThreads.map(item=>'<button class="chat-history-item '+(item.id===activeChatId?'active':'')+'" onclick="chatOpenThread(\''+chatEscape(item.id)+'\')"><span class="chat-history-dot"></span><span>'+chatEscape(item.title||"Новый диалог")+'</span></button>').join("");
+ list.innerHTML=chatThreads.map(item=>{const id=chatEscape(item.id),title=chatEscape(item.title||"Новый диалог");return '<div class="chat-history-row"><button type="button" class="chat-history-item '+(item.id===activeChatId?'active':'')+'" onclick="chatOpenThread(\''+id+'\')"><span class="chat-history-dot"></span><span>'+title+'</span></button><button type="button" class="chat-history-delete" aria-label="Удалить диалог" title="Удалить диалог" onclick="event.stopPropagation();chatDeleteThread(\''+id+'\')">'+ic("trash")+'</button></div>'}).join("");
+}
+function chatDeleteThread(id){
+ const item=chatThreads.find(x=>x.id===id);if(!item)return;
+ if(!confirm('Удалить диалог «'+String(item.title||"Новый диалог").replace(/[<>]/g,"") + '»?'))return;
+ chatThreads=chatThreads.filter(x=>x.id!==id);
+ try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){toast("Не удалось сохранить удаление.",false);return}
+ if(activeChatId===id){CH=[];activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatRender()}
+ else renderChatHistory();
+ snd("tab");
 }
 function chatRender(){
  app.innerHTML=`
