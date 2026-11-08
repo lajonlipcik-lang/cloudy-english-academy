@@ -625,6 +625,32 @@ export type Database = {
           },
         ]
       }
+      shorts_saved_posts: {
+        Row: {
+          created_at: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shorts_saved_posts_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "shorts_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shorts_videos: {
         Row: {
           audio_analysis_confidence: number | null
