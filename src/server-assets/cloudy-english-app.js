@@ -638,40 +638,84 @@ const rvBtn=()=>{const n=Object.keys(S.mis).length;return n?`<button class="ches
 const AIcard=()=>`<button class="card ai" onclick="chat()">${mascot()}<div><b>Практика с Клауди</b><br><small style="opacity:.8">Диалог на уровне ${S.lv}</small></div></button>`;
 
 
-async function chat(){if(S.user?.guest){toast("Для практики с Клауди войдите в аккаунт");return authV()}app.innerHTML=`
-<section class="chat-shell">
-  <div class="top" style="display:flex;align-items:center;justify-content:space-between">
-    <button class="x" onclick="snd('tab');view()">${ic('x')}</button>
-    <div class="chat-top-center">
-      ${mascot()}
-      <span class="pill" style="padding:4px 9px;font-size:12px;opacity:.9">${S.lv||'A1'}</span>
+
+function chatEscape(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function chatHistoryKey(){return "cloudy-ai-history:"+String(cloudUserId||S.user?.email||"account").toLowerCase();}
+function loadChatHistory(){try{const raw=JSON.parse(localStorage.getItem(chatHistoryKey())||"[]");chatThreads=Array.isArray(raw)?raw.filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.messages)).slice(0,30):[]}catch{chatThreads=[]}}
+function saveChatHistory(){
+ if(!activeChatId||!CH.length)return;
+ const firstUser=CH.find(m=>m.r==="u")?.t||"Новый диалог";
+ const title=String(firstUser).replace(/\s+/g," ").trim().slice(0,42)||"Новый диалог";
+ const item={id:activeChatId,title,updatedAt:Date.now(),messages:CH.slice(-80).map(m=>({r:m.r==="u"?"u":"a",t:String(m.t).slice(0,8000)}))};
+ const index=chatThreads.findIndex(x=>x.id===activeChatId);
+ if(index>=0)chatThreads[index]=item;else chatThreads.unshift(item);
+ chatThreads.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+ chatThreads=chatThreads.slice(0,30);
+ try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
+ renderChatHistory();
+}
+function renderChatHistory(){
+ const list=$("#chatHistoryList");if(!list)return;
+ if(!chatThreads.length){list.innerHTML='<div class="chat-history-empty">Диалоги появятся здесь</div>';return}
+ list.innerHTML=chatThreads.map(item=>'<button class="chat-history-item '+(item.id===activeChatId?'active':'')+'" onclick="chatOpenThread(\''+chatEscape(item.id)+'\')"><span class="chat-history-dot"></span><span>'+chatEscape(item.title||"Новый диалог")+'</span></button>').join("");
+}
+function chatRender(){
+ app.innerHTML=`
+<section class="chat-shell" id="chatShell">
+  <aside class="chat-sidebar">
+    <div class="chat-sidebar-brand"><span class="chat-brand-cloud">${mascot()}</span><span><b>Cloudy English</b><small>Учись вместе с Клауди</small></span></div>
+    <button class="chat-new-button" onclick="chatStartNew()"><span>＋</span> Новый чат</button>
+    <div class="chat-sidebar-label">ИСТОРИЯ ДИАЛОГОВ</div>
+    <div class="chat-history-list" id="chatHistoryList"></div>
+    <div class="chat-sidebar-footer"><span class="chat-footer-avatar">${ic('user')}</span><span><b>${chatEscape(S.user?.name||"Ученик")}</b><small>Уровень ${S.lv||"A1"}</small></span></div>
+  </aside>
+  <button class="chat-sidebar-backdrop" onclick="chatToggleDrawer()" aria-label="Закрыть меню"></button>
+  <main class="chat-main">
+    <header class="chat-topbar">
+      <button class="chat-menu-button" onclick="chatToggleDrawer()" aria-label="Открыть историю">${ic('menu')}</button>
+      <div class="chat-top-title"><b>Клауди AI</b><small>Твой помощник по английскому</small></div>
+      <span class="chat-level-pill">${S.lv||"A1"}</span>
+      <div class="chat-flag" title="English" aria-label="Флаг Великобритании">
+        <svg viewBox="0 0 60 40" width="100%" height="100%" role="img" aria-hidden="true">
+          <clipPath id="chat-flag-clip"><rect width="60" height="40" rx="3"/></clipPath>
+          <g clip-path="url(#chat-flag-clip)">
+            <rect width="60" height="40" fill="#012169"/>
+            <path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="8"/>
+            <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="4"/>
+            <path d="M30,0 v40 M0,20 h60" stroke="#fff" stroke-width="12"/>
+            <path d="M30,0 v40 M0,20 h60" stroke="#C8102E" stroke-width="7"/>
+          </g>
+        </svg>
+      </div>
+      <button class="chat-close-button" onclick="snd('tab');view()" aria-label="Закрыть чат">${ic('x')}</button>
+    </header>
+    <div id="msgs" class="chat-messages" aria-live="polite"></div>
+    <div class="chat-composer-wrap">
+      <div class="chat-composer">
+        <div class="chat-composer-box">
+          <input id="ci" placeholder="Напишите Клауди..." autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}">
+        </div>
+        <button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button>
+      </div>
+      <div class="chat-disclaimer">Клауди помогает практиковать английский на уровне ${S.lv||"A1"}</div>
     </div>
-    <div class="chat-flag" title="English" aria-label="Flag of the United Kingdom">
-      <svg viewBox="0 0 60 40" width="100%" height="100%" role="img" aria-hidden="true">
-        <clipPath id="chat-flag-clip"><rect width="60" height="40" rx="3"/></clipPath>
-        <g clip-path="url(#chat-flag-clip)">
-          <rect width="60" height="40" fill="#012169"/>
-          <path d="M0,0 L60,40 M60,0 L0,40" stroke="#fff" stroke-width="8"/>
-          <path d="M0,0 L60,40 M60,0 L0,40" stroke="#C8102E" stroke-width="4"/>
-          <path d="M30,0 v40 M0,20 h60" stroke="#fff" stroke-width="12"/>
-          <path d="M30,0 v40 M0,20 h60" stroke="#C8102E" stroke-width="7"/>
-        </g>
-      </svg>
-    </div>
-  </div>
-  <div id="msgs" class="chat-messages" aria-live="polite"></div>
-  <div class="chat-composer">
-    <div class="chat-composer-box">
-      <input id="ci" placeholder="Напишите по-английски..." autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}">
-    </div>
-    <button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button>
-  </div>
-</section>`;CH.forEach(m=>bub(m.r,m.t,false));if(!CH.length)await ask();const input=$('#ci');if(input)input.focus()}
+  </main>
+</section>`;
+ renderChatHistory();
+ if(CH.length){CH.forEach(m=>bub(m.r,m.t,false));scrollChat()}
+ else{$("#msgs").innerHTML='<div class="chat-welcome"><div class="chat-welcome-mascot">'+mascot()+'</div><h2>Привет! Я Клауди.</h2><p>Давай практиковать английский. Я буду подбирать общение под твой уровень <b>'+(S.lv||"A1")+'</b>.</p><div class="chat-suggestions"><button onclick="chatSuggestion(\'Let’s practice introductions\')">Познакомимся на английском</button><button onclick="chatSuggestion(\'Help me improve my English grammar\')">Разберём грамматику</button><button onclick="chatSuggestion(\'Ask me an easy question for my level\')">Задай мне вопрос</button></div></div>'}
+ const input=$("#ci");if(input)input.focus();
+}
+async function chat(){if(S.user?.guest){toast("Для практики с Клауди войдите в аккаунт");return authV()}loadChatHistory();if(!CH.length&&chatThreads.length){const latest=chatThreads[0];activeChatId=latest.id;CH=latest.messages.slice()}if(!activeChatId)activeChatId=String(Date.now());chatRender()}
+function chatStartNew(){CH=[];activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatDrawerOpen=false;chatRender();snd("tab")}
+function chatOpenThread(id){const item=chatThreads.find(x=>x.id===id);if(!item)return;activeChatId=item.id;CH=item.messages.slice();chatDrawerOpen=false;chatRender();snd("tab")}
+function chatToggleDrawer(){chatDrawerOpen=!chatDrawerOpen;const shell=$("#chatShell");if(shell)shell.classList.toggle("drawer-open",chatDrawerOpen)}
+function chatSuggestion(value){const input=$("#ci");if(input){input.value=value;csend()}}
 function scrollChat(){const box=$('#msgs');if(box)box.scrollTop=box.scrollHeight}
 function bub(r,t,scroll=true){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);if(scroll)requestAnimationFrame(scrollChat);return d}
 function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
 async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await new Promise(resolve=>setTimeout(resolve,text.length>500?9:16))}el.classList.remove('chat-type-cursor')}
-async function ask(u){if(u){CH.push({r:'u',t:u});bub('u',u)}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}scrollChat()}
+async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bub('u',u);saveChatHistory()}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});saveChatHistory();snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}scrollChat()}
 async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('send');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
 setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
 function amb(){const l=S.lv||"A1",a=$(".amb");document.body.dataset.lv=l;document.body.dataset.th="dark";if(a.dataset.l==l)return;a.dataset.l=l;a.innerHTML="";const n={A1:5,A2:16,B1:28,B2:4}[l],r=Math.random;for(let k=0;k<n;k++){const u=document.createElement("u"),z={A1:200+r()*220,A2:14+r()*40,B1:3+r()*6,B2:90}[l];u.style.cssText=`left:${r()*100}%;top:${r()*100}%;width:${z}px;height:${z}px;animation-delay:-${r()*12}s;animation-duration:${l=="A2"?7+r()*8:l=="B1"?2+r()*3:l=="B2"?12+r()*8:14+r()*8}s`;a.appendChild(u)}}
