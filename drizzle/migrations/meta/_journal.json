@@ -134,6 +134,13 @@
       "when": 1794003600003,
       "tag": "0018_shorts_feed_and_review_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794003600004,
+      "tag": "0019_cloudy_chat_history",
+      "breakpoints": true
     }
   ]
 }
