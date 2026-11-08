@@ -657,7 +657,7 @@ function saveChatHistory(){
 function renderChatHistory(){
  const list=$("#chatHistoryList");if(!list)return;
  if(!chatThreads.length){list.innerHTML='<div class="chat-history-empty">Диалоги появятся здесь</div>';return}
- list.innerHTML=chatThreads.map(item=>{const id=chatEscape(item.id),title=chatEscape(item.title||"Новый диалог");return '<div class="chat-history-row"><button type="button" class="chat-history-item '+(item.id===activeChatId?'active':'')+'" onclick="chatOpenThread(\''+id+'\')"><span class="chat-history-dot"></span><span>'+title+'</span></button><button type="button" class="chat-history-delete" aria-label="Удалить диалог" title="Удалить диалог" onclick="event.stopPropagation();chatDeleteThread(\''+id+'\')">'+ic("trash")+'</button></div>'}).join("");
+ list.innerHTML=chatThreads.map(item=>{const id=chatEscape(item.id),title=chatEscape(item.title||"Новый диалог");return '<div class="chat-history-row"><button type="button" class="chat-history-item '+(item.id===activeChatId?'active':'')+'" onclick="chatOpenThread(\''+id+'\')"><span class="chat-history-dot"></span><span>'+title+'</span></button><button type="button" class="chat-history-delete" aria-label="Удалить диалог" title="Удалить диалог" onclick="event.stopPropagation();chatDeleteThread(\''+id+'\')">'+'<svg class="i chat-trash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>'+'</button></div>'}).join("");
 }
 function chatDeleteThread(id){
  const item=chatThreads.find(x=>x.id===id);if(!item)return;
