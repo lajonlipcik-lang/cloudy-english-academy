@@ -10,6 +10,18 @@ export const Route = createFileRoute("/")({
     { property: "og:description", content: "Уроки, упражнения и учебный прогресс в Cloudy English Academy." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
-  ] }),
+    { property: "og:url", content: "https://cloudyenglishru.lovable.app/" },
+  ],
+  links: [{ rel: "canonical", href: "https://cloudyenglishru.lovable.app/" }],
+  scripts: [{
+    type: "application/ld+json",
+    children: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Cloudy English Academy",
+      alternateName: ["Cloudy English", "Cloudy"],
+      url: "https://cloudyenglishru.lovable.app/",
+    }),
+  }] }),
   component: CloudyAppFrame,
 });

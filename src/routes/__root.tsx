@@ -19,7 +19,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     { name: "google-site-verification", content: "Ry_Jj1RQYtx-Irq2DnRa_zniBie7GeAKBProavpbHE0" },
    { title: "Cloudy English Academy — учи английский каждый день" },
    { name: "description", content: "Изучай английский с короткими уроками, практикой и игровым прогрессом." },
-   { name: "author", content: "Cloudy English Academy" }, { property: "og:title", content: "Cloudy English Academy" },
+   { name: "author", content: "Cloudy English Academy" }, { property: "og:site_name", content: "Cloudy English Academy" }, { name: "application-name", content: "Cloudy English Academy" }, { property: "og:title", content: "Cloudy English Academy" },
    { property: "og:description", content: "Твой дружелюбный помощник в изучении английского." }, { property: "og:type", content: "website" },
    { name: "twitter:card", content: "summary_large_image" }, { name: "twitter:site", content: "@CloudyEnglish" },
    { name: "apple-mobile-web-app-capable", content: "yes" },
