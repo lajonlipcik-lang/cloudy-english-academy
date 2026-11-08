@@ -672,7 +672,7 @@ function chatRender(){
   <button class="chat-sidebar-backdrop" onclick="chatToggleDrawer()" aria-label="Закрыть меню"></button>
   <main class="chat-main">
     <header class="chat-topbar">
-      <button class="chat-menu-button" onclick="chatToggleDrawer()" aria-label="Открыть историю">${ic('menu')}</button>
+      <button class="chat-menu-button" onclick="chatToggleDrawer()" aria-label="Открыть историю"><span aria-hidden="true">☰</span></button>
       <div class="chat-top-title"><b>Клауди AI</b><small>Твой помощник по английскому</small></div>
       <span class="chat-level-pill">${S.lv||"A1"}</span>
       <div class="chat-flag" title="English" aria-label="Флаг Великобритании">
