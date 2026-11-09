@@ -72,3 +72,11 @@ The source migrations are not directly executable on Neon because they assume Su
 ## Safety
 
 Do not apply these source migrations directly to Neon. Do not run a production data import until there is a restorable source backup, a provisioned staging target, a reviewed schema conversion, and an explicit rollback plan. Keep Lovable/Supabase online until end-to-end parity and user login tests pass.
+
+## Reference documentation
+
+- Better Auth PostgreSQL adapter: https://better-auth.com/docs/adapters/postgresql
+- Better Auth database schema and UUID ID generation: https://better-auth.com/docs/concepts/database
+- Better Auth email/password custom hash and verify: https://better-auth.com/docs/authentication/email-password
+
+These references establish that PostgreSQL, UUID IDs, and custom password verification are supported. They do not prove compatibility with this project's actual Supabase password hashes; that remains a staging test requirement.
