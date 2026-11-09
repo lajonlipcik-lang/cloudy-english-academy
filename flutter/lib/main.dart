@@ -143,7 +143,7 @@ class _CloudyHomePageState extends State<CloudyHomePage> {
                     } else {
                       Navigator.of(context).push(MaterialPageRoute<void>(
                         builder: (_) => _LessonPage(number: i + 1, onComplete: () {
-                          setState(() { completed = (completed + 1).clamp(0, 5); xp += 15; });
+                          setState(() { completed = (completed + 1).clamp(0, 5).toInt(); xp += 15; });
                           Navigator.of(context).pop();
                           message('Урок завершён! +15 XP');
                         }),
