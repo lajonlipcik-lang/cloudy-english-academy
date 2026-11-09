@@ -55,3 +55,8 @@ BEGIN
   RETURN v_subscription_id;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION public.refund_telegram_stars_payment(text, bigint, text, integer)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.refund_telegram_stars_payment(text, bigint, text, integer)
+  TO service_role;
