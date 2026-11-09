@@ -265,6 +265,26 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
     }
   }
 
+  Future<void> _handleExit() async {
+    if (!_finished) {
+      try {
+        await _progressQueue;
+        await _learningQueue;
+        final store = await widget.controller.learningStore;
+        await store.endSession(outcome: 'lesson_abandoned');
+        await widget.controller.syncLearningEvents();
+      } catch (_) {}
+    }
+    await widget.controller.stopMedia();
+    if (mounted) widget.onExit?.call();
+  }
+
+  @override
+  void dispose() {
+    unawaited(widget.controller.stopMedia());
+    super.dispose();
+  }
+
   void _showMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -323,7 +343,7 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
           onPronunciationRequested: _requestPronunciation,
           onSpeak: (word) => unawaited(widget.controller.speak(word)),
           onSkipPronunciation: _skipPronunciation,
-          onExit: widget.onExit,
+          onExit: _handleExit,
         ),
         if (_finishing)
           Positioned.fill(
