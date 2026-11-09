@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, ChevronDown, CreditCard, Lock, MessageCircle, Scale, ScrollText, ShieldCheck, Users } from "lucide-react";
 import type { CSSProperties } from "react";
 
@@ -133,12 +133,26 @@ const LEGAL_FAQ = [
 ];
 
 export function LegalPage() {
+  const navigate = useNavigate();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [expandedSections, setExpandedSections] = useState<Set<number>>(() => new Set());
   const [progress, setProgress] = useState(0);
+  const [pageDirection, setPageDirection] = useState<"fwd" | "bck" | "">("");
+  const [closing, setClosing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const active = LEGAL_DOCUMENTS.find((document) => document.id === activeId);
   const meta = active ? LEGAL_META[active.id] : null;
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (activeId) backToList();
+      else closeLegal();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeId]);
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -153,24 +167,47 @@ export function LegalPage() {
   }, [activeId]);
 
   const openDocument = (id: string) => {
+    setPageDirection("fwd");
+    setExpandedSections(new Set());
     setActiveId(id);
     setProgress(0);
-    scrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: "auto" }));
   };
   const backToList = () => {
+    setPageDirection("bck");
+    setExpandedSections(new Set());
     setActiveId(null);
     setProgress(0);
-    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: 0, behavior: "auto" }));
+  };
+  const closeLegal = () => {
+    setClosing(true);
+    window.setTimeout(() => navigate({ to: "/" }), 320);
+  };
+  const toggleSection = (index: number) => {
+    setExpandedSections((previous) => {
+      const next = new Set(previous);
+      if (next.has(index)) next.delete(index); else next.add(index);
+      return next;
+    });
   };
   const jumpToSection = (index: number) => {
-    scrollRef.current?.querySelector(`#legal-section-${index}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const container = scrollRef.current;
+    const target = container?.querySelector<HTMLElement>(`#legal-section-${index}`);
+    if (!container || !target) return;
+    const top = target.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - 12;
+    container.scrollTo({ top, behavior: "smooth" });
+    target.classList.remove("legal-flash");
+    void target.offsetWidth;
+    target.classList.add("legal-flash");
   };
 
   return (
-    <main className="legal-redesign">
+    <main className={`legal-redesign${closing ? " legal-closing" : ""}`}>
+
       <style>{`
-        .legal-redesign{position:fixed;inset:0;z-index:60;display:flex;justify-content:center;color:#fff;background:linear-gradient(165deg,#050d2b 0%,#0a2a73 56%,#123f83 100%);font-family:inherit;animation:legalEnter .42s cubic-bezier(.2,.85,.25,1) both}
-        .legal-redesign *{box-sizing:border-box}
+        .legal-redesign{position:fixed;inset:0;z-index:60;display:flex;justify-content:center;color:#fff;background:linear-gradient(165deg,#050d2b 0%,#0a2a73 56%,#123f83 100%);font-family:inherit;animation:legalEnter .5s cubic-bezier(.2,.85,.25,1) both}.legal-redesign.legal-closing{animation:legalExit .32s ease both}
+        .legal-redesign *{box-sizing:border-box}.legal-page-transition{animation:legalForward .42s cubic-bezier(.2,.85,.25,1) both}.legal-page-transition.legal-backward{animation:legalBackward .42s cubic-bezier(.2,.85,.25,1) both}.legal-faq-item .legal-faq-answer{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.85,.25,1);padding:0}.legal-faq-item .legal-faq-answer>div{overflow:hidden;min-height:0;padding:0 16px}.legal-faq-item.is-open .legal-faq-answer{grid-template-rows:1fr}.legal-faq-item.is-open .legal-faq-answer>div{padding-bottom:14px}.legal-section .legal-full-text{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.85,.25,1)}.legal-section .legal-full-text>div{overflow:hidden;min-height:0}.legal-section.is-expanded .legal-full-text{grid-template-rows:1fr}.legal-section.is-expanded .legal-full-toggle svg{transform:rotate(180deg)}.legal-full-toggle svg{transition:transform .35s}.legal-section.legal-flash{animation:legalFlash 1s ease both}
         .legal-shell{width:100%;max-width:560px;height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
         .legal-topbar{display:flex;align-items:center;gap:12px;padding:12px 16px 10px;min-height:64px}
         .legal-back{width:42px;height:42px;flex:none;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center}
@@ -214,13 +251,13 @@ export function LegalPage() {
         .legal-section p{margin:0;color:#d0e1f1;font-size:14px;line-height:1.62;white-space:pre-line}
         .legal-footer{padding:18px 4px 4px;text-align:center;color:#84afd5;font-size:11px}
         .legal-text-link{color:#8fd3ff;word-break:break-all}
-        @keyframes legalEnter{from{opacity:0;transform:translateY(34px)}}
+        @keyframes legalEnter{from{opacity:0;transform:translateY(48px)}}@keyframes legalExit{to{opacity:0;transform:translateY(40px)}}@keyframes legalForward{from{opacity:0;transform:translateX(36px)}}@keyframes legalBackward{from{opacity:0;transform:translateX(-36px)}}@keyframes legalFlash{0%,100%{box-shadow:0 0 0 0 transparent}30%{box-shadow:0 0 0 3px var(--tone)}}
         @keyframes legalRise{from{opacity:0;transform:translateY(10px)}}
         @media(prefers-reduced-motion:reduce){.legal-redesign,.legal-redesign *{animation:none!important;transition:none!important}}
       `}</style>
       <div className="legal-shell">
         <header className="legal-topbar">
-          <button type="button" className="legal-back" aria-label={active ? "Назад к документам" : "Вернуться к обучению"} onClick={active ? backToList : () => { window.location.href = "/"; }}>
+          <button type="button" className="legal-back" aria-label={active ? "Назад к документам" : "Вернуться к обучению"} onClick={active ? backToList : closeLegal}>
             <ArrowLeft size={21} />
           </button>
           <div className="legal-top-title">{active ? active.title : "Документы и правила"}</div>
@@ -228,7 +265,7 @@ export function LegalPage() {
         <div className="legal-progress" aria-label="Прогресс чтения"><i style={{ width: progress + "%" }} /></div>
         <div className="legal-scroll" ref={scrollRef} key={activeId ?? "home"}>
           {active && meta ? (
-            <div className="legal-document">
+            <div key={active.id} className={`legal-document legal-page-transition${pageDirection === "bck" ? " legal-backward" : ""}`}>
               <div className="legal-doc-head" style={{ "--tone": meta.tone } as CSSProperties}>
                 <div className="legal-doc-icon"><meta.icon size={29} strokeWidth={1.8} /></div>
                 <div><h2>{active.title}</h2><p>{active.description} · {active.sections.length} разделов</p></div>
@@ -268,12 +305,12 @@ export function LegalPage() {
                 })}
               </div>
               <div className="legal-kicker">Частые вопросы</div>
-              <div className="legal-faq">
-                {LEGAL_FAQ.map(([question, answer], index) => <section className="legal-faq-item" key={question}>
+              <div className={`legal-faq${pageDirection === "fwd" ? " legal-page-transition" : ""}`}>
+                {LEGAL_FAQ.map(([question, answer], index) => <section className={`legal-faq-item${expandedFaq === index ? " is-open" : ""}`} key={question}>
                   <button type="button" className="legal-faq-trigger" aria-expanded={expandedFaq === index} onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}>
-                    {question}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+                    {question}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .35s cubic-bezier(.3,1.4,.5,1)" }} />
                   </button>
-                  {expandedFaq === index && <div className="legal-faq-answer">{answer}</div>}
+                  <div className="legal-faq-answer"><div>{answer}</div></div>
                 </section>)}
               </div>
               <a className="legal-support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">
