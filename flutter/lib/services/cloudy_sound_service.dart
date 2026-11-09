@@ -52,7 +52,7 @@ class CloudyToneGenerator {
     final tones = tonesFor(sound, combo: combo);
     final totalSeconds = tones
         .map((tone) => tone.delay + tone.duration + _silenceTailSeconds)
-        .reduce(math.max);
+        .reduce((left, right) => left > right ? left : right);
     final sampleCount = (totalSeconds * sampleRate).ceil();
     final mix = Float64List(sampleCount);
 
@@ -70,7 +70,7 @@ class CloudyToneGenerator {
         final frequency = tone.endFrequency == null
             ? tone.frequency
             : tone.frequency *
-                math.pow(tone.endFrequency! / tone.frequency, progress);
+                math.pow(tone.endFrequency! / tone.frequency, progress).toDouble();
         phase += 2 * math.pi * frequency / sampleRate;
 
         final envelope = _envelope(elapsed, tone.duration, tone.peak);
@@ -136,12 +136,12 @@ class CloudyToneGenerator {
   static double _envelope(double elapsed, double duration, double peak) {
     if (elapsed <= _attackSeconds) {
       final progress = (elapsed / _attackSeconds).clamp(0.0, 1.0);
-      return 0.0001 * math.pow(peak / 0.0001, progress);
+      return (0.0001 * math.pow(peak / 0.0001, progress)).toDouble();
     }
     final releaseDuration = duration + _releaseSeconds - _attackSeconds;
     final progress = ((elapsed - _attackSeconds) / releaseDuration)
         .clamp(0.0, 1.0);
-    return peak * math.pow(0.0001 / peak, progress);
+    return (peak * math.pow(0.0001 / peak, progress)).toDouble();
   }
 
   static double _wave(double phase, CloudyWaveform waveform) {
@@ -185,7 +185,7 @@ class CloudyToneGenerator {
 
 class CloudySoundService {
   CloudySoundService({int playerCount = 4})
-      : _players = List.generate(playerCount.clamp(1, 8), (_) => AudioPlayer());
+      : _players = List.generate(playerCount.clamp(1, 8).toInt(), (_) => AudioPlayer());
 
   final List<AudioPlayer> _players;
   final Map<String, Uint8List> _cache = {};
@@ -209,7 +209,7 @@ class CloudySoundService {
     if (!_enabled || _volume <= 0) return;
     try {
       await initialize();
-      final safeCombo = combo.clamp(0, 7);
+      final safeCombo = combo.clamp(0, 7).toInt();
       final key = '$sound:$safeCombo';
       final bytes = _cache.putIfAbsent(
         key,
