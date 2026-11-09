@@ -796,8 +796,53 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
     return { ...input, accessToken: token, id, contentType };
   })
   .handler(async ({ data }) => {
-    await ctx(data.accessToken);
-    return { ok: true, decision: "allow", reason: "Подписи и комментарии не проходят предварительную модерацию.", moderationApplied: false, mediaReviewed: false };
+    const { user, db } = await ctx(data.accessToken);
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const contentDb = getCloudyContentAdmin();
+    const { data: post, error: postError } = await contentDb.from("shorts_videos")
+      .select("id,author_id,media_type,status,text_content,caption")
+      .eq("id", data.id).eq("author_id", user.id).maybeSingle();
+    if (postError || !post || post.status !== "draft" || post.media_type !== "text") {
+      throw new Error("Текстовая публикация не найдена или уже обработана.");
+    }
+
+    let review: ContentModerationDecision & { model?: string } ;
+    let model = "";
+    try {
+      const result = await runCloudyContentTextModeration(db, "short_video", String(post.text_content || post.caption || ""));
+      review = result;
+      model = result.model || result.provider || "";
+    } catch (error) {
+      review = {
+        decision: "review",
+        reason: "Автоматическая проверка текста временно недоступна. Публикация ожидает ручной проверки.",
+        labels: ["text_review_unavailable"],
+        confidence: 0,
+      };
+    }
+
+    const { data: applied, error: applyError } = await contentDb.rpc("apply_shorts_text_moderation", {
+      p_content_type: "short_video",
+      p_content_id: post.id,
+      p_decision: review.decision,
+      p_reason: review.reason,
+      p_labels: review.labels,
+      p_confidence: review.confidence,
+      p_model: model,
+      p_policy_version: "cloudy-content-text-v1",
+    });
+    if (applyError || !applied) throw new Error("Не удалось сохранить результат проверки текста.");
+    return {
+      ok: true,
+      decision: review.decision,
+      reason: review.reason,
+      labels: review.labels,
+      confidence: review.confidence,
+      moderationApplied: true,
+      published: review.decision === "allow",
+      mediaReviewed: true,
+      status: review.decision === "allow" ? "approved" : review.decision === "reject" ? "removed" : "pending_review",
+    };
   });
 
 
