@@ -466,7 +466,7 @@ async function introFinish(){
   snd('win');view();
  }catch(e){if(error)error.textContent=e.message||'Не удалось сохранить профиль. Попробуй ещё раз.'}
 }
-let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;
+let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false;
 function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'><label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button><p style="margin:18px 0 0;font-size:12px;opacity:.72">Продолжая, ознакомьтесь с <a href="/legal" target="_top" style="color:#7fc2ff;text-decoration:underline">документами и правилами</a></p></div>`}
 async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap').value,er=$('#er'),b=$('#ab'),lbl=AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ',bad=m=>{er.textContent=m;er.classList.remove('shk');void er.offsetWidth;er.classList.add('shk');snd('bad')};
  if(!em.includes('@')||!em.includes('.'))return bad('Введите корректный email');if(pw.length<6)return bad('Пароль: минимум 6 символов');
@@ -641,9 +641,43 @@ const AIcard=()=>`<button class="card ai" onclick="chat()">${mascot()}<div><b>П
 
 function chatEscape(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function chatHistoryKey(){return "cloudy-ai-history:"+String(cloudUserId||S.user?.email||"account").toLowerCase();}
-function loadChatHistory(){try{const raw=JSON.parse(localStorage.getItem(chatHistoryKey())||"[]");chatThreads=Array.isArray(raw)?raw.filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.messages)).slice(0,30):[]}catch{chatThreads=[]}}
+function readLocalChatHistory(){try{const raw=JSON.parse(localStorage.getItem(chatHistoryKey())||"[]");return Array.isArray(raw)?raw.filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.messages)).slice(0,30):[]}catch{return []}}
+async function loadChatHistory(){
+ const account=String(cloudUserId||"");
+ if(!account)throw new Error("Войдите в аккаунт, чтобы загрузить историю чатов.");
+ if(chatHistoryLoaded&&chatHistoryAccountId===account)return;
+ if(chatHistoryLoading)return chatHistoryLoading;
+ chatHistoryLoading=(async()=>{
+  chatHistoryLoaded=false;
+  try{
+   const response=await authRequest("chat-history-get");
+   let remote=Array.isArray(response.result?.chats)?response.result.chats:[];
+   if(!remote.length){
+    const legacy=readLocalChatHistory();
+    if(legacy.length){
+     for(const thread of legacy){
+      await authRequest("chat-history-save",{payload:{thread}});
+     }
+     remote=legacy;
+    }
+   }
+   chatThreads=remote.slice(0,30);
+   chatThreads.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+   chatHistoryAccountId=account;
+   try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
+   chatHistoryLoaded=true;
+  }catch(error){
+   chatThreads=readLocalChatHistory();
+   chatHistoryAccountId=account;
+   chatHistoryLoaded=true;
+   console.warn("[cloudy-chat] cloud history unavailable",error);
+   toast("Не удалось загрузить историю из аккаунта. Проверьте соединение.",false);
+  }
+ })();
+ try{await chatHistoryLoading}finally{chatHistoryLoading=null}
+}
 function saveChatHistory(){
- if(!activeChatId||!CH.length)return;
+ if(!activeChatId||!CH.length||!chatHistoryLoaded||!cloudUserId)return;
  const firstUser=CH.find(m=>m.r==="u")?.t||"Новый диалог";
  const title=String(firstUser).replace(/\s+/g," ").trim().slice(0,42)||"Новый диалог";
  const item={id:activeChatId,title,updatedAt:Date.now(),messages:CH.slice(-80).map(m=>({r:m.r==="u"?"u":"a",t:String(m.t).slice(0,8000)}))};
@@ -653,17 +687,23 @@ function saveChatHistory(){
  chatThreads=chatThreads.slice(0,30);
  try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
  renderChatHistory();
+ authRequest("chat-history-save",{payload:{thread:item}}).catch(error=>{
+  console.warn("[cloudy-chat] thread save failed",error);
+  if(!chatHistorySaveNotice){chatHistorySaveNotice=true;toast("Не удалось сохранить чат в аккаунте. Проверьте соединение.",false)}
+ });
 }
 function renderChatHistory(){
  const list=$("#chatHistoryList");if(!list)return;
  if(!chatThreads.length){list.innerHTML='<div class="chat-history-empty">Диалоги появятся здесь</div>';return}
  list.innerHTML=chatThreads.map(item=>{const id=chatEscape(item.id),title=chatEscape(item.title||"Новый диалог");return '<div class="chat-history-row"><button type="button" class="chat-history-item '+(item.id===activeChatId?'active':'')+'" onclick="chatOpenThread(\''+id+'\')"><span class="chat-history-dot"></span><span>'+title+'</span></button><button type="button" class="chat-history-delete" aria-label="Удалить диалог" title="Удалить диалог" onclick="event.stopPropagation();chatDeleteThread(\''+id+'\')">'+'<svg class="i chat-trash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>'+'</button></div>'}).join("");
 }
-function chatDeleteThread(id){
+async function chatDeleteThread(id){
  const item=chatThreads.find(x=>x.id===id);if(!item)return;
  if(!confirm('Удалить диалог «'+String(item.title||"Новый диалог").replace(/[<>]/g,"") + '»?'))return;
+ try{await authRequest("chat-history-delete",{payload:{threadId:id}})}
+ catch(error){toast("Не удалось удалить диалог из аккаунта. Попробуйте ещё раз.",false);return}
  chatThreads=chatThreads.filter(x=>x.id!==id);
- try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){toast("Не удалось сохранить удаление.",false);return}
+ try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
  if(activeChatId===id){CH=[];activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatRender()}
  else renderChatHistory();
  snd("tab");
@@ -715,7 +755,7 @@ function chatRender(){
  else{$("#msgs").innerHTML='<div class="chat-welcome"><div class="chat-welcome-mascot">'+mascot()+'</div><h2>Привет! Я Клауди.</h2><p>Давай практиковать английский. Я буду подбирать общение под твой уровень <b>'+(S.lv||"A1")+'</b>.</p><div class="chat-suggestions"><button onclick="chatSuggestion(\'Let’s practice introductions\')">Познакомимся на английском</button><button onclick="chatSuggestion(\'Help me improve my English grammar\')">Разберём грамматику</button><button onclick="chatSuggestion(\'Ask me an easy question for my level\')">Задай мне вопрос</button></div></div>'}
  const input=$("#ci");if(input)input.focus();
 }
-async function chat(){if(S.user?.guest){toast("Для практики с Клауди войдите в аккаунт");return authV()}loadChatHistory();if(!CH.length&&chatThreads.length){const latest=chatThreads[0];activeChatId=latest.id;CH=latest.messages.slice()}if(!activeChatId)activeChatId=String(Date.now());chatRender()}
+async function chat(){if(S.user?.guest){toast("Для практики с Клауди войдите в аккаунт");return authV()}try{await loadChatHistory()}catch(e){toast("Не удалось загрузить историю чатов.",false);return}if(!CH.length&&chatThreads.length){const latest=chatThreads[0];activeChatId=latest.id;CH=latest.messages.slice()}if(!activeChatId)activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatRender()}
 function chatStartNew(){CH=[];activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatDrawerOpen=false;chatRender();snd("tab")}
 function chatOpenThread(id){const item=chatThreads.find(x=>x.id===id);if(!item)return;activeChatId=item.id;CH=item.messages.slice();chatDrawerOpen=false;chatRender();snd("tab")}
 function chatToggleDrawer(){chatDrawerOpen=!chatDrawerOpen;const shell=$("#chatShell");if(shell)shell.classList.toggle("drawer-open",chatDrawerOpen)}
