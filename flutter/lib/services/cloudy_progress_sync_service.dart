@@ -302,7 +302,7 @@ class CloudyProgressSyncService {
     CloudyState state,
     CloudySession session, {
     DateTime? now,
-  }) async {
+  }) => _serialize(() async {
     final email = _activeEmail ?? localStore.activeAccountEmail;
     if (_syncPaused) {
       throw const CloudyMobileApiException(
@@ -336,7 +336,7 @@ class CloudyProgressSyncService {
     }
     await localStore.markSynced(email, noPendingChanges: true);
     return updated;
-  }
+  });
 
   Future<Map<String, Object?>?> recordLearningAnswer(
     CloudyExercise exercise, {
