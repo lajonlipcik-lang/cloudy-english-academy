@@ -129,5 +129,57 @@ void main() {
       expect(safe.today.les, 1000);
       expect(safe.today.claim, 1);
     });
+
+    test('generates the expected exercise mix and gates pronunciation on microphone access', () {
+      const words = [
+        CloudyPair('apple', 'яблоко'),
+        CloudyPair('water', 'вода'),
+        CloudyPair('bread', 'хлеб'),
+      ];
+      const lesson = CloudyLesson(
+        title: 'Еда',
+        words: words,
+        sentences: [CloudyPair('I drink water', 'Я пью воду')],
+      );
+      final pool = [...words, const CloudyPair('milk', 'молоко')];
+
+      final withMic = buildCloudyExercises(
+        lesson, pool, microphoneEnabled: true, random: () => 0.25,
+      );
+      final withoutMic = buildCloudyExercises(
+        lesson, pool, microphoneEnabled: false, random: () => 0.25,
+      );
+
+      expect(withMic.where((item) => item.kind == CloudyExerciseKind.choice), hasLength(2));
+      expect(withMic.where((item) => item.kind == CloudyExerciseKind.listening), hasLength(1));
+      expect(withMic.where((item) => item.kind == CloudyExerciseKind.matching), hasLength(1));
+      expect(withMic.where((item) => item.kind == CloudyExerciseKind.builder), hasLength(1));
+      expect(withMic.where((item) => item.kind == CloudyExerciseKind.pronunciation), hasLength(1));
+      expect(withoutMic.where((item) => item.kind == CloudyExerciseKind.pronunciation), isEmpty);
+      final builder = withMic.firstWhere((item) => item.kind == CloudyExerciseKind.builder);
+      expect(builder.question, 'Я пью воду');
+      expect(builder.answer, 'I drink water');
+      expect(builder.options, containsAll(['I', 'drink', 'water']));
+    });
+
+    test('adds one retry phase for mistakes and then ends the session', () {
+      final pool = [
+        const CloudyPair('son', 'сын'),
+        const CloudyPair('mother', 'мама'),
+      ];
+      const initial = CloudySession(
+        lesson: 0,
+        exercises: [CloudyExercise(kind: CloudyExerciseKind.choice)],
+        learnedMistakes: ['son'],
+      );
+
+      final retry = advanceCloudySession(initial, pool, random: () => 0.2);
+      expect(retry, isNotNull);
+      expect(retry!.retryPhase, isTrue);
+      expect(retry.exercises, hasLength(2));
+      expect(retry.exercises.last.english, 'son');
+      expect(advanceCloudySession(retry, pool), isNull);
+    });
+
   });
 }
