@@ -651,17 +651,16 @@ async function loadChatHistory(){
   chatHistoryLoaded=false;
   try{
    const response=await authRequest("chat-history-get");
-   let remote=Array.isArray(response.result?.chats)?response.result.chats:[];
-   if(!remote.length){
-    const legacy=readLocalChatHistory();
-    if(legacy.length){
-     for(const thread of legacy){
-      await authRequest("chat-history-save",{payload:{thread}});
-     }
-     remote=legacy;
+   const remote=Array.isArray(response.result?.chats)?response.result.chats:[];
+   const merged=new Map(remote.map(thread=>[thread.id,thread]));
+   for(const localThread of readLocalChatHistory()){
+    const cloudThread=merged.get(localThread.id);
+    if(!cloudThread||(Number(localThread.updatedAt)||0)>(Number(cloudThread.updatedAt)||0)){
+     await authRequest("chat-history-save",{payload:{thread:localThread}});
+     merged.set(localThread.id,localThread);
     }
    }
-   chatThreads=remote.slice(0,30);
+   chatThreads=[...merged.values()].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,30);
    chatThreads.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
    chatHistoryAccountId=account;
    try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
@@ -687,7 +686,8 @@ function saveChatHistory(){
  chatThreads=chatThreads.slice(0,30);
  try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
  renderChatHistory();
- chatHistorySaveQueue=chatHistorySaveQueue.catch(()=>{}).then(()=>authRequest("chat-history-save",{payload:{thread:item}})).catch(error=>{
+ const saveAccount=String(cloudUserId);
+ chatHistorySaveQueue=chatHistorySaveQueue.catch(()=>{}).then(()=>String(cloudUserId)===saveAccount?authRequest("chat-history-save",{payload:{thread:item}}):Promise.resolve()).catch(error=>{
   console.warn("[cloudy-chat] thread save failed",error);
   if(!chatHistorySaveNotice){chatHistorySaveNotice=true;toast("Не удалось сохранить чат в аккаунте. Проверьте соединение.",false)}
  });
