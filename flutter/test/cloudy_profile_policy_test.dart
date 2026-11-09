@@ -44,7 +44,7 @@ void main() {
     test('limits the display name to forty characters', () {
       final update = CloudyProfilePolicy.buildUpdate(
         currentMetadata: const {},
-        name: 'A' * 50,
+        name: List.filled(50, 'A').join(),
       );
       expect((update.metadata['name'] as String).length, 40);
     });
