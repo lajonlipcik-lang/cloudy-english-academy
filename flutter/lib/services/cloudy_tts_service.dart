@@ -97,7 +97,7 @@ class CloudyTtsService {
       final firstName = name.split(RegExp(r'[\s,()]')).first;
       if (gender == 'male' ||
           knownMaleNames.contains(firstName) ||
-          name.contains('male')) {
+          RegExp(r'\\b(male|masculine)\\b').hasMatch(name)) {
         final voiceName = (voice['name'] ?? '').toString();
         final locale = (voice['locale'] ?? '').toString();
         if (voiceName.isNotEmpty && locale.isNotEmpty) {
