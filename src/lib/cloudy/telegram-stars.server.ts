@@ -45,7 +45,7 @@ export async function createTeacherCheckout(request: Request) {
   const { data: auth, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !auth.user) return json({ error: "Сессия недействительна" }, 401);
 
-  const { data: plan, error: planError } = await supabaseAdmin
+  const { data: plan, error: planError } = await paymentDb
     .from("subscription_plans").select("id,code,is_active,telegram_stars_amount")
     .eq("code", "cloudy_teacher").maybeSingle();
   if (planError) return json({ error: "Не удалось проверить тариф" }, 503);
