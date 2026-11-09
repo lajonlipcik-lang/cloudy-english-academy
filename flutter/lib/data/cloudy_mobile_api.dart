@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../domain/cloudy_logic.dart';
+import '../domain/cloudy_progress_engine.dart';
 import '../domain/cloudy_state.dart';
 
 class CloudyMobileApiException implements Exception {
