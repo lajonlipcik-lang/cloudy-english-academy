@@ -289,11 +289,20 @@ export function LegalPage() {
           ) : (
             <div className={`legal-home${pageDirection === "bck" ? " legal-page-transition legal-backward" : ""}`}>
               <section className="legal-hero">
-                <div className="legal-hero-mark"><Scale size={34} /></div>
-                <h1>Юридический центр</h1>
-                <p>Документы Cloudy English Academy — понятные объяснения, правила и важная информация о данных.</p>
+                <div className="legal-hero-mark"><ShieldCheck size={34} /></div>
+                <h1>Твои данные — твои правила</h1>
+                <p>Мы переписали документы простым языком. Главное — сверху, полный юридический текст — под каждым пунктом.</p>
               </section>
-              <div className="legal-kicker">Документы и правила</div>
+              <div className="legal-kicker">Быстрые ответы</div>
+              <div className={`legal-faq${pageDirection === "fwd" ? " legal-page-transition" : ""}`}>
+                {LEGAL_FAQ.map(([question, answer], index) => <section className={`legal-faq-item${expandedFaq === index ? " is-open" : ""}`} key={question}>
+                  <button type="button" className="legal-faq-trigger" aria-expanded={expandedFaq === index} onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}>
+                    {question}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .35s cubic-bezier(.3,1.4,.5,1)" }} />
+                  </button>
+                  <div className="legal-faq-answer"><div>{answer}</div></div>
+                </section>)}
+              </div>
+              <div className="legal-kicker">Все документы</div>
               <div className="legal-cards">
                 {LEGAL_DOCUMENTS.map((document, index) => {
                   const item = LEGAL_META[document.id];
@@ -304,15 +313,6 @@ export function LegalPage() {
                     <ChevronDown className="legal-chevron" size={19} style={{ transform: "rotate(-90deg)" }} />
                   </button>;
                 })}
-              </div>
-              <div className="legal-kicker">Частые вопросы</div>
-              <div className={`legal-faq${pageDirection === "fwd" ? " legal-page-transition" : ""}`}>
-                {LEGAL_FAQ.map(([question, answer], index) => <section className={`legal-faq-item${expandedFaq === index ? " is-open" : ""}`} key={question}>
-                  <button type="button" className="legal-faq-trigger" aria-expanded={expandedFaq === index} onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}>
-                    {question}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .35s cubic-bezier(.3,1.4,.5,1)" }} />
-                  </button>
-                  <div className="legal-faq-answer"><div>{answer}</div></div>
-                </section>)}
               </div>
               <a className="legal-support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">
                 <span className="legal-support-icon"><MessageCircle size={23} /></span>
