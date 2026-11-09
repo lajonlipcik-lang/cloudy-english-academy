@@ -294,6 +294,43 @@ void main() {
       expect(store.pending(), isEmpty);
     });
 
+    test('keeps offline saves dirty and uploads them after a fresh server read', () async {
+      final preferences = await SharedPreferences.getInstance();
+      final local = CloudyLocalProgressStore(preferences);
+      final api = _FakeCloudyApi(
+        remote: CloudyRemoteProgress(
+          state: CloudyState.defaults(),
+          hasProgressRow: false,
+          updatedAt: null,
+          learnerProfile: null,
+        ),
+        saveResponses: [
+          {
+            'ok': true,
+            'state': {'xp': 50, 'lv': 'A1', 'dn': {'A1': 1}},
+            'updated_at': '2026-11-09T12:45:00Z',
+          },
+        ],
+      )..throwOnLoad = true;
+      final service = CloudyProgressSyncService(localStore: local, api: api);
+
+      final offline = await service.activateAccount(email: 'learner@example.com');
+      expect(offline.syncPaused, isTrue);
+      final localSave = await service.saveLocal(
+        CloudyState.fromJson({'xp': 50, 'lv': 'A1', 'dn': {'A1': 1}}),
+      );
+      expect(localSave.syncPaused, isTrue);
+      expect(api.saveCalls, 0);
+      expect(local.loadAccount('learner@example.com').xp, 50);
+
+      api.throwOnLoad = false;
+      final recovered = await service.activateAccount(email: 'learner@example.com');
+      expect(recovered.syncPaused, isFalse);
+      expect(recovered.uploaded, isTrue);
+      expect(recovered.state.xp, 50);
+      expect(api.saveCalls, 1);
+    });
+
     test('pauses sync when the initial server progress load fails', () async {
       final preferences = await SharedPreferences.getInstance();
       final local = CloudyLocalProgressStore(preferences);
