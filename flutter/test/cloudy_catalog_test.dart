@@ -26,6 +26,37 @@ void main() {
       expect(firstSentence.extra, 'you the');
     });
 
+    test('builds the same lesson stages in the same order', () async {
+      final catalog = await CloudyCatalog.load();
+      final sequence = catalog.buildLessonSequence(
+        24,
+        level: 'A1',
+        microphoneEnabled: true,
+        speechRecognitionAvailable: true,
+        random: () => 0.25,
+      );
+
+      expect(sequence.first.kind, CloudyExerciseKind.grammar);
+      expect(sequence[1].kind, CloudyExerciseKind.vocabulary);
+      expect(sequence.first.examples, isNotEmpty);
+      expect(sequence[1].words, hasLength(5));
+      expect(sequence.where((item) => item.kind == CloudyExerciseKind.builder).length, greaterThanOrEqualTo(2));
+      expect(sequence.where((item) => item.kind == CloudyExerciseKind.recall), hasLength(3));
+      expect(sequence.where((item) => item.kind == CloudyExerciseKind.pronunciation), hasLength(1));
+    });
+
+    test('does not add microphone exercises when recognition is unavailable', () async {
+      final catalog = await CloudyCatalog.load();
+      final sequence = catalog.buildLessonSequence(
+        24,
+        level: 'A1',
+        microphoneEnabled: true,
+        speechRecognitionAvailable: false,
+        random: () => 0.25,
+      );
+      expect(sequence.where((item) => item.kind == CloudyExerciseKind.pronunciation), isEmpty);
+    });
+
     test('maps level sections to the exact lesson indices', () async {
       final catalog = await CloudyCatalog.load();
 
