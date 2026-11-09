@@ -4,7 +4,6 @@ import 'cloudy_exercise.dart';
 import 'cloudy_state.dart';
 
 typedef CloudyRand = double Function();
-typedef CloudyExercisePrioritizer = List<CloudyExercise> Function(List<CloudyExercise>);
 
 class CloudyLesson {
   const CloudyLesson({required this.title, required this.words, required this.sentences});
@@ -293,7 +292,6 @@ List<CloudyExercise> buildCloudyLessonSequence({
   required bool microphoneEnabled,
   required bool speechRecognitionAvailable,
   CloudyTheoryExercise? grammarIntro,
-  CloudyExercisePrioritizer? prioritizePractice,
   CloudyRand? random,
 }) {
   final rand = random ?? math.Random().nextDouble;
@@ -316,7 +314,7 @@ List<CloudyExercise> buildCloudyLessonSequence({
     microphoneEnabled: microphoneEnabled && speechRecognitionAvailable,
     random: rand,
   );
-  result.addAll(prioritizePractice?.call(practice) ?? practice);
+  result.addAll(practice);
   return result;
 }
 
