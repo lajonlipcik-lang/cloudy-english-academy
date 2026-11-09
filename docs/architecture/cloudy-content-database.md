@@ -37,6 +37,7 @@ The proposed single-project sequence is documented in `docs/migration/SUPABASE_M
 3. Apply Content Shorts migrations `0002–0011` only after reviewing their security and ordering. The Content directory has two different files named `0009`, so a unique canonical migration history is required. New `0011_shorts_saved_posts_security.sql` enables RLS and limits saved-post access to `service_role`.
 4. Apply Core Shorts RPC migrations `0016–0018` only after their referenced Shorts tables and columns exist.
 5. Core `0019` and `0020` are later independent application migrations and must also be included in the final ordered history.
+6. Add the new text-only moderation RPC migration after Core `0020`; never rewrite the historical `0017` file.
 6. Do not apply anything to the connected destination until the complete sequence has passed on a disposable database.
 
 The repository currently has no verified unified runner for both SQL directories. `drizzle.config.ts` points only to Core migrations; the Content track is not wired into Drizzle Kit. The canonical runner and migration history must be implemented and tested before database changes.
@@ -45,8 +46,9 @@ The repository currently has no verified unified runner for both SQL directories
 
 - Comments are created pending review and are made public only after the trusted server moderation flow approves them.
 - A video caption passing text moderation does not approve the video itself. Video media remains unavailable until frame/audio analysis and human review complete.
-- Photo and text-only publication use the non-video moderation flow defined in Content migration `0008`.
-- Core migration `0017` replaces the earlier `apply_shorts_text_moderation` RPC with a comments-focused implementation. Verify text-only post publication separately; do not assume the RPC still handles it.
+- Photo publication uses the non-video media-review flow defined in Content migration `0008`.
+- The application branch now runs actual AI text moderation for text-only Shorts and calls `apply_shorts_text_moderation`; it no longer returns a hard-coded `allow`.
+- Core migration `0017` replaces the earlier RPC with a comments-only implementation. Preserve that historical migration unchanged and add a new CLI-generated migration after Core `0020` that restores support for text-only rows (`media_type = 'text'`) while refusing to change video/image rows. Until that additive migration is tested and applied, text posts safely fall back to manual review.
 - Core migration `0018` contains the final definitions of `finalize_shorts_publication` and `moderate_shorts_video`, replacing earlier versions.
 
 AI labels are evidence for review, not a verdict about the author. Automatic account restrictions must be proportionate, reasoned, recorded and reversible. Do not permanently ban solely on a low-confidence model result.
