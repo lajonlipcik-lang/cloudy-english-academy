@@ -27,9 +27,10 @@ The current application remains authoritative until the Flutter version passes f
 - flutter/assets/cloudy_catalog.json and flutter/lib/domain/cloudy_catalog.dart: complete 60-lesson curriculum, level sections, and 27 grammar foundations.
 - flutter/lib/domain/cloudy_exercise.dart: typed JSON-compatible models for all eight exercise/study card types.
 - flutter/lib/domain/cloudy_state.dart: persisted progress/settings model using the current cl2 JSON keys.
+- flutter/lib/data/cloudy_progress_store.dart: guest and account-scoped local progress persistence, compatible key selection, safe guest merge, and explicit post-sync cleanup.
 - flutter/lib/domain/cloudy_logic.dart: lesson stages, exercise generation, guided grammar tasks, answer/retry rules, XP/streaks, achievements, daily chest, guest/account merge, and progress sanitization.
 - flutter/lib/domain/cloudy_learning_store.dart: local adaptive mastery, spaced-review prioritization, session tracking, and offline event outbox.
-- flutter/test/: parity-focused tests for progress, catalog loading, exercise serialization, learning persistence, and exercise generation.
+- flutter/test/: parity-focused tests for progress, catalog loading, exercise serialization, learning persistence, guest/account progress merge, and exercise generation.
 - .github/workflows/flutter-ci.yml: Flutter dependency, analyzer, and test workflow for the migration branch.
 
 These are migration foundations, not evidence that the native app is complete or that all tests have passed. The native screen layer, native authentication, media integrations, backend event synchronization, and full parity validation remain outstanding.
