@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { getSiteLanguage, subscribeSiteLanguage, type SiteLanguage } from "@/lib/site-locale";
 
 const COUNTRY_CODES = `
 AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ
@@ -31,47 +30,24 @@ YE YT
 ZA ZM ZW
 `.trim().split(/\s+/).filter((code) => code !== "RU");
 
-const COPY: Record<SiteLanguage, {
-  back: string; title: string; intro: string; detail: string; count: string;
-  supportLead: string; support: string; documentTitle: string; description: string;
-}> = {
-  ru: {
-    back: "Юридические документы", title: "Доступность по странам",
-    intro: "Сейчас сервис доступен в странах и территориях, перечисленных ниже. Если вашей страны нет в списке, доступ к обучению из неё ограничен и подключение может быть заблокировано.",
-    detail: "Доступность зависит от работы технических поставщиков, местного законодательства и сетевых ограничений и может изменяться.",
-    count: "стран и территорий", supportLead: "Если вы считаете, что доступность определена неверно, обратитесь в",
-    support: "поддержку Cloudy English", documentTitle: "Доступность по странам — Cloudy English Academy",
-    description: "Страны и территории, где доступна Cloudy English Academy.",
-  },
-  en: {
-    back: "Legal documents", title: "Country availability",
-    intro: "The service is currently available in the countries and territories listed below. If your country is not listed, access to learning from that location is restricted and the connection may be blocked.",
-    detail: "Availability may change depending on technical providers, local laws, and network restrictions.",
-    count: "countries and territories", supportLead: "If you believe your availability status is incorrect, contact",
-    support: "Cloudy English Support", documentTitle: "Country availability — Cloudy English Academy",
-    description: "Countries and territories where Cloudy English Academy is available.",
-  },
-  uk: {
-    back: "Юридичні документи", title: "Доступність за країнами",
-    intro: "Наразі сервіс доступний у країнах і територіях, перелічених нижче. Якщо вашої країни немає у списку, доступ до навчання з неї обмежено, а підключення може бути заблоковано.",
-    detail: "Доступність може змінюватися залежно від роботи технічних постачальників, місцевого законодавства та мережевих обмежень.",
-    count: "країн і територій", supportLead: "Якщо ви вважаєте, що доступність визначено неправильно, зверніться до",
-    support: "підтримки Cloudy English", documentTitle: "Доступність за країнами — Cloudy English Academy",
-    description: "Країни й території, де доступна Cloudy English Academy.",
-  },
+const COPY = {
+  back: "Юридические документы", title: "Доступность по странам",
+  intro: "Сейчас сервис доступен в странах и территориях, перечисленных ниже. Если вашей страны нет в списке, доступ к обучению из неё ограничен и подключение может быть заблокировано.",
+  detail: "Доступность зависит от работы технических поставщиков, местного законодательства и сетевых ограничений и может изменяться.",
+  count: "стран и территорий", supportLead: "Если вы считаете, что доступность определена неверно, обратитесь в",
+  support: "поддержку Cloudy English", documentTitle: "Доступность по странам — Cloudy English Academy",
+  description: "Страны и территории, где доступна Cloudy English Academy.",
 };
 
 export function AvailabilityPage() {
-  const [language, setLanguage] = useState<SiteLanguage>(() => getSiteLanguage());
-  useEffect(() => subscribeSiteLanguage(setLanguage), []);
-  const copy = COPY[language];
+  const copy = COPY;
   const countries = useMemo(() => {
-    const names = new Intl.DisplayNames([language === "ru" ? "ru" : language === "uk" ? "uk" : "en"], { type: "region" });
-    return COUNTRY_CODES.map((code) => names.of(code) ?? code).sort((a, b) => a.localeCompare(b, language));
-  }, [language]);
+    const names = new Intl.DisplayNames(["ru"], { type: "region" });
+    return COUNTRY_CODES.map((code) => names.of(code) ?? code).sort((a, b) => a.localeCompare(b, "ru"));
+  }, []);
 
   return (
-    <main lang={language} className="min-h-screen px-4 pb-12 pt-[max(24px,env(safe-area-inset-top))] text-white"
+    <main lang="ru" className="min-h-screen px-4 pb-12 pt-[max(24px,env(safe-area-inset-top))] text-white"
       style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', background: "linear-gradient(165deg, #050d2b 0%, #0a2a73 48%, #3aa0ff 100%) fixed" }}>
       <div className="mx-auto max-w-3xl">
         <a href="/legal" className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-[#91d8ff] underline-offset-4 hover:underline">
@@ -104,10 +80,10 @@ export function AvailabilityPage() {
 export const Route = createFileRoute("/availability")({
   staticData: { sitemap: true },
   head: () => ({ meta: [
-    { title: "Country availability — Cloudy English Academy" },
-    { name: "description", content: "Countries and territories where Cloudy English Academy is available." },
+    { title: "Доступность по странам — Cloudy English Academy" },
+    { name: "description", content: "Страны и территории, где доступна Cloudy English Academy." },
     { property: "og:title", content: "Country availability — Cloudy English Academy" },
-    { property: "og:description", content: "Current country availability for Cloudy English Academy." },
+    { property: "og:description", content: "Текущая доступность Cloudy English Academy по странам." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
   ] }),
