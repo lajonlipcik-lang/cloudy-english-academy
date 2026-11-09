@@ -452,6 +452,7 @@ class CloudyAppController extends ChangeNotifier {
 
   Future<void> retryCloudSync() async {
     if (user == null) return;
+    if (syncPaused) await _refreshAccount();
     await flushProgressNow();
     await _syncLearningEvents();
   }
