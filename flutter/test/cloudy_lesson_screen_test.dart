@@ -110,7 +110,9 @@ void main() {
       ),
       onMatchingAttempt: (_, correct, __) => attempts.add(correct),
     ));
-    await tester.tap(find.text('apple'));
+    await tester.tap(find.text('apple').first);
+    await tester.pump();
+    expect(find.text('яблоко'), findsOneWidget);
     await tester.tap(find.text('яблоко'));
     await tester.pump();
     expect(attempts, [true]);
