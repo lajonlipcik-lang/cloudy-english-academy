@@ -99,9 +99,10 @@ describe("Cloudy regional access gate", () => {
     expect(html).toContain("@keyframes cloudBlink");
     expect(html).not.toContain("ДОСТУП ОГРАНИЧЕН");
     expect(html).not.toContain('class="logo"');
-    expect(html).toContain('href="/availability">Доступность по странам</a>');
+    expect(html).toContain('id="region-availability">Country availability</a>');
+    expect(html).toContain('availability: "Доступность по странам"');
     expect(html).toContain('href="/legal">Юридические документы</a>');
-    expect(html).toContain("https://t.me/cloudysupportt_bot");
+    expect(html).toContain("https://t.me/cloudysupport_t_bot");
     expect(html).not.toContain("border: 1px solid");
     expect(html).not.toContain("<hr");
   });
