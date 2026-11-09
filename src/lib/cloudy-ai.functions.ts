@@ -1132,7 +1132,7 @@ export const getShortsComments = createServerFn({ method: "POST" })
       .from("shorts_comments")
       .select("id,author_id,body,created_at,parent_comment_id")
       .eq("video_id", data.videoId)
-      .in("status", ["published", "pending_review"])
+      .eq("status", "published")
       .order("created_at", { ascending: true })
       .limit(100);
     if (error) throw new Error("Не удалось загрузить комментарии.");
@@ -1207,13 +1207,19 @@ export const createShortComment = createServerFn({ method: "POST" })
         throw new Error("Комментарий, на который ты отвечаешь, недоступен.");
       }
     }
-    const { data: inserted, error: insertError } = await contentDb
-      .from("shorts_comments")
-      .insert({ video_id: data.videoId, author_id: user.id, body, ...(data.parentCommentId ? { parent_comment_id: data.parentCommentId } : {}), status: "published", moderation_status: "approved", moderated_at: new Date(now).toISOString() })
-      .select("id")
-      .single();
-    if (insertError || !inserted) throw new Error("Не удалось отправить комментарий.");
-    return { id: inserted.id, status: "published" };
+    const { data: insertedId, error: insertError } = await contentDb.rpc("create_shorts_comment_rate_limited", {
+      p_video_id: data.videoId,
+      p_author_id: user.id,
+      p_body: body,
+      p_parent_comment_id: data.parentCommentId ?? null,
+    });
+    if (insertError || !insertedId) {
+      if (insertError?.message?.includes("COMMENT_RATE_LIMIT")) {
+        throw new Error("Слишком много комментариев. Подожди минуту и попробуй снова.");
+      }
+      throw new Error("Не удалось отправить комментарий.");
+    }
+    return { id: insertedId, status: "published" };
   });
 
 /** Persists a like on an individual Shorts comment. */
