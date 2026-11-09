@@ -4,6 +4,18 @@ import 'package:cloudy_english/domain/cloudy_progress_engine.dart';
 
 void main() {
   group('Cloudy progress engine parity', () {
+    test('rolls the daily counters while preserving the new day marker', () {
+      final state = CloudyState.defaults().copyWith(
+        today: const CloudyToday(d: 'Sun Nov 08 2026', xp: 20, les: 1, ok: 4, claim: 1),
+      );
+      final rolled = rollCloudyDay(state, DateTime(2026, 11, 9, 12));
+      expect(rolled.today.d, 'Mon Nov 09 2026');
+      expect(rolled.today.xp, 0);
+      expect(rolled.today.les, 0);
+      expect(rolled.today.ok, 0);
+      expect(rolled.today.claim, 0);
+    });
+
     test('awards the existing lesson XP formula and increments the streak', () {
       final state = CloudyState.defaults().copyWith(level: CloudyLevel.a1);
       const session = CloudySession(review: false, lesson: 0, exercises: []);
