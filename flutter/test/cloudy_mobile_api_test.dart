@@ -170,6 +170,61 @@ void main() {
       api.close();
     });
 
+    test('creates a Telegram account-link deep link through the Stars API', () async {
+      late http.Request captured;
+      final api = CloudyMobileApi(
+        baseUrl: 'https://cloudy.example/',
+        accessToken: () async => 'access-token',
+        client: MockClient((request) async {
+          captured = request;
+          return http.Response(
+            jsonEncode({
+              'ok': true,
+              'result': {
+                'url': 'https://t.me/cloudysupport_t_bot?start=link_abc',
+                'expiresInSeconds': 600,
+              },
+            }),
+            200,
+          );
+        }),
+      );
+
+      final link = await api.createTelegramLink();
+      expect(captured.url.toString(), 'https://cloudy.example/api/telegram/stars');
+      expect(jsonDecode(captured.body), {'action': 'create-link'});
+      expect(link.url, 'https://t.me/cloudysupport_t_bot?start=link_abc');
+      expect(link.expiresInSeconds, 600);
+      api.close();
+    });
+
+    test('requests a Telegram Stars invoice without embedding price in the app', () async {
+      late http.Request captured;
+      final api = CloudyMobileApi(
+        baseUrl: 'https://cloudy.example',
+        accessToken: () async => 'access-token',
+        client: MockClient((request) async {
+          captured = request;
+          return http.Response(
+            jsonEncode({
+              'ok': true,
+              'result': {'orderId': 'order-1', 'sent': true},
+            }),
+            200,
+          );
+        }),
+      );
+
+      final orderId = await api.createTelegramStarsInvoice(planCode: 'configured_plan');
+      expect(captured.url.toString(), 'https://cloudy.example/api/telegram/stars');
+      expect(jsonDecode(captured.body), {
+        'action': 'create-invoice',
+        'planCode': 'configured_plan',
+      });
+      expect(orderId, 'order-1');
+      api.close();
+    });
+
     test('requires an authenticated access token', () async {
       final api = CloudyMobileApi(
         baseUrl: 'https://cloudy.example',
