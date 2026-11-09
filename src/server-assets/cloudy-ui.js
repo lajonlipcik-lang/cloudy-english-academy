@@ -419,7 +419,7 @@
       paint(true);
     },
     motion: function (v) { API.set("motion", v); },
-    lang: function (v) { if (!["ru","en","uk"].includes(v)) return; P.lang = v; persist(); applyPrefs(); retranslateAll(); snd_("pick"); paint(true); },
+    lang: function (v) { if (!["ru","en","uk"].includes(v)) return; P.lang = v; persist(); applyPrefs(); retranslateAll(); try { window.dispatchEvent(new CustomEvent("cloudy:languagechange", { detail: { language: v } })); if (window.parent && window.parent !== window) window.parent.postMessage({ type: "cloudy:languagechange", language: v }, window.location.origin); } catch (e) {} snd_("pick"); paint(true); },
     tog: function (k) {
       var s = S_(); if (!s) return;
       s.set[k] = s.set[k] ? 0 : 1; save_(); snd_("tap");
