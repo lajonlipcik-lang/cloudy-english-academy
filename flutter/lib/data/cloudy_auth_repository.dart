@@ -50,7 +50,7 @@ class CloudyAuthPolicy {
     final age = value is num
         ? (value.isFinite && value == value.roundToDouble() ? value.toInt() : null)
         : value is String
-            ? int.tryParse(value)
+            ? int.tryParse(value.trim())
             : null;
     return age != null && age >= 13 && age <= 120 ? age : null;
   }
