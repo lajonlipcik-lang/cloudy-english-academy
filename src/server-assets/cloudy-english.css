@@ -1367,3 +1367,14 @@ body:has(.shorts-screen) .amb{display:none!important}
 
 /* Ensure search filtering hides feed cards despite component display rules. */
 .shorts-video[hidden]{display:none!important}
+
+
+/* Shorts comment interactions */
+.shorts-comment-actions{display:flex;align-items:center;gap:14px;margin-top:5px}
+.shorts-comment-actions button{border:0;background:none;color:rgba(255,255,255,.68);font:700 12px var(--font);padding:3px 0}
+.shorts-comment-actions .shorts-comment-like{display:inline-flex;align-items:center;gap:4px}
+.shorts-comment-actions .shorts-comment-like.liked{color:#ff8da5}
+.shorts-comment-row.nested{margin-left:42px;padding-top:8px}
+.shorts-comment-row.nested .shorts-comment-avatar{width:28px;height:28px;font-size:11px}
+.shorts-comment-row.nested .shorts-comment-main{font-size:13px}
+.shorts-comment-compose button[aria-label="Отменить ответ"]{font-size:22px;min-width:30px}
