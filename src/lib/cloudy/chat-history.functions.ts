@@ -3,14 +3,18 @@ import { createClient } from "@supabase/supabase-js";
 
 type ChatMessage = { r: "u" | "a"; t: string };
 type ChatThreadInput = { id: string; title: string; messages: ChatMessage[]; updatedAt?: number };
-type ChatHistoryInput = { accessToken: string; thread?: unknown; threadId?: string };
+type ChatHistoryInput = { accessToken: string; accountId?: string; thread?: unknown; threadId?: string };
 
 function validateToken(input: ChatHistoryInput) {
   const accessToken = String(input?.accessToken ?? "");
   if (!accessToken || accessToken.length > 8192 || accessToken.split(".").length !== 3) {
     throw new Error("Unauthorized");
   }
-  return { ...input, accessToken };
+  const accountId = String(input?.accountId ?? "");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(accountId)) {
+    throw new Error("Некорректный идентификатор аккаунта.");
+  }
+  return { ...input, accessToken, accountId };
 }
 
 function validateThread(value: unknown): ChatThreadInput {
@@ -31,13 +35,14 @@ function validateThread(value: unknown): ChatThreadInput {
   return { id, title, messages, updatedAt: Number(raw["updatedAt"]) || Date.now() };
 }
 
-async function getUserAndDb(token: string) {
+async function getUserAndDb(token: string, expectedAccountId: string) {
   const url = process.env["SUPABASE_URL"];
   const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
   if (!url || !key) throw new Error("Supabase server is not configured.");
   const auth = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await auth.auth.getUser(token);
   if (error || !data.user) throw new Error("Unauthorized");
+  if (data.user.id !== expectedAccountId) throw new Error("Account changed. Reload chat history.");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return { user: data.user, db: supabaseAdmin as any };
 }
@@ -45,7 +50,7 @@ async function getUserAndDb(token: string) {
 export const listCloudyChatHistory = createServerFn({ method: "POST" })
   .inputValidator(validateToken)
   .handler(async ({ data }) => {
-    const { user, db } = await getUserAndDb(data.accessToken);
+    const { user, db } = await getUserAndDb(data.accessToken, data.accountId!);
     const { data: rows, error } = await db.from("cloudy_chat_threads")
       .select("thread_id,title,messages,updated_at")
       .eq("user_id", user.id)
@@ -66,7 +71,7 @@ export const saveCloudyChatThread = createServerFn({ method: "POST" })
   .inputValidator(validateToken)
   .handler(async ({ data }) => {
     const thread = validateThread(data.thread);
-    const { user, db } = await getUserAndDb(data.accessToken);
+    const { user, db } = await getUserAndDb(data.accessToken, data.accountId!);
     const { error } = await db.from("cloudy_chat_threads").upsert({
       user_id: user.id,
       thread_id: thread.id,
@@ -83,7 +88,7 @@ export const deleteCloudyChatThread = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const threadId = String(data.threadId ?? "");
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(threadId)) throw new Error("Некорректный идентификатор диалога.");
-    const { user, db } = await getUserAndDb(data.accessToken);
+    const { user, db } = await getUserAndDb(data.accessToken, data.accountId!);
     const { error } = await db.from("cloudy_chat_threads")
       .delete()
       .eq("user_id", user.id)

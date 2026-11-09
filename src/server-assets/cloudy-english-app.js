@@ -310,7 +310,9 @@ function authRequest(action,payload={}){
 // Applies an authenticated cloud snapshot (session message or signIn reply) exactly once per payload;
 // idempotent when the same updated_at arrives twice (signIn reply + onAuthStateChange session message).
 function applyCloudSnapshot(msg){
- cloudUserId=msg.user.id;
+ const nextChatAccount=String(msg.user.id||"");
+ if(String(cloudUserId||"")!==nextChatAccount)resetChatHistoryState();
+ cloudUserId=nextChatAccount;
  const localKey='cl2:'+msg.user.email,localExists=ls(localKey)!==null,localAt=Number(ls('cl2sync:'+msg.user.email)||0),dirtyAt=Number(ls('cl2dirty:'+msg.user.email)||0),remoteAt=msg.progress?.updated_at?Date.parse(msg.progress.updated_at):0;
  const guestState=(()=>{try{return JSON.parse(ls('cl2')||'{}')}catch(e){return {}}})();
  const profileLevel=['A1','A2','B1','B2'].includes(msg.learnerProfile?.english_level)?msg.learnerProfile.english_level:'';
@@ -338,7 +340,7 @@ window.addEventListener('message',event=>{
   if(msg.ok&&msg.user){
    applyCloudSnapshot(msg);
    view();
-  }else if(msg.ok===false){cloudSyncPaused=true;cloudUserId=null;toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false);view()}else{cloudSyncPaused=false;cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
+  }else if(msg.ok===false){resetChatHistoryState();cloudSyncPaused=true;cloudUserId=null;toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false);view()}else{resetChatHistoryState();cloudSyncPaused=false;cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
   return;
  }
  if(msg.type==='progress-save-result'){
@@ -406,8 +408,8 @@ const Auth={
   finally{cloudProgressPending=false}
  },
  start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);const savedAge=Number(S.user?.age);const validAge=Number.isInteger(Number(age))&&Number(age)>=13&&Number(age)<=120?Number(age):Number.isInteger(savedAge)&&savedAge>=13&&savedAge<=120?savedAge:null;S.user={email,name,age:validAge,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
- guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость',age:null};save();window.CloudyAdmin?.setUser(S.user)},
- async signOut(){await authRequest('signOut');cloudUserId=null;cloudUpdatedAt=null;cloudSyncPending=null;cloudSyncInFlight=null;clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRetry);cloudSyncRetry=0;ls('cl2s','');load('cl2');S.user=null;window.CloudyAdmin?.setUser(null)}
+ guest(){resetChatHistoryState();ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость',age:null};save();window.CloudyAdmin?.setUser(S.user)},
+ async signOut(){await authRequest('signOut');resetChatHistoryState();cloudUserId=null;cloudUpdatedAt=null;cloudSyncPending=null;cloudSyncInFlight=null;clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRetry);cloudSyncRetry=0;ls('cl2s','');load('cl2');S.user=null;window.CloudyAdmin?.setUser(null)}
 };
 let INTRO={name:'',age:18,step:0};
 try{const savedIntro=JSON.parse(localStorage.getItem('cl2welcome')||'{}');INTRO={...INTRO,...savedIntro}}catch(e){}
@@ -466,7 +468,7 @@ async function introFinish(){
   snd('win');view();
  }catch(e){if(error)error.textContent=e.message||'Не удалось сохранить профиль. Попробуй ещё раз.'}
 }
-let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false;let chatHistorySaveQueue=Promise.resolve();
+let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false,chatHistoryGeneration=0;let chatHistorySaveQueue=Promise.resolve();
 function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'><label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button><p style="margin:18px 0 0;font-size:12px;opacity:.72">Продолжая, ознакомьтесь с <a href="/legal" target="_top" style="color:#7fc2ff;text-decoration:underline">документами и правилами</a></p></div>`}
 async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap').value,er=$('#er'),b=$('#ab'),lbl=AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ',bad=m=>{er.textContent=m;er.classList.remove('shk');void er.offsetWidth;er.classList.add('shk');snd('bad')};
  if(!em.includes('@')||!em.includes('.'))return bad('Введите корректный email');if(pw.length<6)return bad('Пароль: минимум 6 символов');
@@ -640,40 +642,52 @@ const AIcard=()=>`<button class="card ai" onclick="chat()">${mascot()}<div><b>П
 
 
 function chatEscape(value){return String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function chatHistoryKey(){return "cloudy-ai-history:"+String(cloudUserId||S.user?.email||"account").toLowerCase();}
-function readLocalChatHistory(){try{const raw=JSON.parse(localStorage.getItem(chatHistoryKey())||"[]");return Array.isArray(raw)?raw.filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.messages)).slice(0,30):[]}catch{return []}}
+function resetChatHistoryState(){
+ chatHistoryGeneration++;
+ chatHistoryLoaded=false;chatHistoryAccountId=null;chatHistoryLoading=null;
+ chatThreads=[];CH=[];activeChatId=null;chatDrawerOpen=false;
+ chatHistorySaveQueue=Promise.resolve();chatHistorySaveNotice=false;
+}
+function chatHistoryKey(account=cloudUserId){return account?"cloudy-ai-history:"+String(account):null;}
+function readLocalChatHistory(account=cloudUserId){const key=chatHistoryKey(account);if(!key)return [];try{const raw=JSON.parse(localStorage.getItem(key)||"[]");return Array.isArray(raw)?raw.filter(x=>x&&typeof x.id==="string"&&Array.isArray(x.messages)).slice(0,30):[]}catch{return []}}
 async function loadChatHistory(){
  const account=String(cloudUserId||"");
  if(!account)throw new Error("Войдите в аккаунт, чтобы загрузить историю чатов.");
  if(chatHistoryLoaded&&chatHistoryAccountId===account)return;
- if(chatHistoryLoading)return chatHistoryLoading;
- chatHistoryLoading=(async()=>{
-  chatHistoryLoaded=false;
+ if(chatHistoryLoading&&chatHistoryAccountId===account)return chatHistoryLoading;
+ resetChatHistoryState();
+ const generation=chatHistoryGeneration;
+ chatHistoryAccountId=account;
+ const task=(async()=>{
   try{
-   const response=await authRequest("chat-history-get");
+   const response=await authRequest("chat-history-get",{payload:{accountId:account}});
+   if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
    const remote=Array.isArray(response.result?.chats)?response.result.chats:[];
    const merged=new Map(remote.map(thread=>[thread.id,thread]));
-   for(const localThread of readLocalChatHistory()){
+   for(const localThread of readLocalChatHistory(account)){
+    if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
     const cloudThread=merged.get(localThread.id);
     if(!cloudThread||(Number(localThread.updatedAt)||0)>(Number(cloudThread.updatedAt)||0)){
-     await authRequest("chat-history-save",{payload:{thread:localThread}});
+     await authRequest("chat-history-save",{payload:{accountId:account,thread:localThread}});
+     if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
      merged.set(localThread.id,localThread);
     }
    }
+   if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
    chatThreads=[...merged.values()].sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)).slice(0,30);
-   chatThreads.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-   chatHistoryAccountId=account;
-   try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
+   const key=chatHistoryKey(account);try{if(key)localStorage.setItem(key,JSON.stringify(chatThreads))}catch(e){}
    chatHistoryLoaded=true;
   }catch(error){
-   chatThreads=readLocalChatHistory();
-   chatHistoryAccountId=account;
-   chatHistoryLoaded=true;
+   if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
+   // Fail closed: never substitute cached messages when the account fetch fails.
+   chatThreads=[];CH=[];activeChatId=null;chatHistoryLoaded=false;
    console.warn("[cloudy-chat] cloud history unavailable",error);
-   toast("Не удалось загрузить историю из аккаунта. Проверьте соединение.",false);
+   toast("Не удалось безопасно загрузить историю. Повторите попытку после восстановления соединения.",false);
+   throw error;
   }
  })();
- try{await chatHistoryLoading}finally{chatHistoryLoading=null}
+ chatHistoryLoading=task;
+ try{await task}finally{if(chatHistoryGeneration===generation&&chatHistoryLoading===task)chatHistoryLoading=null}
 }
 function saveChatHistory(){
  if(!activeChatId||!CH.length||!chatHistoryLoaded||!cloudUserId)return;
@@ -684,10 +698,11 @@ function saveChatHistory(){
  if(index>=0)chatThreads[index]=item;else chatThreads.unshift(item);
  chatThreads.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
  chatThreads=chatThreads.slice(0,30);
- try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
+ const saveAccount=String(cloudUserId||""),saveGeneration=chatHistoryGeneration,key=chatHistoryKey(saveAccount);
+ if(!key||chatHistoryAccountId!==saveAccount)return;
+ try{localStorage.setItem(key,JSON.stringify(chatThreads))}catch(e){}
  renderChatHistory();
- const saveAccount=String(cloudUserId);
- chatHistorySaveQueue=chatHistorySaveQueue.catch(()=>{}).then(()=>String(cloudUserId)===saveAccount?authRequest("chat-history-save",{payload:{thread:item}}):Promise.resolve()).catch(error=>{
+ chatHistorySaveQueue=chatHistorySaveQueue.catch(()=>{}).then(()=>String(cloudUserId||"")===saveAccount&&chatHistoryGeneration===saveGeneration?authRequest("chat-history-save",{payload:{accountId:saveAccount,thread:item}}):Promise.resolve()).catch(error=>{
   console.warn("[cloudy-chat] thread save failed",error);
   if(!chatHistorySaveNotice){chatHistorySaveNotice=true;toast("Не удалось сохранить чат в аккаунте. Проверьте соединение.",false)}
  });
@@ -698,12 +713,15 @@ function renderChatHistory(){
  list.innerHTML=chatThreads.map(item=>{const id=chatEscape(item.id),title=chatEscape(item.title||"Новый диалог");return '<div class="chat-history-row"><button type="button" class="chat-history-item '+(item.id===activeChatId?'active':'')+'" onclick="chatOpenThread(\''+id+'\')"><span class="chat-history-dot"></span><span>'+title+'</span></button><button type="button" class="chat-history-delete" aria-label="Удалить диалог" title="Удалить диалог" onclick="event.stopPropagation();chatDeleteThread(\''+id+'\')">'+'<svg class="i chat-trash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>'+'</button></div>'}).join("");
 }
 async function chatDeleteThread(id){
+ const account=String(cloudUserId||""),generation=chatHistoryGeneration;
+ if(!account||chatHistoryAccountId!==account)return;
  const item=chatThreads.find(x=>x.id===id);if(!item)return;
  if(!confirm('Удалить диалог «'+String(item.title||"Новый диалог").replace(/[<>]/g,"") + '»?'))return;
- try{await authRequest("chat-history-delete",{payload:{threadId:id}})}
+ try{await authRequest("chat-history-delete",{payload:{accountId:account,threadId:id}})}
  catch(error){toast("Не удалось удалить диалог из аккаунта. Попробуйте ещё раз.",false);return}
+ if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
  chatThreads=chatThreads.filter(x=>x.id!==id);
- try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
+ try{localStorage.setItem(chatHistoryKey(account),JSON.stringify(chatThreads))}catch(e){}
  if(activeChatId===id){CH=[];activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatRender()}
  else renderChatHistory();
  snd("tab");
@@ -755,7 +773,7 @@ function chatRender(){
  else{$("#msgs").innerHTML='<div class="chat-welcome"><div class="chat-welcome-mascot">'+mascot()+'</div><h2>Привет! Я Клауди.</h2><p>Давай практиковать английский. Я буду подбирать общение под твой уровень <b>'+(S.lv||"A1")+'</b>.</p><div class="chat-suggestions"><button onclick="chatSuggestion(\'Let’s practice introductions\')">Познакомимся на английском</button><button onclick="chatSuggestion(\'Help me improve my English grammar\')">Разберём грамматику</button><button onclick="chatSuggestion(\'Ask me an easy question for my level\')">Задай мне вопрос</button></div></div>'}
  const input=$("#ci");if(input)input.focus();
 }
-async function chat(){if(S.user?.guest){toast("Для практики с Клауди войдите в аккаунт");return authV()}try{await loadChatHistory()}catch(e){toast("Не удалось загрузить историю чатов.",false);return}if(!CH.length&&chatThreads.length){const latest=chatThreads[0];activeChatId=latest.id;CH=latest.messages.slice()}if(!activeChatId)activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatRender()}
+async function chat(){if(S.user?.guest){toast("Для практики с Клауди войдите в аккаунт");return authV()}const account=String(cloudUserId||"");if(!account){toast("Сначала войдите в аккаунт.",false);return authV()}if(chatHistoryAccountId!==account){resetChatHistoryState();}try{await loadChatHistory()}catch(e){toast("История скрыта до безопасной загрузки из аккаунта.",false);return}if(String(cloudUserId||"")!==account||chatHistoryAccountId!==account)return;if(!CH.length&&chatThreads.length){const latest=chatThreads[0];activeChatId=latest.id;CH=latest.messages.slice()}if(!activeChatId)activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatRender()}
 function chatStartNew(){CH=[];activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatDrawerOpen=false;chatRender();snd("tab")}
 function chatOpenThread(id){const item=chatThreads.find(x=>x.id===id);if(!item)return;activeChatId=item.id;CH=item.messages.slice();chatDrawerOpen=false;chatRender();snd("tab")}
 function chatToggleDrawer(){chatDrawerOpen=!chatDrawerOpen;const shell=$("#chatShell");if(shell)shell.classList.toggle("drawer-open",chatDrawerOpen)}
