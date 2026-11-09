@@ -81,6 +81,77 @@ void main() {
       api.close();
     });
 
+    test('loads server-authoritative active subscription and entitlements', () async {
+      final api = CloudyMobileApi(
+        baseUrl: 'https://cloudy.example',
+        accessToken: () async => 'access-token',
+        client: MockClient((request) async {
+          expect(jsonDecode(request.body), {
+            'action': 'subscription-status',
+            'payload': {},
+          });
+          return http.Response(
+            jsonEncode({
+              'ok': true,
+              'result': {
+                'hasAccess': true,
+                'status': 'active',
+                'subscription': {
+                  'id': 'sub-1',
+                  'currentPeriodEnd': '2026-12-10T00:00:00.000Z',
+                  'cancelAtPeriodEnd': false,
+                },
+                'plan': {
+                  'code': 'premium_monthly',
+                  'name': 'Премиум',
+                  'entitlements': {'ai_tutor': true},
+                },
+                'entitlements': [
+                  {'feature_key': 'ai_tutor', 'enabled': true, 'usage_limit': 100},
+                ],
+              },
+            }),
+            200,
+          );
+        }),
+      );
+
+      final access = await api.loadSubscriptionAccess();
+      expect(access.hasAccess, isTrue);
+      expect(access.status, 'active');
+      expect(access.planCode, 'premium_monthly');
+      expect(access.planName, 'Премиум');
+      expect(access.planEntitlements['ai_tutor'], isTrue);
+      expect(access.featureEntitlements.single['feature_key'], 'ai_tutor');
+      api.close();
+    });
+
+    test('represents users without a subscription as inactive', () async {
+      final api = CloudyMobileApi(
+        baseUrl: 'https://cloudy.example',
+        accessToken: () async => 'access-token',
+        client: MockClient((_) async => http.Response(
+          jsonEncode({
+            'ok': true,
+            'result': {
+              'hasAccess': false,
+              'status': 'inactive',
+              'subscription': null,
+              'plan': null,
+              'entitlements': [],
+            },
+          }),
+          200,
+        )),
+      );
+
+      final access = await api.loadSubscriptionAccess();
+      expect(access.hasAccess, isFalse);
+      expect(access.status, 'inactive');
+      expect(access.planCode, isNull);
+      api.close();
+    });
+
     test('rejects oversized learning event batches before sending', () async {
       final api = CloudyMobileApi(
         baseUrl: 'https://cloudy.example',
