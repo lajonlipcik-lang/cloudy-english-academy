@@ -144,7 +144,7 @@ export const exportCloudyPersonalData = createServerFn({ method: "POST" })
     const [profile, progress, learnerProfile, progressXp, awards, learningEvents, chatThreads, communityPosts, communityComments, communityReactions, communityReports, consentEvents, privacyRequests] = results.map((result: any) => result.data);
     const exportData = {
       format: "cloudy-personal-data-export", version: 1, exportedAt: new Date().toISOString(),
-      account: { id: user.id, email: user.email ?? null, createdAt: user.created_at ?? null, lastSignInAt: user.last_sign_in_at ?? null, name: typeof user.user_metadata?.name === "string" ? user.user_metadata.name : null, ageYears: Number.isInteger(Number(user.user_metadata?.age)) ? Number(user.user_metadata.age) : null },
+      account: { id: user.id, email: user.email ?? null, createdAt: user.created_at ?? null, lastSignInAt: user.last_sign_in_at ?? null, name: typeof user.user_metadata?.["name"] === "string" ? user.user_metadata.name : null, ageYears: Number.isInteger(Number(user.user_metadata?.["age"])) ? Number(user.user_metadata.age) : null },
       profile,
       learning: { progress, learnerProfile, xp: progressXp, awards: awards ?? [], events: learningEvents ?? [] },
       aiChatHistory: chatThreads ?? [],
