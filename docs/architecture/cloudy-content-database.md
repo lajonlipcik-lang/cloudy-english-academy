@@ -34,7 +34,7 @@ The proposed single-project sequence is documented in `docs/migration/SUPABASE_M
 
 1. Apply Core migrations `0000–0015` first; Core `0014` already creates community tables.
 2. Do not apply legacy Content migration `0001_cloudy_content_core.sql`: it duplicates community objects and may alter their grants.
-3. Apply Content Shorts migrations `0002–0010` only after reviewing their security and ordering. The Content directory has two different files named `0009`, so a unique canonical migration history is required.
+3. Apply Content Shorts migrations `0002–0011` only after reviewing their security and ordering. The Content directory has two different files named `0009`, so a unique canonical migration history is required. New `0011_shorts_saved_posts_security.sql` enables RLS and limits saved-post access to `service_role`.
 4. Apply Core Shorts RPC migrations `0016–0018` only after their referenced Shorts tables and columns exist.
 5. Core `0019` and `0020` are later independent application migrations and must also be included in the final ordered history.
 6. Do not apply anything to the connected destination until the complete sequence has passed on a disposable database.
@@ -59,7 +59,7 @@ The same bucket is used by Shorts media and profile image flows. Validate MIME r
 
 ## Security blockers to resolve before apply
 
-- Content migration `0009_shorts_saved_posts.sql` creates `shorts_saved_posts` but does not enable RLS or explicitly revoke browser-role privileges. Add a reviewed hardening migration that enables RLS, revokes `PUBLIC`, `anon` and `authenticated`, and grants only the required server role. Verify effective table privileges on a fresh Supabase database.
+- Content migration `0009_shorts_saved_posts.sql` creates `shorts_saved_posts` without RLS. The migration branch now contains `0011_shorts_saved_posts_security.sql`, which enables RLS, revokes `PUBLIC`, `anon` and `authenticated`, and grants only the required server role. Verify effective table privileges on a fresh Supabase database.
 - Verify RLS and least-privilege grants for every Shorts table, not just the tables covered by Content migration `0002`.
 - Inspect every `SECURITY DEFINER` function for a safe fixed `search_path`, validated inputs and service-role-only execution.
 - Verify no service-role key is exposed through a `VITE_*` variable or browser bundle.
