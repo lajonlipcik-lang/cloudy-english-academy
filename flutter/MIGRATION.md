@@ -23,11 +23,11 @@ The current application remains authoritative until the Flutter version passes f
 
 ## Migration sequence
 
-1. Freeze and document existing state/data contracts; add parity tests before replacing behavior.
-2. Port the exact curriculum and progress/XP rules to Dart and prove JSON compatibility.
-3. Port authentication, Supabase persistence, guest-to-account merge, and conflict handling.
-4. Port every lesson screen and exercise type, including audio, microphone, retries, and sound effects.
-5. Port profile, achievements, daily goals, settings, AI chat, Shorts, and legal/access pages.
+1. Freeze and document the existing state/data contracts; add parity tests before replacing behavior. (Started.)
+2. Copy the exact 60-lesson catalog, four CEFR paths, 27 grammar topics, and 553 vocabulary pairs into Flutter assets; verify byte-for-byte JSON parity against the current runtime. (Done.)
+3. Port progress serialization, all eight study/exercise card types, XP/streak/lesson completion rules, guest/account merge, and adaptive evidence/outbox. (Core data and logic in progress; tests added.)
+4. Port authentication, Supabase persistence, conflict handling, and server event synchronization.
+5. Port every screen and interaction, including profile, daily goals, settings, AI chat, Shorts, legal/access pages, audio, microphone, retries, and sound effects.
 6. Compare every screen and interaction against the current application on iPhone and Android.
 7. Optimize only after parity; never trade fidelity or features for speed.
 
