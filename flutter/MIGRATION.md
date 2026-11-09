@@ -8,7 +8,7 @@ Flutter must be a faithful port of the existing Cloudy English application. Do n
 
 The current application remains authoritative until the Flutter version passes feature-by-feature parity checks. Keep all migration work on flutter-migration; do not change main as part of this migration.
 
-## Current implementation map
+## Current source map
 
 - Visual shell and markup: src/server-assets/cloudy-english.html
 - Main visual styles: src/server-assets/cloudy-english.css
@@ -21,16 +21,27 @@ The current application remains authoritative until the Flutter version passes f
 - Supabase session/progress/AI bridge: src/features/cloudy-app/useCloudyAppBridge.ts
 - Typed progress rules: src/lib/cloudy/types.ts, src/lib/cloudy/logic.ts and src/lib/cloudy/progress-policy.ts
 
-## Migration sequence
+## Current Flutter implementation
 
-1. Freeze and document the existing state/data contracts; add parity tests before replacing behavior. (Started.)
-2. Copy the exact 60-lesson catalog, four CEFR paths, 27 grammar topics, and 553 vocabulary pairs into Flutter assets; verify byte-for-byte JSON parity against the current runtime. (Done.)
-3. Port progress serialization, all eight study/exercise card types, XP/streak/lesson completion rules, guest/account merge, and adaptive evidence/outbox. (Core data and logic in progress; tests added.)
-4. Port authentication, Supabase persistence, conflict handling, and server event synchronization.
-5. Port every screen and interaction, including profile, daily goals, settings, AI chat, Shorts, legal/access pages, audio, microphone, retries, and sound effects.
-6. Compare every screen and interaction against the current application on iPhone and Android.
-7. Optimize only after parity; never trade fidelity or features for speed.
+- flutter/lib/main.dart: WebView compatibility shell; the existing web application is still the runtime UI.
+- flutter/assets/cloudy_catalog.json: current lesson catalogue asset.
+- flutter/lib/domain/cloudy_state.dart: persisted progress/settings model using the current cl2 JSON keys.
+- flutter/lib/domain/cloudy_logic.dart: Dart port of lesson generation, grading, progress, XP, streak, achievements, daily chest, guest/account merge, and server progress sanitization.
+- flutter/test/cloudy_state_test.dart and flutter/test/cloudy_logic_test.dart: compatibility tests for the Dart model and engine.
+- .github/workflows/flutter-ci.yml: Flutter dependency, analyzer, and test workflow for the migration branch.
+
+These are migration foundations, not evidence that the native app is complete. The native screen layer, native authentication, media integrations, and full parity validation remain outstanding.
+
+## Quality gates
+
+1. Keep the original web application unchanged.
+2. Verify each Dart data contract against its TypeScript source.
+3. Run formatting, flutter analyze, and flutter test for every logic change.
+4. Port one feature area at a time and retain the original behavior.
+5. Compare screenshots and interaction flows on iPhone and Android.
+6. Do not remove the WebView compatibility shell until every feature has a native equivalent and the parity checklist passes.
+7. Do not merge flutter-migration into main before the full acceptance gate passes.
 
 ## Acceptance gate
 
-Do not replace the existing app, merge this branch into main, or call the Flutter version complete until all existing features and saved progress are verified against the current app. Demo-only screens and placeholder actions are not parity.
+No feature may be marked complete based only on a placeholder, static mock, or successful compilation. Completion requires functional parity, saved-progress compatibility, and device verification.
