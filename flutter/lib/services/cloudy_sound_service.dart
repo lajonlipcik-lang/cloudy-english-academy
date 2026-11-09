@@ -101,8 +101,8 @@ class CloudyToneGenerator {
           CloudyTone(frequency: 330, delay: 0, duration: 0.3, endFrequency: 990),
         ],
       CloudySound.ok => [
-          CloudyTone(frequency: 523 * boost, delay: 0, duration: 0.18),
-          CloudyTone(frequency: 784 * boost, delay: 0.09, duration: 0.26),
+          CloudyTone(frequency: 523.0 * boost, delay: 0, duration: 0.18),
+          CloudyTone(frequency: 784.0 * boost, delay: 0.09, duration: 0.26),
         ],
       CloudySound.match => const [
           CloudyTone(frequency: 880, delay: 0, duration: 0.12),
