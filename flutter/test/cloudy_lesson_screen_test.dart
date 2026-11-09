@@ -22,6 +22,7 @@ void main() {
         onAdvance: onAdvance ?? () {},
         onComplete: onComplete ?? () {},
         onPronunciationRequested: () {},
+        onSpeak: (_) {},
         onSkipPronunciation: onSkipPronunciation ?? () {},
       ),
     );
