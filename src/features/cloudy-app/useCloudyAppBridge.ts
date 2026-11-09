@@ -18,6 +18,13 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
       frame.contentWindow?.postMessage({ channel: "cloudy-auth", ...payload }, window.location.origin);
     };
 
+    let initialSessionSyncStarted = false;
+    const syncInitialSession = () => {
+      if (initialSessionSyncStarted) return;
+      initialSessionSyncStarted = true;
+      void syncSession();
+    };
+
     const syncSession = async () => {
       const currentFrame = frameRef.current;
       if (!currentFrame?.contentWindow) return;
@@ -80,7 +87,8 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
       if (message.channel !== "cloudy-auth") return;
 
       if (message.type === "init") {
-        await syncSession();
+        if (message.state === "refresh") await syncSession();
+        else syncInitialSession();
         return;
       }
 
@@ -516,7 +524,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
         const script = doc.createElement("script");
         script.id = "cloudy-admin-runtime";
         script.src = "/cloudy-admin.js";
-        script.onload = () => { void syncSession(); };
+        script.onload = syncInitialSession;
         doc.body.appendChild(script);
       } else {
         void syncSession();
