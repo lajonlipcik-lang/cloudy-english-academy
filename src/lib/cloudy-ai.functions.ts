@@ -840,7 +840,7 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
       confidence: review.confidence,
       moderationApplied: true,
       published: review.decision === "allow",
-      mediaReviewed: true,
+      mediaReviewed: false,
       status: review.decision === "allow" ? "approved" : review.decision === "reject" ? "removed" : "pending_review",
     };
   });
