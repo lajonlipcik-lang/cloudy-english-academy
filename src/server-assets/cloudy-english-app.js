@@ -335,6 +335,7 @@ function applyCloudSnapshot(msg){
  cloudSyncPaused=false;queueCloudProgress();void syncLearningEvents();
  return true;
 }
+let passwordRecoveryScreenActive=false;
 window.addEventListener('message',event=>{
  if(event.origin!==location.origin||event.source!==window.parent||!event.data||event.data.channel!=='cloudy-auth')return;
  const msg=event.data;
@@ -343,7 +344,8 @@ window.addEventListener('message',event=>{
   if(sessionHydrationTimer){clearTimeout(sessionHydrationTimer);sessionHydrationTimer=0;}
   if(msg.ok&&msg.user){
    applyCloudSnapshot(msg);
-   view();
+   if(msg.passwordRecovery)passwordRecoveryScreenActive=true;
+   if(passwordRecoveryScreenActive)passwordRecoveryV();else view();
   }else if(msg.ok===false){resetChatHistoryState();cloudSyncPaused=true;cloudUserId=null;toast(msg.error||'Не удалось проверить аккаунт. Проверьте соединение и попробуйте снова.',false);view()}else{resetChatHistoryState();cloudSyncPaused=false;cloudUserId=null;ls('cl2s','');load('cl2');S.user=null;view()}
   return;
  }
@@ -473,7 +475,28 @@ async function introFinish(){
  }catch(e){if(error)error.textContent=e.message||'Не удалось сохранить профиль. Попробуй ещё раз.'}
 }
 let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false,chatHistoryGeneration=0;let chatHistorySaveQueue=Promise.resolve();
-function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'><label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button><p style="margin:18px 0 0;font-size:12px;opacity:.72">Продолжая, ознакомьтесь с <a href="/legal" target="_top" style="color:#7fc2ff;text-decoration:underline">документами и правилами</a></p></div>`}
+function passwordRecoveryV(){
+ app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><h2 style='margin:8px 0 4px'>Новый пароль</h2><p style='opacity:.78;margin:0 0 18px'>Придумай пароль для своего аккаунта</p><div class='fm'><label>Новый пароль<input id='rp1' type='password' autocomplete='new-password' placeholder='Минимум 8 символов'></label><label>Повтори пароль<input id='rp2' type='password' autocomplete='new-password' placeholder='Повтори новый пароль'></label><div class='err' id='rper'></div><button class='btn' id='rpbtn' onclick='submitPasswordRecovery()'>СОХРАНИТЬ ПАРОЛЬ</button></div></div>`;
+}
+async function submitPasswordRecovery(){
+ const password=$('#rp1')?.value||'',confirm=$('#rp2')?.value||'',error=$('#rper'),button=$('#rpbtn');
+ const fail=message=>{if(error){error.textContent=message;error.classList.remove('shk');void error.offsetWidth;error.classList.add('shk')}snd('bad')};
+ if(password.length<8)return fail('Пароль должен содержать не менее 8 символов.');
+ if(password!==confirm)return fail('Пароли не совпадают.');
+ if(button){button.disabled=true;button.textContent='СОХРАНЯЕМ...'}
+ try{await authRequest('updatePassword',{password});passwordRecoveryScreenActive=false;view();toast('Пароль успешно изменён. Теперь можно войти.');}
+ catch(e){if(button){button.disabled=false;button.textContent='СОХРАНИТЬ ПАРОЛЬ'}fail(e.message||'Не удалось изменить пароль.')}
+}
+async function requestPasswordReset(){
+ const email=$('#ae')?.value.trim().toLowerCase()||'',error=$('#er'),button=$('#resetPasswordBtn');
+ const fail=message=>{if(error){error.textContent=message;error.classList.remove('shk');void error.offsetWidth;error.classList.add('shk')}};
+ if(!email.includes('@')||!email.includes('.'))return fail('Сначала введи свой email.');
+ if(button){button.disabled=true;button.textContent='ОТПРАВЛЯЕМ...'}
+ try{await authRequest('resetPassword',{email});if(error){error.style.color='var(--good,#55c98a)';error.textContent='Если аккаунт существует, письмо для сброса пароля уже отправлено. Проверь входящие и папку «Спам».'}}
+ catch(e){fail(e.message||'Не удалось отправить письмо. Попробуй позже.')}
+ finally{if(button){button.disabled=false;button.textContent='Забыли пароль?'}}
+}
+function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'><label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div>${AM=='in'?`<button type='button' id='resetPasswordBtn' onclick='requestPasswordReset()' style='display:block;margin:0 auto 14px;padding:4px 8px;border:0;background:transparent;color:#8fcaff;font:600 13px inherit;cursor:pointer'>Забыли пароль?</button>`:''}<button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button><p style="margin:18px 0 0;font-size:12px;opacity:.72">Продолжая, ознакомьтесь с <a href="/legal" target="_top" style="color:#7fc2ff;text-decoration:underline">документами и правилами</a></p></div>`}
 async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap').value,er=$('#er'),b=$('#ab'),lbl=AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ',bad=m=>{er.textContent=m;er.classList.remove('shk');void er.offsetWidth;er.classList.add('shk');snd('bad')};
  if(!em.includes('@')||!em.includes('.'))return bad('Введите корректный email');if(pw.length<6)return bad('Пароль: минимум 6 символов');
  b.classList.add('ld');b.textContent='ПОДОЖДИТЕ...';er.textContent='';
