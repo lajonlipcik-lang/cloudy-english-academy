@@ -45,6 +45,8 @@ class CloudySessionSnapshot {
 
 class CloudyAuthRepository {
   CloudyAuthRepository(this._client);
+
+  static bool _initialized = false;
   final SupabaseClient _client;
 
   Stream<AuthState> get authChanges => _client.auth.onAuthStateChange;
@@ -54,7 +56,7 @@ class CloudyAuthRepository {
   }
 
   static Future<void> initialize() async {
-    if (Supabase.instance.isInitialized) return;
+    if (_initialized) return;
     const url = String.fromEnvironment('SUPABASE_URL');
     const publishableKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
     if (url.isEmpty || publishableKey.isEmpty) {
@@ -64,6 +66,7 @@ class CloudyAuthRepository {
       );
     }
     await Supabase.initialize(url: url, anonKey: publishableKey);
+    _initialized = true;
   }
 
   factory CloudyAuthRepository.configured() =>
@@ -73,7 +76,7 @@ class CloudyAuthRepository {
     final response = await _client.auth.signUp(
       email: email.trim().toLowerCase(),
       password: password,
-      data: const <String, Object?>{},
+      data: <String, dynamic>{},
     );
     final user = response.user;
     final session = response.session;
@@ -94,7 +97,7 @@ class CloudyAuthRepository {
     final user = response.user;
     final session = response.session;
     if (user == null || session == null) {
-      throw const AuthException('Не удалось загрузить аккаунт.');
+      throw AuthException('Не удалось загрузить аккаунт.');
     }
 
     if (CloudyProfilePolicy.isUnderMinimumAge(user.userMetadata?['age'])) {
@@ -117,7 +120,7 @@ class CloudyAuthRepository {
       age: age,
     );
     final response = await _client.auth.updateUser(
-      UserAttributes(data: update.metadata),
+      UserAttributes(data: <String, dynamic>{...update.metadata}),
     );
     final updatedUser = response.user;
     if (updatedUser == null) {
