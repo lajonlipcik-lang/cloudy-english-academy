@@ -219,7 +219,7 @@ function mountShortsIntro(){
  later(()=>{const bounds=stage.getBoundingClientRect(),cb=cloud.getBoundingClientRect();stage.style.transformOrigin=(cb.left+cb.width/2-bounds.left)+"px "+(cb.top+cb.height*.55-bounds.top)+"px";const zoom=Math.max(innerWidth,innerHeight)/(cb.width*.5);stage.style.setProperty("--zs",Math.max(zoom*1.6,14));stage.classList.add("zoom");tone(220,.65,.045);later(()=>{flash.classList.add("on");[1047,1319,1568,2093].forEach((n,i)=>tone(n,.22,.035,i*.06));},600);later(finish,950);},c0+1350);
 }
 function view(a=1,tabDirection=0){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr tab${T}${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof,shorts][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest)void loadCommunityProfile();if(T===4){void shortsLoadFeed();mountShortsIntro();initShortsPlayback();}}
-function tab(k){if(k!==T){const direction=k>T?1:-1;snd("tab");shortsProfileUserId=null;shortsProfileData=null;shortsProfileLoading=false;shortsProfileTab="all";T=k;if(k===4)shortsFeedUser=null;view(1,direction)}}
+function tab(k){if(k!==T){if(T===4&&k!==4){try{shortsFlowClose(false)}catch(error){console.warn("Shorts capture cleanup failed",error)}try{shortsStopFeedPlayback()}catch(error){console.warn("Shorts playback cleanup failed",error)}document.getElementById("cloudy-shorts-intro")?.remove();try{sessionStorage.setItem("cloudyIntro","1")}catch(_){}}const staleCapture=document.getElementById("cloudy-shorts-fullscreen");if(k!==4&&staleCapture){staleCapture.remove();shortsFlowOverlay=null;shortsFlowFrame=null;shortsFlowFile=null;}const direction=k>T?1:-1;snd("tab");shortsProfileUserId=null;shortsProfileData=null;shortsProfileLoading=false;shortsProfileTab="all";T=k;if(k===4)shortsFeedUser=null;view(1,direction)}}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
 const pool=()=>LV[S.lv].s.flatMap(x=>x.l).flatMap(j=>D[j].w);
@@ -1188,20 +1188,24 @@ function shortsFlowClose(resumeFeed=true){
  if(resumeFeed)shortsResumeFeedPlayback();
 }
 function shortsUpload(){
- shortsStopFeedPlayback();
- shortsDisposeUpload();
- if(shortsFlowOverlay)shortsFlowClose(false);
- const overlay=document.createElement("div");
- overlay.id="cloudy-shorts-fullscreen";
- overlay.style.cssText="position:fixed;inset:0;z-index:2147483000;background:#050c24;overflow:hidden";
- const frame=document.createElement("iframe");
- frame.title="Cloudy Shorts — съёмка";
- frame.allow="camera;microphone;autoplay";
- frame.referrerPolicy="same-origin";
- frame.style.cssText="display:block;width:100%;height:100%;border:0;background:#050c24";
- overlay.appendChild(frame);document.body.appendChild(overlay);
- shortsFlowOverlay=overlay;shortsFlowFrame=frame;
- frame.src="/cloudy-shorts-capture.html";
+ if(T!==4){toast("Сначала открой Shorts.",false);return;}
+ try{
+  shortsStopFeedPlayback();
+  shortsDisposeUpload();
+  if(shortsFlowOverlay)shortsFlowClose(false);
+  const overlay=document.createElement("div");
+  overlay.id="cloudy-shorts-fullscreen";
+  overlay.style.cssText="position:fixed;inset:0;z-index:2147483000;background:#050c24;overflow:hidden";
+  const frame=document.createElement("iframe");
+  frame.title="Cloudy Shorts — съёмка";
+  frame.allow="camera;microphone;autoplay";
+  frame.referrerPolicy="same-origin";
+  frame.style.cssText="display:block;width:100%;height:100%;border:0;background:#050c24";
+  frame.addEventListener("error",()=>{toast("Не удалось открыть камеру Shorts. Попробуй ещё раз.",false);shortsFlowClose();},{once:true});
+  overlay.appendChild(frame);document.body.appendChild(overlay);
+  shortsFlowOverlay=overlay;shortsFlowFrame=frame;
+  frame.src="/cloudy-shorts-capture.html";
+ }catch(error){console.error("Shorts create flow failed",error);shortsFlowClose();toast("Не удалось открыть публикацию. Попробуй ещё раз.",false);}
 }
 if(!window.__cloudyShortsFlowNavigation){
  window.__cloudyShortsFlowNavigation=true;
