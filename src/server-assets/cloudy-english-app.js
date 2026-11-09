@@ -1532,10 +1532,25 @@ function privacyCenterCard(){
  const types={access_export:"Доступ / экспорт данных",correction:"Исправление данных",deletion:"Удаление аккаунта и данных",withdraw_optional_consent:"Отзыв необязательного согласия"};
  return '<div class="card privacy-center-card"><h3>Конфиденциальность и данные</h3><p>Обязательная обработка для работы приложения отделена от необязательного использования переписок для улучшения ИИ.</p><div class="row"><span>Разрешить использовать мои диалоги для дополнительного улучшения ИИ</span><button class="sw '+(enabled?'on':'')+'" type="button" aria-label="Согласие на дополнительное использование диалогов для улучшения ИИ" aria-pressed="'+(enabled?'true':'false')+'" '+(loading||privacyCenterSaving?'disabled':'')+' onclick="toggleAiTrainingConsent()"><i></i></button></div><small>По умолчанию выключено. Отказ не ограничивает обычную работу Cloudy AI. Изменение сохраняется в истории согласий.</small>'+
  (privacyCenter?.error?'<p>'+examEscape(privacyCenter.error)+'</p>':'')+
- '<div class="privacy-request-actions"><button class="btn ghost" type="button" '+(loading?'disabled':'')+' onclick="submitPrivacyRequest(\'access_export\')">Запросить копию данных</button><button class="btn ghost" type="button" '+(loading?'disabled':'')+' onclick="submitPrivacyRequest(\'correction\')">Исправить данные</button><button class="btn ghost" type="button" '+(loading?'disabled':'')+' onclick="submitPrivacyRequest(\'deletion\')">Запросить удаление данных</button></div>'+
- '<small>Запрос отправляется на рассмотрение. Он не удаляет аккаунт автоматически. Для проверки личности и уточнения деталей с вами свяжется поддержка.</small>'+
+ '<div class="privacy-request-actions"><button class="btn ghost" type="button" '+(loading||privacyCenterSaving?'disabled':'')+' onclick="downloadPrivacyData(\'access_export\')">Скачать копию данных</button><button class="btn ghost" type="button" '+(loading?'disabled':'')+' onclick="submitPrivacyRequest(\'correction\')">Исправить данные</button><button class="btn ghost" type="button" '+(loading?'disabled':'')+' onclick="submitPrivacyRequest(\'deletion\')">Запросить удаление данных</button></div>'+
+ '<small>Копия включает данные из основной базы Cloudy English. Данные внешних поставщиков и отдельных инфраструктурных проектов могут потребовать отдельного запроса в поддержку. Запрос на удаление отправляется на рассмотрение и не удаляет аккаунт автоматически.</small>'+
  (requests.length?'<div class="privacy-request-list"><b>Мои запросы</b>'+requests.map(r=>'<div><span>'+examEscape(types[r.type]||r.type)+'</span><small>'+examEscape(status[r.status]||r.status)+' · '+examEscape(new Date(r.createdAt).toLocaleDateString("ru-RU"))+'</small></div>').join("")+'</div>':'')+
  '</div>';
+}
+async function downloadPrivacyData(){
+ if(privacyCenterSaving)return;
+ privacyCenterSaving=true;
+ try{
+  const response=await authRequest("privacy-data-export");
+  if(response.result?.ok!==true||!response.result?.data)throw new Error("Не удалось сформировать копию данных.");
+  const blob=new Blob([JSON.stringify(response.result.data,null,2)],{type:"application/json;charset=utf-8"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="cloudy-personal-data-"+new Date().toISOString().slice(0,10)+".json";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast("Копия данных подготовлена и скачивается.");
+  await loadPrivacyCenter(true);
+ }catch(error){toast(error.message||"Не удалось скачать данные.",false);}
+ finally{privacyCenterSaving=false;if(T===3)view(0);}
 }
 async function toggleAiTrainingConsent(){
  if(privacyCenterSaving||!privacyCenter)return;
