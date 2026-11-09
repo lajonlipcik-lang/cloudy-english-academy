@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 const _background = Color(0xFF050D2B);
 
@@ -28,6 +29,7 @@ class CloudyEnglishApp extends StatefulWidget {
 
 class _CloudyEnglishAppState extends State<CloudyEnglishApp> {
   late final WebViewController _webView;
+  late final Uri _baseUri;
   String? _configurationError;
 
   @override
@@ -42,6 +44,7 @@ class _CloudyEnglishAppState extends State<CloudyEnglishApp> {
       return;
     }
 
+    _baseUri = uri;
     _webView = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(_background)
@@ -49,8 +52,13 @@ class _CloudyEnglishAppState extends State<CloudyEnglishApp> {
         onNavigationRequest: (request) {
           final target = Uri.tryParse(request.url);
           if (target == null) return NavigationDecision.prevent;
-          if (target.scheme == 'https' || target.scheme == 'http') {
+          if (target.host == _baseUri.host &&
+              (target.scheme == 'https' || target.scheme == 'http')) {
             return NavigationDecision.navigate;
+          }
+          if (target.scheme == 'https' || target.scheme == 'http' ||
+              target.scheme == 'mailto' || target.scheme == 'tel') {
+            launchUrl(target, mode: LaunchMode.externalApplication);
           }
           return NavigationDecision.prevent;
         },
