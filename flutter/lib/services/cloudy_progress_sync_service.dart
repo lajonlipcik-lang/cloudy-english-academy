@@ -212,12 +212,12 @@ class CloudyProgressSyncService {
     CloudyState initialBase,
     String? initialUpdatedAt,
   ) async {
-    await localStore.markDirty(email);
     var state = initialState;
     var base = initialBase;
     var expectedUpdatedAt = initialUpdatedAt;
 
     try {
+      await localStore.markDirty(email);
       for (var attempt = 0; attempt < 3; attempt++) {
         final result = await api.saveProgress(
           state,
