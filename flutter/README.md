@@ -24,6 +24,8 @@ The query parameter cloudyNative=1 suppresses only the existing iOS Add to Home 
 - lib/data/cloudy_mobile_api.dart calls the authenticated /api/cloudy/mobile endpoint for progress load/save, server-authoritative lesson XP, and learning-event sync.
 - lib/services/cloudy_progress_sync_service.dart coordinates account activation, guest migration, optimistic-concurrency conflict retries, server XP awards, and learning-event acknowledgements.
 - lib/session/cloudy_session_controller.dart serializes Supabase auth events and connects the shared sync service to the app session, progress, lesson awards, and learning-event outbox.
+- lib/screens/cloudy_learning_home_screen.dart contains the first native learning-tab implementation: gradient background, level/XP/streak HUD, daily-goal ring, section progress banners, winding lesson nodes with locked/current/completed states, and the animated Cloudy mascot. It remains intentionally unwired while the WebView compatibility shell is the active runtime.
+- test/cloudy_learning_home_screen_test.dart covers lesson unlock behavior, opening the current lesson, completed-state rendering, and daily reward availability.
 - src/routes/api/cloudy/mobile.ts now supports authenticated progress loading in addition to its existing save, XP-award, and learning-event actions.
 - Tests cover the catalog, all exercise types, progress rules, local persistence, auth policy, adaptive learning, mobile API contracts, and account synchronization.
 - The existing application remains loaded by the WebView shell in lib/main.dart. The session controller and Dart repositories are migration foundations and are not yet wired into replacement native screens.
