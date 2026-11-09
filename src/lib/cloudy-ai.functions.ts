@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { runWithAiFallback } from "@/lib/ai/router";
-import { CLOUDY_FOUNDATIONS, D, LI, LV } from "@/lib/cloudy/data";
+import { CLOUDY_FOUNDATIONS, D, LI, LV, TQ } from "@/lib/cloudy/data";
+import { buildExercises } from "@/lib/cloudy/logic";
 import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 const OWNER="lajonlipcik@gmail.com";
@@ -160,12 +161,92 @@ export const cloudyTextToSpeech=createServerFn({method:"POST"}).inputValidator(v
   return {audioBase64:btoa(binary),mimeType:"audio/wav",voice:"troy",provider:"groq"};
 });
 
+
+function runCloudyExerciseAudit(){
+  const pool=D.flatMap((lesson:any)=>lesson.w);
+  const typeTotals:Record<string,number>={c:0,l:0,m:0,b:0,p:0,r:0};
+  const levelRows:string[]=[];
+  const failures:string[]=[];
+  let lessonCount=0,exerciseCount=0,manualPronunciation=0,variantCount=0;
+  const randomFor=(seed:number)=>{let value=seed>>>0;return()=>{value=(value*1664525+1013904223)>>>0;return value/4294967296}};
+  for(const level of ["A1","A2","B1","B2"]){
+    const sections=(LV as any)[level]?.s??[];
+    const lessonIds=[...new Set(sections.flatMap((section:any)=>section.l??[]))] as number[];
+    const rows:string[]=[];
+    for(const lessonIndex of lessonIds){
+      const lesson=(D as any)[lessonIndex];
+      lessonCount++;
+      if(!lesson||!Array.isArray(lesson.w)||!Array.isArray(lesson.s)){failures.push(level+" урок "+lessonIndex+": отсутствуют данные урока");continue;}
+      let lessonTasks=0,lessonErrors=0;
+      for(let variant=0;variant<3;variant++){
+        variantCount++;
+        const exercises=buildExercises(lesson,pool,{mic:true},randomFor((lessonIndex+1)*1009+variant*7919));
+        if(!Array.isArray(exercises)||!exercises.length){failures.push(level+" / "+lesson.t+": генератор не создал упражнения");lessonErrors++;continue;}
+        for(const ex of exercises as any[]){
+          exerciseCount++;lessonTasks++;typeTotals[ex.k]=(typeTotals[ex.k]??0)+1;
+          let issue="";
+          if(ex.k==="c"||ex.k==="l"){
+            const options=Array.isArray(ex.o)?ex.o:[];
+            if(!String(ex.a??"").trim()||options.filter((option:any)=>option===ex.a).length!==1)issue="правильный ответ отсутствует или дублируется в вариантах";
+          }else if(ex.k==="b"){
+            const expected=String(ex.a??"").split(/\\s+/).filter(Boolean),available=Array.isArray(ex.o)?ex.o:[];
+            const counts=new Map<string,number>();available.forEach((token:any)=>counts.set(String(token),(counts.get(String(token))??0)+1));
+            const needed=new Map<string,number>();expected.forEach(token=>needed.set(token,(needed.get(token)??0)+1));
+            if(!expected.length||[...needed].some(([token,count])=>(counts.get(token)??0)<count))issue="в конструкторе отсутствует часть правильного предложения";
+          }else if(ex.k==="m"){
+            const left=Array.isArray(ex.L)?ex.L:[],right=Array.isArray(ex.R)?ex.R:[];
+            if(!left.length||left.length!==right.length||left.some((pair:any)=>right.filter((candidate:any)=>candidate?.[1]===pair?.[0]).length!==1))issue="неполное или неоднозначное сопоставление";
+          }else if(ex.k==="p"){
+            if(!String(ex.en??"").trim())issue="не задано слово для произношения";
+            else manualPronunciation++;
+          }else if(ex.k==="r"){
+            if(!String(ex.a??"").trim())issue="у задания нет эталонного ответа";
+          }else issue="неизвестный тип упражнения: "+String(ex.k);
+          if(issue){lessonErrors++;failures.push(level+" / "+lesson.t+" / тип "+String(ex.k)+": "+issue);}
+        }
+      }
+      rows.push("• "+lesson.t+": "+lessonTasks+" проверок, "+(lessonErrors?"ошибок "+lessonErrors:"структура корректна"));
+    }
+    levelRows.push(level+" ("+lessonIds.length+" уроков):\\n"+rows.join("\\n"));
+  }
+  let examValid=0,examErrors=0;
+  for(const [index,item] of (TQ as any[]).entries()){
+    const choices=Array.isArray(item?.[2])?item[2]:[],correct=Number(item?.[3]);
+    if(!String(item?.[1]??"").trim()||choices.length<2||!Number.isInteger(correct)||correct<0||correct>=choices.length||choices.some((choice:any)=>!String(choice??"").trim()))examErrors++;
+    else examValid++;
+  }
+  const grammarEntries=Object.entries(CLOUDY_FOUNDATIONS).reduce((total,[,note]:any)=>total+(Array.isArray(note?.examples)?note.examples.filter((pair:any)=>Array.isArray(pair)&&pair.length>=2&&String(pair[0]??"").trim()&&String(pair[1]??"").trim()).length:0),0);
+  const grammarInvalid=Object.values(CLOUDY_FOUNDATIONS).reduce((total:any,note:any)=>total+(Array.isArray(note?.examples)?note.examples.filter((pair:any)=>!Array.isArray(pair)||pair.length<2||!String(pair[0]??"").trim()||!String(pair[1]??"").trim()).length:0:1),0);
+  const totalFailures=failures.length+examErrors+grammarInvalid;
+  return {answer:[
+    "ОТЧЁТ CLOUDY AI — ПОЛНЫЙ АУДИТ УЧЕБНЫХ ЗАДАНИЙ",
+    "Режим: изолированный тест генератора; прогресс, XP и аккаунты учеников не изменялись.",
+    "Каталог: "+D.length+" уроков; проверено назначение по уровням: "+lessonCount+" уроков.",
+    "Сгенерировано тестовых вариантов: "+variantCount+" (3 варианта на каждый урок).",
+    "Проверено упражнений: "+exerciseCount+". Типы: "+Object.entries(typeTotals).map(([key,value])=>key+"="+value).join(", ")+".",
+    "Произношение: "+manualPronunciation+" заданий проверены только на наличие эталонного слова; реальное распознавание речи требует микрофона и отдельного теста на устройстве.",
+    "Экзаменационный банк: "+examValid+" из "+TQ.length+" вопросов имеют корректную структуру; структурных ошибок: "+examErrors+".",
+    "Грамматические примеры: "+grammarEntries+" корректно заполненных пар; ошибок структуры: "+grammarInvalid+".",
+    "Результат: "+(totalFailures===0?"структурных ошибок не обнаружено.":"обнаружено проблем: "+totalFailures+"."),
+    "",
+    "ПО УРОВНЯМ:",
+    ...levelRows,
+    "",
+    "НАЙДЕННЫЕ ПРОБЛЕМЫ:",
+    ...(failures.length?failures.slice(0,80).map((item)=>"• "+item):["• Ошибок в сгенерированных упражнениях не обнаружено."]),
+    ...(failures.length>80?["• И ещё "+(failures.length-80)+" проблем не показано."]:[]),
+    "",
+    "Ограничение: это статический прогон реального генератора и ключей ответов. Он не подменяет ручную проверку качества формулировок, звука и UX на iPhone."
+  ].join("\\n"),audit:{lessons:lessonCount,variants:variantCount,exercises:exerciseCount,manualPronunciation,examValid,examTotal:TQ.length,grammarEntries,failures:totalFailures}};
+}
+
 async function executeCloudyAdminCommand(db:any,user:any,raw:string){
   const email=String(user.email??"").trim().toLowerCase();
   const isAdmin=(email===OWNER&&!!user.email_confirmed_at)||user.app_metadata?.["role"]==="admin";
   if(!isAdmin)throw new Error("Команды администратора доступны только владельцу и администраторам Cloudy.");
   const parts=raw.trim().split(/\s+/),command=(parts[1]??"help").toLowerCase();
-  if(command==="help")return {answer:["Команды администратора Cloudy:","/admin users — пользователи и XP","/admin reports — последние жалобы","/admin providers — состояние AI-провайдеров","/admin provider <groq|openai|openrouter> <enable|disable> — управление провайдером","/admin report <UUID> <resolve|dismiss> [hide|restore] — обработка жалобы"].join("\n")};
+  if(command==="help")return {answer:["Команды администратора Cloudy:"," /admin audit-exercises — пройти каталог упражнений и выдать полный отчёт","/admin users — пользователи и XP","/admin reports — последние жалобы","/admin providers — состояние AI-провайдеров","/admin provider <groq|openai|openrouter> <enable|disable> — управление провайдером","/admin report <UUID> <resolve|dismiss> [hide|restore] — обработка жалобы"].join("\n")};
+  if(command==="audit-exercises")return runCloudyExerciseAudit();
   if(command==="users"){
     const {data:list,error}=await db.auth.admin.listUsers({page:1,perPage:50});if(error)throw new Error("Не удалось загрузить пользователей.");
     const ids=(list.users??[]).map((u:any)=>u.id);
