@@ -1051,3 +1051,35 @@ body:has(.shorts-screen) .amb{display:none!important}
 .chat-history-delete .i{width:15px;height:15px}
 .chat-history-delete:hover{background:rgba(255,91,112,.16);color:#ff8798;opacity:1}
 .chat-history-delete:active{transform:scale(.92)}
+
+
+/* iOS keyboard / rubber-band background coverage */
+html{
+ min-height:100%;
+ background-color:#050d2b;
+ overscroll-behavior-y:none;
+}
+body{
+ position:relative;
+ isolation:isolate;
+ min-height:100svh;
+ background:transparent!important;
+ background-color:#050d2b;
+ overscroll-behavior-y:none;
+}
+body::before{
+ content:"";
+ position:fixed;
+ z-index:-1;
+ pointer-events:none;
+ top:-120vh;
+ right:-40vw;
+ bottom:-120vh;
+ left:-40vw;
+ background:linear-gradient(165deg,#050d2b 0%,#0a2a73 48%,#3aa0ff 100%);
+ transform:translateZ(0);
+}
+body[data-lv="A2"]::before{background:linear-gradient(165deg,#04203d 0%,#07578c 50%,#58d2ec 100%)}
+body[data-lv="B1"]::before{background:linear-gradient(165deg,#0b1040 0%,#2b3fb5 50%,#9db8ff 100%)}
+body[data-lv="B2"]::before{background:linear-gradient(165deg,#030818 0%,#12327f 48%,#d4e8ff 100%)}
+#app{min-height:100svh;background:transparent}
