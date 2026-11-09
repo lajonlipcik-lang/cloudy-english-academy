@@ -1017,7 +1017,7 @@ function shortsTogglePostMenu(id){const card=Array.from(document.querySelectorAl
 function shortsSearch(){
  const topbar=document.querySelector(".shorts-topbar"),feed=document.querySelector("#shorts-feed");
  if(!topbar||!feed)return;
- const existing=topbar.querySelector(".shorts-search-input");
+ let existing=topbar.querySelector(".shorts-search-input");
  const apply=()=>{
   const query=String(existing?.value||"").trim().toLocaleLowerCase("ru");
   let visible=0;
@@ -1041,6 +1041,7 @@ function shortsSearch(){
  trigger.hidden=true;
  trigger.insertAdjacentHTML("afterend",'<input class="shorts-search-input" type="search" inputmode="search" maxlength="80" placeholder="Найти публикацию…" aria-label="Поиск публикаций"><button type="button" class="shorts-search-close" aria-label="Закрыть поиск">×</button>');
  const input=topbar.querySelector(".shorts-search-input");
+ existing=input;
  input.addEventListener("input",apply);
  input.addEventListener("keydown",event=>{if(event.key==="Escape")shortsSearch();});
  topbar.querySelector(".shorts-search-close")?.addEventListener("click",()=>shortsSearch());
