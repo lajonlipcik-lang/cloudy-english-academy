@@ -34,6 +34,14 @@ void main() {
       expect(guided.skillId, 'grammar:sentence-order');
     });
 
+    test('preserves the optional third source field in lesson sentences', () {
+      final sentence = CloudyPair.fromJson(['Привет.', 'Hello.', 'you the']);
+      expect(sentence.first, 'Привет.');
+      expect(sentence.second, 'Hello.');
+      expect(sentence.extra, 'you the');
+      expect(sentence.toJson(), ['Привет.', 'Hello.', 'you the']);
+    });
+
     test('rejects unknown exercise variants instead of silently dropping them', () {
       expect(() => CloudyExercise.fromJson({'k': 'unknown'}), throwsFormatException);
     });
