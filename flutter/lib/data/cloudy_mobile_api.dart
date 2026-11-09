@@ -56,6 +56,19 @@ class CloudySubscriptionAccess {
     );
   }
 
+  bool canUseFeature(String featureKey) {
+    if (!hasAccess) return false;
+    for (final entitlement in featureEntitlements) {
+      if (entitlement['feature_key'] == featureKey) {
+        return entitlement['enabled'] == true;
+      }
+    }
+    final planValue = planEntitlements[featureKey];
+    if (planValue is bool) return planValue;
+    if (planValue is Map) return planValue['enabled'] == true;
+    return false;
+  }
+
   factory CloudySubscriptionAccess.inactive() =>
       const CloudySubscriptionAccess(hasAccess: false, status: 'inactive');
 }
