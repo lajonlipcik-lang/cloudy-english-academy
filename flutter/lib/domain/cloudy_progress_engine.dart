@@ -210,7 +210,7 @@ DateTime? _parseCloudyDate(String value) {
   final iso = DateTime.tryParse(value);
   if (iso != null) return iso;
 
-  final numeric = RegExp(r'^(\\d{4})-(\\d{1,2})-(\\d{1,2})$').firstMatch(value);
+  final numeric = RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})$').firstMatch(value);
   if (numeric != null) {
     return DateTime(
       int.parse(numeric.group(1)!),
@@ -219,7 +219,7 @@ DateTime? _parseCloudyDate(String value) {
     );
   }
 
-  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\\d{1,2}) (\\d{4})$').firstMatch(value);
+  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\d{1,2}) (\d{4})$').firstMatch(value);
   if (match == null) return null;
   const months = {
     'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
