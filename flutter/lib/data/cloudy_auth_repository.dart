@@ -119,14 +119,14 @@ class CloudyAuthRepository {
       _initialization ??= _initialize();
 
   static Future<void> _initialize() async {
-    const url = String.fromEnvironment('SUPABASE_URL');
-    const publishableKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
-    if (url.isEmpty || publishableKey.isEmpty) {
-      throw StateError(
-        'SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY must be provided at build time.',
-      );
-    }
     try {
+      const url = String.fromEnvironment('SUPABASE_URL');
+      const publishableKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+      if (url.isEmpty || publishableKey.isEmpty) {
+        throw StateError(
+          'SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY must be provided at build time.',
+        );
+      }
       await Supabase.initialize(url: url, anonKey: publishableKey);
     } catch (_) {
       _initialization = null;
