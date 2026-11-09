@@ -250,9 +250,9 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
           ...e.examples.map((p) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(p.first, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+              Text(entry.value.first, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
               const SizedBox(height: 3),
-              Text(p.second, style: const TextStyle(color: Color(0xFFC9DDF7), fontSize: 14)),
+              Text(entry.value.second, style: const TextStyle(color: Color(0xFFC9DDF7), fontSize: 14)),
             ]),
           )),
           if (e.tip.isNotEmpty) ...[
@@ -271,9 +271,9 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
       ...e.words.map((p) => Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: _panel(Row(children: [
-          Expanded(child: Text(p.first, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17))),
+          Expanded(child: Text(entry.value.first, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17))),
           const SizedBox(width: 12),
-          Expanded(child: Text(p.second, textAlign: TextAlign.end, style: const TextStyle(color: Color(0xFFC9DDF7), fontSize: 15))),
+          Expanded(child: Text(entry.value.second, textAlign: TextAlign.end, style: const TextStyle(color: Color(0xFFC9DDF7), fontSize: 15))),
         ])),
       )),
     ],
@@ -390,24 +390,24 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
           Expanded(child: Column(children: e.left.asMap().entries.map((entry) => _matchTile(
             entry.value.first,
             key: ValueKey('cloudy-match-left-${entry.key}'),
-            active: _pendingLeft == p.first,
-            done: _matchedLeft.contains(p.first),
-            onTap: () => setState(() => _pendingLeft = p.first),
+            active: _pendingLeft == entry.value.first,
+            done: _matchedLeft.contains(entry.value.first),
+            onTap: () => setState(() => _pendingLeft = entry.value.first),
           )).toList())),
           const SizedBox(width: 12),
           Expanded(child: Column(children: e.right.asMap().entries.map((entry) => _matchTile(
             entry.value.first,
             key: ValueKey('cloudy-match-right-${entry.key}'),
             active: false,
-            done: _matchedRight.contains(p.first),
-            onTap: _pendingLeft == null || _matchedRight.contains(p.first) ? null : () {
+            done: _matchedRight.contains(entry.value.first),
+            onTap: _pendingLeft == null || _matchedRight.contains(entry.value.first) ? null : () {
               final left = e.left.firstWhere((item) => item.first == _pendingLeft);
-              final correct = left.second == p.second;
+              final correct = left.second == entry.value.second;
               widget.onMatchingAttempt(left.first, correct, pairs);
               setState(() {
                 if (correct) {
                   _matchedLeft.add(left.first);
-                  _matchedRight.add(p.first);
+                  _matchedRight.add(entry.value.first);
                 }
                 _pendingLeft = null;
                 if (correct && _matchedLeft.length == pairs) {
