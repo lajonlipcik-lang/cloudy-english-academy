@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cloudy_english/domain/cloudy_exercise.dart';
 import 'package:cloudy_english/domain/cloudy_logic.dart';
 import 'package:cloudy_english/domain/cloudy_state.dart';
 
@@ -156,11 +157,11 @@ void main() {
         lesson, pool, microphoneEnabled: false, random: () => 0.25,
       );
 
-      expect(withMic.where((item) => item.kind == CloudyExerciseKind.choice), hasLength(2));
-      expect(withMic.where((item) => item.kind == CloudyExerciseKind.listening), hasLength(1));
-      expect(withMic.where((item) => item.kind == CloudyExerciseKind.matching), hasLength(1));
-      expect(withMic.where((item) => item.kind == CloudyExerciseKind.builder), hasLength(1));
-      expect(withMic.where((item) => item.kind == CloudyExerciseKind.pronunciation), hasLength(1));
+      expect(withMic.where((item) => item.kind == 'c'), hasLength(2));
+      expect(withMic.where((item) => item.kind == 'l'), hasLength(1));
+      expect(withMic.where((item) => item.kind == 'm'), hasLength(1));
+      expect(withMic.where((item) => item.kind == 'b'), hasLength(1));
+      expect(withMic.where((item) => item.kind == 'p'), hasLength(1));
       expect(withoutMic.where((item) => item.kind == CloudyExerciseKind.pronunciation), isEmpty);
       final builder = withMic.firstWhere((item) => item.kind == CloudyExerciseKind.builder);
       expect(builder.question, 'Я пью воду');
@@ -175,7 +176,7 @@ void main() {
       ];
       const initial = CloudySession(
         lesson: 0,
-        exercises: [CloudyExercise(kind: CloudyExerciseKind.choice)],
+        exercises: [CloudyChoiceExercise(question: '', answer: '', english: '', speak: false, options: [], title: '')],
         learnedMistakes: ['son'],
       );
 
@@ -183,7 +184,7 @@ void main() {
       expect(retry, isNotNull);
       expect(retry!.retryPhase, isTrue);
       expect(retry.exercises, hasLength(2));
-      expect(retry.exercises.last.english, 'son');
+      expect((retry.exercises.last as CloudyChoiceExercise).english, 'son');
       expect(advanceCloudySession(retry, pool), isNull);
     });
 
