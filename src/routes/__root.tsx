@@ -15,7 +15,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
  staticData: { sitemap: false },
  head: () => ({
   meta: [
-   { charSet: "utf-8" }, { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+   { charSet: "utf-8" }, { name: "viewport", content: "width=device-width, initial-scale=1" },
     { name: "google-site-verification", content: "Ry_Jj1RQYtx-Irq2DnRa_zniBie7GeAKBProavpbHE0" },
    { title: "Cloudy English Academy — учи английский каждый день" },
    { name: "description", content: "Изучай английский с короткими уроками, практикой и игровым прогрессом." },
