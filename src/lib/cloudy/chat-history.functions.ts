@@ -88,7 +88,7 @@ export const deleteCloudyChatThread = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const threadId = String(data.threadId ?? "");
     if (!/^[A-Za-z0-9_-]{1,80}$/.test(threadId)) throw new Error("Некорректный идентификатор диалога.");
-    const { user, db } = await getUserAndDb(data.accessToken);
+    const { user, db } = await getUserAndDb(data.accessToken, data.accountId!);
     const { error } = await db.from("cloudy_chat_threads")
       .delete()
       .eq("user_id", user.id)
