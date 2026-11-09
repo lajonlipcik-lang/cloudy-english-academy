@@ -42,6 +42,18 @@ Apply Core `0016_shorts_publication_and_post_publish_review.sql`, `0017_shorts_c
 
 The current Core `0018` definitions are the final versions of `finalize_shorts_publication` and `moderate_shorts_video`; they replace earlier definitions from Core `0016` and Content `0007`.
 
+## Migration runner gap
+
+The repository currently has no verified command that applies both tracks:
+- `drizzle.config.ts` points Drizzle Kit only at `./drizzle/migrations`.
+- The Content SQL directory is not wired into that Drizzle config.
+- The inspected `package.json` has no database migration script.
+- The inspected configuration does not establish a Supabase CLI migration sequence for these files.
+
+Therefore, even a successful application build does not apply either SQL track. Before testing the sequence, choose one canonical migration mechanism and make it explicit. Preferred direction: consolidate the reviewed SQL into Supabase CLI migration files under the standard `supabase/migrations/` directory, with unique timestamped filenames and one authoritative ordered history. Preserve source files or record their mapping so every SQL change remains traceable. Do not maintain two independent active histories that can drift.
+
+The final runner must support a disposable local/test database and a controlled remote apply. It must fail fast on the first SQL error and record the exact migration version applied. Never rely on manually pasting an undocumented subset of SQL into the dashboard.
+
 ## Proposed deterministic order for a fresh database
 
 This is the order to validate in a disposable database; it is not yet authorization to apply anything to the connected destination.
