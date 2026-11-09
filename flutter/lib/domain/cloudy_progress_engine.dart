@@ -712,6 +712,9 @@ CloudyState sanitizeCloudyProgress(CloudyState input) {
   );
 }
 
+num _number(Object? value, [num fallback = 0]) =>
+    value is num && value.isFinite ? value : fallback;
+
 int _clampInt(num value, int min, int max) =>
     (value.isFinite ? value.toInt() : min).clamp(min, max).toInt();
 
