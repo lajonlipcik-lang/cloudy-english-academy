@@ -137,6 +137,16 @@ class CloudyAuthRepository {
     return CloudyAuthUser.fromSupabase(updatedUser);
   }
 
+  Future<void> resetPassword(String email, {String? redirectTo}) =>
+      _client.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        redirectTo: redirectTo,
+      );
+
+  Future<void> updatePassword(String password) async {
+    await _client.auth.updateUser(UserAttributes(password: password));
+  }
+
   Future<void> signOut() => _client.auth.signOut();
 
   Future<CloudySessionSnapshot> loadSession() async {
