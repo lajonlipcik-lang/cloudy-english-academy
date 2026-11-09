@@ -43,6 +43,16 @@ Vercel alone does not replace PostgreSQL, identity, object storage, or a long-ru
 - `vite.config.ts` was adjusted on `migration/vercel-platform` to keep the Lovable sandbox defaults but select Nitro's `vercel` preset for non-sandbox builds. Manual `.vercel/output` directory overrides were removed; the Vercel/TanStack guidance relies on Nitro's Vercel integration and automatic output layout. This is a configuration change, not proof of a successful deployment.
 - `drizzle.config.ts` now prefers `DATABASE_URL` and temporarily falls back to `LOVABLE_DB_MIGRATION_URL`; `.env.example` documents the target variable as server/CI-only.
 
+## SQL migration source audit (read-only)
+
+- The repository contains 21 Core SQL migration files (drizzle/migrations/0000–0020) and 11 Content SQL migration files (drizzle/migrations-content/0001–0010). The Content directory has two distinct files both numbered 0009 (shorts_follows and shorts_saved_posts); a target migration runner must use a deterministic filename-based ledger and must not assume numeric prefixes are unique.
+- The SQL files are Supabase-specific, not directly portable Neon migrations: Core migrations reference auth.users, auth.uid(), auth.jwt(), Supabase roles (anon, authenticated, service_role), and the auth-user creation trigger. Neon target schema must be adapted to the chosen Auth provider and explicit server authorization model before application.
+- Content migration 0004_shorts_private_storage.sql creates a private Supabase Storage bucket. That statement is not a Vercel Blob migration; Blob object access and authorization must be implemented separately. Content migrations also reference auth.users in the follows migration, despite the older Content DB comments describing Core Auth UUIDs as opaque references. This is an architectural inconsistency to resolve, not a safe assumption that Content can be deployed independently.
+- Core migrations 0004–0015 repeatedly replace the XP award RPC and lesson-index constraints as curriculum expands. The final function/constraint state must be taken from the full ordered migration chain and compared to the live database, not reconstructed from an early migration or copied as an isolated function.
+- Core migrations define learning progress, AI rate-limit leases, learner profiles, community/privacy records, moderation RPCs, Shorts publication RPCs, and chat history. A table-only dump would be insufficient; triggers, functions, indexes, grants, RLS policies, and sequence privileges are part of the application behavior.
+- The connected Lovable database reports enabled=true, but SQL inspection is still blocked by the workspace's free-plan database action quota (the tool reported another 49-minute cooldown). No new production query ran and no source data was modified. Previously observed counts remain provisional until the quota resets.
+- The Lovable file listing was fully paginated in this audit (194 files total across two pages). The repository's Core and Content SQL migration files are present in that listing. No SQL was applied to production or to a target database.
+
 ## Migration gates
 
 1. Reconcile Core vs Content ownership and identify every live source project.
