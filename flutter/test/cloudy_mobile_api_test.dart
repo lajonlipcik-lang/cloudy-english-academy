@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:cloudy_english/data/cloudy_mobile_api.dart';
+import 'package:cloudy_english/domain/cloudy_state.dart';
 
 void main() {
   group('Cloudy mobile API client', () {
