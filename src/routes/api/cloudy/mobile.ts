@@ -3,6 +3,21 @@ import { createClient } from "@supabase/supabase-js";
 
 type JsonRecord = Record<string, unknown>;
 
+function createUserSupabaseFetch(supabaseKey: string): typeof fetch {
+  return (input, init) => {
+    const headers = new Headers(
+      typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
+    );
+    if (init?.headers) new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+    if ((supabaseKey.startsWith("sb_publishable_") || supabaseKey.startsWith("sb_secret_")) &&
+        headers.get("Authorization") === `Bearer ${supabaseKey}`) {
+      headers.delete("Authorization");
+    }
+    headers.set("apikey", supabaseKey);
+    return fetch(input, { ...init, headers });
+  };
+}
+
 const objectValue = (value: unknown): JsonRecord =>
   value && typeof value === "object" && !Array.isArray(value)
     ? value as JsonRecord
@@ -47,7 +62,10 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
     if (!url || !key) throw new Error("Supabase server is not configured.");
     const client = createClient(url, key, {
-      global: { headers: { Authorization: "Bearer " + String(input.accessToken ?? "") } },
+      global: {
+        headers: { Authorization: "Bearer " + String(input.accessToken ?? "") },
+        fetch: createUserSupabaseFetch(key),
+      },
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
     const { data: identity, error: authError } = await client.auth.getUser(String(input.accessToken ?? ""));
