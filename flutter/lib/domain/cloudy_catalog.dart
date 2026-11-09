@@ -131,7 +131,6 @@ class CloudyCatalog {
     required String level,
     required bool microphoneEnabled,
     required bool speechRecognitionAvailable,
-    CloudyLearningStore? learningStore,
     CloudyRand? random,
   }) {
     final lesson = lessonAt(lessonIndex);
@@ -144,9 +143,36 @@ class CloudyCatalog {
       microphoneEnabled: microphoneEnabled,
       speechRecognitionAvailable: speechRecognitionAvailable,
       grammarIntro: grammarExerciseAt(lessonIndex, level: level),
-      prioritizePractice: (practice) => learningStore?.prioritize(practice) ?? practice,
       random: random,
     );
+  }
+
+  Future<List<CloudyExercise>> buildAdaptiveLessonSequence(
+    int lessonIndex, {
+    required String level,
+    required bool microphoneEnabled,
+    required bool speechRecognitionAvailable,
+    required CloudyLearningStore learningStore,
+    DateTime? now,
+    CloudyRand? random,
+  }) async {
+    final lesson = lessonAt(lessonIndex);
+    if (lesson == null) return const [];
+    final sequence = buildLessonSequence(
+      lessonIndex,
+      level: level,
+      microphoneEnabled: microphoneEnabled,
+      speechRecognitionAvailable: speechRecognitionAvailable,
+      random: random,
+    );
+    final studyStages = (foundationAt(lessonIndex) == null ? 0 : 1) +
+        1 +
+        guidedCloudyExercises(lessonIndex).length +
+        (lesson.words.length < 3 ? lesson.words.length : 3);
+    final prefix = sequence.take(studyStages).toList(growable: false);
+    final practice = sequence.skip(studyStages).toList(growable: false);
+    final prioritized = await learningStore.prioritize(practice, now: now);
+    return [...prefix, ...prioritized];
   }
 
   List<CloudyLesson> lessonsForLevel(String level) => List.unmodifiable(
