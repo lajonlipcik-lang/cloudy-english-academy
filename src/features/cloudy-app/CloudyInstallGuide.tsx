@@ -4,6 +4,7 @@ import styles from "./CloudyInstallGuide.module.css";
 type InstallEnvironment = { isAppleMobile: boolean; installed: boolean; safari: boolean };
 
 export function isCloudyInstallRequired() {
+  if (new URLSearchParams(window.location.search).get("cloudyNative") === "1") return false;
   const appleMobile = /iPhone|iPad|iPod/.test(navigator.userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   const installed = (navigator as Navigator & { standalone?: boolean }).standalone === true
