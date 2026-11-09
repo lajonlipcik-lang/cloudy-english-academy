@@ -18,10 +18,11 @@ The query parameter cloudyNative=1 suppresses only the existing iOS Add to Home 
 - The current 60-lesson bilingual catalog is copied into assets/cloudy_catalog.json and parsed by lib/domain/cloudy_catalog.dart.
 - lib/domain/cloudy_exercise.dart models all eight current browser exercise/study card types and preserves their JSON contracts.
 - lib/domain/cloudy_state.dart models the persisted progress and settings contract using the current cl2 JSON keys.
-- lib/data/cloudy_progress_store.dart reads and writes the browser-compatible cl2 / cl2:<scope> namespaces and keeps guest data until an explicit server-confirmed merge.
+- lib/progress/cloudy_local_progress_store.dart and lib/progress/cloudy_progress_repository.dart reads and writes the browser-compatible cl2 / cl2:<scope> namespaces and keeps guest data until an explicit server-confirmed merge.
 - lib/data/cloudy_auth_repository.dart ports password sign-in/sign-up, password reset, auth-session observation, and the existing 13+ profile-age rules using only the public Supabase publishable key. It is not yet connected to replacement native screens.
 - lib/data/cloudy_mobile_api.dart calls the existing authenticated /api/cloudy/mobile endpoint for progress load/save, server-authoritative lesson XP, and learning-event sync.
-- lib/domain/cloudy_exercise_builder.dart and lib/domain/cloudy_progress_engine.dart ports lesson sequencing, guided grammar prompts, choice/listening/builder/matching/pronunciation/review behavior, XP/streak rules, achievements, daily chest, guest/account merge, and server progress sanitization.
+- flutter/lib/domain/cloudy_exercise_builder.dart: exact lesson sequencing and typed exercise generation.
+- flutter/lib/domain/cloudy_progress_engine.dart: one canonical session/progress engine for answer grading, matching, retries, XP/streaks, achievements, guest/account merge, conflict recovery, server awards, and progress sanitization.
 - lib/domain/cloudy_learning_store.dart preserves adaptive mastery, spaced-review ordering, active sessions, and an offline event outbox in the existing learning-intelligence storage namespace.
 - Tests cover the catalog, eight exercise types, progress serialization/rules, local progress storage and safe guest merge, adaptive learning storage, and lesson sequence composition.
 - The existing application remains loaded by the WebView shell in lib/main.dart. These Dart modules are migration foundations and are not yet wired into replacement native screens.
