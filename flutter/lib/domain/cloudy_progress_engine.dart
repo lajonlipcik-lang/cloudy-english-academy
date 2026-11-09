@@ -170,7 +170,7 @@ CloudyLessonResult finishCloudyLesson(
     perfectLessons: state.perfectLessons + (!authenticated && session.health >= 5 && !session.review ? 1 : 0),
     today: CloudyToday(
       d: today.d, xp: authenticated ? today.xp : today.xp + gain,
-      les: today.les + 1,
+      les: today.les + (session.review ? 0 : 1),
       ok: today.ok + session.correct, claim: today.claim,
     ),
     accuracy: [state.accuracy[0] + session.correct, state.accuracy[1] + session.total],
