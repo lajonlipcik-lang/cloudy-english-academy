@@ -52,7 +52,7 @@ The repository currently has no verified command that applies both tracks:
 
 Therefore, even a successful application build does not apply either SQL track. Before testing the sequence, choose one canonical migration mechanism and make it explicit. Preferred direction: consolidate the reviewed SQL into Supabase CLI migration files under the standard `supabase/migrations/` directory, with unique timestamped filenames and one authoritative ordered history. Preserve source files or record their mapping so every SQL change remains traceable. Do not maintain two independent active histories that can drift.
 
-The final runner must support a disposable local/test database and a controlled remote apply. It must fail fast on the first SQL error and record the exact migration version applied. Never rely on manually pasting an undocumented subset of SQL into the dashboard.
+The final runner must support a disposable local/test database and a controlled remote apply. It must fail fast on the first SQL error and record the exact migration version applied. Use Supabase CLI's standard timestamped `supabase/migrations/` history (create files with `supabase migration new`), not a manually invented naming scheme. Never rely on manually pasting an undocumented subset of SQL into the dashboard.
 
 ## Proposed deterministic order for a fresh database
 
@@ -75,7 +75,7 @@ This is the order to validate in a disposable database; it is not yet authorizat
 
 For a maintainable migration history, rename the two colliding Content files to a unique sequence (proposed: follows `0009`, saved posts `0010`, comment interactions `0011`). Update any migration manifest, documentation and runner references in the same change. Do not simply rename files until the migration runner's behavior and any existing migration history are confirmed.
 
-## Known RPC replacement that needs an explicit regression test
+## Additional access-control gap requiring a hardening migration\n\nContent `0009_shorts_saved_posts.sql` creates `shorts_saved_posts` without enabling RLS or explicitly restricting table privileges to the server role. This differs from `shorts_follows` and `shorts_comment_likes`, which explicitly enable RLS and revoke browser-role access. Add the hardening migration in the ordered sequence above, then verify `relrowsecurity` and effective grants for `anon`, `authenticated` and `service_role` on a fresh test database.\n\n## Known RPC replacement that needs an explicit regression test
 
 Content `0008_shorts_photo_text_posts.sql` defines `apply_shorts_text_moderation` for both comments and video/text posts. Core `0017_shorts_caption_nonblocking.sql` later replaces it with a comments-only implementation that returns `false` for `short_video`.
 
