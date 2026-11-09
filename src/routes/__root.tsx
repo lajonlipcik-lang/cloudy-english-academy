@@ -33,5 +33,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
  }),
  shellComponent: RootShell, component: RootComponent, notFoundComponent: NotFoundComponent, errorComponent: ErrorComponent
 });
-function RootShell({ children }: { children: ReactNode }) { return <html lang="ru"><head><HeadContent /></head><body>{children}<Scripts /></body></html>; }
+function RootShell({ children }: { children: ReactNode }) {
+ useEffect(() => {
+  const applyLanguage = () => {
+   let language: "ru" | "en" | "uk" = "ru";
+   try {
+    const prefs = JSON.parse(localStorage.getItem("cloudy-ui-v1") || "{}");
+    if (prefs.lang === "en" || prefs.lang === "uk") language = prefs.lang;
+   } catch {}
+   document.documentElement.lang = language;
+   document.title = language === "ru" ? "Cloudy English Academy — учи английский каждый день" : "Cloudy English Academy — Learn English every day";
+   const description = language === "ru"
+    ? "Изучай английский с короткими уроками, практикой и игровым прогрессом."
+    : language === "uk"
+     ? "Вивчай англійську з короткими уроками, практикою та ігровим прогресом."
+     : "Learn English with short lessons, practice, and gamified progress.";
+   document.querySelector('meta[name="description"]')?.setAttribute("content", description);
+  };
+  applyLanguage();
+  window.addEventListener("cloudy:languagechange", applyLanguage);
+  window.addEventListener("storage", applyLanguage);
+  const onMessage = (event: MessageEvent) => {
+   if (event.origin === window.location.origin && event.data?.type === "cloudy:languagechange") applyLanguage();
+  };
+  window.addEventListener("message", onMessage);
+  return () => {
+   window.removeEventListener("cloudy:languagechange", applyLanguage);
+   window.removeEventListener("storage", applyLanguage);
+   window.removeEventListener("message", onMessage);
+  };
+ }, []);
+ return <html lang="ru"><head><HeadContent /></head><body>{children}<Scripts /></body></html>;
+}
 function RootComponent() { const { queryClient } = Route.useRouteContext(); return <QueryClientProvider client={queryClient}><Outlet /></QueryClientProvider>; }
