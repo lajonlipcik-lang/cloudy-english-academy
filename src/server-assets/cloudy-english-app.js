@@ -822,6 +822,15 @@ function chatRender(){
       </div>
       <button class="chat-close-button" onclick="snd('tab');view()" aria-label="Закрыть чат">${ic('x')}</button>
     </header>
+    <div class="chat-model-switcher chat-model-switcher-top">
+      <button class="chat-model-trigger" id="chatModelTrigger" type="button" aria-expanded="false" aria-controls="chatModelMenu" onclick="chatToggleModelMenu()">
+        <span class="chat-model-trigger-copy"><b id="chatModelName">Cloudy Lite 2.2</b></span><span class="chat-model-chevron" aria-hidden="true">⌄</span>
+      </button>
+      <div class="chat-model-menu" id="chatModelMenu" hidden>
+        <button class="chat-model-option selected" id="chatModelLite" type="button" onclick="chatChooseModel('lite')"><span><b>Cloudy Lite 2.2</b></span><span class="chat-model-check">✓</span></button>
+        <button class="chat-model-option locked" id="chatModelTeacher" type="button" onclick="chatChooseModel('teacher')"><span><b>Cloudy Teacher 4.4</b><small id="chatTeacherCaption">Расширенная модель</small></span><span class="chat-model-lock" id="chatTeacherLock" aria-label="Требуется подписка"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v7h-9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+      </div>
+    </div>
     <div id="msgs" class="chat-messages" aria-live="polite"></div>
     <div class="chat-composer-wrap">
       <div class="chat-composer">
@@ -830,18 +839,7 @@ function chatRender(){
         </div>
         <button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button>
       </div>
-      <div class="chat-composer-meta">
-        <div class="chat-model-switcher">
-          <button class="chat-model-trigger" id="chatModelTrigger" type="button" aria-expanded="false" aria-controls="chatModelMenu" onclick="chatToggleModelMenu()">
-            <span class="chat-model-dot" aria-hidden="true"></span><span class="chat-model-trigger-copy"><b id="chatModelName">Cloudy Lite 2.2</b></span><span class="chat-model-chevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="chat-model-menu" id="chatModelMenu" hidden>
-            <button class="chat-model-option selected" id="chatModelLite" type="button" onclick="chatChooseModel('lite')"><span class="chat-model-option-icon">☁</span><span><b>Cloudy Lite 2.2</b><small>Бесплатная модель</small></span><span class="chat-model-check">✓</span></button>
-            <button class="chat-model-option locked" id="chatModelTeacher" type="button" onclick="chatChooseModel('teacher')"><span class="chat-model-option-icon">✦</span><span><b>Cloudy Teacher 4.4</b><small id="chatTeacherCaption">Расширенная модель</small></span><span class="chat-model-lock" id="chatTeacherLock" aria-label="Требуется подписка"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v7h-9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
-          </div>
-        </div>
-        <div class="chat-disclaimer">Клауди помогает практиковать английский</div>
-      </div>
+      <div class="chat-composer-meta"><div class="chat-disclaimer">Клауди помогает практиковать английский</div></div>
     </div>
   </main>
 </section>`;
