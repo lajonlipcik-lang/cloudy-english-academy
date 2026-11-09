@@ -3,7 +3,7 @@ import '../domain/cloudy_exercise.dart';
 import '../domain/cloudy_learning_store.dart';
 import '../domain/cloudy_progress_engine.dart';
 import '../domain/cloudy_state.dart';
-import 'cloudy_local_progress_store.dart';
+import '../progress/cloudy_local_progress_store.dart';
 
 class CloudyProgressSyncResult {
   const CloudyProgressSyncResult({
