@@ -1,45 +1,66 @@
 # Vercel platform migration
 
-Status: audit and preparation. Production remains unchanged.
+Status: audit and preparation. Production and `main` remain unchanged.
 
 ## Target architecture
 
 - Vercel: application hosting, deployments, and server-side functions.
-- Neon PostgreSQL: application relational data and SQL functions/triggers.
-- Vercel Blob: object storage for user uploads and Shorts media.
-- Better Auth (or another independently hosted auth layer): identity and sessions, subject to a verified account-migration strategy.
-- AI providers: direct server-side provider integrations; secrets stored only in deployment environment variables or a dedicated secret store.
+- Neon PostgreSQL: relational data, constraints, indexes, SQL functions, and triggers.
+- Vercel Blob: user-uploaded objects and Shorts media, with private access mediated by server routes.
+- Better Auth (or another independently hosted auth layer): identity and sessions, subject to a proven account-migration strategy.
+- AI providers: direct server-side integrations; credentials only in deployment environment variables or a dedicated secret store.
+- Shorts media processing: a separately deployed private container service for FFmpeg; do not assume Vercel Functions can replace this workload without testing runtime limits.
 
-This target removes the Lovable platform and Lovable-specific runtime dependencies. Vercel alone is not a replacement for PostgreSQL, identity, or object storage.
+Vercel alone does not replace PostgreSQL, identity, object storage, or a long-running media processor.
 
 ## Verified repository findings
 
-- `package.json` contains `@lovable.dev/ai-gateway` and `@lovable.dev/vite-tanstack-config`.
-- `src/lib/chat.functions.ts` imports the Lovable AI Gateway and checks `LOVABLE_API_KEY`.
+- `package.json` includes `@lovable.dev/ai-gateway` and `@lovable.dev/vite-tanstack-config`.
+- `vite.config.ts` imports the Lovable Vite/TanStack configuration package.
+- `src/lib/chat.functions.ts` checks `LOVABLE_API_KEY` and dynamically imports the Lovable AI Gateway. It already routes through the app's AI fallback router, which is a useful seam for replacing the provider adapter.
 - `drizzle.config.ts` reads `LOVABLE_DB_MIGRATION_URL`.
-- `drizzle/schema.ts` is currently empty, despite existing SQL migration history.
-- The application currently imports Supabase JS in auth, data, and server modules. These integrations must be replaced or deliberately retained only during a staged migration.
+- `drizzle/schema.ts` is intentionally empty; the authoritative schema history is currently represented by SQL migrations, not Drizzle schema declarations.
+- Core SQL migration history is present in `drizzle/migrations/` (0000–0020 in the source inventory).
+- Content SQL migration history is present in `drizzle/migrations-content/` (0001–0010, including two distinct files numbered 0009; migration ordering must be reconciled before applying to a new database).
+- Supabase client/auth modules are used throughout the application. `requireSupabaseAuth` validates bearer tokens using Supabase Auth claims; replacing it requires a new verified identity/session boundary, not just changing the database URL.
+- `src/integrations/supabase/content.server.ts` uses a server-only service-role client and can fall back to the Core project when a dedicated Content project is not configured.
+- `docs/architecture/cloudy-content-database.md` says Shorts/community data is currently co-located in Core and the separate Content project is optional. However, the media processor README describes a separate Content project as its runtime source. This documentation/configuration conflict must be resolved against live project configuration before data export.
+- `services/cloudy-shorts-media/` is a separate FFmpeg container service. Its README describes private server-to-server authentication and signed private-storage URLs.
+- The tracked `.env` file and current `.gitignore` require a credential/configuration hygiene review. Do not copy its values into migration artifacts; deployment configuration should be recreated from verified variable names and secret values entered directly into the hosting dashboard.
+
+## Source project inventory status
+
+- The connected Lovable project file listing was retrieved across both pages and includes the application, Core SQL migrations, Content SQL migrations, Supabase configuration, and Shorts media processor.
+- The connected Lovable database query quota was exhausted during the latest attempt; no new inventory query was executed. Earlier read-only audit results recorded 5 auth users, 5 profiles, 26 public tables, 27 public RLS policies, 19 public SQL functions (overloads may affect counts), one Storage bucket, and seven Storage objects. These are provisional counts and must be re-verified before migration.
+- Only the connected Lovable project's database is currently available through the integration. A second live Supabase project/database has not been independently verified. Do not infer its existence from documentation alone.
+- No database dump, Auth export, or Storage object archive has been produced yet.
 
 ## Migration gates
 
-1. Inventory every table, view, enum, index, constraint, RLS policy, SQL function, trigger, auth user, storage bucket/object, scheduled job, and Edge Function across all source projects.
-2. Obtain a complete, restorable source backup. Never export provider secrets into Git, logs, or ordinary artifacts.
-3. Recreate schema and server-side invariants on the target database; add automated parity checks.
-4. Decide and test account migration. Password hashes and active sessions must not be assumed portable between auth providers. Preserve user IDs where feasible; otherwise implement a verified account-claim/password-reset flow and update foreign keys safely.
-5. Copy storage objects and verify byte counts, MIME types, ownership, and access rules.
-6. Run a read-only parity comparison and end-to-end tests against staging.
-7. Switch production only after explicit validation. Keep source systems intact until rollback window expires.
+1. Reconcile Core vs Content ownership and identify every live source project.
+2. Inventory every table, view, enum, index, constraint, RLS policy, SQL function, trigger, auth user, Storage bucket/object, scheduled job, and Edge Function on each live source.
+3. Obtain complete, restorable database backups and object exports. Never export provider secrets into Git, logs, or ordinary artifacts.
+4. Reconcile migration numbering and apply schema in a deterministic order; reproduce constraints, indexes, triggers, RPCs, and authorization invariants on Neon.
+5. Decide and test account migration. Password hashes and active sessions must not be assumed portable between auth providers. Preserve stable user IDs where feasible; otherwise implement a verified account-claim/password-reset flow and update references safely.
+6. Copy Storage objects to Blob and verify object counts, byte sizes, MIME types, ownership, and private-access behavior.
+7. Replace Lovable Vite configuration and AI Gateway usage with supported runtime/build and provider adapters; remove Lovable dependencies only after equivalent behavior is tested.
+8. Deploy the media processor to a compatible private container host and verify its signed-URL and resource-limit behavior.
+9. Run read-only parity comparisons and end-to-end tests against staging.
+10. Switch production only after explicit validation. Keep source systems intact throughout the rollback window.
 
 ## Current blockers / external access required
 
-- A new Vercel project and deployment access are required to configure the project and production environment.
-- A Neon project/connection string and Vercel Blob store/token must be provisioned by the account owner.
-- Source database access is currently available through the connected Lovable integration; a complete database dump and storage-object export must be obtained before any cutover.
-- Auth migration method must be proven before promising password-preserving account transfer.
+- Vercel project access and deployment environment configuration.
+- Neon database provisioning and a secure connection string.
+- Vercel Blob provisioning and a server-side access token.
+- A complete source database dump and Storage object export; the connected Lovable query quota is currently exhausted.
+- Confirmation of whether a separate Content Supabase project is actually live and where its data resides.
+- A proven Auth migration method before promising password-preserving account transfer.
 
 ## Safety rules
 
 - Do not change `main` during preparation.
 - Do not delete, truncate, or disable source data/services.
 - Do not commit credentials, access tokens, connection strings, or API keys.
-- Do not declare migration complete until schema/data/storage/auth parity and production smoke tests pass.
+- Do not point production at an empty target database.
+- Do not declare migration complete until schema/data/Storage/Auth parity and production smoke tests pass.
