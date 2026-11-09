@@ -25,8 +25,8 @@ class CloudySkillEvidence {
     return CloudySkillEvidence(
       mastery: number(raw['mastery'], 0.5).clamp(0.05, 0.98).toDouble(),
       evidence: number(raw['evidence'], 0).clamp(0, 1000).toDouble(),
-      correct: integer(raw['correct']).clamp(0, 1000000),
-      incorrect: integer(raw['incorrect']).clamp(0, 1000000),
+      correct: integer(raw['correct']).clamp(0, 1000000).toInt(),
+      incorrect: integer(raw['incorrect']).clamp(0, 1000000).toInt(),
       lastPracticed: integer(raw['lastPracticed']),
       dueAt: integer(raw['dueAt']),
     );
@@ -156,5 +156,5 @@ String _cleanLearningText(String value, int max) {
       .replaceAll(RegExp(r'[\u0000-\u001f\u007f]'), ' ')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
-  return cleaned.substring(0, cleaned.length.clamp(0, max));
+  return cleaned.substring(0, cleaned.length.clamp(0, max).toInt());
 }
