@@ -24,16 +24,17 @@ class CloudySession {
     this.total = 0,
     this.learnedMistakes = const [],
     this.retryPhase = false,
+    this.matchingCorrect = 0,
   });
   final bool review, retryPhase;
-  final int lesson, index, health, combo, correct, total;
+  final int lesson, index, health, combo, correct, total, matchingCorrect;
   final List<CloudyExercise> exercises;
   final List<String> learnedMistakes;
 
   CloudySession copyWith({
     int? lesson, List<CloudyExercise>? exercises, bool? review,
     int? index, int? health, int? combo, int? correct, int? total,
-    List<String>? learnedMistakes, bool? retryPhase,
+    List<String>? learnedMistakes, bool? retryPhase, int? matchingCorrect,
   }) => CloudySession(
     lesson: lesson ?? this.lesson,
     exercises: exercises ?? this.exercises,
@@ -45,6 +46,7 @@ class CloudySession {
     total: total ?? this.total,
     learnedMistakes: learnedMistakes ?? this.learnedMistakes,
     retryPhase: retryPhase ?? this.retryPhase,
+    matchingCorrect: matchingCorrect ?? this.matchingCorrect,
   );
 }
 
@@ -354,6 +356,79 @@ CloudySession? startCloudyReview(
   );
 }
 
+
+bool isCloudyAnswerCorrect(
+  CloudyExercise exercise, {
+  int? selectedOption,
+  List<int> builtOptionIndices = const [],
+  String? typedAnswer,
+}) {
+  if (exercise is CloudyRecallExercise) {
+    return checkCloudyRecallAnswer(typedAnswer ?? '', exercise.answer);
+  }
+  if (exercise is CloudyBuilderExercise) {
+    final valid = builtOptionIndices.every(
+      (index) => index >= 0 && index < exercise.options.length,
+    );
+    if (!valid) return false;
+    final answer = builtOptionIndices.map((index) => exercise.options[index]).join(' ');
+    return answer.toLowerCase() == exercise.answer.toLowerCase();
+  }
+  if (exercise is CloudyChoiceExercise) {
+    return selectedOption != null &&
+        selectedOption >= 0 &&
+        selectedOption < exercise.options.length &&
+        exercise.options[selectedOption] == exercise.answer;
+  }
+  if (exercise is CloudyListeningExercise) {
+    return selectedOption != null &&
+        selectedOption >= 0 &&
+        selectedOption < exercise.options.length &&
+        exercise.options[selectedOption] == exercise.answer;
+  }
+  return false;
+}
+
+CloudyAnswerResult applyCloudyMatchingAttempt(
+  CloudyState state,
+  CloudySession session, {
+  required String englishWord,
+  required bool correct,
+  required int totalPairs,
+}) {
+  if (correct) {
+    final completedPairs = session.matchingCorrect + 1;
+    if (completedPairs >= totalPairs) {
+      final result = applyCloudyAnswer(
+        state, session, true, englishWord: englishWord,
+      );
+      return CloudyAnswerResult(
+        state: result.state,
+        session: result.session.copyWith(matchingCorrect: completedPairs),
+      );
+    }
+    return CloudyAnswerResult(
+      state: state,
+      session: session.copyWith(matchingCorrect: completedPairs),
+    );
+  }
+
+  final mistakes = Map<String, num>.of(state.mistakes);
+  mistakes[englishWord] = (mistakes[englishWord] ?? 0) + 1;
+  final learned = session.learnedMistakes.contains(englishWord)
+      ? session.learnedMistakes
+      : [...session.learnedMistakes, englishWord];
+  return CloudyAnswerResult(
+    state: state.copyWith(mistakes: mistakes),
+    session: session.copyWith(
+      health: session.health - 1,
+      combo: 0,
+      total: session.total + 1,
+      learnedMistakes: learned,
+    ),
+  );
+}
+
 CloudyAnswerResult applyCloudyAnswer(
   CloudyState state, CloudySession session, bool correct, {String? englishWord}
 ) {
@@ -400,7 +475,7 @@ CloudySession skipCloudyAnswer(CloudySession session) => session.copyWith(combo:
 CloudySession? advanceCloudySession(
   CloudySession session, List<CloudyPair> pool, {CloudyRand? random}
 ) {
-  var next = session.copyWith(index: session.index + 1);
+  var next = session.copyWith(index: session.index + 1, matchingCorrect: 0);
   if (next.index >= next.exercises.length && !next.retryPhase && next.learnedMistakes.isNotEmpty) {
     final retry = <CloudyExercise>[];
     for (final word in next.learnedMistakes.take(3)) {
