@@ -28,6 +28,7 @@ The current application remains authoritative until the Flutter version passes f
 - flutter/lib/domain/cloudy_exercise.dart: typed JSON-compatible models for all eight exercise/study card types.
 - flutter/lib/domain/cloudy_state.dart: persisted progress/settings model using the current cl2 JSON keys.
 - flutter/lib/data/cloudy_progress_store.dart: guest and account-scoped local progress persistence, compatible key selection, safe guest merge, and explicit post-sync cleanup.
+- flutter/lib/data/cloudy_auth_repository.dart: Supabase auth adapter and exact 13+ profile-age update policy; the adapter is not yet wired into native screens.
 - flutter/lib/domain/cloudy_logic.dart: lesson stages, exercise generation, guided grammar tasks, answer/retry rules, XP/streaks, achievements, daily chest, guest/account merge, and progress sanitization.
 - flutter/lib/domain/cloudy_learning_store.dart: local adaptive mastery, spaced-review prioritization, session tracking, and offline event outbox.
 - flutter/test/: parity-focused tests for progress, catalog loading, exercise serialization, learning persistence, guest/account progress merge, and exercise generation.
