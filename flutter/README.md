@@ -30,6 +30,10 @@ flutter run --dart-define=CLOUDY_API_BASE_URL=https://YOUR-CLOUDY-HOST
 
 CLOUDY_API_BASE_URL must be the origin of the Cloudy host that contains the cloudyNative install-guide bypass and the authenticated /api/cloudy/mobile route. Do not point the Flutter shell at an unrelated or stale deployment.
 
+When the native authentication/bootstrap is enabled, also provide SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY with --dart-define. Never place a Supabase service-role or secret key in the Flutter app.
+
+The generated iOS Runner/Info.plist must include NSMicrophoneUsageDescription and NSCameraUsageDescription. The Android app manifest must include INTERNET, RECORD_AUDIO, and CAMERA permissions. These are required for the existing voice and Shorts media features; do not remove them during platform setup.
+
 ## Native modules already ported
 
 - Exact current lesson catalog asset: all 60 lessons, all four CEFR paths, grammar foundations, vocabulary, and bilingual sentence data.
