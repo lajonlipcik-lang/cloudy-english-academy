@@ -90,8 +90,8 @@ void main() {
             'action': 'subscription-status',
             'payload': {},
           });
-          return http.Response(
-            jsonEncode({
+          return http.Response.bytes(
+            utf8.encode(jsonEncode({
               'ok': true,
               'result': {
                 'hasAccess': true,
@@ -110,8 +110,9 @@ void main() {
                   {'feature_key': 'ai_tutor', 'enabled': true, 'usage_limit': 100},
                 ],
               },
-            }),
+            })),
             200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
           );
         }),
       );
