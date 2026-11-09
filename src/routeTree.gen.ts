@@ -83,6 +83,7 @@ export interface FileRoutesByTo {
   '/legal': typeof LegalRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
+  '/api/telegram/payments/events': typeof ApiTelegramPaymentsEventsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -91,6 +92,7 @@ export interface FileRoutesById {
   '/legal': typeof LegalRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
+  '/api/telegram/payments/events': typeof ApiTelegramPaymentsEventsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,6 +120,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/sitemap.xml'
     | '/api/internal/support-ai'
+    | '/api/telegram/payments/events'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
