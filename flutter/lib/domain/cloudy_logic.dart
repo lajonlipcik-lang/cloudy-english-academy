@@ -18,7 +18,7 @@ class CloudyLesson {
   final List<CloudyPair> sentences;
 }
 
-enum CloudyExerciseKind { choice, listening, builder, matching, pronunciation }
+enum CloudyExerciseKind { grammar, vocabulary, recall, choice, listening, builder, matching, pronunciation }
 
 class CloudyExercise {
   const CloudyExercise({
@@ -31,12 +31,18 @@ class CloudyExercise {
     this.title = '',
     this.left = const [],
     this.right = const [],
+    this.words = const [],
+    this.examples = const [],
+    this.body = '',
+    this.tip = '',
+    this.level = '',
+    this.skillId = '',
   });
   final CloudyExerciseKind kind;
-  final String question, answer, english, title;
+  final String question, answer, english, title, body, tip, level, skillId;
   final bool speaks;
   final List<String> options;
-  final List<CloudyPair> left, right;
+  final List<CloudyPair> left, right, words, examples;
 }
 
 class CloudySession {
@@ -149,10 +155,21 @@ CloudyExercise cloudyChoiceQuestion(
   final options = cloudyShuffle<CloudyPair>(
     [CloudyPair(english, russian), ...distractors], random: rand,
   );
+  const listeningTitles = [
+    'Что вы услышали?', 'Прослушайте и выберите слово', 'Какое слово произнесено?',
+  ];
+  const englishTitles = [
+    'Что это значит?', 'Выберите перевод слова', 'Как переводится это слово?',
+  ];
+  const russianTitles = [
+    'Переведите на английский', 'Как сказать это по-английски?', 'Выберите английский перевод',
+  ];
+  String chooseTitle(List<String> titles) => titles[(rand() * titles.length).floor()];
   if (mode == 2) {
     return CloudyExercise(
       kind: CloudyExerciseKind.listening, answer: english, english: english,
-      options: options.map((pair) => pair.en).toList(), title: 'Что вы слышите?',
+      options: options.map((pair) => pair.en).toList(),
+      title: chooseTitle(listeningTitles),
     );
   }
   return CloudyExercise(
@@ -162,7 +179,7 @@ CloudyExercise cloudyChoiceQuestion(
     english: english,
     speaks: mode != 0,
     options: options.map((pair) => mode != 0 ? pair.ru : pair.en).toList(),
-    title: mode != 0 ? 'Что это значит?' : 'Переведите на английский',
+    title: chooseTitle(mode != 0 ? englishTitles : russianTitles),
   );
 }
 
@@ -187,6 +204,7 @@ List<CloudyExercise> buildCloudyExercises(
       kind: CloudyExerciseKind.matching,
       left: cloudyShuffle(matching.map((p) => CloudyPair(p.en, p.en)).toList(), random: rand),
       right: cloudyShuffle(matching.map((p) => CloudyPair(p.ru, p.en)).toList(), random: rand),
+      title: 'Найдите пары',
     ));
   }
 
@@ -218,7 +236,7 @@ List<CloudyExercise> buildCloudyExercises(
       question: sentence.ru,
       answer: sentence.en,
       options: cloudyShuffle([...correctTokens, ...unique.take(2)], random: rand),
-      title: 'Переведите на английский',
+      title: ['Составьте предложение на английском', 'Переведите фразу на английский', 'Соберите правильный перевод'][(rand() * 3).floor()],
     ));
   }
 
@@ -227,6 +245,117 @@ List<CloudyExercise> buildCloudyExercises(
     output.add(CloudyExercise(kind: CloudyExerciseKind.pronunciation, english: pronunciation.en));
   }
   return cloudyShuffle(output, random: rand);
+}
+
+
+const Map<int, List<CloudyExercise>> _guidedVerbPath = {
+  24: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Я хочу воды.', answer: 'I want water.', options: ['I', 'want', 'water.', 'We', 'go', 'home'], title: 'Собери предложение', skillId: 'grammar:verbs:action'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Мы идём домой.', answer: 'We go home.', options: ['We', 'go', 'home.', 'I', 'want', 'water.'], title: 'Собери предложение', skillId: 'grammar:verbs:action'),
+  ],
+  25: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Я просыпаюсь рано.', answer: 'I wake up early.', options: ['I', 'wake', 'up', 'early.', 'She', 'wakes'], title: 'Собери предложение', skillId: 'grammar:present-simple:base'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Они изучают английский.', answer: 'They study English.', options: ['They', 'study', 'English.', 'He', 'studies', 'I'], title: 'Собери предложение', skillId: 'grammar:present-simple:base'),
+  ],
+  26: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Она любит чай.', answer: 'She likes tea.', options: ['She', 'likes', 'tea.', 'I', 'like', 'coffee.'], title: 'Собери предложение', skillId: 'grammar:present-simple:third-person'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Он работает каждый день.', answer: 'He works every day.', options: ['He', 'works', 'every', 'day.', 'They', 'work'], title: 'Собери предложение', skillId: 'grammar:present-simple:third-person'),
+  ],
+  27: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Ты говоришь по-английски?', answer: 'Do you speak English?', options: ['Do', 'you', 'speak', 'English?', 'Does', 'she', 'speaks'], title: 'Собери предложение', skillId: 'grammar:present-simple:questions'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Она работает здесь?', answer: 'Does she work here?', options: ['Does', 'she', 'work', 'here?', 'Do', 'works', 'they'], title: 'Собери предложение', skillId: 'grammar:present-simple:questions'),
+  ],
+  28: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Я не знаю.', answer: "I don't know.", options: ['I', "don't", 'know.', 'He', "doesn't", 'knows'], title: 'Собери предложение', skillId: 'grammar:present-simple:negatives'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Он не любит кофе.', answer: "He doesn't like coffee.", options: ['He', "doesn't", 'like', 'coffee.', 'I', "don't", 'likes'], title: 'Собери предложение', skillId: 'grammar:present-simple:negatives'),
+  ],
+  29: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Она читает книгу дома.', answer: 'She reads a book at home.', options: ['She', 'reads', 'a', 'book', 'at', 'home.', 'I', 'read'], title: 'Собери предложение', skillId: 'grammar:sentence-order'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Мы изучаем английский каждый день.', answer: 'We study English every day.', options: ['We', 'study', 'English', 'every', 'day.', 'She', 'studies'], title: 'Собери предложение', skillId: 'grammar:sentence-order'),
+  ],
+  54: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Где ты живёшь?', answer: 'Where do you live?', options: ['Where', 'do', 'you', 'live?', 'I', 'am', 'home.'], title: 'Собери предложение', skillId: 'grammar:wh-questions'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Когда начинается урок?', answer: 'When does the lesson start?', options: ['When', 'does', 'the', 'lesson', 'start?', 'Where', 'do', 'you'], title: 'Собери предложение', skillId: 'grammar:wh-questions'),
+  ],
+  55: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Это сумка Анны.', answer: "This is Anna's bag.", options: ['This', 'is', "Anna's", 'bag.', 'That', 'are', 'mine'], title: 'Собери предложение', skillId: 'grammar:possessive-pronouns'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Этот зонт мой.', answer: 'This umbrella is mine.', options: ['This', 'umbrella', 'is', 'mine.', 'That', 'are', 'yours'], title: 'Собери предложение', skillId: 'grammar:possessive-pronouns'),
+  ],
+  56: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Закрой дверь, пожалуйста.', answer: 'Close the door, please.', options: ['Close', 'the', 'door,', 'please.', "Don't", 'closes', 'it'], title: 'Собери предложение', skillId: 'grammar:imperatives'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Давай начнём урок.', answer: "Let's start the lesson.", options: ["Let's", 'start', 'the', 'lesson.', 'We', 'starts', 'home.'], title: 'Собери предложение', skillId: 'grammar:imperatives'),
+  ],
+  57: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Вчера я нашёл ключи.', answer: 'I found my keys yesterday.', options: ['I', 'found', 'my', 'keys', 'yesterday.', 'find', 'did', 'tomorrow'], title: 'Собери предложение', skillId: 'grammar:past-simple-irregular'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Она поехала домой на автобусе.', answer: 'She went home by bus.', options: ['She', 'went', 'home', 'by', 'bus.', 'go', 'goes', 'yesterday'], title: 'Собери предложение', skillId: 'grammar:past-simple-irregular'),
+  ],
+  58: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Тебе нельзя здесь парковаться.', answer: "You mustn't park here.", options: ['You', "mustn't", 'park', 'here.', 'must', "don't", 'parking'], title: 'Собери предложение', skillId: 'grammar:modals-obligation'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Нам не нужно работать в воскресенье.', answer: "We don't have to work on Sunday.", options: ['We', "don't", 'have', 'to', 'work', 'on', 'Sunday.', 'must', 'has', 'working'], title: 'Собери предложение', skillId: 'grammar:modals-obligation'),
+  ],
+  59: [
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Если пойдёт дождь, мы останемся дома.', answer: "If it rains, we'll stay home.", options: ['If', 'it', 'rains,', "we'll", 'stay', 'home.', 'will', 'stays', 'tomorrow'], title: 'Собери предложение', skillId: 'grammar:first-conditional'),
+    CloudyExercise(kind: CloudyExerciseKind.builder, question: 'Если поторопишься, успеешь на автобус.', answer: "If you hurry, you'll catch the bus.", options: ['If', 'you', 'hurry,', "you'll", 'catch', 'the', 'bus.', 'will', 'catches', 'late'], title: 'Собери предложение', skillId: 'grammar:first-conditional'),
+  ],
+};
+
+List<CloudyExercise> guidedCloudyExercises(int lessonIndex, {CloudyRand? random}) {
+  final rand = random ?? math.Random().nextDouble;
+  return cloudyShuffle(List<CloudyExercise>.of(_guidedVerbPath[lessonIndex] ?? const []), random: rand);
+}
+
+List<CloudyExercise> buildCloudyLessonSequence({
+  required int lessonIndex,
+  required CloudyLesson lesson,
+  required String level,
+  required List<CloudyPair> vocabularyPool,
+  required bool microphoneEnabled,
+  required bool speechRecognitionAvailable,
+  CloudyExercise? grammarIntro,
+  CloudyRand? random,
+}) {
+  final rand = random ?? math.Random().nextDouble;
+  final result = <CloudyExercise>[];
+  if (grammarIntro != null) {
+    result.add(CloudyExercise(
+      kind: CloudyExerciseKind.grammar,
+      title: grammarIntro.title,
+      body: grammarIntro.body,
+      examples: grammarIntro.examples,
+      tip: grammarIntro.tip,
+      level: grammarIntro.level.isEmpty ? level : grammarIntro.level,
+    ));
+  }
+  result.add(CloudyExercise(
+    kind: CloudyExerciseKind.vocabulary,
+    title: 'Познакомься со словами',
+    words: lesson.words,
+  ));
+  result.addAll(guidedCloudyExercises(lessonIndex, random: rand));
+  final recall = cloudyShuffle(lesson.words, random: rand)
+      .take(math.min(3, lesson.words.length))
+      .map((pair) => CloudyExercise(
+        kind: CloudyExerciseKind.recall,
+        question: pair.ru,
+        answer: pair.en,
+        english: pair.en,
+        title: 'Вспомни слово без подсказок',
+      ));
+  result.addAll(recall);
+  result.addAll(buildCloudyExercises(
+    lesson,
+    vocabularyPool,
+    microphoneEnabled: microphoneEnabled && speechRecognitionAvailable,
+    random: rand,
+  ));
+  return result;
+}
+
+bool checkCloudyRecallAnswer(String input, String expected) {
+  final normalized = input.trim().toLowerCase()
+      .replaceAll(RegExp(r'[.!?]+$'), '')
+      .replaceAll(RegExp(r'\s+'), ' ');
+  return normalized == expected.toLowerCase();
 }
 
 CloudySession newCloudySession(int lesson, List<CloudyExercise> exercises, {bool review = false}) =>
