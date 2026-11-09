@@ -109,18 +109,21 @@ class CloudyAuthPolicy {
 class CloudyAuthRepository {
   CloudyAuthRepository(this._client);
 
+  static bool _initializedByRepository = false;
+
   final SupabaseClient _client;
 
   static Future<void> initialize() async {
-    if (Supabase.instance.isInitialized) return;
+    if (_initializedByRepository) return;
     const url = String.fromEnvironment('SUPABASE_URL');
-    const anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-    if (url.isEmpty || anonKey.isEmpty) {
+    const publishableKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+    if (url.isEmpty || publishableKey.isEmpty) {
       throw StateError(
-        'SUPABASE_URL and SUPABASE_ANON_KEY must be provided at build time.',
+        'SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY must be provided at build time.',
       );
     }
-    await Supabase.initialize(url: url, anonKey: anonKey);
+    await Supabase.initialize(url: url, anonKey: publishableKey);
+    _initializedByRepository = true;
   }
 
   static CloudyAuthRepository fromInitializedClient() =>
