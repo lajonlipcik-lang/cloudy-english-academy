@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 const MAX_SKEW_SECONDS = 300;
 const BOT_USERNAME = "cloudysupport_t_bot";
 const json = (value: unknown, status = 200) => Response.json(value, { status });
+const paymentDb: any = supabaseAdmin;
 
 function signature(secret: string, timestamp: string, body: string) {
   return createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex");
@@ -55,7 +56,7 @@ export async function createTeacherCheckout(request: Request) {
 
   const rawToken = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(rawToken).digest("hex");
-  const { error: insertError } = await supabaseAdmin.from("telegram_payment_tokens").insert({
+  const { error: insertError } = await paymentDb.from("telegram_payment_tokens").insert({
     user_id: auth.user.id, plan_id: plan.id, token_hash: tokenHash,
     expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
   });
@@ -69,7 +70,7 @@ export async function resolveStarsOrder(request: Request) {
   if (typeof body.token !== "string" || !/^[a-f0-9]{64}$/.test(body.token) ||
       !Number.isSafeInteger(body.telegram_user_id) || body.telegram_user_id <= 0) return fail(400, "Invalid request");
   const tokenHash = createHash("sha256").update(body.token).digest("hex");
-  const { data, error } = await supabaseAdmin.rpc("resolve_telegram_stars_order", {
+  const { data, error } = await paymentDb.rpc("resolve_telegram_stars_order", {
     p_token_hash: tokenHash, p_telegram_user_id: body.telegram_user_id,
   });
   if (error) {
@@ -85,7 +86,7 @@ export async function precheckStarsOrder(request: Request) {
   if (!body) return fail(401, "Unauthorized");
   if (typeof body.order_id !== "string" || !Number.isSafeInteger(body.telegram_user_id) ||
       !Number.isSafeInteger(body.total_amount) || body.currency !== "XTR") return fail(400, "Invalid request");
-  const { data, error } = await supabaseAdmin.from("telegram_payment_orders")
+  const { data, error } = await paymentDb.from("telegram_payment_orders")
     .select("telegram_user_id,amount_stars,status,expires_at")
     .eq("invoice_payload", body.order_id).maybeSingle();
   if (error) return fail(503, "Order lookup failed");
@@ -105,7 +106,7 @@ export async function handleStarsPaymentEvent(request: Request) {
     return fail(400, "Invalid payment event");
   }
   if (body.type === "successful_payment") {
-    const { data, error } = await supabaseAdmin.rpc("apply_telegram_stars_payment", {
+    const { data, error } = await paymentDb.rpc("apply_telegram_stars_payment", {
       p_invoice_payload: body.order_id,
       p_telegram_user_id: body.telegram_user_id,
       p_telegram_payment_charge_id: body.telegram_payment_charge_id,
@@ -120,7 +121,7 @@ export async function handleStarsPaymentEvent(request: Request) {
     return signedResponse({ ok: true, subscription_id: data });
   }
 
-  const { data, error } = await supabaseAdmin.rpc("refund_telegram_stars_payment", {
+  const { data, error } = await paymentDb.rpc("refund_telegram_stars_payment", {
     p_invoice_payload: body.order_id,
     p_telegram_user_id: body.telegram_user_id,
     p_telegram_payment_charge_id: body.telegram_payment_charge_id,
