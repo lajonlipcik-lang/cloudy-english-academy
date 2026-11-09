@@ -5,7 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'native/cloudy_native_learning_app.dart';
+
 const _background = Color(0xFF050D2B);
+
+const _nativeLearningEnabled =
+    bool.fromEnvironment('CLOUDY_NATIVE_LEARNING', defaultValue: false);
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +42,7 @@ class _CloudyEnglishAppState extends State<CloudyEnglishApp> {
   @override
   void initState() {
     super.initState();
+    if (_nativeLearningEnabled) return;
     const baseUrl = String.fromEnvironment('CLOUDY_API_BASE_URL');
     final uri = Uri.tryParse(baseUrl);
     if (uri == null || !uri.hasScheme || !uri.hasAuthority ||
@@ -82,6 +88,21 @@ class _CloudyEnglishAppState extends State<CloudyEnglishApp> {
 
   @override
   Widget build(BuildContext context) {
+    if (_nativeLearningEnabled) {
+      return MaterialApp(
+        title: 'Cloudy English',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: _background,
+          colorScheme: const ColorScheme.dark(
+            primary: Color(0xFF4DB3FF),
+            surface: _background,
+          ),
+        ),
+        home: const CloudyNativeLearningApp(),
+      );
+    }
     return MaterialApp(
       title: 'Cloudy English',
       debugShowCheckedModeBanner: false,
