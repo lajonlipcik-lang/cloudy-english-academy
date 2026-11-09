@@ -24,7 +24,7 @@ void main() {
         client: MockClient((request) async {
           captured = request;
           return http.Response(
-            jsonEncode({'ok': true, 'result': {'acceptedCount': 2}}),
+            jsonEncode({'ok': true, 'result': {'acceptedEventIds': ['a', 'b']}}),
             200,
           );
         }),
@@ -35,7 +35,7 @@ void main() {
         {'eventId': 'b'},
       ]);
 
-      expect(accepted, 2);
+      expect(accepted, ['a', 'b']);
       expect(captured.headers['authorization'], 'Bearer access-token');
       expect(jsonDecode(captured.body), {
         'action': 'learning-events',
