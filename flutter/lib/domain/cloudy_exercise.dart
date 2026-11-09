@@ -1,7 +1,6 @@
 class CloudyPair {
   const CloudyPair(this.first, this.second);
-  final String first;
-  final String second;
+  final String first, second;
 
   factory CloudyPair.fromJson(Object? value) {
     if (value is List && value.length >= 2) {
@@ -13,7 +12,9 @@ class CloudyPair {
   List<String> toJson() => [first, second];
 }
 
-/// Mirrors the six exercise variants used by the current Cloudy exercise engine.
+/// Mirrors every exercise/study card emitted by the current browser runtime:
+/// choice, listening, sentence builder, matching, pronunciation, recall,
+/// vocabulary introduction, and grammar/theory introduction.
 sealed class CloudyExercise {
   const CloudyExercise();
   String get kind;
@@ -37,10 +38,12 @@ sealed class CloudyExercise {
         return CloudyBuilderExercise(
           question: _string(map['q']), answer: _string(map['a']),
           options: _strings(map['o']), title: _string(map['title']),
+          skillId: map['skillId'] is String ? map['skillId'] as String : null,
         );
       case 'm':
         return CloudyMatchingExercise(
           left: _pairs(map['L']), right: _pairs(map['R']),
+          title: map['title'] is String ? map['title'] as String : null,
         );
       case 'p':
         return CloudyPronunciationExercise(english: _string(map['en']));
@@ -48,6 +51,14 @@ sealed class CloudyExercise {
         return CloudyRecallExercise(
           question: _string(map['q']), answer: _string(map['a']),
           english: _string(map['en']), title: _string(map['title']),
+        );
+      case 'v':
+        return CloudyVocabularyExercise(words: _pairs(map['words']));
+      case 't':
+        return CloudyTheoryExercise(
+          title: _string(map['title']), body: _string(map['body']),
+          examples: _pairs(map['examples']), tip: _string(map['tip']),
+          level: map['level'] is String ? map['level'] as String : null,
         );
       default:
         throw FormatException('Unknown Cloudy exercise type: ${map['k']}');
@@ -90,27 +101,31 @@ class CloudyListeningExercise extends CloudyExercise {
 class CloudyBuilderExercise extends CloudyExercise {
   const CloudyBuilderExercise({
     required this.question, required this.answer,
-    required this.options, required this.title,
+    required this.options, required this.title, this.skillId,
   });
   final String question, answer, title;
   final List<String> options;
+  final String? skillId;
   @override
   String get kind => 'b';
   @override
   Map<String, Object?> toJson() => {
     'k': kind, 'q': question, 'a': answer, 'o': options, 'title': title,
+    if (skillId != null) 'skillId': skillId,
   };
 }
 
 class CloudyMatchingExercise extends CloudyExercise {
-  const CloudyMatchingExercise({required this.left, required this.right});
+  const CloudyMatchingExercise({required this.left, required this.right, this.title});
   final List<CloudyPair> left, right;
+  final String? title;
   @override
   String get kind => 'm';
   @override
   Map<String, Object?> toJson() => {
     'k': kind, 'L': left.map((pair) => pair.toJson()).toList(),
     'R': right.map((pair) => pair.toJson()).toList(),
+    if (title != null) 'title': title,
   };
 }
 
@@ -134,6 +149,35 @@ class CloudyRecallExercise extends CloudyExercise {
   @override
   Map<String, Object?> toJson() => {
     'k': kind, 'q': question, 'a': answer, 'en': english, 'title': title,
+  };
+}
+
+class CloudyVocabularyExercise extends CloudyExercise {
+  const CloudyVocabularyExercise({required this.words});
+  final List<CloudyPair> words;
+  @override
+  String get kind => 'v';
+  @override
+  Map<String, Object?> toJson() => {
+    'k': kind, 'words': words.map((pair) => pair.toJson()).toList(),
+  };
+}
+
+class CloudyTheoryExercise extends CloudyExercise {
+  const CloudyTheoryExercise({
+    required this.title, required this.body, required this.examples,
+    required this.tip, this.level,
+  });
+  final String title, body, tip;
+  final String? level;
+  final List<CloudyPair> examples;
+  @override
+  String get kind => 't';
+  @override
+  Map<String, Object?> toJson() => {
+    'k': kind, 'title': title, 'body': body,
+    'examples': examples.map((pair) => pair.toJson()).toList(),
+    'tip': tip, if (level != null) 'level': level,
   };
 }
 
