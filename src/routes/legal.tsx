@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, ChevronDown, CreditCard, Lock, MessageCircle, Scale, ScrollText, ShieldCheck, Users } from "lucide-react";
 import type { CSSProperties } from "react";
+import { getSiteLanguage, subscribeSiteLanguage, type SiteLanguage } from "@/lib/site-locale";
 
 type LegalSection = readonly [string, string];
 type LegalDocument = {
@@ -132,8 +133,362 @@ const LEGAL_FAQ = [
   ["Можно ли отказаться от дополнительного использования диалогов?", "Да. Такое согласие отделено от обычной работы сервиса, выключено по умолчанию и может быть отозвано в центре конфиденциальности."],
 ];
 
+
+const LEGAL_TRANSLATIONS: Record<string, readonly [string, string]> = {
+  "Пользовательское соглашение": [
+    "User Agreement",
+    "Користувацька угода"
+  ],
+  "Условия использования Cloudy English Academy": [
+    "Terms of use for Cloudy English Academy",
+    "Умови використання Cloudy English Academy"
+  ],
+  "Политика конфиденциальности": [
+    "Privacy Policy",
+    "Політика конфіденційності"
+  ],
+  "Какие данные обрабатываются, для чего и какие есть ограничения": [
+    "What data is processed, why it is used, and the applicable limits",
+    "Які дані обробляються, навіщо та які діють обмеження"
+  ],
+  "Согласие на дополнительное использование диалогов": [
+    "Consent to Additional Use of Conversations",
+    "Згода на додаткове використання діалогів"
+  ],
+  "Отдельный выбор пользователя для необязательной цели улучшения ИИ": [
+    "An optional user choice for AI improvement",
+    "Окремий вибір користувача для необов’язкової мети вдосконалення ШІ"
+  ],
+  "Правила сообщества": [
+    "Community Guidelines",
+    "Правила спільноти"
+  ],
+  "Требования к безопасному и уважительному общению": [
+    "Requirements for safe and respectful communication",
+    "Вимоги до безпечного та шанобливого спілкування"
+  ],
+  "Оплата и возвраты": [
+    "Payments and Refunds",
+    "Оплата та повернення"
+  ],
+  "Условия для платных функций, если они будут доступны в приложении": [
+    "Terms for paid features, if they become available in the app",
+    "Умови для платних функцій, якщо вони будуть доступні в застосунку"
+  ],
+  "Информация для родителей и представителей": [
+    "Information for Parents and Guardians",
+    "Інформація для батьків і законних представників"
+  ],
+  "Возрастные ограничения, безопасность и обращения по данным несовершеннолетних": [
+    "Age limits, safety, and requests concerning minors’ data",
+    "Вікові обмеження, безпека та запити щодо даних неповнолітніх"
+  ],
+  "Краткая памятка пользователя": [
+    "Quick User Guide",
+    "Коротка пам’ятка користувача"
+  ],
+  "Основные правила использования и защиты данных": [
+    "Essential usage and data-protection rules",
+    "Основні правила користування та захисту даних"
+  ],
+  "Быстрые ответы": [
+    "Quick answers",
+    "Швидкі відповіді"
+  ],
+  "Все документы": [
+    "All documents",
+    "Усі документи"
+  ],
+  "Кратко о главном": [
+    "Key points",
+    "Коротко про головне"
+  ],
+  "разделов": [
+    "sections",
+    "розділів"
+  ],
+  "Свернуть текст": [
+    "Collapse text",
+    "Згорнути текст"
+  ],
+  "Читать полный текст": [
+    "Read full text",
+    "Читати повний текст"
+  ],
+  "Назад к документам": [
+    "Back to documents",
+    "Назад до документів"
+  ],
+  "Вернуться к обучению": [
+    "Back to learning",
+    "Повернутися до навчання"
+  ],
+  "Документы и правила": [
+    "Documents and policies",
+    "Документи та правила"
+  ],
+  "Прогресс чтения": [
+    "Reading progress",
+    "Прогрес читання"
+  ],
+  "Навигация по разделам": [
+    "Section navigation",
+    "Навігація розділами"
+  ],
+  "Нужна помощь?": [
+    "Need help?",
+    "Потрібна допомога?"
+  ],
+  "Официальная поддержка Cloudy English в Telegram": [
+    "Official Cloudy English support on Telegram",
+    "Офіційна підтримка Cloudy English у Telegram"
+  ],
+  "Юридический центр": [
+    "Legal Center",
+    "Юридичний центр"
+  ],
+  "Как открыть нужный документ?": [
+    "How do I open a document?",
+    "Як відкрити потрібний документ?"
+  ],
+  "Выберите карточку на главном экране юридического центра. Внутри документа есть краткое изложение и переходы к отдельным разделам.": [
+    "Select a card on the Legal Center home screen. Each document includes a summary and links to its sections.",
+    "Виберіть картку на головному екрані юридичного центру. Документ містить короткий виклад і переходи до окремих розділів."
+  ],
+  "Где задать вопрос о своих данных?": [
+    "Where can I ask about my data?",
+    "Де поставити запитання про мої дані?"
+  ],
+  "Напишите в официальную поддержку Cloudy English. Не отправляйте пароли, коды входа и полные платёжные реквизиты.": [
+    "Contact official Cloudy English support. Do not send passwords, sign-in codes, or full payment details.",
+    "Напишіть до офіційної підтримки Cloudy English. Не надсилайте паролі, коди входу та повні платіжні реквізити."
+  ],
+  "Можно ли отказаться от дополнительного использования диалогов?": [
+    "Can I opt out of additional use of conversations?",
+    "Чи можу я відмовитися від додаткового використання діалогів?"
+  ],
+  "Да. Такое согласие отделено от обычной работы сервиса, выключено по умолчанию и может быть отозвано в центре конфиденциальности.": [
+    "Yes. This consent is separate from normal service operation, off by default, and can be withdrawn in the Privacy Center.",
+    "Так. Ця згода не пов’язана зі звичайною роботою сервісу, вимкнена за замовчуванням і може бути відкликана в Центрі конфіденційності."
+  ],
+  "1. О сервисе": [
+    "1. About the service",
+    "1. Про сервіс"
+  ],
+  "2. Возраст и регистрация": [
+    "2. Age and registration",
+    "2. Вік і реєстрація"
+  ],
+  "3. Аккаунт и способы входа": [
+    "3. Account and sign-in methods",
+    "3. Обліковий запис і способи входу"
+  ],
+  "4. Профиль и изменения данных": [
+    "4. Profile and data changes",
+    "4. Профіль і зміни даних"
+  ],
+  "5. Допустимое использование": [
+    "5. Acceptable use",
+    "5. Прийнятне використання"
+  ],
+  "6. Внешние учебные инструменты": [
+    "6. Third-party learning tools",
+    "6. Сторонні навчальні інструменти"
+  ],
+  "7. Материалы и интеллектуальная собственность": [
+    "7. Materials and intellectual property",
+    "7. Матеріали та інтелектуальна власність"
+  ],
+  "8. Профиль и публичные материалы": [
+    "8. Profiles and public content",
+    "8. Профілі та публічні матеріали"
+  ],
+  "9. Модерация и обжалование": [
+    "9. Moderation and appeals",
+    "9. Модерація та оскарження"
+  ],
+  "10. Доступность, прогресс и прекращение использования": [
+    "10. Availability, progress, and account closure",
+    "10. Доступність, прогрес і припинення користування"
+  ],
+  "11. Изменения сервиса и документов": [
+    "11. Changes to the service and documents",
+    "11. Зміни сервісу та документів"
+  ],
+  "12. Оператор, контакты и применимое право": [
+    "12. Operator, contacts, and applicable law",
+    "12. Оператор, контакти та застосовне право"
+  ],
+  "13. Доступность по странам": [
+    "13. Country availability",
+    "13. Доступність за країнами"
+  ],
+  "1. Кто отвечает за обработку": [
+    "1. Who is responsible for processing",
+    "1. Хто відповідає за обробку"
+  ],
+  "2. Какие данные обрабатываются": [
+    "2. What data is processed",
+    "2. Які дані обробляються"
+  ],
+  "3. Для чего нужны данные": [
+    "3. Why data is used",
+    "3. Для чого потрібні дані"
+  ],
+  "4. Cloudy AI и внешние поставщики": [
+    "4. Cloudy AI and third-party providers",
+    "4. Cloudy AI та сторонні постачальники"
+  ],
+  "5. Использование диалогов для улучшения ИИ": [
+    "5. Use of conversations to improve AI",
+    "5. Використання діалогів для вдосконалення ШІ"
+  ],
+  "6. Голосовые функции": [
+    "6. Voice features",
+    "6. Голосові функції"
+  ],
+  "7. Хранение и безопасность": [
+    "7. Storage and security",
+    "7. Зберігання та безпека"
+  ],
+  "8. Передача и международная обработка": [
+    "8. Sharing and international processing",
+    "8. Передавання та міжнародна обробка"
+  ],
+  "9. Публичность": [
+    "9. Public visibility",
+    "9. Публічність"
+  ],
+  "10. Права и запросы пользователя": [
+    "10. User rights and requests",
+    "10. Права та запити користувача"
+  ],
+  "11. Данные несовершеннолетних": [
+    "11. Minors’ data",
+    "11. Дані неповнолітніх"
+  ],
+  "12. Изменения и обращения": [
+    "12. Changes and contact",
+    "12. Зміни та звернення"
+  ],
+  "1. Основная работа сервиса": [
+    "1. Core service operations",
+    "1. Основна робота сервісу"
+  ],
+  "2. Необязательное согласие": [
+    "2. Optional consent",
+    "2. Необов’язкова згода"
+  ],
+  "3. Отзыв согласия": [
+    "3. Withdrawing consent",
+    "3. Відкликання згоди"
+  ],
+  "4. Несовершеннолетние": [
+    "4. Minors",
+    "4. Неповнолітні"
+  ],
+  "1. Уважительное общение": [
+    "1. Respectful communication",
+    "1. Шанобливе спілкування"
+  ],
+  "2. Защита личной информации": [
+    "2. Protecting personal information",
+    "2. Захист особистої інформації"
+  ],
+  "3. Публикации и профили": [
+    "3. Posts and profiles",
+    "3. Публікації та профілі"
+  ],
+  "4. Безопасность сервиса": [
+    "4. Service security",
+    "4. Безпека сервісу"
+  ],
+  "5. Использование Cloudy AI": [
+    "5. Using Cloudy AI",
+    "5. Використання Cloudy AI"
+  ],
+  "6. Жалобы и меры": [
+    "6. Reports and actions",
+    "6. Скарги та заходи"
+  ],
+  "1. Когда применяются эти условия": [
+    "1. When these terms apply",
+    "1. Коли застосовуються ці умови"
+  ],
+  "2. Информация до оплаты": [
+    "2. Information before payment",
+    "2. Інформація до оплати"
+  ],
+  "3. Подтверждение и документы об оплате": [
+    "3. Payment confirmation and receipts",
+    "3. Підтвердження та документи про оплату"
+  ],
+  "4. Возвраты": [
+    "4. Refunds",
+    "4. Повернення коштів"
+  ],
+  "5. Поддержка по платежам": [
+    "5. Payment support",
+    "5. Підтримка щодо платежів"
+  ],
+  "1. Возраст": [
+    "1. Age",
+    "1. Вік"
+  ],
+  "2. Проверка согласия": [
+    "2. Consent verification",
+    "2. Перевірка згоди"
+  ],
+  "3. Безопасность обучения": [
+    "3. Learning safety",
+    "3. Безпека навчання"
+  ],
+  "4. Cloudy AI": [
+    "4. Cloudy AI",
+    "4. Cloudy AI"
+  ],
+  "5. Запросы родителя": [
+    "5. Parent requests",
+    "5. Запити батьків"
+  ],
+  "6. Контакты": [
+    "6. Contact",
+    "6. Контакти"
+  ],
+  "Аккаунт": [
+    "Account",
+    "Обліковий запис"
+  ],
+  "Профиль": [
+    "Profile",
+    "Профіль"
+  ],
+  "Личные данные": [
+    "Personal data",
+    "Особисті дані"
+  ],
+  "Конфиденциальность": [
+    "Privacy",
+    "Конфіденційність"
+  ],
+  "Экспорт и удаление": [
+    "Export and deletion",
+    "Експорт і видалення"
+  ],
+  "Помощь": [
+    "Help",
+    "Допомога"
+  ]
+};
+function legalText(value: string, language: SiteLanguage): string {
+  if (language === "ru") return value;
+  const translated = LEGAL_TRANSLATIONS[value];
+  return translated ? translated[language === "en" ? 0 : 1] : value;
+}
+
 export function LegalPage() {
   const navigate = useNavigate();
+  const [language, setLanguage] = useState<SiteLanguage>(() => getSiteLanguage());
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(() => new Set());
@@ -143,6 +498,8 @@ export function LegalPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const active = LEGAL_DOCUMENTS.find((document) => document.id === activeId);
   const meta = active ? LEGAL_META[active.id] : null;
+
+  useEffect(() => subscribeSiteLanguage(setLanguage), []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -253,10 +610,10 @@ export function LegalPage() {
       `}</style>
       <div className="legal-shell">
         <header className="legal-topbar">
-          <button type="button" className="legal-back" aria-label={active ? "Назад к документам" : "Вернуться к обучению"} onClick={active ? backToList : closeLegal}>
+          <button type="button" className="legal-back" aria-label={legalText(active ? "Назад к документам" : "Вернуться к обучению", language)} onClick={active ? backToList : closeLegal}>
             <ArrowLeft size={21} />
           </button>
-          <div className="legal-top-title">{active ? active.title : "Документы и правила"}</div>
+          <div className="legal-top-title">{active ? legalText(active.title, language) : legalText("Документы и правила", language)}</div>
         </header>
         <div className="legal-progress" aria-label="Прогресс чтения"><i style={{ width: progress + "%" }} /></div>
         <div className="legal-scroll" ref={scrollRef} key={activeId ?? "home"}>
@@ -264,11 +621,11 @@ export function LegalPage() {
             <div key={active.id} className={`legal-document legal-page-transition${pageDirection === "bck" ? " legal-backward" : ""}`}>
               <div className="legal-doc-head" style={{ "--tone": meta.tone } as CSSProperties}>
                 <div className="legal-doc-icon"><meta.icon size={29} strokeWidth={1.8} /></div>
-                <div><h2>{active.title}</h2><p>{active.description} · {active.sections.length} разделов</p></div>
+                <div><h2>{active.title}</h2><p>{legalText(active.description, language)} · {active.sections.length} {legalText("разделов", language)}</p></div>
               </div>
               <section className="legal-summary" style={{ "--tone": meta.tone } as React.CSSProperties}>
-                <h3>Кратко о главном</h3>
-                <ul>{meta.summary.map((item, index) => <li key={index}><ShieldCheck size={17} /><span>{item}</span></li>)}</ul>
+                <h3>{legalText("Кратко о главном", language)}</h3>
+                <ul>{meta.summary.map((item, index) => <li key={index}><ShieldCheck size={17} /><span>{legalText(item, language)}</span></li>)}</ul>
               </section>
               <div className="legal-toc" aria-label="Навигация по разделам">
                 {active.sections.map(([heading], index) => <button type="button" key={heading} onClick={() => jumpToSection(index)}>{heading.replace(/^\d+\.\s*/, "")}</button>)}
@@ -278,23 +635,23 @@ export function LegalPage() {
                   <h3><span>{/^\d+/.test(heading) ? heading.match(/^\d+/)?.[0] : index + 1}</span>{heading.replace(/^\d+\.\s*/, "")}</h3>
                   <p>{body.length > 260 ? `${body.slice(0, 260).trimEnd()}…` : body}</p>
                   {body.length > 260 && <div className="legal-text-reveal"><div><p>{body}</p></div></div>}
-                  {body.length > 260 && <button type="button" className="legal-full-toggle legal-text-link" aria-expanded={expandedSections.has(index)} onClick={() => toggleSection(index)}>{expandedSections.has(index) ? "Свернуть текст" : "Читать полный текст"} <ChevronDown size={15} /></button>}
+                  {body.length > 260 && <button type="button" className="legal-full-toggle legal-text-link" aria-expanded={expandedSections.has(index)} onClick={() => toggleSection(index)}>{legalText(expandedSections.has(index) ? "Свернуть текст" : "Читать полный текст", language)} <ChevronDown size={15} /></button>}
                 </article>
               ))}
-              <button type="button" className="legal-back" onClick={backToList} style={{ width: "auto", borderRadius: 14, padding: "0 16px", display: "inline-flex", gap: 8, marginTop: 8 }}> <ArrowLeft size={17} /> Все документы</button>
+              <button type="button" className="legal-back" onClick={backToList} style={{ width: "auto", borderRadius: 14, padding: "0 16px", display: "inline-flex", gap: 8, marginTop: 8 }}> <ArrowLeft size={17} /> {legalText("Все документы", language)}</button>
             </div>
           ) : (
             <div className={`legal-home${pageDirection === "bck" ? " legal-page-transition legal-backward" : ""}`}>
-              <div className="legal-kicker">Быстрые ответы</div>
+              <div className="legal-kicker">{legalText("Быстрые ответы", language)}</div>
               <div className={`legal-faq${pageDirection === "fwd" ? " legal-page-transition" : ""}`}>
                 {LEGAL_FAQ.map(([question, answer], index) => <section className={`legal-faq-item${expandedFaq === index ? " is-open" : ""}`} key={question}>
                   <button type="button" className="legal-faq-trigger" aria-expanded={expandedFaq === index} onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}>
-                    {question}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .35s cubic-bezier(.3,1.4,.5,1)" }} />
+                    {legalText(question, language)}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .35s cubic-bezier(.3,1.4,.5,1)" }} />
                   </button>
-                  <div className="legal-faq-answer"><div>{answer}</div></div>
+                  <div className="legal-faq-answer"><div>{legalText(answer, language)}</div></div>
                 </section>)}
               </div>
-              <div className="legal-kicker">Все документы</div>
+              <div className="legal-kicker">{legalText("Все документы", language)}</div>
               <div className="legal-cards">
                 {LEGAL_DOCUMENTS.map((document, index) => {
                   const item = LEGAL_META[document.id];
@@ -302,17 +659,17 @@ export function LegalPage() {
                   const Icon = item.icon;
                   return <button type="button" className="legal-card" key={document.id} style={{ "--i": index, "--tone": item.tone } as React.CSSProperties} onClick={() => openDocument(document.id)}>
                     <span className="legal-card-icon"><Icon size={25} strokeWidth={1.8} /></span>
-                    <span className="legal-card-copy"><b>{document.title}</b><small>{document.description}</small></span>
+                    <span className="legal-card-copy"><b>{legalText(document.title, language)}</b><small>{legalText(document.description, language)}</small></span>
                     <ChevronDown className="legal-chevron" size={19} style={{ transform: "rotate(-90deg)" }} />
                   </button>;
                 })}
               </div>
               <a className="legal-support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">
                 <span className="legal-support-icon"><MessageCircle size={23} /></span>
-                <span className="legal-support-copy"><b>Нужна помощь?</b><small>Официальная поддержка Cloudy English в Telegram</small></span>
+                <span className="legal-support-copy"><b>{legalText("Нужна помощь?", language)}</b><small>{legalText("Официальная поддержка Cloudy English в Telegram", language)}</small></span>
                 <ChevronDown size={20} style={{ transform: "rotate(-90deg)", opacity: .6 }} />
               </a>
-              <div className="legal-footer">Cloudy English Academy · Юридический центр · Редакция от 9 ноября 2026 года</div>
+              <div className="legal-footer">Cloudy English Academy · {legalText("Юридический центр", language)} · {language === "en" ? "Updated 9 November 2026" : language === "uk" ? "Редакція від 9 листопада 2026 року" : "Редакция от 9 ноября 2026 года"}</div>
             </div>
           )}
         </div>
