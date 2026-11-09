@@ -7,12 +7,13 @@ import {
 } from "@/lib/cloudy/telegram-stars.server";
 
 export const Route = createFileRoute("/api/telegram/stars")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
           const body = await request.json().catch(() => ({})) as Record<string, unknown>;
-          const action = String(body.action ?? "");
+          const action = String(body['action'] ?? "");
           const { runtime, userId } = await requireCloudyUser(request);
           const admin = createAdminClient(runtime.url, runtime.secretKey);
 
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/api/telegram/stars")({
           }
 
           if (action === "create-invoice") {
-            const planCode = typeof body.planCode === "string" ? body.planCode.trim() : "";
+            const planCode = typeof body['planCode'] === "string" ? body.planCode.trim() : "";
             if (!/^[a-z][a-z0-9_]{1,47}$/.test(planCode)) {
               return Response.json({ ok: false, error: "Некорректный тариф." }, { status: 400 });
             }
