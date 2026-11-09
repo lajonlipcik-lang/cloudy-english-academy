@@ -71,7 +71,7 @@ export const saveCloudyChatThread = createServerFn({ method: "POST" })
   .inputValidator(validateToken)
   .handler(async ({ data }) => {
     const thread = validateThread(data.thread);
-    const { user, db } = await getUserAndDb(data.accessToken);
+    const { user, db } = await getUserAndDb(data.accessToken, data.accountId!);
     const { error } = await db.from("cloudy_chat_threads").upsert({
       user_id: user.id,
       thread_id: thread.id,
