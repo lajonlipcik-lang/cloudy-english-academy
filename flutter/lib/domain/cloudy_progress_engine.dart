@@ -151,9 +151,12 @@ CloudyLessonResult finishCloudyLesson(
   var state = updateCloudyStreak(rollCloudyDay(original, now), now);
   final gain = authenticated ? 24 : cloudyLessonGain(session.health);
   final day = cloudyDayKey(now);
-  final days = authenticated || state.days.contains(day)
+  final allDays = authenticated || state.days.contains(day)
       ? List<String>.from(state.days)
-      : [...state.days, day].take(60).toList(growable: false);
+      : [...state.days, day];
+  final days = allDays.length > 60
+      ? allDays.sublist(allDays.length - 60)
+      : allDays;
   final weekCode = cloudyWeekKey(now);
   final week = authenticated
       ? Map<String, Object?>.from(state.week)
@@ -264,7 +267,12 @@ CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
     mistakes: mistakes,
     week: week,
     accuracy: [account.accuracy[0] + guest.accuracy[0], account.accuracy[1] + guest.accuracy[1]],
-    days: [...{...account.days, ...guest.days}].take(60).toList(growable: false),
+    days: (() {
+      final mergedDays = [...{...account.days, ...guest.days}];
+      return mergedDays.length > 60
+          ? mergedDays.sublist(mergedDays.length - 60)
+          : mergedDays;
+    })(),
     achievements: [...{...account.achievements, ...guest.achievements}],
     perfectLessons: account.perfectLessons + guest.perfectLessons,
     tested: account.tested > guest.tested ? account.tested : guest.tested,
@@ -451,9 +459,12 @@ CloudyState applyCloudyServerAward(
 }) {
   final awarded = _number(award['awarded']);
   final day = cloudyDayKey(now);
-  final days = awarded > 0 && !state.days.contains(day)
-      ? [...state.days, day].take(60).toList(growable: false)
+  final allDays = awarded > 0 && !state.days.contains(day)
+      ? [...state.days, day]
       : List<String>.from(state.days);
+  final days = allDays.length > 60
+      ? allDays.sublist(allDays.length - 60)
+      : allDays;
   final today = state.today;
   return state.copyWith(
     xp: _number(award['total_xp'], state.xp),
