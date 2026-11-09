@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, ChevronDown, CreditCard, Lock, MessageCircle, Scale, ScrollText, ShieldCheck, Users } from "lucide-react";
 import type { CSSProperties } from "react";
-import { getSiteLanguage, subscribeSiteLanguage, type SiteLanguage } from "@/lib/site-locale";
 
 type LegalSection = readonly [string, string];
 type LegalDocument = {
@@ -134,711 +133,8 @@ const LEGAL_FAQ = [
 ];
 
 
-const LEGAL_TRANSLATIONS: Record<string, readonly [string, string]> = {
-  "Пользовательское соглашение": [
-    "User Agreement",
-    "Користувацька угода"
-  ],
-  "Условия использования Cloudy English Academy": [
-    "Terms of use for Cloudy English Academy",
-    "Умови використання Cloudy English Academy"
-  ],
-  "Политика конфиденциальности": [
-    "Privacy Policy",
-    "Політика конфіденційності"
-  ],
-  "Какие данные обрабатываются, для чего и какие есть ограничения": [
-    "What data is processed, why it is used, and the applicable limits",
-    "Які дані обробляються, навіщо та які діють обмеження"
-  ],
-  "Согласие на дополнительное использование диалогов": [
-    "Consent to Additional Use of Conversations",
-    "Згода на додаткове використання діалогів"
-  ],
-  "Отдельный выбор пользователя для необязательной цели улучшения ИИ": [
-    "An optional user choice for AI improvement",
-    "Окремий вибір користувача для необов’язкової мети вдосконалення ШІ"
-  ],
-  "Правила сообщества": [
-    "Community Guidelines",
-    "Правила спільноти"
-  ],
-  "Требования к безопасному и уважительному общению": [
-    "Requirements for safe and respectful communication",
-    "Вимоги до безпечного та шанобливого спілкування"
-  ],
-  "Оплата и возвраты": [
-    "Payments and Refunds",
-    "Оплата та повернення"
-  ],
-  "Условия для платных функций, если они будут доступны в приложении": [
-    "Terms for paid features, if they become available in the app",
-    "Умови для платних функцій, якщо вони будуть доступні в застосунку"
-  ],
-  "Информация для родителей и представителей": [
-    "Information for Parents and Guardians",
-    "Інформація для батьків і законних представників"
-  ],
-  "Возрастные ограничения, безопасность и обращения по данным несовершеннолетних": [
-    "Age limits, safety, and requests concerning minors’ data",
-    "Вікові обмеження, безпека та запити щодо даних неповнолітніх"
-  ],
-  "Краткая памятка пользователя": [
-    "Quick User Guide",
-    "Коротка пам’ятка користувача"
-  ],
-  "Основные правила использования и защиты данных": [
-    "Essential usage and data-protection rules",
-    "Основні правила користування та захисту даних"
-  ],
-  "Быстрые ответы": [
-    "Quick answers",
-    "Швидкі відповіді"
-  ],
-  "Все документы": [
-    "All documents",
-    "Усі документи"
-  ],
-  "Кратко о главном": [
-    "Key points",
-    "Коротко про головне"
-  ],
-  "разделов": [
-    "sections",
-    "розділів"
-  ],
-  "Свернуть текст": [
-    "Collapse text",
-    "Згорнути текст"
-  ],
-  "Читать полный текст": [
-    "Read full text",
-    "Читати повний текст"
-  ],
-  "Назад к документам": [
-    "Back to documents",
-    "Назад до документів"
-  ],
-  "Вернуться к обучению": [
-    "Back to learning",
-    "Повернутися до навчання"
-  ],
-  "Документы и правила": [
-    "Documents and policies",
-    "Документи та правила"
-  ],
-  "Прогресс чтения": [
-    "Reading progress",
-    "Прогрес читання"
-  ],
-  "Навигация по разделам": [
-    "Section navigation",
-    "Навігація розділами"
-  ],
-  "Нужна помощь?": [
-    "Need help?",
-    "Потрібна допомога?"
-  ],
-  "Официальная поддержка Cloudy English в Telegram": [
-    "Official Cloudy English support on Telegram",
-    "Офіційна підтримка Cloudy English у Telegram"
-  ],
-  "Юридический центр": [
-    "Legal Center",
-    "Юридичний центр"
-  ],
-  "Как открыть нужный документ?": [
-    "How do I open a document?",
-    "Як відкрити потрібний документ?"
-  ],
-  "Выберите карточку на главном экране юридического центра. Внутри документа есть краткое изложение и переходы к отдельным разделам.": [
-    "Select a card on the Legal Center home screen. Each document includes a summary and links to its sections.",
-    "Виберіть картку на головному екрані юридичного центру. Документ містить короткий виклад і переходи до окремих розділів."
-  ],
-  "Где задать вопрос о своих данных?": [
-    "Where can I ask about my data?",
-    "Де поставити запитання про мої дані?"
-  ],
-  "Напишите в официальную поддержку Cloudy English. Не отправляйте пароли, коды входа и полные платёжные реквизиты.": [
-    "Contact official Cloudy English support. Do not send passwords, sign-in codes, or full payment details.",
-    "Напишіть до офіційної підтримки Cloudy English. Не надсилайте паролі, коди входу та повні платіжні реквізити."
-  ],
-  "Можно ли отказаться от дополнительного использования диалогов?": [
-    "Can I opt out of additional use of conversations?",
-    "Чи можу я відмовитися від додаткового використання діалогів?"
-  ],
-  "Да. Такое согласие отделено от обычной работы сервиса, выключено по умолчанию и может быть отозвано в центре конфиденциальности.": [
-    "Yes. This consent is separate from normal service operation, off by default, and can be withdrawn in the Privacy Center.",
-    "Так. Ця згода не пов’язана зі звичайною роботою сервісу, вимкнена за замовчуванням і може бути відкликана в Центрі конфіденційності."
-  ],
-  "1. О сервисе": [
-    "1. About the service",
-    "1. Про сервіс"
-  ],
-  "2. Возраст и регистрация": [
-    "2. Age and registration",
-    "2. Вік і реєстрація"
-  ],
-  "3. Аккаунт и способы входа": [
-    "3. Account and sign-in methods",
-    "3. Обліковий запис і способи входу"
-  ],
-  "4. Профиль и изменения данных": [
-    "4. Profile and data changes",
-    "4. Профіль і зміни даних"
-  ],
-  "5. Допустимое использование": [
-    "5. Acceptable use",
-    "5. Прийнятне використання"
-  ],
-  "6. Внешние учебные инструменты": [
-    "6. Third-party learning tools",
-    "6. Сторонні навчальні інструменти"
-  ],
-  "7. Материалы и интеллектуальная собственность": [
-    "7. Materials and intellectual property",
-    "7. Матеріали та інтелектуальна власність"
-  ],
-  "8. Профиль и публичные материалы": [
-    "8. Profiles and public content",
-    "8. Профілі та публічні матеріали"
-  ],
-  "9. Модерация и обжалование": [
-    "9. Moderation and appeals",
-    "9. Модерація та оскарження"
-  ],
-  "10. Доступность, прогресс и прекращение использования": [
-    "10. Availability, progress, and account closure",
-    "10. Доступність, прогрес і припинення користування"
-  ],
-  "11. Изменения сервиса и документов": [
-    "11. Changes to the service and documents",
-    "11. Зміни сервісу та документів"
-  ],
-  "12. Оператор, контакты и применимое право": [
-    "12. Operator, contacts, and applicable law",
-    "12. Оператор, контакти та застосовне право"
-  ],
-  "13. Доступность по странам": [
-    "13. Country availability",
-    "13. Доступність за країнами"
-  ],
-  "1. Кто отвечает за обработку": [
-    "1. Who is responsible for processing",
-    "1. Хто відповідає за обробку"
-  ],
-  "2. Какие данные обрабатываются": [
-    "2. What data is processed",
-    "2. Які дані обробляються"
-  ],
-  "3. Для чего нужны данные": [
-    "3. Why data is used",
-    "3. Для чого потрібні дані"
-  ],
-  "4. Cloudy AI и внешние поставщики": [
-    "4. Cloudy AI and third-party providers",
-    "4. Cloudy AI та сторонні постачальники"
-  ],
-  "5. Использование диалогов для улучшения ИИ": [
-    "5. Use of conversations to improve AI",
-    "5. Використання діалогів для вдосконалення ШІ"
-  ],
-  "6. Голосовые функции": [
-    "6. Voice features",
-    "6. Голосові функції"
-  ],
-  "7. Хранение и безопасность": [
-    "7. Storage and security",
-    "7. Зберігання та безпека"
-  ],
-  "8. Передача и международная обработка": [
-    "8. Sharing and international processing",
-    "8. Передавання та міжнародна обробка"
-  ],
-  "9. Публичность": [
-    "9. Public visibility",
-    "9. Публічність"
-  ],
-  "10. Права и запросы пользователя": [
-    "10. User rights and requests",
-    "10. Права та запити користувача"
-  ],
-  "11. Данные несовершеннолетних": [
-    "11. Minors’ data",
-    "11. Дані неповнолітніх"
-  ],
-  "12. Изменения и обращения": [
-    "12. Changes and contact",
-    "12. Зміни та звернення"
-  ],
-  "1. Основная работа сервиса": [
-    "1. Core service operations",
-    "1. Основна робота сервісу"
-  ],
-  "2. Необязательное согласие": [
-    "2. Optional consent",
-    "2. Необов’язкова згода"
-  ],
-  "3. Отзыв согласия": [
-    "3. Withdrawing consent",
-    "3. Відкликання згоди"
-  ],
-  "4. Несовершеннолетние": [
-    "4. Minors",
-    "4. Неповнолітні"
-  ],
-  "1. Уважительное общение": [
-    "1. Respectful communication",
-    "1. Шанобливе спілкування"
-  ],
-  "2. Защита личной информации": [
-    "2. Protecting personal information",
-    "2. Захист особистої інформації"
-  ],
-  "3. Публикации и профили": [
-    "3. Posts and profiles",
-    "3. Публікації та профілі"
-  ],
-  "4. Безопасность сервиса": [
-    "4. Service security",
-    "4. Безпека сервісу"
-  ],
-  "5. Использование Cloudy AI": [
-    "5. Using Cloudy AI",
-    "5. Використання Cloudy AI"
-  ],
-  "6. Жалобы и меры": [
-    "6. Reports and actions",
-    "6. Скарги та заходи"
-  ],
-  "1. Когда применяются эти условия": [
-    "1. When these terms apply",
-    "1. Коли застосовуються ці умови"
-  ],
-  "2. Информация до оплаты": [
-    "2. Information before payment",
-    "2. Інформація до оплати"
-  ],
-  "3. Подтверждение и документы об оплате": [
-    "3. Payment confirmation and receipts",
-    "3. Підтвердження та документи про оплату"
-  ],
-  "4. Возвраты": [
-    "4. Refunds",
-    "4. Повернення коштів"
-  ],
-  "5. Поддержка по платежам": [
-    "5. Payment support",
-    "5. Підтримка щодо платежів"
-  ],
-  "1. Возраст": [
-    "1. Age",
-    "1. Вік"
-  ],
-  "2. Проверка согласия": [
-    "2. Consent verification",
-    "2. Перевірка згоди"
-  ],
-  "3. Безопасность обучения": [
-    "3. Learning safety",
-    "3. Безпека навчання"
-  ],
-  "4. Cloudy AI": [
-    "4. Cloudy AI",
-    "4. Cloudy AI"
-  ],
-  "5. Запросы родителя": [
-    "5. Parent requests",
-    "5. Запити батьків"
-  ],
-  "6. Контакты": [
-    "6. Contact",
-    "6. Контакти"
-  ],
-  "Аккаунт": [
-    "Account",
-    "Обліковий запис"
-  ],
-  "Профиль": [
-    "Profile",
-    "Профіль"
-  ],
-  "Личные данные": [
-    "Personal data",
-    "Особисті дані"
-  ],
-  "Конфиденциальность": [
-    "Privacy",
-    "Конфіденційність"
-  ],
-  "Экспорт и удаление": [
-    "Export and deletion",
-    "Експорт і видалення"
-  ],
-  "Помощь": [
-    "Help",
-    "Допомога"
-  ]
-};
-
-Object.assign(LEGAL_TRANSLATIONS, {
-  "Регистрация доступна с 13 лет; дополнительные требования зависят от законодательства страны.": [
-    "Registration is available from age 13; additional requirements depend on local law.",
-    "Реєстрація доступна з 13 років; додаткові вимоги залежать від законодавства країни."
-  ],
-  "Профиль и публикации регулируются настройками приватности.": [
-    "Profiles and posts are governed by privacy settings.",
-    "Профілі та публікації регулюються налаштуваннями приватності."
-  ],
-  "Cloudy AI помогает с английским, но его ответы могут быть неточными.": [
-    "Cloudy AI helps with English, but its answers may be inaccurate.",
-    "Cloudy AI допомагає з англійською, але його відповіді можуть бути неточними."
-  ],
-  "Запрещены травля, взлом, злоупотребления и перепродажа доступа.": [
-    "Bullying, hacking, abuse, and resale of access are prohibited.",
-    "Заборонені цькування, злам, зловживання та перепродаж доступу."
-  ],
-  "Запросы по аккаунту и персональным данным направляются в поддержку.": [
-    "Account and personal-data requests should be sent to support.",
-    "Запити щодо облікового запису й персональних даних надсилайте до служби підтримки."
-  ],
-  "Какие данные обрабатываются, зависит от используемых функций.": [
-    "The data processed depends on the features you use.",
-    "Дані, що обробляються, залежать від функцій, якими ви користуєтеся."
-  ],
-  "Данные нужны для аккаунта, обучения, прогресса и безопасности.": [
-    "Data is used for accounts, learning, progress, and security.",
-    "Дані потрібні для облікового запису, навчання, прогресу та безпеки."
-  ],
-  "Для ответов Cloudy AI может использоваться внешняя инфраструктура.": [
-    "Cloudy AI may use external infrastructure to generate responses.",
-    "Для відповідей Cloudy AI може використовуватися зовнішня інфраструктура."
-  ],
-  "Дополнительное использование диалогов требует отдельного согласия.": [
-    "Additional use of conversations requires separate consent.",
-    "Додаткове використання діалогів потребує окремої згоди."
-  ],
-  "Запросы на доступ, исправление и удаление требуют обработки.": [
-    "Access, correction, and deletion requests must be processed.",
-    "Запити на доступ, виправлення та видалення потребують опрацювання."
-  ],
-  "Согласие на дополнительное использование диалогов добровольное.": [
-    "Consent to additional use of conversations is voluntary.",
-    "Згода на додаткове використання діалогів є добровільною."
-  ],
-  "Оно не требуется для обычной работы Cloudy AI.": [
-    "It is not required for normal Cloudy AI operation.",
-    "Вона не потрібна для звичайної роботи Cloudy AI."
-  ],
-  "По умолчанию согласие выключено.": [
-    "Consent is off by default.",
-    "За замовчуванням згоду вимкнено."
-  ],
-  "Согласие можно отозвать в центре конфиденциальности.": [
-    "Consent can be withdrawn in the Privacy Center.",
-    "Згоду можна відкликати в Центрі конфіденційності."
-  ],
-  "Запись выбора не означает, что обучение моделей уже запущено.": [
-    "Recording your choice does not mean model training has started.",
-    "Фіксація вашого вибору не означає, що навчання моделей уже розпочалося."
-  ],
-  "Относитесь к другим пользователям уважительно.": [
-    "Treat other users with respect.",
-    "Ставтеся до інших користувачів із повагою."
-  ],
-  "Не публикуйте чужие персональные и конфиденциальные сведения.": [
-    "Do not publish other people's personal or confidential information.",
-    "Не публікуйте чужі персональні та конфіденційні відомості."
-  ],
-  "Запрещены угрозы, травля, спам и попытки нарушить работу сервиса.": [
-    "Threats, bullying, spam, and attempts to disrupt the service are prohibited.",
-    "Заборонені погрози, цькування, спам і спроби порушити роботу сервісу."
-  ],
-  "Материалы могут проверяться по жалобам.": [
-    "Content may be reviewed following reports.",
-    "Матеріали можуть перевірятися за скаргами."
-  ],
-  "Решения модерации можно обжаловать через поддержку.": [
-    "Moderation decisions can be appealed through support.",
-    "Рішення модерації можна оскаржити через службу підтримки."
-  ],
-  "Правила применяются только к платным функциям, если они доступны.": [
-    "These terms apply only to paid features, if available.",
-    "Правила застосовуються лише до платних функцій, якщо вони доступні."
-  ],
-  "Цена, валюта и срок доступа должны быть показаны до оплаты.": [
-    "The price, currency, and access period must be shown before payment.",
-    "Ціна, валюта та строк доступу мають бути показані до оплати."
-  ],
-  "Возвраты рассматриваются по применимому законодательству.": [
-    "Refunds are handled under applicable law.",
-    "Повернення коштів розглядаються відповідно до застосовного законодавства."
-  ],
-  "Сам документ не означает, что платёжный механизм уже подключён.": [
-    "This document does not mean that payment processing is already enabled.",
-    "Сам документ не означає, що платіжний механізм уже підключено."
-  ],
-  "Минимальный возраст регистрации — 13 лет.": [
-    "The minimum registration age is 13.",
-    "Мінімальний вік для реєстрації — 13 років."
-  ],
-  "Для пользователей 13–17 лет могут действовать требования о согласии представителя.": [
-    "Users aged 13–17 may be subject to guardian-consent requirements.",
-    "Для користувачів віком 13–17 років можуть діяти вимоги щодо згоди законного представника."
-  ],
-  "В приложении нет автоматической проверки полномочий родителя.": [
-    "The app does not automatically verify a parent's authority.",
-    "Застосунок не перевіряє автоматично повноваження батьків."
-  ],
-  "Родитель может обратиться в поддержку по вопросам данных несовершеннолетнего.": [
-    "A parent can contact support about a minor's data.",
-    "Батьки можуть звернутися до служби підтримки щодо даних неповнолітнього."
-  ],
-  "Защищайте данные входа и настройки аккаунта.": [
-    "Keep your sign-in details and account settings secure.",
-    "Захищайте дані для входу та налаштування облікового запису."
-  ],
-  "Не отправляйте в чаты пароли, документы и финансовые сведения.": [
-    "Do not send passwords, documents, or financial information in chats.",
-    "Не надсилайте в чати паролі, документи та фінансову інформацію."
-  ],
-  "Проверяйте настройки видимости перед публикацией.": [
-    "Check visibility settings before posting.",
-    "Перевіряйте налаштування видимості перед публікацією."
-  ],
-  "Cloudy AI может ошибаться — важные сведения перепроверяйте.": [
-    "Cloudy AI can make mistakes; verify important information.",
-    "Cloudy AI може помилятися — перевіряйте важливу інформацію."
-  ],
-  "По вопросам данных и аккаунта обращайтесь в поддержку.": [
-    "Contact support about data or account questions.",
-    "Звертайтеся до служби підтримки з питань даних та облікового запису."
-  ]
-});
-
-Object.assign(LEGAL_TRANSLATIONS, {
-  "Не допускаются травля, угрозы, преследование, унижение, намеренное запугивание и публикация материалов, нарушающих закон или права других людей.": [
-    "Bullying, threats, harassment, humiliation, deliberate intimidation, and publishing content that violates the law or other people's rights are not allowed.",
-    "Не допускаються цькування, погрози, переслідування, приниження, навмисне залякування та публікація матеріалів, що порушують закон або права інших людей."
-  ],
-  "Не публикуйте пароли, адрес проживания, номера документов, финансовые сведения, личные контакты и чужие персональные данные. Не просите других пользователей раскрывать такую информацию.": [
-    "Do not publish passwords, home addresses, document numbers, financial details, personal contact information, or other people's personal data. Do not ask other users to disclose such information.",
-    "Не публікуйте паролі, домашні адреси, номери документів, фінансові відомості, особисті контакти та чужі персональні дані. Не просіть інших користувачів розкривати таку інформацію."
-  ],
-  "Перед публикацией проверьте настройки видимости и содержание материала. Не публикуйте чужие фотографии, тексты или персональные данные без законного основания. Администрация может ограничить доступ к материалу, если он нарушает правила или создаёт угрозу безопасности.": [
-    "Before posting, check the visibility settings and the content. Do not publish other people's photos, texts, or personal data without a lawful basis. The administration may restrict access to content that violates the rules or creates a safety risk.",
-    "Перед публікацією перевірте налаштування видимості та зміст матеріалу. Не публікуйте чужі фотографії, тексти чи персональні дані без законних підстав. Адміністрація може обмежити доступ до матеріалу, якщо він порушує правила або створює загрозу безпеці."
-  ],
-  "Запрещены взлом, обход ограничений, вмешательство в чужие аккаунты или прогресс, распространение вредоносного кода, автоматизированные действия, создающие чрезмерную нагрузку, и использование платформы для незаконных целей.": [
-    "Hacking, bypassing restrictions, interfering with other accounts or progress, distributing malicious code, automated activity that creates excessive load, and using the platform for illegal purposes are prohibited.",
-    "Заборонені злам, обхід обмежень, втручання в чужі облікові записи або прогрес, поширення шкідливого коду, автоматизовані дії, що створюють надмірне навантаження, та використання платформи з незаконною метою."
-  ],
-  "Не отправляйте Cloudy AI пароли, платёжные реквизиты, документы и другие конфиденциальные сведения. Ответы формируются автоматически, могут содержать ошибки и не являются профессиональной консультацией. Не используйте ответы ИИ как единственный источник для важных решений.": [
-    "Do not send passwords, payment details, documents, or other confidential information to Cloudy AI. Responses are generated automatically, may contain errors, and are not professional advice. Do not rely on AI responses as the sole source for important decisions.",
-    "Не надсилайте Cloudy AI паролі, платіжні реквізити, документи та інші конфіденційні відомості. Відповіді генеруються автоматично, можуть містити помилки й не є професійною консультацією. Не використовуйте відповіді ШІ як єдине джерело для важливих рішень."
-  ],
-  "О нарушениях сообщайте через официальную поддержку Cloudy English: https://t.me/cloudysupportt_bot. По возможности укажите ссылку или описание материала и причину обращения, но не отправляйте лишние персональные данные. Администрация может запросить уточнения, ограничить видимость материала, вынести предупреждение или временно ограничить аккаунт. Решение можно обжаловать через поддержку.": [
-    "Report violations through official Cloudy English support: https://t.me/cloudysupportt_bot. If possible, include a link or description of the content and explain the issue, but do not send unnecessary personal data. The administration may request clarification, limit content visibility, issue a warning, or temporarily restrict an account. You can appeal a decision through support.",
-    "Повідомляйте про порушення через офіційну підтримку Cloudy English: https://t.me/cloudysupportt_bot. За можливості додайте посилання або опис матеріалу та поясніть причину звернення, але не надсилайте зайві персональні дані. Адміністрація може попросити уточнення, обмежити видимість матеріалу, винести попередження або тимчасово обмежити обліковий запис. Рішення можна оскаржити через службу підтримки."
-  ],
-  "Этот раздел применяется только к платным функциям, для которых в приложении явно показаны цена и условия покупки. Само наличие этого документа не означает, что подписка, платёжный шлюз или автоматическое списание уже подключены.": [
-    "This section applies only to paid features for which the app clearly displays the price and purchase terms. The existence of this document does not mean that a subscription, payment gateway, or automatic billing is currently enabled.",
-    "Цей розділ застосовується лише до платних функцій, для яких у застосунку чітко зазначено ціну та умови придбання. Наявність цього документа не означає, що підписку, платіжний шлюз або автоматичне списання вже підключено."
-  ],
-  "До подтверждения покупки пользователю должны быть показаны цена, валюта, состав услуги, срок доступа, периодичность списаний и условия автоматического продления, если они применяются. Если эти сведения не показаны до подтверждения, не считайте покупку согласованной на неуказанных условиях.": [
-    "Before a purchase is confirmed, the user must be shown the price, currency, what is included, access period, billing frequency, and automatic-renewal terms, if applicable. If this information is not shown before confirmation, the purchase must not be treated as agreed to on undisclosed terms.",
-    "До підтвердження покупки користувачеві мають бути показані ціна, валюта, склад послуги, строк доступу, періодичність списань та умови автоматичного продовження, якщо вони застосовуються. Якщо ці відомості не показані до підтвердження, не вважайте, що користувач погодився на невказані умови."
-  ],
-  "Платёж обрабатывается выбранным платёжным провайдером, если такая функция доступна. Условия провайдера могут применяться дополнительно. Сохраняйте подтверждение операции. Не отправляйте в поддержку полный номер карты, CVV/CVC, пароли или одноразовые коды.": [
-    "If available, payments are processed by the selected payment provider. The provider's terms may also apply. Keep your transaction confirmation. Do not send support your full card number, CVV/CVC, passwords, or one-time codes.",
-    "Якщо така функція доступна, платіж обробляється обраним платіжним провайдером. Додатково можуть застосовуватися умови провайдера. Зберігайте підтвердження операції. Не надсилайте службі підтримки повний номер картки, CVV/CVC, паролі або одноразові коди."
-  ],
-  "Запросы о возврате рассматриваются с учётом условий, показанных при покупке, правил платёжного провайдера и обязательных норм законодательства о защите потребителей. Этот документ не устанавливает фиксированный срок возврата и не отменяет обязательные права потребителя.": [
-    "Refund requests are considered in light of the terms shown at purchase, the payment provider's rules, and mandatory consumer-protection laws. This document does not set a fixed refund period or waive mandatory consumer rights.",
-    "Запити на повернення коштів розглядаються з урахуванням умов, показаних під час покупки, правил платіжного провайдера та обов’язкових норм законодавства про захист прав споживачів. Цей документ не встановлює фіксований строк повернення й не скасовує обов’язкових прав споживача."
-  ],
-  "По вопросам списаний, доступа к оплаченной функции или возврата обратитесь в официальную поддержку: https://t.me/cloudysupportt_bot. Укажите дату и сумму операции и идентификатор заказа, если он отображается; не передавайте полные платёжные реквизиты.": [
-    "For questions about charges, access to a paid feature, or refunds, contact official support: https://t.me/cloudysupportt_bot. Provide the transaction date and amount and the order ID, if shown. Do not share full payment details.",
-    "Щодо списань, доступу до оплаченої функції або повернення коштів звертайтеся до офіційної підтримки: https://t.me/cloudysupportt_bot. Укажіть дату й суму операції та ідентифікатор замовлення, якщо він відображається; не передавайте повні платіжні реквізити."
-  ],
-  "Минимальный возраст регистрации в Cloudy English Academy — 13 лет. Для пользователей 13–17 лет применимые требования к согласию родителя или представителя зависят от законодательства страны пользователя и характера обработки данных.": [
-    "The minimum registration age for Cloudy English Academy is 13. For users aged 13–17, parental or guardian consent requirements depend on the user's country laws and the type of data processing.",
-    "Мінімальний вік реєстрації в Cloudy English Academy — 13 років. Для користувачів віком 13–17 років вимоги щодо згоди батьків або законного представника залежать від законодавства країни користувача та характеру обробки даних."
-  ],
-  "В приложении пока нет автоматизированного механизма проверки личности родителя и его полномочий. Поэтому не следует считать, что одно лишь указание возраста или нажатие переключателя в приложении подтверждает родительское согласие там, где закон требует его проверять. Родителю следует обратиться в поддержку до использования функции, для которой такое согласие обязательно.": [
-    "The app does not currently have an automated process for verifying a parent's identity or authority. Therefore, entering an age or toggling a setting in the app must not be treated as proof of parental consent where the law requires verification. A parent should contact support before a feature requiring such consent is used.",
-    "У застосунку наразі немає автоматизованого механізму перевірки особи батьків та їхніх повноважень. Тому саме зазначення віку або перемикання налаштування в застосунку не підтверджує батьківську згоду там, де закон вимагає її перевірки. Перед використанням функції, для якої така згода обов’язкова, батькам слід звернутися до служби підтримки."
-  ],
-  "Обсудите с подростком безопасное использование цифровых сервисов. Не размещайте в профиле и чатах домашний адрес, телефон, документы, пароли, сведения о школе и другую информацию, не нужную для обучения. Не отправляйте в Cloudy AI конфиденциальные сведения.": [
-    "Discuss safe use of digital services with your teenager. Do not post a home address, phone number, documents, passwords, school information, or other details not needed for learning in profiles or chats. Do not send confidential information to Cloudy AI.",
-    "Обговоріть із підлітком безпечне користування цифровими сервісами. Не розміщуйте в профілі та чатах домашню адресу, номер телефону, документи, паролі, відомості про школу та іншу інформацію, не потрібну для навчання. Не надсилайте Cloudy AI конфіденційні відомості."
-  ],
-  "Cloudy AI — фирменный помощник Cloudy English Academy, который использует внешние модели и техническую инфраструктуру для формирования ответов. Он помогает с изучением английского и функциями приложения, но может ошибаться и не заменяет преподавателя или профильного специалиста.": [
-    "Cloudy AI is the branded assistant of Cloudy English Academy. It uses external models and technical infrastructure to generate responses. It helps with English learning and app features, but may make mistakes and does not replace a teacher or qualified professional.",
-    "Cloudy AI — фірмовий помічник Cloudy English Academy, який використовує зовнішні моделі та технічну інфраструктуру для формування відповідей. Він допомагає з вивченням англійської та функціями застосунку, але може помилятися й не замінює викладача або профільного фахівця."
-  ],
-  "Родитель или законный представитель может обратиться с вопросом о данных несовершеннолетнего, запросом на доступ, исправление или удаление. Для защиты ребёнка поддержка может попросить подтвердить личность и полномочия заявителя. Не отправляйте пароль ребёнка или полные платёжные данные.": [
-    "A parent or legal guardian may contact support with questions about a minor's data or request access, correction, or deletion. To protect the child, support may ask the requester to verify their identity and authority. Do not send the child's password or full payment details.",
-    "Батьки або законний представник можуть звернутися із запитанням щодо даних неповнолітнього чи запитом на доступ, виправлення або видалення. Для захисту дитини служба підтримки може попросити підтвердити особу та повноваження заявника. Не надсилайте пароль дитини або повні платіжні дані."
-  ],
-  "Официальная поддержка Cloudy English: https://t.me/cloudysupportt_bot.": [
-    "Official Cloudy English support: https://t.me/cloudysupportt_bot.",
-    "Офіційна підтримка Cloudy English: https://t.me/cloudysupportt_bot."
-  ],
-  "Используйте личный аккаунт и не передавайте пароль или коды входа другим людям.": [
-    "Use your personal account and never share your password or sign-in codes.",
-    "Користуйтеся особистим обліковим записом і не передавайте іншим пароль або коди входу."
-  ],
-  "Проверяйте настройки видимости перед публикацией. Если изменение данных недоступно в профиле, обратитесь в поддержку.": [
-    "Check visibility settings before posting. If you cannot change your data in your profile, contact support.",
-    "Перевіряйте налаштування видимості перед публікацією. Якщо змінити дані в профілі неможливо, зверніться до служби підтримки."
-  ],
-  "Не отправляйте в чаты пароли, документы, домашний адрес, финансовые сведения и другую конфиденциальную информацию.": [
-    "Do not send passwords, documents, your home address, financial details, or other confidential information in chats.",
-    "Не надсилайте в чати паролі, документи, домашню адресу, фінансові відомості та іншу конфіденційну інформацію."
-  ],
-  "Cloudy AI помогает изучать английский и пользоваться приложением. Ответы могут быть неточными; важную информацию проверяйте.": [
-    "Cloudy AI helps you learn English and use the app. Its answers may be inaccurate, so verify important information.",
-    "Cloudy AI допомагає вивчати англійську та користуватися застосунком. Відповіді можуть бути неточними — перевіряйте важливу інформацію."
-  ],
-  "Необязательное согласие на дополнительное использование диалогов выключено по умолчанию и может быть отозвано в центре конфиденциальности.": [
-    "Optional consent to additional use of conversations is off by default and can be withdrawn in the Privacy Center.",
-    "Необов’язкова згода на додаткове використання діалогів вимкнена за замовчуванням і може бути відкликана в Центрі конфіденційності."
-  ],
-  "Экспорт можно запросить в центре конфиденциальности; он охватывает данные основной базы в пределах, указанных в интерфейсе. Запрос на удаление регистрируется и требует обработки, а не удаляет всё мгновенно.": [
-    "You can request an export in the Privacy Center; it covers the main database data described in the interface. A deletion request is recorded for processing and does not erase everything immediately.",
-    "Експорт можна запросити в Центрі конфіденційності; він охоплює дані основної бази в межах, зазначених в інтерфейсі. Запит на видалення реєструється та потребує опрацювання, а не видаляє все миттєво."
-  ]
-});
-Object.assign(LEGAL_TRANSLATIONS, {
-  "Для входа, предоставления уроков, проверки заданий, сохранения прогресса, работы чата и защиты аккаунта обрабатываются данные, необходимые для соответствующих функций. Такая обработка описана в Политике конфиденциальности и не должна смешиваться с необязательным согласием на дополнительное использование диалогов.": [
-    "Data needed for sign-in, lessons, exercise checking, progress storage, chat, and account security is processed to provide those features. This processing is described in the Privacy Policy and must be kept separate from optional consent to additional use of conversations.",
-    "Для входу, надання уроків, перевірки завдань, збереження прогресу, роботи чату та захисту облікового запису обробляються дані, необхідні для відповідних функцій. Така обробка описана в Політиці конфіденційності й не повинна змішуватися з необов’язковою згодою на додаткове використання діалогів."
-  ],
-  "В центре конфиденциальности можно отдельно разрешить дополнительное использование диалогов для улучшения ИИ. Выбор добровольный: он выключен по умолчанию, не является условием регистрации или обычного обучения и может быть изменён в настройках. Переключатель сохраняет событие согласия или отзыва и версию документа. Сам факт сохранения события не означает, что обучение моделей уже запущено или что данные были переданы конкретному поставщику для этой цели.": [
-    "In the Privacy Center, you can separately allow conversations to be used additionally for AI improvement. This choice is voluntary, off by default, not a condition of registration or ordinary learning, and can be changed in settings. The toggle records the consent or withdrawal event and the document version. Recording the event does not mean that model training has started or that data has been sent to a specific provider for this purpose.",
-    "У Центрі конфіденційності можна окремо дозволити додаткове використання діалогів для вдосконалення ШІ. Вибір добровільний: згоду вимкнено за замовчуванням, вона не є умовою реєстрації чи звичайного навчання та може бути змінена в налаштуваннях. Перемикач зберігає подію надання або відкликання згоди та версію документа. Сам факт збереження події не означає, що навчання моделей уже розпочато або що дані передано конкретному постачальнику з цією метою."
-  ],
-  "Отозвать согласие можно через центр конфиденциальности. После отзыва сервис фиксирует новое состояние и не должен использовать последующие диалоги для указанной дополнительной цели на основании прежнего согласия. Отзыв не отменяет обработку, которая необходима для обычной работы выбранных функций, и не может автоматически отменить уже выполненные операции. Если данные ранее были переданы поставщику, возможность их удаления у него зависит от технических возможностей, договора и применимого права.": [
-    "You can withdraw consent in the Privacy Center. After withdrawal, the service records the new status and must not rely on the previous consent to use subsequent conversations for the specified additional purpose. Withdrawal does not stop processing required for normal operation of selected features and cannot automatically reverse operations already completed. If data was previously sent to a provider, its ability to delete that data depends on technical capabilities, the contract, and applicable law.",
-    "Відкликати згоду можна через Центр конфіденційності. Після відкликання сервіс фіксує новий стан і не повинен використовувати наступні діалоги для зазначеної додаткової мети на підставі попередньої згоди. Відкликання не припиняє обробку, необхідну для звичайної роботи вибраних функцій, і не може автоматично скасувати вже виконані операції. Якщо дані раніше передали постачальнику, можливість їх видалення залежить від технічних можливостей, договору та застосовного законодавства."
-  ],
-  "Если применимое законодательство требует согласия родителя или законного представителя, одного нажатия пользователем переключателя недостаточно. В Cloudy English пока нет автоматизированной проверки личности и полномочий родителя; до внедрения соответствующего механизма нельзя утверждать, что такая проверка выполняется внутри приложения. По вопросам согласия представителя обращайтесь в поддержку.": [
-    "If applicable law requires consent from a parent or legal guardian, the user's action of toggling the switch is not sufficient. Cloudy English does not currently have an automated process to verify a parent's identity and authority; until such a mechanism is introduced, the app must not be described as performing this verification. Contact support with questions about guardian consent.",
-    "Якщо застосовне законодавство вимагає згоди батьків або законного представника, одного натискання користувачем перемикача недостатньо. У Cloudy English наразі немає автоматизованої перевірки особи та повноважень батьків; до впровадження відповідного механізму не можна стверджувати, що така перевірка здійснюється в застосунку. Із запитаннями щодо згоди представника звертайтеся до служби підтримки."
-  ]
-});
-Object.assign(LEGAL_TRANSLATIONS, {
-  "Cloudy English Academy — цифровой сервис для самостоятельного изучения английского языка. В нём доступны учебные материалы, упражнения, проверка ответов, сохранение прогресса и помощник Cloudy AI. Cloudy AI — фирменный помощник сервиса, работающий с использованием моделей и технической инфраструктуры, которые могут предоставляться сторонними поставщиками. Он помогает изучать английский, объясняет ошибки и отвечает на вопросы о функциях приложения. Ответы формируются автоматически, могут быть неточными и не заменяют преподавателя, переводчика, юриста, врача или другого специалиста.": [
-    "Cloudy English Academy is a digital service for independent English learning. It provides learning materials, exercises, answer checking, progress tracking, and the Cloudy AI assistant. Cloudy AI is the service’s branded assistant and uses models and technical infrastructure that may be provided by third parties. It helps users learn English, explains mistakes, and answers questions about app features. Responses are generated automatically, may be inaccurate, and do not replace a teacher, translator, lawyer, doctor, or other professional.",
-    "Cloudy English Academy — цифровий сервіс для самостійного вивчення англійської мови. Він надає навчальні матеріали, вправи, перевірку відповідей, збереження прогресу та помічника Cloudy AI. Cloudy AI — фірмовий помічник сервісу, який використовує моделі й технічну інфраструктуру, що можуть надаватися сторонніми постачальниками. Він допомагає вивчати англійську, пояснює помилки та відповідає на запитання про функції застосунку. Відповіді генеруються автоматично, можуть бути неточними й не замінюють викладача, перекладача, юриста, лікаря чи іншого фахівця."
-  ],
-  "Минимальный возраст регистрации — 13 лет. Указывайте возраст достоверно; для этого сервис запрашивает возраст в полных годах, а не полную дату рождения. Если законодательство страны пользователя требует согласия родителя или законного представителя либо иных дополнительных мер для пользователей младше 18 лет, такие требования должны быть соблюдены до использования соответствующих функций. В сервисе пока нет автоматизированной проверки полномочий родителя или представителя. По вопросам несовершеннолетних можно обратиться в поддержку.": [
-    "The minimum registration age is 13. Provide your age accurately; the service asks for age in completed years, not your full date of birth. If the laws of your country require parental or guardian consent or other safeguards for users under 18, those requirements must be met before the relevant features are used. The service does not currently have an automated process to verify a parent’s or guardian’s authority. Contact support with questions concerning minors.",
-    "Мінімальний вік для реєстрації — 13 років. Указуйте свій вік достовірно; сервіс запитує кількість повних років, а не повну дату народження. Якщо законодавство вашої країни вимагає згоди батьків або законного представника чи інших додаткових заходів для користувачів до 18 років, ці вимоги мають бути виконані до використання відповідних функцій. Сервіс наразі не має автоматизованої перевірки повноважень батьків або представника. Із запитаннями щодо неповнолітніх звертайтеся до служби підтримки."
-  ],
-  "Для сохранения и синхронизации прогресса используйте личный аккаунт. Гостевой режим, если он доступен, может иметь ограничения и не гарантирует сохранение данных между устройствами. Доступные способы входа отображаются непосредственно в приложении и могут изменяться. Не передавайте другим людям пароль, одноразовые коды и ссылки для входа. Если вы подозреваете несанкционированный доступ, обратитесь в поддержку.": [
-    "Use a personal account to save and sync your progress. Guest mode, if available, may be limited and does not guarantee that data will be preserved across devices. Available sign-in methods are shown in the app and may change. Do not share your password, one-time codes, or sign-in links. If you suspect unauthorized access, contact support.",
-    "Для збереження та синхронізації прогресу використовуйте особистий обліковий запис. Гостьовий режим, якщо він доступний, може мати обмеження й не гарантує збереження даних між пристроями. Доступні способи входу відображаються безпосередньо в застосунку та можуть змінюватися. Не передавайте іншим пароль, одноразові коди й посилання для входу. Якщо ви підозрюєте несанкціонований доступ, зверніться до служби підтримки."
-  ],
-  "Имя и доступные настройки профиля можно менять средствами приложения. Если изменение возраста или адреса электронной почты недоступно в интерфейсе, направьте запрос в поддержку. Для предотвращения доступа посторонних к аккаунту поддержка может запросить разумное подтверждение личности или полномочий представителя. Никогда не отправляйте пароль, полный номер банковской карты или коды подтверждения.": [
-    "You can change your name and available profile settings in the app. If the interface does not allow you to change your age or email address, submit a request to support. To prevent unauthorized account access, support may ask for reasonable proof of identity or a representative’s authority. Never send your password, full bank card number, or verification codes.",
-    "Ім’я та доступні налаштування профілю можна змінювати в застосунку. Якщо інтерфейс не дозволяє змінити вік або адресу електронної пошти, надішліть запит до служби підтримки. Щоб запобігти сторонньому доступу до облікового запису, служба підтримки може попросити надати обґрунтоване підтвердження особи або повноважень представника. Ніколи не надсилайте пароль, повний номер банківської картки чи коди підтвердження."
-  ],
-  "Используйте сервис законно и не мешайте другим пользователям. Запрещены попытки взлома, обхода технических ограничений, вмешательства в работу приложения или чужие аккаунты, распространение вредоносного кода, травля, угрозы и публикация чужих персональных данных. Не перепродавайте доступ и не представляйте сервис как собственный продукт без разрешения правообладателей. Эти правила не ограничивают права, которые предоставлены пользователю обязательными нормами закона.": [
-    "Use the service lawfully and do not interfere with other users. Hacking, bypassing technical restrictions, interfering with the app or other people’s accounts, distributing malicious code, bullying, threats, and publishing other people’s personal data are prohibited. Do not resell access or present the service as your own product without the rights holder’s permission. These rules do not limit rights granted to users by mandatory law.",
-    "Користуйтеся сервісом законно та не заважайте іншим користувачам. Заборонено зламувати систему, обходити технічні обмеження, втручатися в роботу застосунку або чужі облікові записи, поширювати шкідливий код, цькувати, погрожувати та публікувати чужі персональні дані. Не перепродавайте доступ і не видавайте сервіс за власний продукт без дозволу правовласників. Ці правила не обмежують права користувача, надані обов’язковими нормами закону."
-  ],
-  "Вы можете пользоваться сторонними словарями, переводчиками и учебными инструментами по своему усмотрению. Их результаты могут отличаться от ответов Cloudy English. Не передавайте сторонним сервисам пароли, личные переписки и другие сведения, которые не нужны для выбранной функции.": [
-    "You may use third-party dictionaries, translators, and learning tools at your discretion. Their results may differ from Cloudy English responses. Do not provide third-party services with passwords, private conversations, or other information that is not needed for the selected feature.",
-    "Ви можете на власний розсуд користуватися сторонніми словниками, перекладачами та навчальними інструментами. Їхні результати можуть відрізнятися від відповідей Cloudy English. Не передавайте стороннім сервісам паролі, особисте листування та інші відомості, не потрібні для вибраної функції."
-  ],
-  "Права на материалы, которые пользователь самостоятельно создаёт и загружает, сохраняются за пользователем или соответствующими правообладателями. Пользователь разрешает сервису обрабатывать такие материалы только в объёме, необходимом для предоставления выбранных функций, обеспечения безопасности и исполнения обязательных требований закона. Название Cloudy English Academy, фирменный стиль, логотип, персонаж Cloudy, программный код и оригинальные учебные материалы охраняются применимым законодательством и принадлежат соответствующим правообладателям. Публикация личных материалов пользователя в рекламе или продвижении не предполагается без отдельного согласия.": [
-    "Rights to materials that users create and upload themselves remain with the user or the respective rights holders. The user permits the service to process those materials only to the extent necessary to provide selected features, maintain security, and comply with mandatory legal requirements. The Cloudy English Academy name, visual identity, logo, Cloudy character, source code, and original learning materials are protected by applicable law and belong to their respective rights holders. A user’s personal materials will not be used in advertising or promotion without separate consent.",
-    "Права на матеріали, які користувач самостійно створює та завантажує, залишаються за користувачем або відповідними правовласниками. Користувач дозволяє сервісу обробляти такі матеріали лише в обсязі, необхідному для надання вибраних функцій, забезпечення безпеки та виконання обов’язкових вимог закону. Назва Cloudy English Academy, фірмовий стиль, логотип, персонаж Cloudy, програмний код та оригінальні навчальні матеріали охороняються застосовним законодавством і належать відповідним правовласникам. Особисті матеріали користувача не використовуються в рекламі чи просуванні без окремої згоди."
-  ],
-  "Настройки публичности могут быть доступны не для всех типов профиля и материалов. Перед публикацией проверьте, какие сведения будут видны другим пользователям. Не публикуйте контактные данные, документы, адрес проживания, сведения о школе или чужую личную информацию без законного основания. Личные сообщения и адрес электронной почты не предназначены для публичного отображения.": [
-    "Privacy settings may not be available for every profile or content type. Before posting, check what information will be visible to other users. Do not publish contact details, documents, your home address, school information, or another person’s personal information without a lawful basis. Private messages and email addresses are not intended for public display.",
-    "Налаштування приватності можуть бути доступні не для всіх типів профілів і матеріалів. Перед публікацією перевірте, які відомості будуть видимі іншим користувачам. Не публікуйте контактні дані, документи, домашню адресу, відомості про школу або чужу особисту інформацію без законних підстав. Особисті повідомлення та адреса електронної пошти не призначені для публічного відображення."
-  ],
-  "При сообщении о нарушении администрация может проверить материал и принять соразмерные меры: запросить пояснения, скрыть или удалить материал, ограничить отдельную функцию либо временно ограничить доступ к аккаунту. При выборе меры учитываются обстоятельства, безопасность пользователей и применимое право. Пользователь может запросить объяснение и обжаловать решение через официальную поддержку. Обработка жалобы может потребовать времени; немедленное рассмотрение не гарантируется.": [
-    "When a violation is reported, the administration may review the content and take proportionate action: request an explanation, hide or remove the content, restrict a feature, or temporarily restrict account access. The circumstances, user safety, and applicable law are considered when choosing a measure. Users may request an explanation and appeal a decision through official support. Handling a report may take time; immediate review is not guaranteed.",
-    "У разі повідомлення про порушення адміністрація може перевірити матеріал і вжити пропорційних заходів: запросити пояснення, приховати або видалити матеріал, обмежити окрему функцію чи тимчасово обмежити доступ до облікового запису. Під час вибору заходу враховуються обставини, безпека користувачів і застосовне законодавство. Користувач може запросити пояснення та оскаржити рішення через офіційну службу підтримки. Розгляд скарги може потребувати часу; негайний розгляд не гарантується."
-  ],
-  "Сервис стремится обеспечивать доступность приложения и сохранность прогресса, но не гарантирует непрерывную работу, отсутствие ошибок или восстановление каждой записи после сбоя. Синхронизация может задерживаться; перед важными действиями убедитесь, что данные сохранены. Уведомления зависят от настроек приложения, устройства, браузера и выданных разрешений. Запрос на удаление аккаунта можно направить через центр конфиденциальности или поддержку. Отправка запроса сама по себе не означает, что аккаунт и все данные уже удалены: запрос регистрируется и требует дальнейшей обработки. Некоторые сведения могут временно сохраняться в резервных копиях либо дольше, если этого требует закон.": [
-    "The service aims to keep the app available and preserve learning progress, but does not guarantee uninterrupted operation, error-free performance, or recovery of every record after an incident. Synchronization may be delayed; make sure your data has been saved before important actions. Notifications depend on app, device, and browser settings and the permissions granted. You can submit an account deletion request through the Privacy Center or support. Submitting a request does not mean that the account and all data have already been deleted: the request is recorded and must be processed. Some information may remain temporarily in backups or longer where required by law.",
-    "Сервіс прагне забезпечувати доступність застосунку та збереження прогресу, але не гарантує безперервної роботи, відсутності помилок або відновлення кожного запису після збою. Синхронізація може затримуватися; перед важливими діями переконайтеся, що дані збережено. Сповіщення залежать від налаштувань застосунку, пристрою, браузера та наданих дозволів. Запит на видалення облікового запису можна надіслати через Центр конфіденційності або службу підтримки. Надсилання запиту саме по собі не означає, що обліковий запис і всі дані вже видалено: запит реєструється та потребує подальшого опрацювання. Деякі відомості можуть тимчасово зберігатися в резервних копіях або довше, якщо цього вимагає закон."
-  ],
-  "Функции приложения и документы могут обновляться. При существенных изменениях администрация стремится сообщать об этом заранее, если это практически возможно и требуется применимым правом. Если изменение требует нового согласия, оно запрашивается отдельно. Продолжение использования сервиса не отменяет обязательные права пользователя.": [
-    "App features and documents may be updated. For significant changes, the administration aims to provide advance notice where reasonably possible and required by applicable law. If a change requires new consent, it will be requested separately. Continuing to use the service does not waive users’ mandatory rights.",
-    "Функції застосунку та документи можуть оновлюватися. У разі суттєвих змін адміністрація прагне повідомляти про це заздалегідь, якщо це практично можливо та вимагається застосовним законодавством. Якщо зміна потребує нової згоди, її буде запитано окремо. Продовження користування сервісом не скасовує обов’язкових прав користувача."
-  ],
-  "Сервис действует под наименованием Cloudy English Academy. На дату этой редакции оператор не оформлен как юридическое лицо или индивидуальный предприниматель; официальное юридическое наименование, регистрационный номер и почтовый адрес оператора не установлены и поэтому не приводятся в этом документе. Это не отменяет обязанностей по применимому законодательству. Документ не выбирает единственную юрисдикцию и не ограничивает обязательные права пользователя по законам, которые применяются к его ситуации. По вопросам сервиса и персональных данных обращайтесь в официальную поддержку: https://t.me/cloudysupportt_bot.": [
-    "The service operates under the name Cloudy English Academy. As of this revision, the operator has not been registered as a legal entity or sole proprietor; its official legal name, registration number, and postal address have not been established and are therefore not stated in this document. This does not remove obligations under applicable law. This document does not select a single jurisdiction or limit mandatory user rights under the laws applicable to the user’s circumstances. For service and personal-data questions, contact official support: https://t.me/cloudysupportt_bot.",
-    "Сервіс працює під назвою Cloudy English Academy. На дату цієї редакції оператор не зареєстрований як юридична особа або фізична особа-підприємець; офіційну юридичну назву, реєстраційний номер і поштову адресу оператора не встановлено, тому їх не зазначено в цьому документі. Це не скасовує обов’язків за застосовним законодавством. Документ не визначає єдину юрисдикцію та не обмежує обов’язкові права користувача за законами, що застосовуються до його обставин. Із питань сервісу та персональних даних звертайтеся до офіційної служби підтримки: https://t.me/cloudysupportt_bot."
-  ],
-  "Доступ к Cloudy English Academy может зависеть от страны и территории пользователя, доступности хостинга, авторизации, баз данных и ИИ-поставщиков, а также от применимых санкционных, экспортных и иных правовых ограничений. Отдельные страны, территории или категории пользователей могут быть недоступны. Географическое определение по IP является приблизительным и может ошибаться, например при использовании VPN или мобильной сети. Наличие доступа сегодня не гарантирует его постоянную доступность. Актуальное ограничение показывается при попытке открыть сервис; при ошибочной блокировке обратитесь в поддержку.": [
-    "Access to Cloudy English Academy may depend on the user’s country or territory, the availability of hosting, authentication, databases and AI providers, and applicable sanctions, export controls, and other legal restrictions. Certain countries, territories, or user categories may be unavailable. IP-based location detection is approximate and may be inaccurate, for example when using a VPN or mobile network. Availability today does not guarantee permanent access. Current restrictions are shown when you try to open the service; if you believe you have been blocked by mistake, contact support.",
-    "Доступ до Cloudy English Academy може залежати від країни або території користувача, доступності хостингу, автентифікації, баз даних і постачальників ШІ, а також від застосовних санкційних, експортних та інших правових обмежень. Окремі країни, території або категорії користувачів можуть бути недоступними. Визначення місцезнаходження за IP є приблизним і може помилятися, наприклад під час використання VPN або мобільної мережі. Наявність доступу сьогодні не гарантує його постійної доступності. Поточне обмеження відображається під час спроби відкрити сервіс; якщо блокування помилкове, зверніться до служби підтримки."
-  ],
-  "Сервис работает под наименованием Cloudy English Academy. На дату этой редакции оператор не оформлен как юридическое лицо или индивидуальный предприниматель; юридическое наименование, регистрационный номер и почтовый адрес оператора пока не установлены. В документе не указываются вымышленные реквизиты. По вопросам обработки данных доступна официальная поддержка: https://t.me/cloudysupportt_bot.": [
-    "The service operates under the name Cloudy English Academy. As of this revision, the operator has not been registered as a legal entity or sole proprietor; its legal name, registration number, and postal address have not yet been established. No fictitious registration details are provided in this document. For data-processing questions, contact official support: https://t.me/cloudysupportt_bot.",
-    "Сервіс працює під назвою Cloudy English Academy. На дату цієї редакції оператор не зареєстрований як юридична особа або фізична особа-підприємець; юридичну назву, реєстраційний номер і поштову адресу оператора ще не встановлено. У документі не зазначаються вигадані реєстраційні дані. Із питань обробки даних звертайтеся до офіційної служби підтримки: https://t.me/cloudysupportt_bot."
-  ],
-  "В зависимости от используемых функций могут обрабатываться: адрес электронной почты и идентификатор аккаунта; имя и возраст в полных годах; уровень английского и настройки; ответы на задания, результаты тестов, ошибки, достижения, XP и учебный прогресс; сообщения и контекст диалогов с Cloudy AI; публикации, комментарии и реакции, если пользователь использует функции сообщества; технические сведения о браузере, устройстве, подключении и сбоях. Полная дата рождения для указания возраста не требуется. Не отправляйте в сервис пароли от других сайтов, платёжные реквизиты, документы и сведения, не нужные для обучения.": [
-    "Depending on the features used, the service may process: email address and account identifier; name and age in completed years; English level and settings; exercise answers, test results, mistakes, achievements, XP, and learning progress; messages and conversation context with Cloudy AI; posts, comments, and reactions if community features are used; and technical information about the browser, device, connection, and errors. A full date of birth is not required to provide your age. Do not send the service passwords for other websites, payment details, documents, or information that is not needed for learning.",
-    "Залежно від використовуваних функцій можуть оброблятися: адреса електронної пошти та ідентифікатор облікового запису; ім’я та вік у повних роках; рівень англійської та налаштування; відповіді на завдання, результати тестів, помилки, досягнення, XP і навчальний прогрес; повідомлення та контекст діалогів із Cloudy AI; публікації, коментарі й реакції, якщо користувач використовує функції спільноти; технічні відомості про браузер, пристрій, підключення та збої. Повна дата народження для зазначення віку не потрібна. Не надсилайте сервісу паролі від інших сайтів, платіжні реквізити, документи та відомості, не потрібні для навчання."
-  ],
-  "Данные используются для создания и защиты аккаунта, входа, предоставления уроков и упражнений, проверки ответов, сохранения и синхронизации прогресса, адаптации учебных заданий, работы Cloudy AI, функций сообщества, ответа на обращения, диагностики ошибок, предотвращения злоупотреблений и исполнения обязательных требований закона. Объём данных должен соответствовать цели выбранной функции.": [
-    "Data is used to create and secure accounts; provide sign-in, lessons, and exercises; check answers; save and sync progress; adapt learning tasks; operate Cloudy AI and community features; respond to requests; diagnose errors; prevent abuse; and comply with mandatory legal requirements. The amount of data processed should be proportionate to the purpose of the selected feature.",
-    "Дані використовуються для створення та захисту облікового запису, входу, надання уроків і вправ, перевірки відповідей, збереження та синхронізації прогресу, адаптації навчальних завдань, роботи Cloudy AI і функцій спільноти, відповіді на звернення, діагностики помилок, запобігання зловживанням і виконання обов’язкових вимог закону. Обсяг даних має відповідати меті вибраної функції."
-  ],
-  "Cloudy AI — фирменный помощник Cloudy English Academy, но вычисления и формирование ответов могут выполняться с помощью внешних моделей и технических поставщиков. Для ответа им может передаваться текст запроса и необходимый контекст, например фрагменты диалога, ответ на упражнение или сведения об учебном уровне. Поэтому не отправляйте в чат конфиденциальные сведения. Точный состав поставщиков и страны обработки могут зависеть от текущей конфигурации сервиса и на дату этой редакции не перечислены здесь исчерпывающим образом. Поставщики обрабатывают переданные им данные в рамках своих условий и применимых правил.": [
-    "Cloudy AI is the branded assistant of Cloudy English Academy, but computations and response generation may rely on external models and technical providers. To generate a response, they may receive the prompt text and necessary context, such as parts of a conversation, an exercise answer, or information about the learner’s level. Do not send confidential information in the chat. The exact providers and processing countries may depend on the service’s current configuration and are not exhaustively listed in this revision. Providers process the data they receive under their own terms and applicable rules.",
-    "Cloudy AI — фірмовий помічник Cloudy English Academy, проте обчислення та формування відповідей можуть виконуватися за допомогою зовнішніх моделей і технічних постачальників. Для формування відповіді їм може передаватися текст запиту та необхідний контекст, наприклад фрагменти діалогу, відповідь на вправу або відомості про рівень навчання. Не надсилайте в чат конфіденційну інформацію. Точний перелік постачальників і країн обробки може залежати від поточної конфігурації сервісу та в цій редакції не наведений вичерпно. Постачальники обробляють отримані дані відповідно до власних умов і застосовних правил."
-  ],
-  "Сообщения и диалоги обрабатываются для формирования ответов Cloudy AI и работы выбранных пользователем функций. Дополнительное использование диалогов для обучения или улучшения моделей не является условием обычного обучения и должно быть отделено от основной обработки. В центре конфиденциальности доступно отдельное необязательное согласие на такую цель; оно по умолчанию выключено и может быть отозвано. Сохранение выбора в центре конфиденциальности фиксирует действие пользователя, но само по себе не подтверждает, что все внешние поставщики или модели используют данные для обучения. До отдельного документированного включения соответствующего процесса нельзя считать, что такой процесс действует.": [
-    "Messages and conversations are processed to generate Cloudy AI responses and provide the features selected by the user. Additional use of conversations to train or improve models is not a condition of ordinary learning and must be kept separate from core processing. A separate, optional consent for this purpose is available in the Privacy Center; it is off by default and can be withdrawn. Saving a choice in the Privacy Center records the user’s action but does not by itself confirm that all external providers or models use the data for training. Unless the relevant process is separately documented and enabled, it should not be assumed to be active.",
-    "Повідомлення та діалоги обробляються для формування відповідей Cloudy AI і роботи вибраних користувачем функцій. Додаткове використання діалогів для навчання або вдосконалення моделей не є умовою звичайного навчання та має бути відокремлене від основної обробки. У Центрі конфіденційності доступна окрема необов’язкова згода на таку мету; за замовчуванням її вимкнено, і її можна відкликати. Збереження вибору в Центрі конфіденційності фіксує дію користувача, але саме по собі не підтверджує, що всі зовнішні постачальники або моделі використовують дані для навчання. Якщо відповідний процес не ввімкнено окремо та не задокументовано, не слід вважати, що він діє."
-  ],
-  "Распознавание и озвучивание речи могут выполняться средствами устройства, браузера или внешнего сервиса. Конкретный путь обработки зависит от устройства, браузера и выбранной функции. Перед использованием голосовой функции проверьте разрешения микрофона и настройки устройства. Эта политика не обещает, что все аудиоданные обрабатываются исключительно локально или что каждый поставщик использует одинаковые сроки хранения.": [
-    "Speech recognition and playback may be handled by the device, browser, or an external service. The processing route depends on the device, browser, and selected feature. Check microphone permissions and device settings before using voice features. This policy does not promise that all audio data is processed locally only or that every provider uses the same retention periods.",
-    "Розпізнавання та відтворення мовлення можуть виконуватися засобами пристрою, браузера або зовнішнього сервісу. Конкретний спосіб обробки залежить від пристрою, браузера та вибраної функції. Перед використанням голосової функції перевірте дозволи мікрофона й налаштування пристрою. Ця політика не гарантує, що всі аудіодані обробляються виключно локально або що кожен постачальник використовує однакові строки зберігання."
-  ],
-  "Данные аккаунта хранятся, пока они нужны для предоставления сервиса, обработки запросов, обеспечения безопасности и исполнения обязательных требований. На дату этой редакции единый подробный график сроков хранения для каждой категории данных не опубликован. Доступ к данным ограничивается техническими и организационными мерами, однако ни один способ передачи или хранения не может гарантировать абсолютную безопасность. Резервные копии и технические журналы могут сохраняться отдельно от основного аккаунта в течение технически необходимого или обязательного срока.": [
-    "Account data is retained for as long as it is needed to provide the service, handle requests, maintain security, and meet mandatory requirements. As of this revision, a single detailed retention schedule for each data category has not been published. Technical and organizational measures are used to restrict access, but no method of transmission or storage can guarantee absolute security. Backups and technical logs may be retained separately from the main account for as long as technically necessary or legally required.",
-    "Дані облікового запису зберігаються доти, доки вони потрібні для надання сервісу, опрацювання запитів, забезпечення безпеки та виконання обов’язкових вимог. На дату цієї редакції єдиний докладний графік строків зберігання для кожної категорії даних не опубліковано. Доступ до даних обмежується технічними й організаційними заходами, однак жоден спосіб передавання чи зберігання не гарантує абсолютної безпеки. Резервні копії та технічні журнали можуть зберігатися окремо від основного облікового запису протягом технічно необхідного або обов’язкового строку."
-  ],
-  "Для работы сервиса данные могут обрабатываться поставщиками хостинга, базы данных, авторизации, ИИ-инфраструктуры, уведомлений и диагностики. При использовании внешнего входа, например через Google, часть данных обрабатывается соответствующим провайдером по его правилам. Серверы и поставщики могут находиться в разных странах. Полный актуальный список поставщиков, стран обработки и применяемых механизмов международной передачи на дату редакции не опубликован; не следует считать, что все данные хранятся в одной стране.": [
-    "To operate the service, data may be processed by hosting, database, authentication, AI infrastructure, notification, and diagnostics providers. When using an external sign-in option, such as Google, some data is processed by that provider under its own rules. Servers and providers may be located in different countries. A complete, current list of providers, processing countries, and international transfer mechanisms has not been published as of this revision; do not assume that all data is stored in one country.",
-    "Для роботи сервісу дані можуть оброблятися постачальниками хостингу, баз даних, автентифікації, інфраструктури ШІ, сповіщень і діагностики. Під час використання зовнішнього способу входу, наприклад через Google, частина даних обробляється відповідним провайдером за його правилами. Сервери та постачальники можуть перебувати в різних країнах. Повний актуальний перелік постачальників, країн обробки та механізмів міжнародного передавання на дату редакції не опубліковано; не слід вважати, що всі дані зберігаються в одній країні."
-  ],
-  "Данные профиля и материалы сообщества могут отображаться другим пользователям в соответствии с настройками и правилами конкретной функции. Перед публикацией проверьте её видимость. Адрес электронной почты, пароль и личная переписка не должны включаться в публичный профиль. Не размещайте сведения о других людях без законного основания.": [
-    "Profile data and community content may be visible to other users according to the settings and rules of the relevant feature. Check visibility before posting. Your email address, password, and private correspondence must not be included in a public profile. Do not publish information about other people without a lawful basis.",
-    "Дані профілю та матеріали спільноти можуть відображатися іншим користувачам відповідно до налаштувань і правил конкретної функції. Перед публікацією перевірте її видимість. Адреса електронної пошти, пароль та особисте листування не повинні включатися до публічного профілю. Не розміщуйте відомості про інших людей без законних підстав."
-  ],
-  "В зависимости от применимого законодательства пользователь может иметь право запросить сведения об обработке, доступ, копию, исправление, удаление или ограничение обработки, а также отозвать согласие. В центре конфиденциальности можно изменить необязательное согласие, отправить запрос и получить экспорт части данных основной базы. Экспорт включает перечисленные в интерфейсе категории основной базы и имеет технические ограничения по числу записей; он не включает данные внешних поставщиков и некоторые технические журналы. Запросы на исправление и удаление регистрируются в системе со статусом «получен» и не исполняются автоматически. Для рассмотрения запроса обратитесь в поддержку; может потребоваться подтверждение личности или полномочий представителя.": [
-    "Depending on applicable law, users may have the right to request information about processing, access, a copy, correction, deletion, or restriction of processing, and to withdraw consent. In the Privacy Center, users can change optional consent, submit a request, and export some data from the main database. The export covers the main-database categories listed in the interface and has technical record-count limits; it does not include data held by external providers or certain technical logs. Correction and deletion requests are recorded with the status “received” and are not fulfilled automatically. Contact support to have a request reviewed; proof of identity or a representative’s authority may be required.",
-    "Залежно від застосовного законодавства користувач може мати право запросити інформацію про обробку, доступ, копію, виправлення, видалення або обмеження обробки, а також відкликати згоду. У Центрі конфіденційності можна змінити необов’язкову згоду, надіслати запит і експортувати частину даних з основної бази. Експорт охоплює категорії основної бази, перелічені в інтерфейсі, та має технічні обмеження щодо кількості записів; він не містить даних зовнішніх постачальників і деяких технічних журналів. Запити на виправлення та видалення реєструються зі статусом «отримано» й не виконуються автоматично. Для розгляду запиту зверніться до служби підтримки; може знадобитися підтвердження особи або повноважень представника."
-  ],
-  "Минимальный возраст регистрации — 13 лет. Для пользователей младше 18 лет могут действовать дополнительные требования применимого законодательства, включая согласие родителя или законного представителя. В сервисе пока нет автоматизированной проверки такого согласия или полномочий представителя. Родительские запросы рассматриваются через поддержку с проверкой полномочий в объёме, необходимом для защиты данных ребёнка.": [
-    "The minimum registration age is 13. Additional legal requirements may apply to users under 18, including parental or legal-guardian consent. The service does not currently have an automated process to verify such consent or a representative’s authority. Parental requests are handled through support, with authority checks to the extent necessary to protect the child’s data.",
-    "Мінімальний вік для реєстрації — 13 років. До користувачів віком до 18 років можуть застосовуватися додаткові вимоги законодавства, зокрема згода батьків або законного представника. Сервіс наразі не має автоматизованої перевірки такої згоди чи повноважень представника. Запити батьків розглядаються через службу підтримки з перевіркою повноважень у межах, необхідних для захисту даних дитини."
-  ],
-  "При существенном изменении целей или способов обработки политика обновляется; если закон требует нового согласия, оно запрашивается отдельно. Дата редакции указана в интерфейсе документа. По вопросам конфиденциальности и реализации прав обращайтесь в официальную поддержку: https://t.me/cloudysupportt_bot.": [
-    "If the purposes or methods of processing change significantly, this policy will be updated; where the law requires new consent, it will be requested separately. The revision date is shown in the document interface. For privacy questions and requests to exercise your rights, contact official support: https://t.me/cloudysupportt_bot.",
-    "Якщо цілі або способи обробки суттєво зміняться, цю політику буде оновлено; якщо закон вимагає нової згоди, її буде запитано окремо. Дата редакції зазначена в інтерфейсі документа. Із питань конфіденційності та реалізації ваших прав звертайтеся до офіційної служби підтримки: https://t.me/cloudysupportt_bot."
-  ]
-});
-function legalText(value: string, language: SiteLanguage): string {
-  if (language === "ru") return value;
-  const translated = LEGAL_TRANSLATIONS[value];
-  return translated ? translated[language === "en" ? 0 : 1] : value;
-}
-
 export function LegalPage() {
   const navigate = useNavigate();
-  const [language, setLanguage] = useState<SiteLanguage>(() => getSiteLanguage());
   const [activeId, setActiveId] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<number>>(() => new Set());
@@ -849,8 +145,7 @@ export function LegalPage() {
   const active = LEGAL_DOCUMENTS.find((document) => document.id === activeId);
   const meta = active ? LEGAL_META[active.id] : null;
 
-  useEffect(() => subscribeSiteLanguage(setLanguage), []);
-  useEffect(() => { document.title = legalText("Документы и правила", language) + " — Cloudy English Academy"; }, [language]);
+  useEffect(() => { document.title = "Документы и правила — Cloudy English Academy"; }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -961,10 +256,10 @@ export function LegalPage() {
       `}</style>
       <div className="legal-shell">
         <header className="legal-topbar">
-          <button type="button" className="legal-back" aria-label={legalText(active ? "Назад к документам" : "Вернуться к обучению", language)} onClick={active ? backToList : closeLegal}>
+          <button type="button" className="legal-back" aria-label={(active ? "Назад к документам" : "Вернуться к обучению")} onClick={active ? backToList : closeLegal}>
             <ArrowLeft size={21} />
           </button>
-          <div className="legal-top-title">{active ? legalText(active.title, language) : legalText("Документы и правила", language)}</div>
+          <div className="legal-top-title">{active ? (active.title) : ("Документы и правила")}</div>
         </header>
         <div className="legal-progress" aria-label="Прогресс чтения"><i style={{ width: progress + "%" }} /></div>
         <div className="legal-scroll" ref={scrollRef} key={activeId ?? "home"}>
@@ -972,37 +267,37 @@ export function LegalPage() {
             <div key={active.id} className={`legal-document legal-page-transition${pageDirection === "bck" ? " legal-backward" : ""}`}>
               <div className="legal-doc-head" style={{ "--tone": meta.tone } as CSSProperties}>
                 <div className="legal-doc-icon"><meta.icon size={29} strokeWidth={1.8} /></div>
-                <div><h2>{legalText(active.title, language)}</h2><p>{legalText(active.description, language)} · {active.sections.length} {legalText("разделов", language)}</p></div>
+                <div><h2>{(active.title)}</h2><p>{(active.description)} · {active.sections.length} {("разделов")}</p></div>
               </div>
               <section className="legal-summary" style={{ "--tone": meta.tone } as React.CSSProperties}>
-                <h3>{legalText("Кратко о главном", language)}</h3>
-                <ul>{meta.summary.map((item, index) => <li key={index}><ShieldCheck size={17} /><span>{legalText(item, language)}</span></li>)}</ul>
+                <h3>{("Кратко о главном")}</h3>
+                <ul>{meta.summary.map((item, index) => <li key={index}><ShieldCheck size={17} /><span>{(item)}</span></li>)}</ul>
               </section>
               <div className="legal-toc" aria-label="Навигация по разделам">
-                {active.sections.map(([heading], index) => <button type="button" key={heading} onClick={() => jumpToSection(index)}>{legalText(heading, language).replace(/^\d+\.\s*/, "")}</button>)}
+                {active.sections.map(([heading], index) => <button type="button" key={heading} onClick={() => jumpToSection(index)}>{(heading).replace(/^\d+\.\s*/, "")}</button>)}
               </div>
               {active.sections.map(([heading, body], index) => (
                 <article id={`legal-section-${index}`} className={`legal-section${expandedSections.has(index) ? " is-expanded" : ""}`} key={heading} style={{ "--i": Math.min(index, 10), "--tone": meta.tone } as React.CSSProperties}>
-                  <h3><span>{/^\d+/.test(heading) ? heading.match(/^\d+/)?.[0] : index + 1}</span>{legalText(heading, language).replace(/^\d+\.\s*/, "")}</h3>
-                  <p>{legalText(body, language).length > 260 ? `${legalText(body, language).slice(0, 260).trimEnd()}…` : legalText(body, language)}</p>
-                  {body.length > 260 && <div className="legal-text-reveal"><div><p>{legalText(body, language)}</p></div></div>}
-                  {body.length > 260 && <button type="button" className="legal-full-toggle legal-text-link" aria-expanded={expandedSections.has(index)} onClick={() => toggleSection(index)}>{legalText(expandedSections.has(index) ? "Свернуть текст" : "Читать полный текст", language)} <ChevronDown size={15} /></button>}
+                  <h3><span>{/^\d+/.test(heading) ? heading.match(/^\d+/)?.[0] : index + 1}</span>{(heading).replace(/^\d+\.\s*/, "")}</h3>
+                  <p>{(body).length > 260 ? `${(body).slice(0, 260).trimEnd()}…` : (body)}</p>
+                  {body.length > 260 && <div className="legal-text-reveal"><div><p>{(body)}</p></div></div>}
+                  {body.length > 260 && <button type="button" className="legal-full-toggle legal-text-link" aria-expanded={expandedSections.has(index)} onClick={() => toggleSection(index)}>{(expandedSections.has(index) ? "Свернуть текст" : "Читать полный текст")} <ChevronDown size={15} /></button>}
                 </article>
               ))}
-              <button type="button" className="legal-back" onClick={backToList} style={{ width: "auto", borderRadius: 14, padding: "0 16px", display: "inline-flex", gap: 8, marginTop: 8 }}> <ArrowLeft size={17} /> {legalText("Все документы", language)}</button>
+              <button type="button" className="legal-back" onClick={backToList} style={{ width: "auto", borderRadius: 14, padding: "0 16px", display: "inline-flex", gap: 8, marginTop: 8 }}> <ArrowLeft size={17} /> {("Все документы")}</button>
             </div>
           ) : (
             <div className={`legal-home${pageDirection === "bck" ? " legal-page-transition legal-backward" : ""}`}>
-              <div className="legal-kicker">{legalText("Быстрые ответы", language)}</div>
+              <div className="legal-kicker">{("Быстрые ответы")}</div>
               <div className={`legal-faq${pageDirection === "fwd" ? " legal-page-transition" : ""}`}>
                 {LEGAL_FAQ.map(([question, answer], index) => <section className={`legal-faq-item${expandedFaq === index ? " is-open" : ""}`} key={question}>
                   <button type="button" className="legal-faq-trigger" aria-expanded={expandedFaq === index} onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}>
-                    {legalText(question, language)}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .35s cubic-bezier(.3,1.4,.5,1)" }} />
+                    {(question)}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .35s cubic-bezier(.3,1.4,.5,1)" }} />
                   </button>
-                  <div className="legal-faq-answer"><div>{legalText(answer, language)}</div></div>
+                  <div className="legal-faq-answer"><div>{(answer)}</div></div>
                 </section>)}
               </div>
-              <div className="legal-kicker">{legalText("Все документы", language)}</div>
+              <div className="legal-kicker">{("Все документы")}</div>
               <div className="legal-cards">
                 {LEGAL_DOCUMENTS.map((document, index) => {
                   const item = LEGAL_META[document.id];
@@ -1010,17 +305,17 @@ export function LegalPage() {
                   const Icon = item.icon;
                   return <button type="button" className="legal-card" key={document.id} style={{ "--i": index, "--tone": item.tone } as React.CSSProperties} onClick={() => openDocument(document.id)}>
                     <span className="legal-card-icon"><Icon size={25} strokeWidth={1.8} /></span>
-                    <span className="legal-card-copy"><b>{legalText(document.title, language)}</b><small>{legalText(document.description, language)}</small></span>
+                    <span className="legal-card-copy"><b>{(document.title)}</b><small>{(document.description)}</small></span>
                     <ChevronDown className="legal-chevron" size={19} style={{ transform: "rotate(-90deg)" }} />
                   </button>;
                 })}
               </div>
               <a className="legal-support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">
                 <span className="legal-support-icon"><MessageCircle size={23} /></span>
-                <span className="legal-support-copy"><b>{legalText("Нужна помощь?", language)}</b><small>{legalText("Официальная поддержка Cloudy English в Telegram", language)}</small></span>
+                <span className="legal-support-copy"><b>{("Нужна помощь?")}</b><small>{("Официальная поддержка Cloudy English в Telegram")}</small></span>
                 <ChevronDown size={20} style={{ transform: "rotate(-90deg)", opacity: .6 }} />
               </a>
-              <div className="legal-footer">Cloudy English Academy · {legalText("Юридический центр", language)} · {language === "en" ? "Updated 9 November 2026" : language === "uk" ? "Редакція від 9 листопада 2026 року" : "Редакция от 9 ноября 2026 года"}</div>
+              <div className="legal-footer">Cloudy English Academy · {("Юридический центр")} · {"Редакция от 9 ноября 2026 года"}</div>
             </div>
           )}
         </div>
