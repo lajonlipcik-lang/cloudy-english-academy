@@ -145,6 +145,31 @@ class CloudyState {
     'set': settings.toJson(), 'td': today.toJson(),
   };
 
+  CloudyState copyWith({
+    num? xp, num? streak, String? last, CloudyLevel? level,
+    bool clearLevel = false,
+    Map<String, num>? completed, List<num>? accuracy,
+    Map<String, num>? mistakes, List<String>? days,
+    List<String>? achievements, Map<String, Object?>? week,
+    num? perfectLessons, num? tested,
+    CloudySettings? settings, CloudyToday? today,
+  }) => CloudyState(
+    xp: xp ?? this.xp,
+    streak: streak ?? this.streak,
+    last: last ?? this.last,
+    level: clearLevel ? null : (level ?? this.level),
+    completed: completed ?? this.completed,
+    accuracy: accuracy ?? this.accuracy,
+    mistakes: mistakes ?? this.mistakes,
+    days: days ?? this.days,
+    achievements: achievements ?? this.achievements,
+    week: week ?? this.week,
+    perfectLessons: perfectLessons ?? this.perfectLessons,
+    tested: tested ?? this.tested,
+    settings: settings ?? this.settings,
+    today: today ?? this.today,
+  );
+
   bool get hasProgress => xp > 0 || tested > 0 || completed.values.any((v) => v > 0) || level != null;
 }
 
