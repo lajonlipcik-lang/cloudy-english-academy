@@ -17,7 +17,7 @@ Vercel alone does not replace PostgreSQL, identity, object storage, or a long-ru
 
 - `package.json` includes `@lovable.dev/ai-gateway` and `@lovable.dev/vite-tanstack-config`.
 - `vite.config.ts` imports the Lovable Vite/TanStack configuration package.
-- `src/lib/chat.functions.ts` checks `LOVABLE_API_KEY` and dynamically imports the Lovable AI Gateway. It already routes through the app's AI fallback router, which is a useful seam for replacing the provider adapter.
+- `src/lib/chat.functions.ts` contains a legacy `claudyReply` function that checks `LOVABLE_API_KEY` and dynamically imports the Lovable AI Gateway. Repository code search found no call site or import of this function; the active iframe bridge dispatches chat requests to `cloudyTutorChat` in `src/lib/cloudy-ai.functions.ts`. The active tutor path calls configured providers directly (Groq, OpenRouter, OpenAI) through the AI Vault and fallback router, and retains learner context, age-aware safety, and request quotas. Keep the legacy module/dependency until a branch build confirms it can be removed safely.
 - `drizzle.config.ts` reads `LOVABLE_DB_MIGRATION_URL`.
 - `drizzle/schema.ts` is intentionally empty; the authoritative schema history is currently represented by SQL migrations, not Drizzle schema declarations.
 - Core SQL migration history is present in `drizzle/migrations/` (0000–0020 in the source inventory).
@@ -39,7 +39,9 @@ Vercel alone does not replace PostgreSQL, identity, object storage, or a long-ru
 
 - The source `.env` file was inspected without displaying values. It contains only Supabase project identifiers, project URLs, and publishable client keys (including Vite-prefixed equivalents); no service-role key was found in that file. Publishable keys are not database passwords, but a tracked local `.env` should still be replaced by a committed placeholder-only `.env.example` and ignored local environment files.
 - The build scripts are `vite dev`, `vite build`, and `vite preview`; CI commands include lint, typecheck, tests, and the media processor syntax check. The Lovable Vite config currently supplies framework/build plugins and defaults the Nitro target to Cloudflare. Replacing it requires an explicit Vercel-compatible TanStack Start/Nitro configuration and a production build test.
-- The current app dependency set includes Supabase JS and the Lovable AI Gateway; both are runtime dependencies, while the Lovable Vite/TanStack config is a development dependency. Removal must be sequenced after replacement adapters and integration tests are in place.
+- The current app dependency set includes Supabase JS and the Lovable AI Gateway; both are runtime dependencies, while the Lovable Vite/TanStack config is a development dependency. The legacy Gateway module appears unreferenced, but its package and generated type declarations remain pending removal until the lockfile can be regenerated and a clean build/test can run.
+- `vite.config.ts` was adjusted on `migration/vercel-platform` to keep the Lovable sandbox defaults but select Nitro's `vercel` preset for non-sandbox builds. Manual `.vercel/output` directory overrides were removed; the Vercel/TanStack guidance relies on Nitro's Vercel integration and automatic output layout. This is a configuration change, not proof of a successful deployment.
+- `drizzle.config.ts` now prefers `DATABASE_URL` and temporarily falls back to `LOVABLE_DB_MIGRATION_URL`; `.env.example` documents the target variable as server/CI-only.
 
 ## Migration gates
 
