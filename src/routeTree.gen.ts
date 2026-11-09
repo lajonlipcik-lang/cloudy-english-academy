@@ -14,6 +14,7 @@ import { Route as AvailabilityRouteImport } from './routes/availability'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ApiInternalSupportAiRouteImport } from './routes/api/internal/support-ai'
+import { Route as ApiCloudyMobileRouteImport } from './routes/api/cloudy/mobile'
 import { Route as ApiTelegramStarsRouteImport } from './routes/api/telegram/stars'
 import { Route as ApiTelegramStarsWebhookRouteImport } from './routes/api/telegram/stars-webhook'
 
@@ -42,6 +43,11 @@ const ApiInternalSupportAiRoute = ApiInternalSupportAiRouteImport.update({
   path: '/api/internal/support-ai',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCloudyMobileRoute = ApiCloudyMobileRouteImport.update({
+  id: '/api/cloudy/mobile',
+  path: '/api/cloudy/mobile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTelegramStarsRoute = ApiTelegramStarsRouteImport.update({
   id: '/api/telegram/stars',
   path: '/api/telegram/stars',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/legal': typeof LegalRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
+  '/api/cloudy/mobile': typeof ApiCloudyMobileRoute
   '/api/telegram/stars': typeof ApiTelegramStarsRoute
   '/api/telegram/stars-webhook': typeof ApiTelegramStarsWebhookRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/legal': typeof LegalRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
+  '/api/cloudy/mobile': typeof ApiCloudyMobileRoute
   '/api/telegram/stars': typeof ApiTelegramStarsRoute
   '/api/telegram/stars-webhook': typeof ApiTelegramStarsWebhookRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/legal': typeof LegalRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
+  '/api/cloudy/mobile': typeof ApiCloudyMobileRoute
   '/api/telegram/stars': typeof ApiTelegramStarsRoute
   '/api/telegram/stars-webhook': typeof ApiTelegramStarsWebhookRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/sitemap.xml'
     | '/api/internal/support-ai'
+    | '/api/cloudy/mobile'
     | '/api/telegram/stars'
     | '/api/telegram/stars-webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/sitemap.xml'
     | '/api/internal/support-ai'
+    | '/api/cloudy/mobile'
     | '/api/telegram/stars'
     | '/api/telegram/stars-webhook'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/sitemap.xml'
     | '/api/internal/support-ai'
+    | '/api/cloudy/mobile'
     | '/api/telegram/stars'
     | '/api/telegram/stars-webhook'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   LegalRoute: typeof LegalRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiInternalSupportAiRoute: typeof ApiInternalSupportAiRoute
+  ApiCloudyMobileRoute: typeof ApiCloudyMobileRoute
   ApiTelegramStarsRoute: typeof ApiTelegramStarsRoute
   ApiTelegramStarsWebhookRoute: typeof ApiTelegramStarsWebhookRoute
 }
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalSupportAiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cloudy/mobile': {
+      id: '/api/cloudy/mobile'
+      path: '/api/cloudy/mobile'
+      fullPath: '/api/cloudy/mobile'
+      preLoaderRoute: typeof ApiCloudyMobileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/telegram/stars': {
       id: '/api/telegram/stars'
       path: '/api/telegram/stars'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalRoute: LegalRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiInternalSupportAiRoute: ApiInternalSupportAiRoute,
+  ApiCloudyMobileRoute: ApiCloudyMobileRoute,
   ApiTelegramStarsRoute: ApiTelegramStarsRoute,
   ApiTelegramStarsWebhookRoute: ApiTelegramStarsWebhookRoute,
 }
