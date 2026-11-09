@@ -48,7 +48,11 @@ void main() {
       expect(builder.question, 'Я пью воду');
       expect(builder.answer, 'I drink water');
       expect(builder.options, containsAll(['I', 'drink', 'water']));
-      expect(isCloudyAnswerCorrect(builder, builtOptionIndices: [0, 1, 2]), isTrue);
+      final correctIndices = ['I', 'drink', 'water']
+          .map(builder.options.indexOf)
+          .toList(growable: false);
+      expect(correctIndices.every((index) => index >= 0), isTrue);
+      expect(isCloudyAnswerCorrect(builder, builtOptionIndices: correctIndices), isTrue);
     });
 
     test('uses the exact fixed labels of the current browser runtime', () {
@@ -71,8 +75,20 @@ void main() {
       expect((listening as CloudyListeningExercise).title, 'Что вы слышите?');
       expect((russianToEnglish as CloudyChoiceExercise).title, 'Переведите на английский');
       expect((englishToRussian as CloudyChoiceExercise).title, 'Что это значит?');
-      expect(isCloudyAnswerCorrect(listening, selectedOption: 0), isTrue);
-      expect(isCloudyAnswerCorrect(russianToEnglish, selectedOption: 0), isFalse);
+      expect(
+        isCloudyAnswerCorrect(
+          listening,
+          selectedOption: listening.options.indexOf('son'),
+        ),
+        isTrue,
+      );
+      expect(
+        isCloudyAnswerCorrect(
+          russianToEnglish,
+          selectedOption: russianToEnglish.options.indexOf('sun'),
+        ),
+        isFalse,
+      );
     });
 
     test('normalizes typed recall answers like the current app', () {
