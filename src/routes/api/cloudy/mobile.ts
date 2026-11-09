@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createClient } from "@supabase/supabase-js";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -39,6 +40,166 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
         examAction: action.slice("learning-exam-".length),
       } as never,
     });
+  }
+
+  if (action.startsWith("community-")) {
+    const url = process.env["SUPABASE_URL"];
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !key) throw new Error("Supabase server is not configured.");
+    const client = createClient(url, key, {
+      global: { headers: { Authorization: "Bearer " + String(input.accessToken ?? "") } },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+    const { data: identity, error: authError } = await client.auth.getUser(String(input.accessToken ?? ""));
+    if (authError || !identity.user) throw new Error("Unauthorized");
+    const uid = identity.user.id;
+    const uuid = (value: unknown) => typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value);
+
+    if (action === "community-interactions-get") {
+      const ids = Array.isArray(input.postIds)
+        ? [...new Set(input.postIds.filter(uuid))].slice(0, 50) as string[]
+        : [];
+      if (!ids.length) return { comments: [], reactions: [] };
+      const [commentsResult, reactionsResult] = await Promise.all([
+        client.from("community_comments").select("id,post_id,author_id,body,created_at")
+          .in("post_id", ids).eq("status", "published").order("created_at", { ascending: true }).limit(250),
+        client.from("community_reactions").select("post_id,user_id,reaction").in("post_id", ids),
+      ]);
+      if (commentsResult.error) throw commentsResult.error;
+      if (reactionsResult.error) throw reactionsResult.error;
+      const comments = commentsResult.data ?? [];
+      const authorIds = [...new Set(comments.map((comment: any) => comment.author_id))];
+      const profiles = authorIds.length
+        ? await client.from("community_public_profiles").select("id,display_name").in("id", authorIds)
+        : { data: [], error: null };
+      if (profiles.error) throw profiles.error;
+      const names = new Map((profiles.data ?? []).map((profile: any) => [profile.id, profile.display_name || "Участник"]));
+      return {
+        comments: comments.map((comment: any) => ({
+          ...comment,
+          author_name: names.get(comment.author_id) || (comment.author_id === uid ? "Вы" : "Участник"),
+          is_own: comment.author_id === uid,
+        })),
+        reactions: (reactionsResult.data ?? []).map((reaction: any) => ({
+          post_id: reaction.post_id, is_own: reaction.user_id === uid, reaction: reaction.reaction,
+        })),
+      };
+    }
+
+    if (action === "community-comment-create") {
+      const postId = input.postId;
+      const body = typeof input.body === "string" ? input.body.trim() : "";
+      if (!uuid(postId)) throw new Error("Некорректная публикация.");
+      if (body.length < 1 || body.length > 1000) throw new Error("Комментарий должен содержать от 1 до 1000 символов.");
+      const { data, error } = await client.from("community_comments")
+        .insert({ post_id: postId, author_id: uid, body }).select("id").single();
+      if (error) throw error;
+      return { id: data.id };
+    }
+
+    if (action === "community-comment-delete") {
+      const commentId = input.commentId;
+      if (!uuid(commentId)) throw new Error("Некорректный комментарий.");
+      const { data, error } = await client.from("community_comments")
+        .delete().eq("id", commentId).eq("author_id", uid).select("id").maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("Комментарий не найден или уже удалён.");
+      return { id: data.id };
+    }
+
+    if (action === "community-reaction-toggle") {
+      const postId = input.postId;
+      if (!uuid(postId)) throw new Error("Некорректная публикация.");
+      const { data: existing, error: readError } = await client.from("community_reactions")
+        .select("post_id").eq("post_id", postId).eq("user_id", uid).maybeSingle();
+      if (readError) throw readError;
+      if (existing) {
+        const { error } = await client.from("community_reactions").delete().eq("post_id", postId).eq("user_id", uid);
+        if (error) throw error;
+      } else {
+        const { error } = await client.from("community_reactions").insert({ post_id: postId, user_id: uid, reaction: "like" });
+        if (error) throw error;
+      }
+      return { active: !existing };
+    }
+
+    if (action === "community-report-create") {
+      const postId = typeof input.postId === "string" ? input.postId : "";
+      const commentId = typeof input.commentId === "string" ? input.commentId : "";
+      const reason = input.reason;
+      const details = typeof input.details === "string" ? input.details.trim().slice(0, 1000) : "";
+      if ((!postId && !commentId) || (postId && !uuid(postId)) || (commentId && !uuid(commentId)) || (postId && commentId)) {
+        throw new Error("Некорректная жалоба.");
+      }
+      if (!["harassment", "personal_data", "spam", "inappropriate", "other"].includes(String(reason))) {
+        throw new Error("Выбери причину жалобы.");
+      }
+      const { data, error } = await client.from("community_reports")
+        .insert({ reporter_id: uid, post_id: postId || null, comment_id: commentId || null, reason, details })
+        .select("id").single();
+      if (error) throw error;
+      return { id: data.id };
+    }
+
+    if (action === "community-feed-get") {
+      const { data: posts, error } = await client.from("community_posts")
+        .select("id,author_id,body,status,created_at").eq("status", "published")
+        .order("created_at", { ascending: false }).limit(50);
+      if (error) throw error;
+      const own = await client.from("community_posts").select("id,author_id,body,status,created_at")
+        .eq("author_id", uid).order("created_at", { ascending: false }).limit(30);
+      if (own.error) throw own.error;
+      const merged = new Map<string, any>();
+      for (const post of [...(posts ?? []), ...(own.data ?? [])]) merged.set(post.id, post);
+      const rows = [...merged.values()].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 50);
+      const authorIds = [...new Set(rows.map((post: any) => post.author_id))];
+      const profiles = authorIds.length
+        ? await client.from("community_public_profiles").select("id,display_name").in("id", authorIds)
+        : { data: [], error: null };
+      if (profiles.error) throw profiles.error;
+      const names = new Map((profiles.data ?? []).map((profile: any) => [profile.id, profile.display_name || "Участник"]));
+      return rows.map((post: any) => ({
+        ...post,
+        author_name: names.get(post.author_id) || (post.author_id === uid ? "Вы" : "Участник"),
+        is_own: post.author_id === uid,
+      }));
+    }
+
+    if (action === "community-post-create") {
+      const body = typeof input.body === "string" ? input.body.trim() : "";
+      if (body.length < 1 || body.length > 2000) throw new Error("Текст публикации должен содержать от 1 до 2000 символов.");
+      const { data, error } = await client.from("community_posts")
+        .insert({ author_id: uid, body }).select("id").single();
+      if (error) throw error;
+      return { id: data.id };
+    }
+
+    if (action === "community-post-delete") {
+      const postId = input.postId;
+      if (!uuid(postId)) throw new Error("Некорректная публикация.");
+      const { data, error } = await client.from("community_posts")
+        .delete().eq("id", postId).eq("author_id", uid).select("id").maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("Публикация не найдена или уже удалена.");
+      return { id: data.id };
+    }
+
+    if (action === "community-profile-get") {
+      const { data, error } = await client.from("profiles").select("is_public,bio").eq("id", uid).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error("Профиль не найден.");
+      return { is_public: data.is_public === true, bio: String(data.bio ?? "").slice(0, 240) };
+    }
+
+    if (action === "community-profile-update") {
+      if (typeof input.is_public !== "boolean") throw new Error("Некорректная настройка публичности.");
+      const bio = typeof input.bio === "string" ? input.bio.trim() : "";
+      if (bio.length > 240) throw new Error("Описание слишком длинное.");
+      const { data, error } = await client.from("profiles")
+        .update({ is_public: input.is_public, bio }).eq("id", uid).select("is_public,bio").single();
+      if (error) throw error;
+      return { is_public: data.is_public === true, bio: String(data.bio ?? "").slice(0, 240) };
+    }
   }
 
   if (action.startsWith("chat-history-")) {
