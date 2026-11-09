@@ -24,6 +24,12 @@ bool isCloudyLessonInLevel(int index, String level) =>
 List<int> cloudyLevelLessons(String level) =>
     List.unmodifiable(cloudyLessonsByLevel[level] ?? const <int>[]);
 
+int _number(Object? value, [int fallback = 0]) =>
+    value is num && value.isFinite ? value.toInt() : fallback;
+
+int _clampInt(num value, int min, int max) =>
+    (value.isFinite ? value.toInt() : min).clamp(min, max).toInt();
+
 List<T> cloudyShuffle<T>(List<T> input, {CloudyRand? random}) {
   final result = List<T>.of(input);
   final rand = random ?? math.Random().nextDouble;
@@ -239,6 +245,69 @@ bool checkCloudyRecallAnswer(String input, String expected) {
       .replaceAll(RegExp(r'[.!?]+$'), '')
       .replaceAll(RegExp(r'\s+'), ' ');
   return normalized == expected.toLowerCase();
+}
+
+CloudySession newCloudySession(int lesson, List<CloudyExercise> exercises, {bool review = false}) =>
+    CloudySession(lesson: lesson, exercises: exercises, review: review, retryPhase: review);
+
+CloudySession? startCloudyReview(
+  CloudyState state, List<CloudyPair> vocabularyPool, {
+  required bool microphoneEnabled, CloudyRand? random,
+}) {
+  final reviewWords = <CloudyPair>[];
+  for (final word in state.mistakes.keys.take(8)) {
+    for (final pair in vocabularyPool) {
+      if (pair.first == word && pair.second.isNotEmpty) {
+        reviewWords.add(pair);
+        break;
+      }
+    }
+  }
+  if (reviewWords.isEmpty) return null;
+  return newCloudySession(
+    -1,
+    buildCloudyExercises(
+      CloudyLesson(title: '', words: reviewWords, sentences: const []),
+      vocabularyPool,
+      microphoneEnabled: microphoneEnabled,
+      random: random,
+    ),
+    review: true,
+  );
+}
+
+
+bool isCloudyAnswerCorrect(
+  CloudyExercise exercise, {
+  int? selectedOption,
+  List<int> builtOptionIndices = const [],
+  String? typedAnswer,
+}) {
+  if (exercise is CloudyRecallExercise) {
+    return checkCloudyRecallAnswer(typedAnswer ?? '', exercise.answer);
+  }
+  if (exercise is CloudyBuilderExercise) {
+    if (builtOptionIndices.isEmpty) return false;
+    final valid = builtOptionIndices.every(
+      (index) => index >= 0 && index < exercise.options.length,
+    );
+    if (!valid) return false;
+    final answer = builtOptionIndices.map((index) => exercise.options[index]).join(' ');
+    return answer.toLowerCase() == exercise.answer.toLowerCase();
+  }
+  if (exercise is CloudyChoiceExercise) {
+    return selectedOption != null &&
+        selectedOption >= 0 &&
+        selectedOption < exercise.options.length &&
+        exercise.options[selectedOption] == exercise.answer;
+  }
+  if (exercise is CloudyListeningExercise) {
+    return selectedOption != null &&
+        selectedOption >= 0 &&
+        selectedOption < exercise.options.length &&
+        exercise.options[selectedOption] == exercise.answer;
+  }
+  return false;
 }
 
 bool isCloudyAnswerCorrect(
