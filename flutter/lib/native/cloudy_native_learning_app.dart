@@ -8,6 +8,7 @@ import '../data/cloudy_mobile_api.dart';
 import '../domain/cloudy_catalog.dart';
 import '../domain/cloudy_exercise_builder.dart';
 import '../domain/cloudy_progress_engine.dart' show claimCloudyChest, newCloudySession;
+import '../domain/cloudy_state.dart';
 import '../progress/cloudy_local_progress_store.dart';
 import '../screens/cloudy_learning_home_screen.dart';
 import '../screens/cloudy_lesson_flow.dart';
