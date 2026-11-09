@@ -244,8 +244,44 @@ function mountShortsIntro(){
  later(()=>cloud.classList.add("settled"),c0+1050);
  later(()=>{const bounds=stage.getBoundingClientRect(),cb=cloud.getBoundingClientRect();stage.style.transformOrigin=(cb.left+cb.width/2-bounds.left)+"px "+(cb.top+cb.height*.55-bounds.top)+"px";const zoom=Math.max(innerWidth,innerHeight)/(cb.width*.5);stage.style.setProperty("--zs",Math.max(zoom*1.6,14));stage.classList.add("zoom");tone(220,.65,.045);later(()=>{flash.classList.add("on");[1047,1319,1568,2093].forEach((n,i)=>tone(n,.22,.035,i*.06));},600);later(finish,950);},c0+1350);
 }
-function refreshProfileContent(){if(T!==3)return;const screen=app.querySelector(".scr");if(screen)screen.innerHTML=prof()}
-function view(a=1,tabDirection=0){if(regionCheckPending){cloudLoader();return}if(regionCheckFailed){regionCheckError();return}roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr tab${T}${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest)void loadCommunityProfile();}
+function refreshProfileContent(){
+ if(T!==3)return;
+ const screen=app.querySelector(".scr");if(!screen)return;
+ const fresh=document.createElement("div");fresh.innerHTML=prof();
+ [".community-profile-settings",".privacy-center-card"].forEach(selector=>{
+  const current=screen.querySelector(selector),next=fresh.querySelector(selector);
+  if(current&&next)current.replaceWith(next);
+ });
+}
+function view(a=1,tabDirection=0){
+ if(regionCheckPending){cloudLoader();return}
+ if(regionCheckFailed){regionCheckError();return}
+ roll();amb();
+ if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}
+ if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}
+ SEC=LV[S.lv].s;
+ const screenClass="scr tab"+T+(a?"":" na")+(tabDirection?" tab-screen":"");
+ const screenMarkup=`<div class="${screenClass}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof][T]()}</div>`;
+ const existingScreen=app.querySelector(".scr");
+ if(existingScreen){
+  const fresh=document.createElement("div");fresh.innerHTML=screenMarkup;
+  const nextScreen=fresh.firstElementChild;
+  existingScreen.className=nextScreen.className;
+  if(tabDirection)existingScreen.setAttribute("data-tab-direction",String(tabDirection));else existingScreen.removeAttribute("data-tab-direction");
+  existingScreen.innerHTML=nextScreen.innerHTML;
+  const dock=app.querySelector("nav.dock");
+  if(dock){
+   dock.querySelectorAll("button").forEach((button,index)=>button.classList.toggle("on",index===T));
+   const currentIndex=Number(dock.style.getPropertyValue("--i"));
+   if(currentIndex!==T){requestAnimationFrame(()=>requestAnimationFrame(()=>dock.style.setProperty("--i",String(T))))}
+  }else app.insertAdjacentHTML("beforeend",nav());
+  const fab=app.querySelector(".fab-ai");
+  if(T===0&&!fab){const dockNow=app.querySelector("nav.dock");if(dockNow)dockNow.insertAdjacentHTML("afterend",'<button class="fab-ai" onclick="chat()" aria-label="Практика с Клауди">'+mascot()+'<span>Практика</span></button>')}
+  else if(T!==0&&fab)fab.remove();
+ }else app.innerHTML=screenMarkup+nav();
+ if(T===0)void loadRemoteLearningProfile();
+ if(T===3&&!S.user?.guest)void loadCommunityProfile();
+}
 function tab(k){if(!Number.isInteger(k)||k<0||k>3||k===T)return;const direction=k>T?1:-1;snd("tab");T=k;view(1,direction)}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
