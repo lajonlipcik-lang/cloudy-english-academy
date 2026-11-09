@@ -36,6 +36,7 @@ class CloudyProgressSyncService {
   String? _updatedAt;
   CloudyState _baseState = CloudyState.defaults();
   CloudyLearningStore? _learningStore;
+  bool _syncPaused = false;
 
   String? get activeEmail => _activeEmail;
 
@@ -51,6 +52,7 @@ class CloudyProgressSyncService {
     _activeEmail = null;
     _updatedAt = null;
     _baseState = CloudyState.defaults();
+    _syncPaused = false;
     _learningStore = await CloudyLearningStore.create(scope: 'cl2');
     return localStore.loadGuest();
   }
@@ -77,6 +79,7 @@ class CloudyProgressSyncService {
       _activeEmail = normalizedEmail;
       _updatedAt = activation.updatedAt;
       _baseState = activation.baseState;
+      _syncPaused = true;
       _learningStore = await CloudyLearningStore.create(
         scope: 'cl2:$normalizedEmail',
       );
@@ -106,6 +109,7 @@ class CloudyProgressSyncService {
     _activeEmail = normalizedEmail;
     _updatedAt = activation.updatedAt;
     _baseState = activation.baseState;
+    _syncPaused = activation.syncPaused;
     _learningStore = await CloudyLearningStore.create(
       scope: 'cl2:$normalizedEmail',
     );
@@ -149,6 +153,13 @@ class CloudyProgressSyncService {
         uploaded: false,
       );
     }
+    if (_syncPaused) {
+      return CloudyProgressSyncResult(
+        state: state, syncPaused: true, uploaded: false,
+        updatedAt: _updatedAt,
+        error: 'Синхронизация приостановлена до повторной загрузки серверного прогресса.',
+      );
+    }
     await localStore.markDirty(email);
     return syncCurrent();
   }
@@ -160,6 +171,15 @@ class CloudyProgressSyncService {
         state: localStore.loadGuest(),
         syncPaused: false,
         uploaded: false,
+      );
+    }
+    if (_syncPaused) {
+      return CloudyProgressSyncResult(
+        state: localStore.loadAccount(email),
+        syncPaused: true,
+        uploaded: false,
+        updatedAt: _updatedAt,
+        error: 'Синхронизация приостановлена до повторной загрузки серверного прогресса.',
       );
     }
     return _saveWithConflict(
@@ -191,6 +211,7 @@ class CloudyProgressSyncService {
         if (result['conflict'] == true) {
           final rawRemote = result['state'];
           if (rawRemote is! Map) {
+            _syncPaused = true;
             return CloudyProgressSyncResult(
               state: state,
               syncPaused: true,
@@ -202,14 +223,17 @@ class CloudyProgressSyncService {
           final remote = CloudyState.fromJson(rawRemote);
           state = mergeCloudyConflictProgress(remote, state, base);
           base = remote;
+          _baseState = remote;
           expectedUpdatedAt = result['updated_at'] is String
               ? result['updated_at'] as String
               : expectedUpdatedAt;
+          _updatedAt = expectedUpdatedAt;
           await localStore.saveAccount(email, state);
           continue;
         }
 
         if (result['ok'] != true) {
+          _syncPaused = true;
           final message = result['error'];
           return CloudyProgressSyncResult(
             state: state,
@@ -228,6 +252,7 @@ class CloudyProgressSyncService {
             ? result['updated_at'] as String
             : expectedUpdatedAt;
         _baseState = savedState;
+        _syncPaused = false;
         await localStore.saveAccount(email, savedState);
         await localStore.markSynced(email, noPendingChanges: true);
         return CloudyProgressSyncResult(
@@ -237,6 +262,7 @@ class CloudyProgressSyncService {
           updatedAt: _updatedAt,
         );
       }
+      _syncPaused = true;
       return CloudyProgressSyncResult(
         state: state,
         syncPaused: true,
@@ -245,6 +271,7 @@ class CloudyProgressSyncService {
         error: 'Прогресс менялся одновременно на нескольких устройствах. Повтори синхронизацию.',
       );
     } catch (error) {
+      _syncPaused = true;
       return CloudyProgressSyncResult(
         state: state,
         syncPaused: true,
@@ -261,6 +288,11 @@ class CloudyProgressSyncService {
     DateTime? now,
   }) async {
     final email = _activeEmail ?? localStore.activeAccountEmail;
+    if (_syncPaused) {
+      throw const CloudyMobileApiException(
+        'Синхронизация прогресса приостановлена. Повторите загрузку аккаунта.',
+      );
+    }
     if (email == null) {
       throw const CloudyMobileApiException(
         'Начисление серверного опыта доступно только в аккаунте.',
@@ -316,7 +348,7 @@ class CloudyProgressSyncService {
   }
 
   Future<int> syncLearningEvents() async {
-    if (_activeEmail == null) return 0;
+    if (_activeEmail == null || _syncPaused) return 0;
     final store = await learningStore;
     final events = store.pending(limit: 50);
     if (events.isEmpty) return 0;
