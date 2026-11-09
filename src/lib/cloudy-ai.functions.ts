@@ -223,7 +223,7 @@ function runCloudyExerciseAudit(){
         if(finished.acc<100){lessonErrors++;failures.push(level+" / "+lesson.t+": симуляция правильных ответов завершилась с точностью ниже 100%");}
         else {simulatedCompletions++;simulatedXp+=finished.gain;}
       }
-      rows.push("• "+lesson.t+": "+lessonTasks+" проверок, "+(lessonErrors?"ошибок "+lessonErrors:"структура корректна"));
+      rows.push("• "+lesson.t+": "+lessonTasks+" проверок, "+(lessonErrors?"ошибок "+lessonErrors:"структура корректна")+", точность "+finished.acc+"%, "+finished.stars+" звезды, "+finished.gain+" XP (тестовая симуляция)");
     }
     levelRows.push(level+" ("+lessonIds.length+" уроков):\\n"+rows.join("\\n"));
   }
