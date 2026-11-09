@@ -4,6 +4,52 @@ import 'package:cloudy_english/domain/cloudy_progress_engine.dart';
 
 void main() {
   group('Cloudy progress engine parity', () {
+    test('merges concurrent device edits without overwriting independent settings', () {
+      final base = CloudyState.fromJson({
+        'xp': 100, 'streak': 2, 'last': 'Sun Nov 8 2026', 'lv': 'A1',
+        'dn': {'A1': 2, 'A2': 0, 'B1': 0, 'B2': 0},
+        'acc': [2, 3], 'mis': {'hello': 1},
+        'days': ['2026-11-8'], 'ach': ['first'], 'perf': 1,
+        'set': {'snd': 1, 'vol': 0.7, 'voice': 1, 'goal': 30, 'mic': 1, 'th': 'dark', 'rem': 0, 'remT': '19:00'},
+        'td': {'d': 'Mon Nov 9 2026', 'xp': 5, 'les': 1, 'ok': 2, 'claim': 0},
+      });
+      final remote = CloudyState.fromJson({
+        ...base.toJson(),
+        'xp': 140, 'streak': 2, 'last': 'Sun Nov 8 2026',
+        'dn': {'A1': 3, 'A2': 0, 'B1': 0, 'B2': 0},
+        'acc': [3, 4], 'mis': {'hello': 2},
+        'days': ['2026-11-8', '2026-11-9'], 'ach': ['first', 's3'], 'perf': 2,
+        'set': {'snd': 1, 'vol': 0.7, 'voice': 1, 'goal': 45, 'mic': 1, 'th': 'dark', 'rem': 0, 'remT': '19:00'},
+        'td': {'d': 'Mon Nov 9 2026', 'xp': 10, 'les': 2, 'ok': 4, 'claim': 0},
+        'wk': {'k': '2026w45', 'xp': 40},
+      });
+      final local = CloudyState.fromJson({
+        ...base.toJson(),
+        'xp': 100, 'streak': 3, 'last': 'Mon Nov 9 2026',
+        'dn': {'A1': 4, 'A2': 0, 'B1': 0, 'B2': 0},
+        'acc': [4, 6], 'mis': {'hello': 3, 'world': 1},
+        'days': ['2026-11-8', '2026-11-9'], 'ach': ['first', 'perf'], 'perf': 3,
+        'set': {'snd': 1, 'vol': 0.4, 'voice': 1, 'goal': 30, 'mic': 1, 'th': 'dark', 'rem': 0, 'remT': '19:00'},
+        'td': {'d': 'Mon Nov 9 2026', 'xp': 15, 'les': 3, 'ok': 5, 'claim': 1},
+        'wk': {'k': '2026w45', 'xp': 20},
+      });
+
+      final merged = mergeCloudyConflictProgress(remote, local, base);
+      expect(merged.xp, 140); // Server XP ledger wins.
+      expect(merged.completed['A1'], 4);
+      expect(merged.mistakes, {'hello': 4, 'world': 1});
+      expect(merged.accuracy, [5, 7]);
+      expect(merged.settings.goal, 45); // Remote edit wins when local left it untouched.
+      expect(merged.settings.vol, 0.4); // Local edit survives independently.
+      expect(merged.today.xp, 20);
+      expect(merged.today.les, 4);
+      expect(merged.today.claim, 1);
+      expect(merged.streak, 3);
+      expect(merged.last, 'Mon Nov 9 2026');
+      expect(merged.achievements.toSet(), {'first', 's3', 'perf'});
+      expect(merged.week['xp'], 40);
+    });
+
     test('rolls the daily counters while preserving the new day marker', () {
       final state = CloudyState.defaults().copyWith(
         today: const CloudyToday(d: 'Sun Nov 8 2026', xp: 20, les: 1, ok: 4, claim: 1),
