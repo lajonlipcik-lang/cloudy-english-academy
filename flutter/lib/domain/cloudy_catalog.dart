@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 import 'cloudy_logic.dart';
+import 'cloudy_learning.dart';
 
 class CloudySection {
   const CloudySection({required this.name, required this.lessonIndices});
@@ -130,6 +131,8 @@ class CloudyCatalog {
     required String level,
     required bool microphoneEnabled,
     required bool speechRecognitionAvailable,
+    Map<String, CloudySkillEvidence> skills = const {},
+    int? nowMillis,
     CloudyRand? random,
   }) {
     final lesson = lessonAt(lessonIndex);
@@ -142,6 +145,11 @@ class CloudyCatalog {
       microphoneEnabled: microphoneEnabled,
       speechRecognitionAvailable: speechRecognitionAvailable,
       grammarIntro: grammarExerciseAt(lessonIndex, level: level),
+      prioritizePractice: (practice) => prioritizeCloudyExercises(
+        practice,
+        skills,
+        nowMillis: nowMillis ?? DateTime.now().millisecondsSinceEpoch,
+      ),
       random: random,
     );
   }
