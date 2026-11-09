@@ -63,8 +63,8 @@ export async function telegramApi<T = JsonRecord>(
     body: JSON.stringify(payload),
   });
   const result = readObject(await response.json().catch(() => ({})));
-  if (!response.ok || result.ok !== true) {
+  if (!response.ok || result['ok'] !== true) {
     throw new Error(`Telegram API request failed: ${method}`);
   }
-  return result.result as T;
+  return result['result'] as T;
 }
