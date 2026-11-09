@@ -39,14 +39,14 @@ This is a plan to test on a disposable empty Supabase database, not authorizatio
 9. Content `0009_shorts_follows.sql`.
 10. Content `0009_shorts_saved_posts.sql` (give it a unique version in the canonical history).
 11. Content `0010_shorts_comment_interactions.sql` (give it a unique version in the canonical history).
-12. Add a new timestamped hardening migration for `shorts_saved_posts`: enable RLS, revoke all privileges from `PUBLIC`, `anon` and `authenticated`, and grant only the required server-role privileges.
+12. Content `0011_shorts_saved_posts_security.sql` (new additive hardening migration).
 13. Core `0016_shorts_publication_and_post_publish_review.sql`.
 14. Core `0017_shorts_caption_nonblocking.sql`.
 15. Core `0018_shorts_feed_and_review_rpc.sql`.
 16. Core `0019_cloudy_chat_history.sql`.
 17. Core `0020_secure_privacy_center_writes.sql`.
 
-The exact ordering of the hardening migration relative to Core Shorts RPCs can be fixed during test implementation; it must run after the saved-posts table exists and before the application is enabled.
+The hardening migration is now present in the migration branch. It runs after the saved-posts table exists and before the application is enabled.
 
 ## Migration runner gap
 
@@ -64,7 +64,7 @@ The canonical runner must apply all migrations in timestamp order, stop on the f
 
 Content `0009_shorts_saved_posts.sql` creates `public.shorts_saved_posts` but does not enable RLS or explicitly revoke browser-role privileges. This differs from `shorts_follows` and `shorts_comment_likes`, which enable RLS and revoke access from browser roles.
 
-Add the hardening migration described above and verify on a fresh Supabase database:
+Apply `0011_shorts_saved_posts_security.sql` and verify on a fresh Supabase database:
 - `relrowsecurity` is enabled for `shorts_saved_posts`;
 - `anon` and `authenticated` have no table privileges;
 - `service_role` has only the privileges required by the server's select/upsert/delete operations.
