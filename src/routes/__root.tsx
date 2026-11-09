@@ -49,6 +49,20 @@ function RootShell({ children }: { children: ReactNode }) {
      ? "Вивчай англійську з короткими уроками, практикою та ігровим прогресом."
      : "Learn English with short lessons, practice, and gamified progress.";
    document.querySelector('meta[name="description"]')?.setAttribute("content", description);
+   const socialTitle = language === "ru"
+    ? "Cloudy English Academy — учи английский каждый день"
+    : language === "uk"
+     ? "Cloudy English Academy — вивчай англійську щодня"
+     : "Cloudy English Academy — Learn English every day";
+   const socialDescription = language === "ru"
+    ? "Уроки, упражнения и учебный прогресс в Cloudy English Academy."
+    : language === "uk"
+     ? "Уроки, вправи та навчальний прогрес у Cloudy English Academy."
+     : "Lessons, exercises, and learning progress with Cloudy English Academy.";
+   document.querySelector('meta[property="og:title"]')?.setAttribute("content", socialTitle);
+   document.querySelector('meta[property="og:description"]')?.setAttribute("content", socialDescription);
+   document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", socialTitle);
+   document.querySelector('meta[name="twitter:description"]')?.setAttribute("content", socialDescription);
   };
   applyLanguage();
   window.addEventListener("cloudy:languagechange", applyLanguage);
