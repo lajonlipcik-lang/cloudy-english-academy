@@ -48,6 +48,24 @@ export const listShortsFeed = createServerFn({ method: "POST" })
       profile.id,
       String(profile.display_name || "Участник").slice(0, 80),
     ]));
+    const authorAvatars = new Map<string, string>();
+    await Promise.all(ids.map(async (authorId: string) => {
+      try {
+        const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(authorId);
+        const metadata = authUser?.user?.user_metadata ?? {};
+        const avatarPath = typeof metadata["avatar_path"] === "string" ? metadata["avatar_path"] : "";
+        if (avatarPath.startsWith(`profiles/${authorId}/avatar/`)) {
+          const { data: signed } = await content.storage.from("cloudy-shorts").createSignedUrl(avatarPath, 3600);
+          if (signed?.signedUrl) { authorAvatars.set(authorId, signed.signedUrl); return; }
+        }
+        const external = metadata["avatar_url"] ?? metadata["picture"];
+        if (typeof external === "string" && external.length <= 2048) {
+          try { if (new URL(external).protocol === "https:") authorAvatars.set(authorId, external); } catch { /* Ignore invalid profile image URLs. */ }
+        }
+      } catch {
+        // A missing avatar must not prevent the public feed from loading.
+      }
+    }));
 
     const postIds = (rows ?? []).map((row: any) => row.id);
     const authorIds = [...new Set((rows ?? []).map((row: any) => row.author_id))];
@@ -78,6 +96,7 @@ export const listShortsFeed = createServerFn({ method: "POST" })
         isOwn: viewerId === row.author_id,
         mediaType: row.media_type || "video",
         authorName: names.get(row.author_id) || "Участник",
+        avatarUrl: authorAvatars.get(row.author_id) || null,
         caption: String(row.caption || "").slice(0, 500),
         textContent: String(row.text_content || "").slice(0, 2000),
         publishedAt: row.published_at || row.created_at,
