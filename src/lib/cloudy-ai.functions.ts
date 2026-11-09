@@ -6,7 +6,7 @@ import { advance, applyAnswer, buildExercises, defaultState, finishLesson, newSe
 import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 const OWNER="lajonlipcik@gmail.com";
-type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;reportId?:string;status?:string;contentAction?:string;moderationNote?:string;message?:string;level?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
+type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;reportId?:string;status?:string;contentAction?:string;moderationNote?:string;message?:string;level?:string;chatModel?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
 function validate(v:Input){const t=String(v?.accessToken??"");if(!t||t.length>8192||t.split(".").length!==3)throw new Error("Unauthorized");return {...v,accessToken:t}}
 async function ctx(token:string,owner=false){const url=process.env["SUPABASE_URL"],pub=process.env["SUPABASE_PUBLISHABLE_KEY"];if(!url||!pub)throw new Error("Supabase server is not configured.");const auth=createClient(url,pub,{auth:{persistSession:false,autoRefreshToken:false}});const {data,error}=await auth.auth.getUser(token);if(error||!data.user)throw new Error("Unauthorized");const email=(data.user.email??"").trim().toLowerCase(),role=data.user.app_metadata?.["role"];if(owner&&role!=="admin"&&email!==OWNER)throw new Error("Недостаточно прав.");const {supabaseAdmin}=await import("@/integrations/supabase/client.server");return {user:data.user,db:supabaseAdmin as any}}
 // New keys are stored in api_key in this RLS-protected table. Legacy AES-GCM
@@ -302,8 +302,51 @@ async function executeCloudyAdminCommand(db:any,user:any,raw:string){
   throw new Error("Неизвестная команда. Напишите /admin help.");
 }
 
+async function hasActiveCloudyTeacherAccess(db:any,userId:string){
+  const {data:subscriptions,error}=await db.from("subscriptions")
+    .select("plan_id,status,current_period_end")
+    .eq("user_id",userId)
+    .in("status",["active","trialing","canceled"])
+    .order("created_at",{ascending:false})
+    .limit(20);
+  if(error)throw new Error("Не удалось проверить подписку Cloudy Teacher.");
+  const planIds=[...new Set((subscriptions??[]).map((row:any)=>String(row.plan_id)).filter(Boolean))];
+  if(!planIds.length)return false;
+  const {data:plans,error:plansError}=await db.from("subscription_plans").select("id,code").in("id",planIds);
+  if(plansError)throw new Error("Не удалось проверить тариф Cloudy Teacher.");
+  const teacherIds=new Set((plans??[]).filter((plan:any)=>plan.code==="cloudy_teacher").map((plan:any)=>String(plan.id)));
+  const now=Date.now();
+  return (subscriptions??[]).some((row:any)=>{
+    if(!teacherIds.has(String(row.plan_id)))return false;
+    const end=row.current_period_end?new Date(row.current_period_end).getTime():null;
+    if(row.status==="canceled")return end!==null&&Number.isFinite(end)&&end>now;
+    return (row.status==="active"||row.status==="trialing")&&(end===null||(Number.isFinite(end)&&end>now));
+  });
+}
+function cloudyChatModel(provider:any,tier:"lite"|"teacher"){
+  if(tier==="lite"){
+    const configured=String(process.env["CLOUDY_LITE_MODEL"]??"").trim();
+    if(configured)return configured;
+    const saved=String(provider.model??"").trim();
+    if(saved)return saved;
+    return provider.provider==="groq"?"openai/gpt-oss-20b":provider.provider==="openrouter"?"openai/gpt-4o-mini":"gpt-4o-mini";
+  }
+  const configured=String(process.env["CLOUDY_TEACHER_MODEL"]??"").trim();
+  if(configured)return configured;
+  if(provider.provider==="groq")return "openai/gpt-oss-120b";
+  if(provider.provider==="openrouter")return "openai/gpt-4o";
+  return "gpt-4o";
+}
+export const getCloudyChatModelAccess=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
+  const {db,user}=await ctx(data.accessToken);
+  return {teacherAccess:await hasActiveCloudyTeacherAccess(db,user.id),defaultModel:"lite"};
+});
 export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
+  const requestedChatModel=data.chatModel==="teacher"?"teacher":"lite";
+  if(requestedChatModel==="teacher"&&!(await hasActiveCloudyTeacherAccess(db,user.id))){
+    throw new Error("Для Cloudy Teacher 4.4 нужна активная подписка. Выберите Cloudy Lite 2.2 или оформите подписку.");
+  }
   const prompt=String(data.message??"").trim().slice(0,2000);
   if(prompt.toLowerCase()==="/admin"||prompt.toLowerCase().startsWith("/admin "))return await executeCloudyAdminCommand(db,user,prompt);
   if(!prompt)throw new Error("Напишите сообщение.");
@@ -360,10 +403,10 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const routed=await runWithAiFallback(providers.map((r:any)=>({id:String(r.id),priority:Number(r.priority)||0})),async(candidate)=>{
       const provider=providers.find((r:any)=>String(r.id)===candidate.id);
       if(!provider)throw new Error("AI provider configuration changed.");
-      return ask(provider,messages,700);
+      return ask(provider,messages,700,cloudyChatModel(provider,requestedChatModel));
     });
     const a=routed.value;
-    return {answer:a.content,provider:a.provider,model:a.model};
+    return {answer:a.content,provider:a.provider,model:a.model,chatModel:requestedChatModel};
   }finally{
     await db.rpc("release_cloudy_ai_request",{_user_id:user.id,_request_id:requestId});
   }
