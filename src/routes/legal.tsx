@@ -216,10 +216,6 @@ export function LegalPage() {
         .legal-progress i{display:block;height:100%;background:linear-gradient(90deg,#4db3ff,#fff);transition:width .15s}
         .legal-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:14px 16px calc(34px + env(safe-area-inset-bottom,0px))}
         .legal-scroll::-webkit-scrollbar{display:none}
-        .legal-hero{text-align:center;padding:24px 18px 22px;margin:2px 0 22px;border-radius:28px;background:linear-gradient(135deg,#4db3ff,#2d86f2);box-shadow:0 5px 0 #1a58b5,0 16px 30px rgba(0,0,0,.25)}
-        .legal-hero-mark{width:58px;height:58px;margin:0 auto 10px;border-radius:20px;background:rgba(255,255,255,.2);display:grid;place-items:center}
-        .legal-hero h1{margin:0 0 8px;font-size:25px;line-height:1.15;font-weight:900}
-        .legal-hero p{margin:0;font-size:14px;line-height:1.5;font-weight:700;opacity:.94}
         .legal-kicker{margin:22px 4px 10px;font-size:12px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:#9cc9ed}
         .legal-cards{display:grid;gap:10px}
         .legal-card{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border-radius:22px;text-align:left;color:#fff;background:rgba(255,255,255,.085);border:1px solid rgba(255,255,255,.12);transition:transform .2s,background .2s;animation:legalRise .45s both;animation-delay:calc(var(--i)*45ms)}
@@ -289,11 +285,6 @@ export function LegalPage() {
             </div>
           ) : (
             <div className={`legal-home${pageDirection === "bck" ? " legal-page-transition legal-backward" : ""}`}>
-              <section className="legal-hero">
-                <div className="legal-hero-mark"><ShieldCheck size={34} /></div>
-                <h1>Твои данные — твои правила</h1>
-                <p>Мы переписали документы простым языком. Главное — сверху, полный юридический текст — под каждым пунктом.</p>
-              </section>
               <div className="legal-kicker">Быстрые ответы</div>
               <div className={`legal-faq${pageDirection === "fwd" ? " legal-page-transition" : ""}`}>
                 {LEGAL_FAQ.map(([question, answer], index) => <section className={`legal-faq-item${expandedFaq === index ? " is-open" : ""}`} key={question}>
