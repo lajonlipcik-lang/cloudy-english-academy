@@ -14,6 +14,12 @@ void main() {
       expect(isCloudyLessonInLevel(6, 'A1'), isFalse);
     });
 
+    test('normalizes typed recall answers like the current app', () {
+      expect(checkCloudyRecallAnswer('  HELLO!!  ', 'hello'), isTrue);
+      expect(checkCloudyRecallAnswer('hello   world', 'hello world'), isTrue);
+      expect(checkCloudyRecallAnswer('hello there', 'hello'), isFalse);
+    });
+
     test('uses the same XP, star and accuracy formulas', () {
       expect(cloudyLessonGain(5), 30);
       expect(cloudyLessonGain(0), 15);
