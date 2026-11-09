@@ -34,9 +34,9 @@ These migrations reference Content tables such as `public.shorts_videos`, `publi
 
 The Content track's `0001_cloudy_content_core.sql` creates community tables and functions. Core migration `0014_community_and_privacy_rights.sql` also contains community/privacy functionality. The exact intended ownership and overlap must be reconciled before applying both tracks to the same database.
 
-The Content track's comments describe a separate Content database and opaque user UUID references, while application code uses both Core and Content Supabase clients. This is an intentional architectural possibility documented in the repository and must not be silently collapsed into a single database.
+The Content track was originally written for a separate Content database, but the current target proposal is one project. This is supported by the server helper's Core fallback and by Core Shorts RPC migrations that reference Content tables in the same schema. The single-project target must be treated as an explicit migration decision, not as a claim that the old separate-project mode has been removed.
 
-### Duplicate migration number
+### Security gap in saved-posts migration\n\nContent migration `0009_shorts_saved_posts.sql` creates `public.shorts_saved_posts` but does not enable RLS, revoke browser-role privileges or explicitly grant access only to `service_role`. Other Shorts tables in Content migration `0002` do have RLS and explicit service-role grants. Because saved posts are accessed through a privileged server client, add a separate reviewed hardening migration and verify effective grants/RLS on a fresh Supabase database before applying the sequence. Do not assume the table is protected just because server code currently uses the admin client.\n\n### Duplicate migration number
 
 There are two distinct files numbered `0009` in the Content directory:
 - `0009_shorts_follows.sql`
@@ -52,7 +52,7 @@ The migration runner's ordering and identity rules must be checked. A runner tha
 
 1. Read the complete Core and Content migration files in order, including every `ALTER TABLE`, policy, grant, function, trigger, extension and Storage bucket operation.
 2. Inspect the migration runner/configuration and confirm how it identifies migration files, especially duplicate `0009` prefixes.
-3. Decide and document the target topology: one Supabase project with one unified schema, or separate Core and Content Supabase projects. Do not infer the answer from folder names alone.
+3. Use the documented single-project target for this migration unless a new explicit architecture decision supersedes it. Keep the separate Content-project mode as a future option, not a second database to provision now.
 4. Reconcile duplicate/overlapping community objects and Shorts RPC dependencies for the selected topology.
 5. Ensure every RPC's referenced tables and columns exist before that RPC is created.
 6. Verify RLS, grants, SECURITY DEFINER functions, search_path, Storage policies and private bucket access.
@@ -71,4 +71,4 @@ The migration runner's ordering and identity rules must be checked. A runner tha
 
 ## Audit conclusion
 
-The destination Supabase project is currently empty and ready for schema preparation, but the repository's Core and Content migration tracks are not yet proven safe to apply as one sequence. The duplicate Content migration prefix and the Core-to-Content RPC dependencies are concrete blockers. No database changes should be made until the target topology and ordered migration plan are reconciled and tested.
+The destination Supabase project is currently empty. The single-project target is now documented, but the Core and Content migration tracks are still not proven safe to apply as one sequence. The duplicate Content migration prefix, the missing unified runner, the saved-posts RLS/grants gap, and the RPC behavior conflict are concrete blockers. No database changes should be made until the complete ordered history and hardening changes pass on a disposable Supabase database.
