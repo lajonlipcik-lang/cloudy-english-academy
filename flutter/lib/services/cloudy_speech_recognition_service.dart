@@ -197,7 +197,7 @@ class CloudySpeechRecognitionService {
       transcript: transcript,
       accepted: accepted,
       confidence: selected?.confidence,
-      alternatives: alternatives.map((item) => item.recognizedWords).toList(),
+      alternatives: alternatives.map((item) => item.recognizedWords.toString()).toList(growable: false),
       error: error,
     ));
   }
