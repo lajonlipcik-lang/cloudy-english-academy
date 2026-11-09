@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/cloudy_auth_repository.dart';
 import '../data/cloudy_mobile_api.dart';
 import '../domain/cloudy_state.dart';
+import '../domain/cloudy_progress_engine.dart';
 import '../progress/cloudy_local_progress_store.dart';
 
 enum CloudySessionStatus {
@@ -57,7 +58,11 @@ class CloudySessionController extends ChangeNotifier {
       (event) {
         // Serialize auth events so an older activation cannot win a race
         // against a newer sign-in/sign-out event.
-        _eventQueue = _eventQueue.then((_) => _handleAuthEvent(event));
+        _eventQueue = _eventQueue
+            .then((_) => _handleAuthEvent(event))
+            .catchError((Object error, StackTrace stackTrace) {
+          _setError('Не удалось обработать изменение аккаунта. Повторите вход.');
+        });
       },
       onError: (Object error, StackTrace stackTrace) {
         _setError('Не удалось обновить сессию. Проверьте подключение к интернету.');
@@ -108,7 +113,9 @@ class CloudySessionController extends ChangeNotifier {
       remoteState: remote?.hasProgressRow == true ? remote!.state.toJson() : null,
       remoteUpdatedAt: remote?.updatedAt,
       progressLoadFailed: loadError != null,
-      profileLevel: remote?.learnerProfile?['english_level'] as String?,
+      profileLevel: remote?.learnerProfile?['english_level'] is String
+          ? remote!.learnerProfile!['english_level'] as String
+          : null,
       placementTestCompleted:
           remote?.learnerProfile?['placement_test_completed'] == true,
     );
@@ -139,26 +146,42 @@ class CloudySessionController extends ChangeNotifier {
   ) async {
     await _localProgress.markDirty(email);
     try {
-      final result = await _mobileApi.saveProgress(
-        activation.state,
-        expectedUpdatedAt: activation.updatedAt,
-      );
-      if (result['conflict'] == true) {
+      var candidate = activation.state;
+      var base = activation.baseState;
+      var version = activation.updatedAt;
+      var saved = false;
+      for (var attempt = 0; attempt < 3; attempt++) {
+        final result = await _mobileApi.saveProgress(
+          candidate,
+          expectedUpdatedAt: version,
+        );
+        if (result['ok'] == true) {
+          saved = true;
+          break;
+        }
+        if (result['conflict'] != true) break;
+        final rawRemote = result['state'];
+        if (rawRemote is! Map) break;
+        final remoteState = CloudyState.fromJson(rawRemote);
+        candidate = mergeCloudyConflictProgress(remoteState, candidate, base);
+        base = remoteState;
+        version = result['updated_at'] is String
+            ? result['updated_at'] as String
+            : null;
+        await _localProgress.saveAccount(email, candidate);
+        _progress = candidate;
+      }
+      if (!saved) {
         _setError(
-          'Прогресс изменился на другом устройстве. '
-          'Синхронизация приостановлена, чтобы не потерять данные.',
+          'Не удалось подтвердить синхронизацию прогресса. '
+          'Локальная копия сохранена, повторная попытка не потеряет данные.',
           status: CloudySessionStatus.offline,
         );
         return;
       }
-      final updatedAt = result['updated_at'];
-      await _localProgress.markSynced(
-        email,
-        noPendingChanges: true,
-      );
-      if (updatedAt is String && updatedAt.isNotEmpty) {
-        // The next activation obtains the authoritative timestamp from the API.
-      }
+      _progress = candidate;
+      await _localProgress.saveAccount(email, candidate);
+      await _localProgress.markSynced(email, noPendingChanges: true);
     } catch (_) {
       _setError(
         'Прогресс сохранён на устройстве, но не отправлен на сервер. '
