@@ -6,7 +6,7 @@ type JsonRecord = Record<string, unknown>;
 function createUserSupabaseFetch(supabaseKey: string): typeof fetch {
   return (input, init) => {
     const headers = new Headers(
-      typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
+      typeof Request !== "undefined" && input instanceof Request ? input['headers'] : undefined,
     );
     if (init?.headers) new Headers(init.headers).forEach((value, key) => headers.set(key, value));
     if ((supabaseKey.startsWith("sb_publishable_") || supabaseKey.startsWith("sb_secret_")) &&
@@ -30,12 +30,12 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     if (!url || !key) throw new Error("Supabase server is not configured.");
     const client = createClient(url, key, {
       global: {
-        headers: { Authorization: "Bearer " + String(input.accessToken ?? "") },
+        headers: { Authorization: "Bearer " + String(input['accessToken'] ?? "") },
         fetch: createUserSupabaseFetch(key),
       },
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
-    const { data: identity, error: authError } = await client.auth.getUser(String(input.accessToken ?? ""));
+    const { data: identity, error: authError } = await client.auth.getUser(String(input['accessToken'] ?? ""));
     if (authError || !identity.user) throw new Error("Unauthorized");
     const [progressResult, profileResult] = await Promise.all([
       client.from("user_progress")
@@ -61,12 +61,12 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     if (!url || !key) throw new Error("Supabase server is not configured.");
     const client = createClient(url, key, {
       global: {
-        headers: { Authorization: "Bearer " + String(input.accessToken ?? "") },
+        headers: { Authorization: "Bearer " + String(input['accessToken'] ?? "") },
         fetch: createUserSupabaseFetch(key),
       },
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
-    const { data: identity, error: authError } = await client.auth.getUser(String(input.accessToken ?? ""));
+    const { data: identity, error: authError } = await client.auth.getUser(String(input['accessToken'] ?? ""));
     if (authError || !identity.user) throw new Error("Unauthorized");
     const uid = identity.user.id;
     const { data: access, error: accessError } = await client
@@ -129,8 +129,8 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
   if (action === "tts") {
     const api = await import("@/lib/cloudy-ai.functions");
     return api.cloudyTextToSpeech({ data: {
-      accessToken: input.accessToken,
-      message: String(input.text ?? input.message ?? ""),
+      accessToken: String(input['accessToken'] ?? ''),
+      message: String(input['text'] ?? input['message'] ?? ""),
     } });
   }
   if (action.startsWith("learning-exam-")) {
@@ -149,19 +149,19 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     if (!url || !key) throw new Error("Supabase server is not configured.");
     const client = createClient(url, key, {
       global: {
-        headers: { Authorization: "Bearer " + String(input.accessToken ?? "") },
+        headers: { Authorization: "Bearer " + String(input['accessToken'] ?? "") },
         fetch: createUserSupabaseFetch(key),
       },
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
-    const { data: identity, error: authError } = await client.auth.getUser(String(input.accessToken ?? ""));
+    const { data: identity, error: authError } = await client.auth.getUser(String(input['accessToken'] ?? ""));
     if (authError || !identity.user) throw new Error("Unauthorized");
     const uid = identity.user.id;
     const uuid = (value: unknown) => typeof value === "string" && /^[0-9a-f-]{36}$/i.test(value);
 
     if (action === "community-interactions-get") {
-      const ids = Array.isArray(input.postIds)
-        ? [...new Set(input.postIds.filter(uuid))].slice(0, 50) as string[]
+      const ids = Array.isArray(input['postIds'])
+        ? [...new Set(input['postIds'].filter(uuid))].slice(0, 50) as string[]
         : [];
       if (!ids.length) return { comments: [], reactions: [] };
       const [commentsResult, reactionsResult] = await Promise.all([
@@ -191,8 +191,8 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     }
 
     if (action === "community-comment-create") {
-      const postId = input.postId;
-      const body = typeof input.body === "string" ? input.body.trim() : "";
+      const postId = input['postId'];
+      const body = typeof input['body'] === "string" ? input['body'].trim() : "";
       if (!uuid(postId)) throw new Error("Некорректная публикация.");
       if (body.length < 1 || body.length > 1000) throw new Error("Комментарий должен содержать от 1 до 1000 символов.");
       const { data, error } = await client.from("community_comments")
@@ -202,7 +202,7 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     }
 
     if (action === "community-comment-delete") {
-      const commentId = input.commentId;
+      const commentId = input['commentId'];
       if (!uuid(commentId)) throw new Error("Некорректный комментарий.");
       const { data, error } = await client.from("community_comments")
         .delete().eq("id", commentId).eq("author_id", uid).select("id").maybeSingle();
@@ -212,7 +212,7 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     }
 
     if (action === "community-reaction-toggle") {
-      const postId = input.postId;
+      const postId = input['postId'];
       if (!uuid(postId)) throw new Error("Некорректная публикация.");
       const { data: existing, error: readError } = await client.from("community_reactions")
         .select("post_id").eq("post_id", postId).eq("user_id", uid).maybeSingle();
@@ -228,10 +228,10 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     }
 
     if (action === "community-report-create") {
-      const postId = typeof input.postId === "string" ? input.postId : "";
-      const commentId = typeof input.commentId === "string" ? input.commentId : "";
-      const reason = input.reason;
-      const details = typeof input.details === "string" ? input.details.trim().slice(0, 1000) : "";
+      const postId = typeof input['postId'] === "string" ? input['postId'] : "";
+      const commentId = typeof input['commentId'] === "string" ? input['commentId'] : "";
+      const reason = input['reason'];
+      const details = typeof input['details'] === "string" ? input['details'].trim().slice(0, 1000) : "";
       if ((!postId && !commentId) || (postId && !uuid(postId)) || (commentId && !uuid(commentId)) || (postId && commentId)) {
         throw new Error("Некорректная жалоба.");
       }
@@ -270,7 +270,7 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     }
 
     if (action === "community-post-create") {
-      const body = typeof input.body === "string" ? input.body.trim() : "";
+      const body = typeof input['body'] === "string" ? input['body'].trim() : "";
       if (body.length < 1 || body.length > 2000) throw new Error("Текст публикации должен содержать от 1 до 2000 символов.");
       const { data, error } = await client.from("community_posts")
         .insert({ author_id: uid, body }).select("id").single();
@@ -279,7 +279,7 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     }
 
     if (action === "community-post-delete") {
-      const postId = input.postId;
+      const postId = input['postId'];
       if (!uuid(postId)) throw new Error("Некорректная публикация.");
       const { data, error } = await client.from("community_posts")
         .delete().eq("id", postId).eq("author_id", uid).select("id").maybeSingle();
@@ -296,11 +296,11 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     }
 
     if (action === "community-profile-update") {
-      if (typeof input.is_public !== "boolean") throw new Error("Некорректная настройка публичности.");
-      const bio = typeof input.bio === "string" ? input.bio.trim() : "";
+      if (typeof input['is_public'] !== "boolean") throw new Error("Некорректная настройка публичности.");
+      const bio = typeof input['bio'] === "string" ? input['bio'].trim() : "";
       if (bio.length > 240) throw new Error("Описание слишком длинное.");
       const { data, error } = await client.from("profiles")
-        .update({ is_public: input.is_public, bio }).eq("id", uid).select("is_public,bio").single();
+        .update({ is_public: input['is_public'], bio }).eq("id", uid).select("is_public,bio").single();
       if (error) throw error;
       return { is_public: data.is_public === true, bio: String(data.bio ?? "").slice(0, 240) };
     }
