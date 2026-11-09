@@ -57,7 +57,7 @@ class CloudyProgressSyncService {
     return _learningStore!;
   }
 
-  Future<CloudyState> activateGuest() async {
+  Future<CloudyState> activateGuest() => _serialize(() async {
     await localStore.enterGuestMode();
     _activeEmail = null;
     _updatedAt = null;
@@ -65,11 +65,11 @@ class CloudyProgressSyncService {
     _syncPaused = false;
     _learningStore = await CloudyLearningStore.create(scope: 'cl2');
     return localStore.loadGuest();
-  }
+  });
 
   Future<CloudyProgressSyncResult> activateAccount({
     required String email,
-  }) async {
+  }) => _serialize(() async {
     final normalizedEmail = email.trim().toLowerCase();
     if (normalizedEmail.isEmpty) {
       throw ArgumentError.value(email, 'email', 'Account email must not be empty.');
@@ -151,7 +151,7 @@ class CloudyProgressSyncService {
       uploaded: false,
       updatedAt: activation.updatedAt,
     );
-  }
+  });
 
   Future<CloudyProgressSyncResult> saveLocal(CloudyState state) =>
       _serialize(() async {
