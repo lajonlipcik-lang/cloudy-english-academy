@@ -138,9 +138,7 @@ function sheet(h){const s=document.createElement("div");s.className="sb";s.inner
 function closeSh(){const s=$(".sb");if(!s)return;if(s.dataset.shortsUpload==="1")shortsDisposeUpload();s.classList.add("out");setTimeout(()=>s.remove(),300)}
 let __dockPrev=-1;const NAVORD=[0,1,4,2,3],NAVN={0:"Учёба",1:"Задания",2:"Лига",3:"Профиль",4:"Видео"},NAVI={0:"home",1:"target",2:"medal",3:"user",4:"play"};
 const nav=()=>{const cur=NAVORD.indexOf(T),prev=__dockPrev<0?cur:__dockPrev;__dockPrev=cur;if(prev!==cur)requestAnimationFrame(()=>requestAnimationFrame(()=>{const n=document.querySelector("nav.dock");if(n)n.style.setProperty("--i",cur)}));
-return `<nav class="dock${T===4?" dock-dark":""}${T===4?" mid-on":""}" style="--i:${prev}"><i class="dock-ind"></i>${NAVORD.map(k=>{if(k===4){const pl=T===4;return `<button class="dock-mid${pl?" on plus":""}" aria-label="${pl?"Создать":"Видео"}" onclick="${pl?"shortsUpload()":"tab(4)"}"><span class="mid-bub">${pl?'<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>':ic("play")}</span><span>${pl?"Создать":"Видео"}</span></button>`}return `<button class="${T==k?"on":""}" onclick="tab(${k})">${ic(NAVI[k])}<span>${NAVN[k]}</span></button>`}).join("")}</nav>${T===0?`<button class="fab-ai" onclick="chat()" aria-label="Практика с Клауди">${mascot()}<span>Практика</span></button>`:""}`};
-
-const isAppleMobile=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+return `<nav class="dock${T===4?" dock-dark":""}${T===4?" mid-on":""}" style="--i:${prev}"><i class="dock-ind"></i>${NAVORD.map(k=>{if(k===4){const pl=T===4;return `<button class="dock-mid${pl?" on plus":""}" aria-label="${pl?"Создать":"Видео"}" onclick="${pl?"shortsUpload()":"tab(4)"}"><span class="mid-bub">${pl?'<svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>':ic("play")}</span><span>${pl?"Создать":"Видео"}</span></button>`}return `<button class="${T==k?"on":""}" onclick="tab(${k})">${ic(NAVI[k])}<span>${NAVN[k]}</span></button>`}).join("")}</nav>${T===0?`<button class="fab-ai" onclick="chat()" aria-label="Практика с Клауди">${mascot()}<span>Практика</span></button>`:""}`};const isAppleMobile=()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const isInstalledCloudy=()=>window.navigator.standalone===true||window.matchMedia('(display-mode: standalone)').matches||window.matchMedia('(display-mode: fullscreen)').matches;
 function renderInstallGate(){
  const safari=/Safari/i.test(navigator.userAgent)&&!/CriOS|FxiOS|EdgiOS|OPiOS|YaBrowser/i.test(navigator.userAgent);
@@ -497,7 +495,8 @@ const LG=[['Бронза',0],['Серебро',200],['Золото',600],['Са�
 function lg(){const li=LG.reduce((a,x,k)=>S.xp>=x[1]?k:a,0),c=LG[li],nx=LG[li+1],w=S.wk.k==wkey()?S.wk.xp:0,dow=(new Date().getDay()+6)%7+1,seed=[...wkey()].reduce((a,ch)=>a+ch.charCodeAt(0),0),pr=nx?Math.min((S.xp-c[1])/(nx[1]-c[1]),1):1,
  rows=BOTS.map((n,k)=>[n,Math.round(((seed*(k+3)*7919)%180+40)*dow/7),0]).concat([['Вы',w,1]]).sort((a,b)=>b[1]-a[1]);
   const pod=[1,0,2].map(q=>{const r=rows[q];return r?`<div class="pod p${q+1}${r[2]?" me":""}" style="--i:${q}"><div class="pod-av">${ic("user")}</div><b>${r[0]}</b><small>${r[1]} XP</small><div class="pod-bar"><span>${q+1}</span></div></div>`:""}).join("");
-  return `<div class="pg-head"><h2>Лига: ${c[0]}</h2><button class="hud-gear" aria-label="Настройки" onclick="CloudyUI.open()">${ic("gear")}</button></div><div class="lg-hero" style="--lc:${LC[li]}"><span class="mdl" style="color:${LC[li]}">${ic("medal")}</span><div style="flex:1"><b>${nx?"До лиги "+nx[0]+": "+(nx[1]-S.xp)+" XP":"Максимальная лига"}</b><div class="pb" style="margin-top:10px"><i style="width:${pr*100}%"></i></div></div></div><div class="podium">${pod}</div><div class="card"><h3>Рейтинг недели</h3>${rows.map((r,k)=>`<div class="row lr${r[2]?" me":""}" style="animation-delay:${k*70}ms"><span><b class="rk">${k+1}</b>${r[0]}</span><b>${r[1]} XP</b></div>`).join("")}<small style="opacity:.7">Соперники учебные: пример для будущей онлайн-лиги</small></div><div class="card"><h3>Достижения</h3><div class="ag">${ACH.map(a=>`<div class="bd${S.ach.includes(a[0])?" on":""}">${ic(a[3])}<small>${a[1]}</small></div>`).join("")}</div></div>`}function cal(){const t=new Date(),c=[];for(let k=27;k>=0;k--){const d=new Date(t);d.setDate(t.getDate()-k);const on=S.days.includes(dk(d));c.push(`<i class="cd${on?' on':''}" style="animation-delay:${(27-k)*25}ms">${on?ic('flame'):d.getDate()}</i>`)}return `<div class="card"><h3>Календарь серии</h3><div class="cal">${c.join('')}</div></div>`}
+  return `<div class="pg-head"><h2>Лига: ${c[0]}</h2><button class="hud-gear" aria-label="Настройки" onclick="CloudyUI.open()">${ic("gear")}</button></div><div class="lg-hero" style="--lc:${LC[li]}"><span class="mdl" style="color:${LC[li]}">${ic("medal")}</span><div style="flex:1"><b>${nx?"До лиги "+nx[0]+": "+(nx[1]-S.xp)+" XP":"Максимальная лига"}</b><div class="pb" style="margin-top:10px"><i style="width:${pr*100}%"></i></div></div></div><div class="podium">${pod}</div><div class="card"><h3>Рейтинг недели</h3>${rows.map((r,k)=>`<div class="row lr${r[2]?" me":""}" style="animation-delay:${k*70}ms"><span><b class="rk">${k+1}</b>${r[0]}</span><b>${r[1]} XP</b></div>`).join("")}<small style="opacity:.7">Соперники учебные: пример для будущей онлайн-лиги</small></div><div class="card"><h3>Достижения</h3><div class="ag">${ACH.map(a=>`<div class="bd${S.ach.includes(a[0])?" on":""}">${ic(a[3])}<small>${a[1]}</small></div>`).join("")}</div></div>`}
+function cal(){const t=new Date(),c=[];for(let k=27;k>=0;k--){const d=new Date(t);d.setDate(t.getDate()-k);const on=S.days.includes(dk(d));c.push(`<i class="cd${on?' on':''}" style="animation-delay:${(27-k)*25}ms">${on?ic('flame'):d.getDate()}</i>`)}return `<div class="card"><h3>Календарь серии</h3><div class="cal">${c.join('')}</div></div>`}
 let personalExamBusy=false,PERSONAL_EXAM=null,learningSyncTimer=0,learningSyncInFlight=null,learningEventSyncTimer=0,learningEventSyncInFlight=null,remoteLearningProfile=null,remoteLearningProfileUser=null,remoteLearningProfileLoading=false,remoteExamStatus=null,remoteExamStatusUser=null,remoteExamStatusLoading=false;
 const examEscape=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
 function examLearnerProfile(){
@@ -808,7 +807,8 @@ function learn(){
  return `<header class="hud"><button class="hud-lv" aria-label="Профиль" onclick="tab(3)"><span class="lc ${S.lv}">${S.lv}</span></button><div class="hud-stats"><span class="stat s-fl">${ic("flame")}<b>${S.streak}</b></span><span class="stat s-xp">${ic("bolt")}<b>${S.xp}</b></span></div><span class="sp"></span><button class="hud-goal ${rdy?"rdy":td.claim?"got":""}" aria-label="Цель дня" onclick="claim()"><svg viewBox="0 0 44 44"><circle class="t" cx="22" cy="22" r="18"/><circle class="p" cx="22" cy="22" r="18" style="stroke-dasharray:${C};stroke-dashoffset:${C*(1-gp)}"/></svg>${ic("chest")}</button><button class="hud-gear" aria-label="Настройки" onclick="CloudyUI.open()">${ic("gear")}</button></header>
  ${rv||examCard()?`<div class="quick">${rvBtn()}${examCard()}</div>`:""}${secs}${dn>=tl&&nxt(S.lv)?`<div class="card done-card"><b>Уровень ${S.lv} пройден!</b><br><br><button class="btn" onclick="setLv('${nxt(S.lv)}')">ПЕРЕЙТИ НА ${nxt(S.lv)}</button></div>`:""}`}
 function claim(){const td=S.td;if(td.xp>=S.set.goal&&!td.claim){td.claim=1;S.xp+=25;save();snd("chest");conf(50);view(0)}else snd("bad")}
-function guide(si){sheet(`<h3>Шпаргалка: ${SEC[si].n}</h3>`+SEC[si].l.map(li=>`<b style="opacity:.8;font-size:13px">${D[li].t.toUpperCase()}</b>`+D[li].w.map(([e,r])=>`<div class="row"><span>${e} <span style="opacity:.65">— ${r}</span></span><button class="spk" onclick="say('${e}',1)">${ic("spk")}</button></div>`).join("")).join("")+`<br><button class="btn" onclick="closeSh()">ЗАКРЫТЬ</button>`)}function quests(){const g=Math.max(1,Number(S.set.goal)||30),td=S.td,rdy=td.xp>=g&&!td.claim,nr=Object.keys(S.mis).length,
+function guide(si){sheet(`<h3>Шпаргалка: ${SEC[si].n}</h3>`+SEC[si].l.map(li=>`<b style="opacity:.8;font-size:13px">${D[li].t.toUpperCase()}</b>`+D[li].w.map(([e,r])=>`<div class="row"><span>${e} <span style="opacity:.65">— ${r}</span></span><button class="spk" onclick="say('${e}',1)">${ic("spk")}</button></div>`).join("")).join("")+`<br><button class="btn" onclick="closeSh()">ЗАКРЫТЬ</button>`)}
+function quests(){const g=Math.max(1,Number(S.set.goal)||30),td=S.td,rdy=td.xp>=g&&!td.claim,nr=Object.keys(S.mis).length,
  Q=[["Набери "+g+" XP",td.xp,g,"bolt"],["Пройди 2 урока",td.les,2,"book"],["Дай 12 верных ответов",td.ok,12,"target"]],
  wd=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"],now=new Date(),dow=(now.getDay()+6)%7,
  week=wd.map((w,k)=>{const d=new Date(now);d.setDate(now.getDate()-dow+k);const on=S.days.includes(dk(d));return `<div class="wd${on?" on":""}${k==dow?" now":""}" style="--i:${k}"><small>${w}</small><i>${on?ic("flame"):""}</i></div>`}).join("");
@@ -816,7 +816,101 @@ function guide(si){sheet(`<h3>Шпаргалка: ${SEC[si].n}</h3>`+SEC[si].l.m
  <div class="streak-card"><div class="sc-top"><span class="sc-fl">${ic("flame")}</span><div><b>${S.streak}</b><small>дней подряд</small></div></div><div class="week">${week}</div></div>
  <div class="chest-card ${rdy?"rdy":td.claim?"got":""}"><span class="cc-ic">${ic("chest")}</span><div class="cc-b"><b>Сундук дня</b><small>${td.claim?"Награда получена":Math.min(td.xp,g)+" из "+g+" XP"}</small><div class="pb"><i style="width:${Math.min(td.xp/g,1)*100}%"></i></div></div><button class="btn sm" ${rdy?"":"disabled"} onclick="claim()">${td.claim?"Получено":"Забрать"}</button></div>
  ${nr?`<div class="rv-card"><span class="rv-ic">${ic("redo")}</span><div style="flex:1"><b>Повторение ошибок</b><small>Слов для повторения: ${nr}</small></div><button class="btn sm" onclick="review()">ПОВТОРИТЬ</button></div>`:""}
- <div class="quest-list">${Q.map(([nm,v,m,icn],k)=>`<div class="qi${v>=m?" done":""}" style="--i:${k}"><span class="qi-ic">${ic(icn)}</span><div class="qi-b"><p><span>${nm}</span><b>${Math.min(v,m)}/${m}</b></p><div class="pb"><i style="width:${Math.min(v/m,1)*100}%"></i></div></div><span class="qi-ok">${ic("check")}</span></div>`).join("")}</div>`}// Shorts state must exist before the first render. The feed renderer reads these
+ <div class="quest-list">${Q.map(([nm,v,m,icn],k)=>`<div class="qi${v>=m?" done":""}" style="--i:${k}"><span class="qi-ic">${ic(icn)}</span><div class="qi-b"><p><span>${nm}</span><b>${Math.min(v,m)}/${m}</b></p><div class="pb"><i style="width:${Math.min(v/m,1)*100}%"></i></div></div><span class="qi-ok">${ic("check")}</span></div>`).join("")}</div>`}
+function shortsOpenAccountProfile(){shortsProfileUserId=null;shortsProfileData=null;shortsProfileLoading=false;shortsProfileTab="all";T=3;shortsPauseAll();view(1,-1);}
+function shortsOpenMyCreatorProfile(){
+ if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы открыть профиль Cloudy Shorts.",false);return;}
+ const userId=S.user.id;
+ shortsProfileUserId=userId;shortsProfileData=null;shortsProfileLoading=true;shortsProfileTab="all";shortsPauseAll();T=4;view(0);
+ authRequest("shorts-profile-get",{payload:{authorId:userId}}).then(r=>{if(shortsProfileUserId===userId)shortsProfileData=r.result||null;}).catch(e=>toast(e.message||"Не удалось открыть профиль.",false)).finally(()=>{if(shortsProfileUserId===userId){shortsProfileLoading=false;view(0);}});
+}
+function shortsOpenProfile(userId){
+ if(!/^[0-9a-f-]{36}$/i.test(String(userId||"")))return;
+ if(userId===S.user?.id){shortsOpenAccountProfile();return;}
+ shortsProfileUserId=userId;shortsProfileData=null;shortsProfileLoading=true;shortsProfileTab="all";shortsPauseAll();T=3;view(0);
+ authRequest("shorts-profile-get",{payload:{authorId:userId}}).then(r=>{if(shortsProfileUserId===userId)shortsProfileData=r.result||null;}).catch(e=>toast(e.message||"Не удалось открыть профиль.",false)).finally(()=>{if(shortsProfileUserId===userId){shortsProfileLoading=false;view(0);}});
+}
+function shortsCloseProfile(){shortsProfileUserId=null;shortsProfileData=null;shortsProfileTab="all";T=4;view(0);}
+function shortsSetProfileTab(tab){shortsProfileTab=["all","video","image","text"].includes(tab)?tab:"all";view(0);}
+
+async function shortsToggleFollow(){
+ const p=shortsProfileData?.profile;if(!p||p.isOwn||!S.user||S.user.guest)return;
+ const next=!shortsProfileData.isFollowing;
+ try{
+  const response=await authRequest("shorts-follow-set",{payload:{authorId:p.id,follow:next}});
+  if(!shortsProfileData||shortsProfileData.profile.id!==p.id)return;
+  shortsProfileData.isFollowing=!!response.result?.isFollowing;
+  shortsProfileData.stats={...(shortsProfileData.stats||{}),followers:Number(response.result?.followers||0),following:Number(response.result?.following||0)};
+  view(0);
+ }catch(error){toast(error.message||"Не удалось изменить подписку.",false);}
+}
+function shortsEditProfile(){
+ if(!shortsProfileData?.profile?.isOwn)return;
+ const p=shortsProfileData.profile;
+ document.getElementById("shorts-profile-editor")?.remove();
+ const modal=document.createElement("div");modal.id="shorts-profile-editor";modal.className="shorts-profile-editor";
+ const avatarPreview=p.avatarUrl?'<img src="'+shortsEscapeText(p.avatarUrl)+'" alt="">':'<span>'+shortsEscapeText((p.displayName||"У").charAt(0).toUpperCase())+'</span>';
+ modal.innerHTML='<div class="shorts-profile-editor-backdrop" data-profile-editor-close></div><section class="shorts-profile-editor-panel" role="dialog" aria-modal="true" aria-labelledby="shortsProfileEditorTitle"><header><h2 id="shortsProfileEditorTitle">Настройки профиля</h2><button type="button" data-profile-editor-close aria-label="Закрыть">×</button></header><label class="shorts-profile-editor-cover" style="'+(p.coverUrl?'background-image:url(&quot;'+shortsEscapeText(p.coverUrl)+'&quot;)':'')+'"><span>Обложка профиля</span><input id="shortsProfileCoverFile" type="file" accept="image/jpeg,image/png,image/webp"></label><div class="shorts-profile-editor-avatar-row"><label class="shorts-profile-editor-avatar">'+avatarPreview+'<input id="shortsProfileAvatarFile" type="file" accept="image/jpeg,image/png,image/webp"></label><span>Нажмите на фото, чтобы сменить аватар</span></div><label class="shorts-profile-editor-field">Имя профиля<input id="shortsProfileName" maxlength="40" value="'+shortsEscapeText(p.displayName||"")+'"></label><label class="shorts-profile-editor-field">Описание<textarea id="shortsProfileBio" maxlength="240" rows="3">'+shortsEscapeText(p.bio||"")+'</textarea></label><label class="shorts-profile-editor-visibility"><input id="shortsProfilePublic" type="checkbox" '+(p.isPublic?'checked':'')+'> Открытый профиль</label><p class="shorts-profile-editor-hint">Изображения загружаются в закрытое хранилище Cloudy. В профиле отображаются только временные защищённые ссылки.</p><footer><button type="button" data-profile-editor-close>Отмена</button><button type="button" id="shortsProfileSave">Сохранить</button></footer></section>';
+ document.body.appendChild(modal);
+ modal.querySelectorAll("[data-profile-editor-close]").forEach(el=>el.addEventListener("click",()=>modal.remove()));
+ const saveButton=modal.querySelector("#shortsProfileSave");
+ saveButton.addEventListener("click",async()=>{
+  const name=modal.querySelector("#shortsProfileName").value.trim(),bio=modal.querySelector("#shortsProfileBio").value.trim();
+  if(!name||name.length>40){toast("Имя должно содержать от 1 до 40 символов.",false);return;}
+  if(bio.length>240){toast("Описание не должно превышать 240 символов.",false);return;}
+  const avatarFile=modal.querySelector("#shortsProfileAvatarFile").files[0],coverFile=modal.querySelector("#shortsProfileCoverFile").files[0];
+  saveButton.disabled=true;saveButton.textContent="Сохраняем…";
+  try{
+   const upload=async(file,kind)=>{
+    if(!file)return undefined;
+    if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>5*1024*1024)throw new Error("Выберите JPG, PNG или WebP размером до 5 МБ.");
+    const signed=await authRequest("shorts-profile-image-url",{payload:{kind,mimeType:file.type,fileSize:file.size}});
+    const url=signed.result?.signedUrl;
+    if(typeof url!=="string"||!url.startsWith("https://"))throw new Error("Не удалось подготовить загрузку изображения.");
+    const response=await fetch(url,{method:"PUT",headers:{"Content-Type":file.type,"x-upsert":"true"},body:file});
+    if(!response.ok)throw new Error("Не удалось загрузить изображение.");
+    return signed.result.path;
+   };
+   const avatarPath=await upload(avatarFile,"avatar"),coverPath=await upload(coverFile,"cover");
+   await authRequest("shorts-profile-update",{payload:{displayName:name,bio,isPublic:modal.querySelector("#shortsProfilePublic").checked,...(avatarPath?{avatarPath}:{}),...(coverPath?{coverPath}:{})}});
+   modal.remove();toast("Профиль сохранён.");shortsProfileData=null;shortsOpenProfile(S.user.id);
+  }catch(e){toast(e.message||"Не удалось сохранить профиль.",false);saveButton.disabled=false;saveButton.textContent="Сохранить";}
+ });
+}
+
+async function shortsDeletePost(postId){
+ if(!confirm("Удалить публикацию? Это действие нельзя отменить."))return;
+ try{await authRequest("shorts-post-delete",{payload:{postId}});shortsLiveItems=shortsLiveItems.filter(x=>x.id!==postId);toast("Публикация удалена.");if(shortsProfileUserId)shortsOpenProfile(shortsProfileUserId);else view(0);}
+ catch(e){toast(e.message||"Не удалось удалить публикацию.",false);}
+}
+function shortsCreatorProfile(){
+ if(shortsProfileLoading)return '<section class="shorts-creator-profile"><div class="shorts-profile-loading">Загружаем профиль…</div></section>';
+ const data=shortsProfileData;
+ if(!data||!data.profile)return '<section class="shorts-creator-profile"><div class="shorts-profile-cover"><button class="shorts-profile-back" onclick="shortsCloseProfile()" aria-label="Назад">‹</button></div><div class="shorts-profile-loading">Профиль недоступен.</div></section>';
+ const p=data.profile,posts=data.posts||[],stats=data.stats||{},own=!!p.isOwn;
+ const initial=shortsEscapeText((p.displayName||"У").trim().charAt(0).toUpperCase());
+ const avatar=p.avatarUrl?'<img src="'+shortsEscapeText(p.avatarUrl)+'" alt="" referrerpolicy="no-referrer">':'<span>'+initial+'</span>';
+ const coverStyle=p.coverUrl?' style="background-image:linear-gradient(180deg,rgba(0,0,0,.02),rgba(0,0,0,.58)),url(&quot;'+shortsEscapeText(p.coverUrl)+'&quot;)"':"";
+ const handle=p.username?'@'+shortsEscapeText(p.username):'Участник Cloudy Shorts';
+ const visiblePosts=shortsProfileTab==="all"?posts:posts.filter(x=>x.mediaType===shortsProfileTab);
+ const videoCount=posts.filter(x=>x.mediaType==="video"&&x.status==="approved").length;
+ const tabs=[
+  ["all",'<path d="M6 4v16M12 4v16M18 4v16"/>',"Все публикации"],
+  ["video",'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',"Видео"],
+  ["image",'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/>',"Фото"],
+  ["text",'<path d="M5 5h14M5 10h14M5 15h9M5 20h7"/>',"Текст"]
+ ];
+ const tabHtml=tabs.map(([key,path,label])=>'<button class="shorts-profile-tab '+(shortsProfileTab===key?'active':'')+'" aria-label="'+label+'" aria-pressed="'+(shortsProfileTab===key)+'" onclick="shortsSetProfileTab(&quot;'+key+'&quot;)"><svg viewBox="0 0 24 24">'+path+'</svg></button>').join("");
+ const tiles=visiblePosts.length?visiblePosts.map(x=>'<article class="shorts-profile-post" data-profile-post="'+shortsEscapeText(x.id)+'">'+(x.mediaType==="video"&&x.playbackUrl?'<video src="'+shortsEscapeText(x.playbackUrl)+'" muted playsinline preload="none"></video>':x.mediaType==="image"&&x.imageUrl?'<img src="'+shortsEscapeText(x.imageUrl)+'" alt="" loading="lazy">':'<div class="shorts-profile-text">'+shortsEscapeText(x.textContent||x.caption||"Текстовая публикация")+'</div>')+(x.status!=="approved"?'<small class="shorts-profile-pending">На проверке</small>':'')+(own?'<button class="shorts-profile-delete" onclick="shortsDeletePost(&quot;'+x.id+'&quot;)">Удалить</button>':'')+'</article>').join(""):'<div class="shorts-profile-empty"><div>▧</div><b>Публикаций пока нет</b><span>Здесь появятся видео, фото и заметки автора</span></div>';
+ return '<section class="shorts-creator-profile'+(own?' own':'')+'"><header class="shorts-profile-cover"'+coverStyle+'><button class="shorts-profile-back" onclick="shortsCloseProfile()" aria-label="Назад">‹</button><span class="shorts-profile-cover-label">CLOUDY SHORTS</span></header><div class="shorts-profile-head"><div class="shorts-profile-avatar">'+avatar+'</div><div class="shorts-profile-title"><h2>'+shortsEscapeText(p.displayName||"Участник")+'</h2><span>'+handle+'</span></div>'+(own?'<button class="shorts-profile-edit" onclick="shortsEditProfile()">Редактировать</button>':(p.isPublic?'<button class="shorts-profile-follow '+(data.isFollowing?'following':'')+'" onclick="shortsToggleFollow()">'+(data.isFollowing?'Вы подписаны':'Подписаться')+'</button>':'<span class="shorts-profile-visibility">Закрытый профиль</span>'))+'</div><div class="shorts-profile-stats"><div><b>'+shortsCount(stats.posts,false)+'</b><span>Публикации</span></div><div><b>'+shortsCount(stats.followers,false)+'</b><span>Подписчики</span></div><div><b>'+shortsCount(stats.following,false)+'</b><span>Подписки</span></div></div>'+(p.bio?'<p class="shorts-profile-bio">'+shortsEscapeText(p.bio)+'</p>':'')+'<div class="shorts-profile-tabs" role="tablist" aria-label="Публикации автора">'+tabHtml+'</div><div class="shorts-profile-grid">'+tiles+'</div></section>';
+}
+function shortsCount(base, inc){
+  const n = Number(base || 0) + (inc ? 1 : 0);
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
+  return String(n);
+}
+// Shorts state must exist before the first render. The feed renderer reads these
 // values synchronously, before shortsLoadFeed() has completed its first request.
 let shortsFeedMode="for-you";
 let shortsLiveItems=[];
