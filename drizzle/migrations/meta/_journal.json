@@ -148,6 +148,13 @@
       "when": 1794297600000,
       "tag": "0020_cloudy_subscriptions",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794297600001,
+      "tag": "0021_telegram_stars_payments",
+      "breakpoints": true
     }
   ]
 }
