@@ -907,6 +907,16 @@ function shortsCount(base, inc){
   if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
   return String(n);
 }
+// Shorts state must exist before the first render. The feed renderer reads these
+// values synchronously, before shortsLoadFeed() has completed its first request.
+let shortsFeedMode="for-you";
+let shortsLiveItems=[];
+let shortsFollowing=new Set();
+let shortsFeedLoading=false;
+let shortsFeedUser=null;
+let shortsLiked=new Set();
+let shortsSaved=new Set();
+
 function shorts(){
  
  const items=shortsFeedMode==="following"?shortsLiveItems.filter(x=>shortsFollowing.has(x.authorId)):shortsLiveItems;
