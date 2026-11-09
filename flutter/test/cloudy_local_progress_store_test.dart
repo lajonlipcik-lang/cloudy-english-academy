@@ -71,5 +71,21 @@ void main() {
       expect(activation.syncPaused, true);
       expect(activation.shouldSync, false);
     });
+    test('sanitizes local progress before persisting the cl2 snapshot', () async {
+      final unsafe = CloudyState.fromJson({
+        'xp': 40,
+        'streak': 9000,
+        'dn': {'A1': 999, 'A2': 999, 'B1': 99, 'B2': 99},
+        'acc': [9999999, 9999999],
+      });
+
+      await store.saveGuest(unsafe);
+      final restored = store.loadGuest();
+      expect(restored.xp, 40);
+      expect(restored.streak, 3650);
+      expect(restored.completed, {'A1': 24, 'A2': 24, 'B1': 6, 'B2': 6});
+      expect(restored.accuracy, [1000000, 1000000]);
+    });
+
   });
 }
