@@ -2,63 +2,33 @@
 
 Repository: `lajonlipcik-lang/cloudy-english-academy`  
 Branch: `migration/vercel-platform`  
-Destination project: the newly provisioned Cloudy Supabase project.
+Destination: the new Cloudy Supabase project.
 
-## Recommended target topology
+## Target topology
 
-Use **one Supabase project** for the first Vercel migration:
+Use one Supabase project for the first Vercel migration:
 - Core: Auth, profiles, learning progress, XP, AI Vault, community and privacy records.
-- Shorts/Content: Shorts metadata, comments, likes, follows, saved posts, moderation records and the private `cloudy-shorts` Storage bucket.
-- All privileged Content operations remain server-side through `getCloudyContentAdmin()`. Core Auth verifies the access token before a server function accesses Content tables.
-- Do not configure `CLOUDY_CONTENT_SUPABASE_URL` or `CLOUDY_CONTENT_SUPABASE_SERVICE_ROLE_KEY` for this single-project topology. The existing server helper falls back to Core `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+- Shorts/Content: Shorts metadata, comments, likes, follows, saved posts, moderation records and private `cloudy-shorts` Storage bucket.
+- All privileged Shorts operations stay server-side through `getCloudyContentAdmin()`. Core Auth verifies the access token before privileged data access.
+- Leave `CLOUDY_CONTENT_SUPABASE_URL` and `CLOUDY_CONTENT_SUPABASE_SERVICE_ROLE_KEY` unset so the Content helper uses the Core project fallback.
 
-Why this is the best fit for the current repository:
-1. `content.server.ts` explicitly supports the single-project fallback.
-2. The current architecture document says Shorts tables and private storage are co-located in Core by default.
-3. Core migrations `0016`, `0017` and `0018` reference Shorts tables and moderation events in the same `public` schema.
-4. Content migration `0009_shorts_follows.sql` has a foreign key to `auth.users`, so it is not compatible with the documented separate Content project where user UUIDs are supposed to be opaque references.
-5. The user has provisioned one new Supabase destination project. A second project is not required for the current code path.
+This is supported by the current server helper and by Core migrations `0016–0018`, which reference Shorts tables in the same `public` schema. Content migration `0009_shorts_follows.sql` also references `auth.users`, which conflicts with the old separate-project description of opaque user UUIDs. A separate Content project remains a future architecture option, not part of this initial migration.
 
-A separate Content project should be treated as a later, explicit architecture change. It would require moving the Shorts RPCs out of the Core migration track, removing cross-database assumptions and revisiting the `auth.users` foreign key.
+## Include and exclude
 
-## Migration files: include and exclude
+### Core
+Include every Core migration `0000–0020`. Core `0014` creates community/privacy objects; Core `0016–0018` add Shorts RPCs; Core `0019` creates chat history; Core `0020` hardens privacy-center writes.
 
-### Core migrations
+### Content
+- Exclude `0001_cloudy_content_core.sql`. It is the legacy separate-Content community schema and duplicates community objects already created by Core `0014`; its grants/revokes could change access to those Core tables.
+- Include Content `0002–0010` for Shorts tables, RPCs, Storage, media-analysis metadata, follows, saved posts and comment interactions.
+- Resolve the duplicate `0009` filename before creating the canonical migration history. Proposed logical order: follows, saved posts, comment interactions.
 
-Keep the Core sequence `0000–0015` as the base sequence, subject to a final complete SQL review and a clean-database test.
+## Proposed dependency order
 
-Core migration `0014_community_and_privacy_rights.sql` already creates the community tables and privacy-related additions.
+This is a plan to test on a disposable empty Supabase database, not authorization to apply SQL to the connected destination.
 
-### Content migrations
-
-For the single-project topology:
-- **Do not apply** `0001_cloudy_content_core.sql`. It is a legacy separate-Content-project community schema. It duplicates community tables already created by Core `0014`, and its grants/revokes could alter access on those Core tables.
-- Apply `0002_shorts_and_ai_moderation.sql` through `0008_shorts_photo_text_posts.sql` to create and extend the Shorts schema, private storage bucket, media-analysis metadata and moderation RPCs.
-- Include `0009_shorts_follows.sql`, `0009_shorts_saved_posts.sql` and `0010_shorts_comment_interactions.sql`, but first resolve their duplicate numeric prefix as described below.
-
-### Core Shorts RPC migrations
-
-Apply Core `0016_shorts_publication_and_post_publish_review.sql`, `0017_shorts_caption_nonblocking.sql` and `0018_shorts_feed_and_review_rpc.sql` only after the Content Shorts tables and columns they reference exist.
-
-The current Core `0018` definitions are the final versions of `finalize_shorts_publication` and `moderate_shorts_video`; they replace earlier definitions from Core `0016` and Content `0007`.
-
-## Migration runner gap
-
-The repository currently has no verified command that applies both tracks:
-- `drizzle.config.ts` points Drizzle Kit only at `./drizzle/migrations`.
-- The Content SQL directory is not wired into that Drizzle config.
-- The inspected `package.json` has no database migration script.
-- The inspected configuration does not establish a Supabase CLI migration sequence for these files.
-
-Therefore, even a successful application build does not apply either SQL track. Before testing the sequence, choose one canonical migration mechanism and make it explicit. Preferred direction: consolidate the reviewed SQL into Supabase CLI migration files under the standard `supabase/migrations/` directory, with unique timestamped filenames and one authoritative ordered history. Preserve source files or record their mapping so every SQL change remains traceable. Do not maintain two independent active histories that can drift.
-
-The final runner must support a disposable local/test database and a controlled remote apply. It must fail fast on the first SQL error and record the exact migration version applied. Use Supabase CLI's standard timestamped `supabase/migrations/` history (create files with `supabase migration new`), not a manually invented naming scheme. Never rely on manually pasting an undocumented subset of SQL into the dashboard.
-
-## Proposed deterministic order for a fresh database
-
-This is the order to validate in a disposable database; it is not yet authorization to apply anything to the connected destination.
-
-1. Core migrations `0000–0015`, in their existing numeric order.
+1. Core migrations `0000–0015`, in numeric order.
 2. Content `0002_shorts_and_ai_moderation.sql`.
 3. Content `0003_shorts_text_moderation_rpc.sql`.
 4. Content `0004_shorts_private_storage.sql`.
@@ -67,43 +37,71 @@ This is the order to validate in a disposable database; it is not yet authorizat
 7. Content `0007_shorts_human_moderation.sql`.
 8. Content `0008_shorts_photo_text_posts.sql`.
 9. Content `0009_shorts_follows.sql`.
-10. Content `0009_shorts_saved_posts.sql` (after renumbering).
-11. Content `0010_shorts_comment_interactions.sql` (after renumbering).
-12. Core `0016_shorts_publication_and_post_publish_review.sql`.
-13. Core `0017_shorts_caption_nonblocking.sql`.
-14. Core `0018_shorts_feed_and_review_rpc.sql`.
+10. Content `0009_shorts_saved_posts.sql` (give it a unique version in the canonical history).
+11. Content `0010_shorts_comment_interactions.sql` (give it a unique version in the canonical history).
+12. Add a new timestamped hardening migration for `shorts_saved_posts`: enable RLS, revoke all privileges from `PUBLIC`, `anon` and `authenticated`, and grant only the required server-role privileges.
+13. Core `0016_shorts_publication_and_post_publish_review.sql`.
+14. Core `0017_shorts_caption_nonblocking.sql`.
+15. Core `0018_shorts_feed_and_review_rpc.sql`.
+16. Core `0019_cloudy_chat_history.sql`.
+17. Core `0020_secure_privacy_center_writes.sql`.
 
-For a maintainable migration history, rename the two colliding Content files to a unique sequence (proposed: follows `0009`, saved posts `0010`, comment interactions `0011`). Update any migration manifest, documentation and runner references in the same change. Do not simply rename files until the migration runner's behavior and any existing migration history are confirmed.
+The exact ordering of the hardening migration relative to Core Shorts RPCs can be fixed during test implementation; it must run after the saved-posts table exists and before the application is enabled.
 
-## Additional access-control gap requiring a hardening migration\n\nContent `0009_shorts_saved_posts.sql` creates `shorts_saved_posts` without enabling RLS or explicitly restricting table privileges to the server role. This differs from `shorts_follows` and `shorts_comment_likes`, which explicitly enable RLS and revoke browser-role access. Add the hardening migration in the ordered sequence above, then verify `relrowsecurity` and effective grants for `anon`, `authenticated` and `service_role` on a fresh test database.\n\n## Known RPC replacement that needs an explicit regression test
+## Migration runner gap
 
-Content `0008_shorts_photo_text_posts.sql` defines `apply_shorts_text_moderation` for both comments and video/text posts. Core `0017_shorts_caption_nonblocking.sql` later replaces it with a comments-only implementation that returns `false` for `short_video`.
+The repository does not currently have a verified command that applies both SQL tracks:
+- `drizzle.config.ts` points only to `./drizzle/migrations`.
+- Content SQL is not wired into Drizzle Kit.
+- The inspected `package.json` has no database migration script.
+- There is no established Supabase CLI history for these existing files.
 
-The current server function `moderateOwnShortContent` is presently a no-op that returns an `allow` decision with `moderationApplied: false`; therefore, do not assume the database RPC is actively used for text-only posts. Before finalizing the sequence, verify intended behavior and add regression tests for:
-- text-only post creation and publication state;
-- comments allow/reject/review transitions;
-- video caption moderation never approving the underlying media;
+Create one canonical, ordered history under the standard `supabase/migrations/` directory. Supabase CLI migration files must be generated with `supabase migration new <name>`; do not invent timestamp filenames manually. Preserve original SQL sources or add an explicit source-to-canonical mapping. Avoid two active histories that can drift.
+
+The canonical runner must apply all migrations in timestamp order, stop on the first SQL error, and track the exact migration version. It must support a disposable local/test database before any remote apply.
+
+## Concrete security blocker
+
+Content `0009_shorts_saved_posts.sql` creates `public.shorts_saved_posts` but does not enable RLS or explicitly revoke browser-role privileges. This differs from `shorts_follows` and `shorts_comment_likes`, which enable RLS and revoke access from browser roles.
+
+Add the hardening migration described above and verify on a fresh Supabase database:
+- `relrowsecurity` is enabled for `shorts_saved_posts`;
+- `anon` and `authenticated` have no table privileges;
+- `service_role` has only the privileges required by the server's select/upsert/delete operations.
+
+Do not assume the table is protected just because the current server code uses an admin client.
+
+## RPC behavior conflict requiring regression tests
+
+Content `0008_shorts_photo_text_posts.sql` defines `apply_shorts_text_moderation` for comments and video/text posts. Core `0017_shorts_caption_nonblocking.sql` later replaces it with a comments-focused implementation that returns false for `short_video`.
+
+The current `moderateOwnShortContent` server function is a no-op that returns an allow decision with `moderationApplied: false`; do not assume the RPC is used for text-only posts. Verify and test:
+- text-only post creation and publication;
+- comment allow/reject/review transitions;
+- video caption moderation never approving underlying video media;
 - photo publication through `finalize_shorts_nonvideo_publication`.
 
-This is a code-behavior issue to resolve alongside schema validation, not a reason to skip the migration review.
+Core `0018` contains the final `finalize_shorts_publication` and `moderate_shorts_video` definitions, replacing earlier versions from Core `0016` and Content `0007`.
 
-## Security checks required in the disposable database
+## Disposable database verification
 
-- Confirm every Shorts table has RLS enabled.
-- Confirm browser roles `anon` and `authenticated` have no direct access to privileged Shorts tables; service-role grants are intentional.
-- Confirm Storage bucket `cloudy-shorts` is private, has the expected MIME and size limits, and has no browser-role policies that bypass signed upload/download flows.
-- Inspect every `SECURITY DEFINER` function for a fixed safe `search_path`, least-privilege grants and validated inputs.
-- Confirm Core Auth token verification happens before privileged Content reads/writes.
-- Confirm author IDs and profile projections are taken from verified Core identities, not trusted from browser payloads.
-- Confirm no service-role key is exposed through a `VITE_*` variable or browser bundle.
+- Apply the complete canonical history to a clean disposable Supabase database.
+- Confirm all expected tables, columns, constraints, indexes, triggers, functions and Storage bucket exist.
+- Confirm RLS is enabled on every exposed table.
+- Verify `anon`, `authenticated` and `service_role` effective grants, including the saved-posts hardening.
+- Inspect every `SECURITY DEFINER` function for fixed safe `search_path`, validated inputs and least-privilege execution grants.
+- Confirm the `cloudy-shorts` bucket is private, has the expected MIME/size limits and no broad browser-role policies.
+- Test Core Auth verification before privileged Shorts operations.
+- Test upload, signed upload, signed playback, deletion, comments, likes, follows, saved posts, text/image/video publication and moderator review.
+- Run application build, typecheck and tests against the resulting schema.
 
 ## Stop conditions
 
-Do not apply the proposed sequence to the connected Supabase destination until:
+Do not apply the sequence to the connected destination until:
 1. all Core and Content SQL files have been reviewed in full;
-2. duplicate migration numbering and runner semantics are resolved;
-3. the exact order succeeds on a disposable empty PostgreSQL/Supabase environment;
-4. all RPC, RLS and Storage checks pass;
-5. application build, typecheck and tests pass against the resulting schema.
+2. duplicate migration numbering and canonical runner semantics are resolved;
+3. the exact sequence passes on a disposable Supabase environment;
+4. RPC, RLS, grants and Storage checks pass;
+5. application build, typecheck and tests pass against that schema.
 
-No migrations have been applied by this document. It does not authorize production cutover, data deletion, changes to `main`, or changes to the existing Lovable database.
+No SQL migrations or data imports have been applied by this proposal. It does not authorize production cutover, deletion, changes to `main`, or changes to the existing Lovable database.
