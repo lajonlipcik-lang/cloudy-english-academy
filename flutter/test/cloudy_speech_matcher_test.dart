@@ -17,7 +17,8 @@ void main() {
 
     test('allows only a one-edit tolerance for longer single words', () {
       expect(cloudySpeechMatches('beautiful', 'beautifull'), isTrue);
-      expect(cloudySpeechMatches('beautiful', 'beautifool'), isTrue);
+      expect(cloudySpeechMatches('beautiful', 'beautifal'), isTrue);
+      expect(cloudySpeechMatches('beautiful', 'beautifool'), isFalse);
       expect(cloudySpeechMatches('beautiful', 'beautifoooo'), isFalse);
       expect(cloudySpeechMatches('something', 'somethink'), isTrue);
     });
