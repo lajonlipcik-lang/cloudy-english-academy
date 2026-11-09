@@ -1,0 +1,36 @@
+name: Supabase migration smoke test
+
+on:
+  push:
+    branches: [migration/vercel-platform]
+  pull_request:
+    branches: [migration/vercel-platform]
+
+permissions:
+  contents: read
+
+jobs:
+  local-migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pin CLI v2 while the repository's migration harness is validated.
+      # No Supabase access token, project link, or remote database is used.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.1
+
+      - name: Verify no remote project is linked
+        run: |
+          test ! -f supabase/.temp/project-ref
+          test -z "${SUPABASE_ACCESS_TOKEN:-}"
+          test -z "${SUPABASE_DB_URL:-}"
+
+      - name: Rebuild the full schema on an isolated local Supabase stack
+        run: bash scripts/ci/test-supabase-migrations.sh
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup
