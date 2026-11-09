@@ -51,6 +51,7 @@ class CloudySessionController extends ChangeNotifier {
   CloudySessionStatus _status = CloudySessionStatus.starting;
   CloudyAuthUser? _user;
   CloudyState _progress = CloudyState.defaults();
+  CloudySubscriptionAccess _subscriptionAccess = CloudySubscriptionAccess.inactive();
   String? _errorMessage;
   String? _loadedUserId;
   String? _pendingGuestError;
@@ -60,6 +61,7 @@ class CloudySessionController extends ChangeNotifier {
   CloudySessionStatus get status => _status;
   CloudyAuthUser? get user => _user;
   CloudyState get progress => _progress;
+  CloudySubscriptionAccess get subscriptionAccess => _subscriptionAccess;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _user != null;
   bool get cloudSyncPaused => _status == CloudySessionStatus.offline;
@@ -92,6 +94,7 @@ class CloudySessionController extends ChangeNotifier {
     if (session == null || event.event == AuthChangeEvent.signedOut) {
       _loadedUserId = null;
       _user = null;
+      _subscriptionAccess = CloudySubscriptionAccess.inactive();
       _progress = await _progressSync.activateGuest();
       await _media.applySettings(_progress.settings);
       _errorMessage = _pendingGuestError;
@@ -124,6 +127,7 @@ class CloudySessionController extends ChangeNotifier {
   }
 
   Future<void> _activateAccount(CloudyAuthUser user, String userId) async {
+    _subscriptionAccess = CloudySubscriptionAccess.inactive();
     final result = await _progressSync.activateAccount(email: user.email);
     if (_disposed || _user?.id != user.id) return;
 
@@ -147,6 +151,28 @@ class CloudySessionController extends ChangeNotifier {
     } catch (_) {
       // The event outbox remains on-device and can be retried later.
     }
+    try {
+      await refreshSubscriptionAccess();
+    } catch (_) {
+      // Subscription lookup must never block access to the free learning path.
+      // A later retry can refresh this independently after a network failure.
+    }
+  }
+
+  /// Refreshes the server-authoritative subscription state after login or a
+  /// verified purchase callback. The app never grants paid access from a
+  /// client-side purchase flag.
+  Future<void> refreshSubscriptionAccess() async {
+    final userId = _user?.id;
+    if (userId == null) {
+      _subscriptionAccess = CloudySubscriptionAccess.inactive();
+      _notify();
+      return;
+    }
+    final access = await _mobileApi.loadSubscriptionAccess();
+    if (_disposed || _user?.id != userId) return;
+    _subscriptionAccess = access;
+    _notify();
   }
 
   /// Retries the account progress handshake after a network interruption.
