@@ -315,7 +315,7 @@ CloudySession? advanceCloudySession(
   return next.index >= next.exercises.length ? null : next;
 }
 
-int cloudyLessonGain(int health) => 15 + math.max(health, 0) * 3;
+int cloudyLessonGain(int health) => 15 + math.max(health, 0).toInt() * 3;
 int cloudyLessonStars(int health) => health >= 5 ? 3 : health >= 3 ? 2 : 1;
 int cloudyAccuracy(int correct, int total) => ((correct / math.max(total, 1)) * 100).round();
 
@@ -473,13 +473,191 @@ CloudyState sanitizeCloudyProgress(CloudyState input) {
 
   final mistakes = <String, num>{};
   for (final entry in input.mistakes.entries.take(200)) {
-    if (entry.key.isNotEmpty && entry.key.length <= 80) {
+    if (entry.key.isNotEmpty && entry.key.length <= 80 && entry.value > 0) {
       mistakes[entry.key] = _clampInt(entry.value, 0, 10000);
     }
   }
 
   final days = input.days
-      .where((day) => RegExp(r'^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$').hasMatch(day))
+      .takeLast(60)
+      .where((day) => RegExp(r'^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}
+  final boundedDays = days.length > 60 ? days.sublist(days.length - 60) : days;
+  final achievements = input.achievements
+      .where((id) => RegExp(r'^[a-z0-9_-]{1,24}
+
+  final settings = input.settings;
+  final weekKey = input.week['k'] is String ? input.week['k'] as String : '';
+  final validTime = RegExp(r'^([01][0-9]|2[0-3]):[0-5][0-9]$').hasMatch(settings.remT);
+
+  return input.copyWith(
+    streak: _clampInt(input.streak, 0, 3650),
+    last: input.last.substring(0, math.min(40, input.last.length)),
+    completed: completed,
+    accuracy: [
+      _clampInt(input.accuracy[0], 0, 1000000),
+      _clampInt(input.accuracy[1], 0, 1000000),
+    ],
+    mistakes: mistakes,
+    days: boundedDays,
+    achievements: achievements,
+    week: {
+      'k': weekKey.substring(0, math.min(16, weekKey.length)),
+      'xp': _clampInt(_number(input.week['xp']), 0, 1000000),
+    },
+    perfectLessons: _clampInt(input.perfectLessons, 0, 100000),
+    tested: input.tested == 0 ? 0 : 1,
+    settings: CloudySettings(
+      snd: settings.snd == 0 ? 0 : 1,
+      vol: settings.vol.clamp(0, 1),
+      voice: settings.voice == 0 ? 0 : 1,
+      goal: _clampInt(settings.goal, 5, 240),
+      mic: settings.mic == 0 ? 0 : 1,
+      th: settings.th,
+      rem: settings.rem == 0 ? 0 : 1,
+      remT: validTime ? settings.remT : '19:00',
+    ),
+    today: CloudyToday(
+      d: input.today.d.substring(0, math.min(40, input.today.d.length)),
+      xp: _clampInt(input.today.xp, 0, 100000),
+      les: _clampInt(input.today.les, 0, 1000),
+      ok: _clampInt(input.today.ok, 0, 100000),
+      claim: input.today.claim == 0 ? 0 : 1,
+    ),
+  );
+}
+
+String cloudyLessonTitle(int index, List<CloudyLesson> lessons) =>
+    index >= 0 && index < lessons.length ? lessons[index].title : '';
+
+extension _TakeLast<T> on Iterable<T> {
+  List<T> takeLast(int count) {
+    final values = toList();
+    return values.length <= count ? values : values.sublist(values.length - count);
+  }
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
+}
+).hasMatch(day))
+      .toSet().toList();
+  final boundedDays = days.length > 60 ? days.sublist(days.length - 60) : days;
+  final achievements = input.achievements
+      .where((id) => RegExp(r'^[a-z0-9_-]{1,24}$', caseSensitive: false).hasMatch(id))
+      .toSet().take(32).toList();
+
+  final settings = input.settings;
+  final weekKey = input.week['k'] is String ? input.week['k'] as String : '';
+  final validTime = RegExp(r'^([01][0-9]|2[0-3]):[0-5][0-9]$').hasMatch(settings.remT);
+
+  return input.copyWith(
+    streak: _clampInt(input.streak, 0, 3650),
+    last: input.last.substring(0, math.min(40, input.last.length)),
+    completed: completed,
+    accuracy: [
+      _clampInt(input.accuracy[0], 0, 1000000),
+      _clampInt(input.accuracy[1], 0, 1000000),
+    ],
+    mistakes: mistakes,
+    days: boundedDays,
+    achievements: achievements,
+    week: {
+      'k': weekKey.substring(0, math.min(16, weekKey.length)),
+      'xp': _clampInt(_number(input.week['xp']), 0, 1000000),
+    },
+    perfectLessons: _clampInt(input.perfectLessons, 0, 100000),
+    tested: input.tested == 0 ? 0 : 1,
+    settings: CloudySettings(
+      snd: settings.snd == 0 ? 0 : 1,
+      vol: settings.vol.clamp(0, 1),
+      voice: settings.voice == 0 ? 0 : 1,
+      goal: _clampInt(settings.goal, 5, 240),
+      mic: settings.mic == 0 ? 0 : 1,
+      th: settings.th,
+      rem: settings.rem == 0 ? 0 : 1,
+      remT: validTime ? settings.remT : '19:00',
+    ),
+    today: CloudyToday(
+      d: input.today.d.substring(0, math.min(40, input.today.d.length)),
+      xp: _clampInt(input.today.xp, 0, 100000),
+      les: _clampInt(input.today.les, 0, 1000),
+      ok: _clampInt(input.today.ok, 0, 100000),
+      claim: input.today.claim == 0 ? 0 : 1,
+    ),
+  );
+}
+
+String cloudyLessonTitle(int index, List<CloudyLesson> lessons) =>
+    index >= 0 && index < lessons.length ? lessons[index].title : '';
+
+extension _TakeLast<T> on Iterable<T> {
+  List<T> takeLast(int count) {
+    final values = toList();
+    return values.length <= count ? values : values.sublist(values.length - count);
+  }
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
+}
+, caseSensitive: false).hasMatch(id))
+      .take(32).toSet().toList();
+
+  final settings = input.settings;
+  final weekKey = input.week['k'] is String ? input.week['k'] as String : '';
+  final validTime = RegExp(r'^([01][0-9]|2[0-3]):[0-5][0-9]$').hasMatch(settings.remT);
+
+  return input.copyWith(
+    streak: _clampInt(input.streak, 0, 3650),
+    last: input.last.substring(0, math.min(40, input.last.length)),
+    completed: completed,
+    accuracy: [
+      _clampInt(input.accuracy[0], 0, 1000000),
+      _clampInt(input.accuracy[1], 0, 1000000),
+    ],
+    mistakes: mistakes,
+    days: boundedDays,
+    achievements: achievements,
+    week: {
+      'k': weekKey.substring(0, math.min(16, weekKey.length)),
+      'xp': _clampInt(_number(input.week['xp']), 0, 1000000),
+    },
+    perfectLessons: _clampInt(input.perfectLessons, 0, 100000),
+    tested: input.tested == 0 ? 0 : 1,
+    settings: CloudySettings(
+      snd: settings.snd == 0 ? 0 : 1,
+      vol: settings.vol.clamp(0, 1),
+      voice: settings.voice == 0 ? 0 : 1,
+      goal: _clampInt(settings.goal, 5, 240),
+      mic: settings.mic == 0 ? 0 : 1,
+      th: settings.th,
+      rem: settings.rem == 0 ? 0 : 1,
+      remT: validTime ? settings.remT : '19:00',
+    ),
+    today: CloudyToday(
+      d: input.today.d.substring(0, math.min(40, input.today.d.length)),
+      xp: _clampInt(input.today.xp, 0, 100000),
+      les: _clampInt(input.today.les, 0, 1000),
+      ok: _clampInt(input.today.ok, 0, 100000),
+      claim: input.today.claim == 0 ? 0 : 1,
+    ),
+  );
+}
+
+String cloudyLessonTitle(int index, List<CloudyLesson> lessons) =>
+    index >= 0 && index < lessons.length ? lessons[index].title : '';
+
+extension _TakeLast<T> on Iterable<T> {
+  List<T> takeLast(int count) {
+    final values = toList();
+    return values.length <= count ? values : values.sublist(values.length - count);
+  }
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
+}
+).hasMatch(day))
       .toSet().toList();
   final boundedDays = days.length > 60 ? days.sublist(days.length - 60) : days;
   final achievements = input.achievements
