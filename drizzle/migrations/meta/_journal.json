@@ -162,6 +162,13 @@
       "when": 1794297600002,
       "tag": "0022_cloudy_plans_and_telegram_checkout_bridge",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794315600000,
+      "tag": "0023_telegram_stars_refunds",
+      "breakpoints": true
     }
   ]
 }
