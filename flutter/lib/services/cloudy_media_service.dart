@@ -1,5 +1,3 @@
-import 'package:flutter/foundation.dart';
-
 import '../domain/cloudy_speech_matcher.dart';
 import '../domain/cloudy_state.dart';
 import 'cloudy_sound_service.dart';
@@ -49,7 +47,7 @@ class CloudyMediaService {
     );
   }
 
-  Future<bool> matchesAnswer(String transcript, String target) async =>
+  bool matchesAnswer(String transcript, String target) =>
       cloudySpeechMatches(transcript, target);
 
   Future<void> play(CloudySound effect, {int combo = 0}) =>
@@ -64,7 +62,6 @@ class CloudyMediaService {
   }
 
   Future<void> dispose() async {
-    await stop();
     await Future.wait([
       tts.dispose(),
       speech.dispose(),
