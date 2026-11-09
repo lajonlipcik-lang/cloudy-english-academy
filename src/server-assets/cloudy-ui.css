@@ -154,11 +154,11 @@ html[data-motion="off"] .tt-heart{display:none}
 /* ---------- Shorts: TikTok-style ---------- */
 .scr.tab4{padding:0 0 calc(var(--dock-h) + env(safe-area-inset-bottom,0px))!important;height:100svh;min-height:100svh;overflow:hidden;animation:none}
 .scr.tab4 .shorts-screen{height:calc(100svh - var(--dock-h) - env(safe-area-inset-bottom,0px))!important;max-width:480px;margin:0 auto}
-.shorts-topbar{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;gap:0;
+.shorts-topbar{display:grid;grid-template-columns:minmax(0,1fr) 48px;align-items:center;gap:0;
   padding:calc(6px + env(safe-area-inset-top,0px)) 10px 12px;background:linear-gradient(180deg,rgba(0,0,0,.6),transparent)}
 .shorts-brand{justify-self:start}
 .tt-logo{display:block;width:38px;animation:float 3.2s ease-in-out infinite}.tt-logo .ms{width:100%;filter:drop-shadow(0 2px 6px rgba(0,0,0,.4))}
-.shorts-tabs{justify-self:center;gap:22px}
+.shorts-tabs{grid-column:1;justify-self:center;gap:22px;min-width:0}
 .shorts-tabs button{font-size:17px;font-weight:900;padding:8px 2px;color:rgba(255,255,255,.62);text-shadow:0 1px 8px rgba(0,0,0,.55);transition:color .3s}
 .shorts-tabs button.active{color:#fff}
 .shorts-tabs button.active:after{left:28%;right:28%;bottom:0;height:3px;border-radius:3px;background:#fff;animation:ttLine .4s var(--ease-spring) both}
