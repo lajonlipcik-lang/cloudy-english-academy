@@ -98,6 +98,8 @@ export interface FileRouteTypes {
     | '/legal'
     | '/sitemap.xml'
     | '/api/internal/support-ai'
+    | '/api/telegram/stars'
+    | '/api/telegram/stars-webhook'
   id:
     | '__root__'
     | '/'
@@ -105,6 +107,8 @@ export interface FileRouteTypes {
     | '/legal'
     | '/sitemap.xml'
     | '/api/internal/support-ai'
+    | '/api/telegram/stars'
+    | '/api/telegram/stars-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
