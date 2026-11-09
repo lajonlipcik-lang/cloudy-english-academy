@@ -36,7 +36,7 @@ class CloudySpeechRecognitionService {
   String? _target;
   Completer<CloudySpeechRecognitionResult>? _active;
   Timer? _watchdog;
-  List<SpeechRecognitionWords> _lastAlternatives = const [];
+  List<dynamic> _lastAlternatives = const [];
 
   void Function(String status)? onStatusChanged;
   void Function(double level)? onSoundLevelChanged;
@@ -159,7 +159,7 @@ class CloudySpeechRecognitionService {
 
   Future<void> dispose() => cancel();
 
-  void _handleResult(SpeechRecognitionResult result) {
+  void _handleResult(dynamic result) {
     _lastAlternatives = result.alternates;
     if (!result.finalResult) return;
     _finishFromLastResult();
@@ -173,7 +173,7 @@ class CloudySpeechRecognitionService {
     }
   }
 
-  void _handleError(SpeechRecognitionError error) {
+  void _handleError(dynamic error) {
     onError?.call(error.errorMsg);
     _finishFromLastResult(error: error.errorMsg);
   }
@@ -190,7 +190,7 @@ class CloudySpeechRecognitionService {
         : alternatives.isNotEmpty
             ? alternatives.first
             : null;
-    final transcript = selected?.recognizedWords ?? _speech.lastRecognizedWords;
+    final transcript = selected?.recognizedWords ?? _speech.lastRecognizedWords ?? '';
     final accepted = transcript.isNotEmpty &&
         cloudySpeechMatches(transcript, target);
     _finish(CloudySpeechRecognitionResult(
