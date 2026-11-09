@@ -153,14 +153,16 @@ class CloudyProgressSyncService {
         uploaded: false,
       );
     }
+    await localStore.markDirty(email);
     if (_syncPaused) {
       return CloudyProgressSyncResult(
-        state: state, syncPaused: true, uploaded: false,
+        state: state,
+        syncPaused: true,
+        uploaded: false,
         updatedAt: _updatedAt,
         error: 'Синхронизация приостановлена до повторной загрузки серверного прогресса.',
       );
     }
-    await localStore.markDirty(email);
     return syncCurrent();
   }
 
