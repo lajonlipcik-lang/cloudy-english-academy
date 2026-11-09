@@ -82,7 +82,7 @@ export const Route = createFileRoute("/availability")({
   head: () => ({ meta: [
     { title: "Доступность по странам — Cloudy English Academy" },
     { name: "description", content: "Страны и территории, где доступна Cloudy English Academy." },
-    { property: "og:title", content: "Country availability — Cloudy English Academy" },
+    { property: "og:title", content: "Доступность по странам — Cloudy English Academy" },
     { property: "og:description", content: "Текущая доступность Cloudy English Academy по странам." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
