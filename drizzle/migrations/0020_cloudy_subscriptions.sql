@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
     CHECK (jsonb_typeof(metadata) = 'object'),
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
-  CHECK (current_period_end IS NULL OR current_period_start IS NULL OR current_period_end > current_period_start)
+  CHECK (current_period_end IS NULL OR current_period_start IS NULL OR current_period_end > current_period_start),
+  UNIQUE (id, user_id)
 );
 
 CREATE INDEX IF NOT EXISTS subscriptions_user_status_idx
@@ -83,7 +84,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS subscription_payments_provider_payment_uidx
 
 CREATE TABLE IF NOT EXISTS public.subscription_entitlements (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  subscription_id uuid NOT NULL REFERENCES public.subscriptions(id) ON DELETE CASCADE,
+  subscription_id uuid NOT NULL,
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   feature_key text NOT NULL CHECK (feature_key ~ '^[a-z][a-z0-9_.-]{1,79}$'),
   enabled boolean NOT NULL DEFAULT true,
@@ -91,7 +92,9 @@ CREATE TABLE IF NOT EXISTS public.subscription_entitlements (
   metadata jsonb NOT NULL DEFAULT '{}'::jsonb
     CHECK (jsonb_typeof(metadata) = 'object'),
   created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (subscription_id, feature_key)
+  UNIQUE (subscription_id, feature_key),
+  FOREIGN KEY (subscription_id, user_id)
+    REFERENCES public.subscriptions(id, user_id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS subscription_entitlements_user_feature_idx
   ON public.subscription_entitlements (user_id, feature_key);
