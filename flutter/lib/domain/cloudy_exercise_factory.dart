@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'cloudy_curriculum.dart';
 import 'cloudy_exercise.dart';
+import 'cloudy_learning_store.dart';
 
 class CloudyExerciseFactory {
   const CloudyExerciseFactory._();
@@ -153,6 +154,7 @@ class CloudyExerciseFactory {
     required List<CloudyPair> levelVocabulary,
     required bool microphoneEnabled,
     required bool speechRecognitionSupported,
+    CloudyLearningStore? learningStore,
     Random? random,
   }) {
     final rng = random ?? Random();
@@ -177,12 +179,13 @@ class CloudyExerciseFactory {
       ));
     }
 
-    result.addAll(_practice(
+    final practice = _practice(
       lesson, levelVocabulary,
       microphoneEnabled: microphoneEnabled,
       speechRecognitionSupported: speechRecognitionSupported,
       random: rng,
-    ));
+    );
+    result.addAll(learningStore == null ? practice : learningStore.prioritize(practice));
     return result;
   }
 
