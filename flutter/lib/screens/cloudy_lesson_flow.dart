@@ -12,7 +12,7 @@ import 'cloudy_lesson_screen.dart';
 /// Connects the native lesson UI to Cloudy's canonical progress, learning
 /// events, sound, TTS and speech-recognition services.
 class CloudyLessonFlow extends StatefulWidget {
-  const CloudyLessonFlow({
+  CloudyLessonFlow({
     super.key,
     required this.title,
     required this.initialSession,
