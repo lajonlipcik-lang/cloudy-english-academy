@@ -1,0 +1,40 @@
+name: Flutter migration checks
+
+on:
+  push:
+    branches:
+      - flutter-migration
+    paths:
+      - "flutter/**"
+      - ".github/workflows/flutter-migration.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "flutter/**"
+      - ".github/workflows/flutter-migration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: flutter
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Resolve packages
+        run: flutter pub get
+      - name: Analyze Dart code
+        run: flutter analyze
+      - name: Run parity tests
+        run: flutter test
