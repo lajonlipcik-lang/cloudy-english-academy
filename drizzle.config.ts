@@ -5,6 +5,8 @@ export default defineConfig({
   schema: "./drizzle/schema.ts",
   out: "./drizzle/migrations",
   dbCredentials: {
-    url: process.env.LOVABLE_DB_MIGRATION_URL ?? "",
+    // DATABASE_URL is the target-hosting convention; keep the legacy variable
+    // as a temporary fallback until the source platform is fully retired.
+    url: process.env.DATABASE_URL ?? process.env.LOVABLE_DB_MIGRATION_URL ?? "",
   },
 });
