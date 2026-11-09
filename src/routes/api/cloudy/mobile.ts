@@ -24,6 +24,37 @@ const objectValue = (value: unknown): JsonRecord =>
     : {};
 
 async function dispatchMobileAction(action: string, input: JsonRecord): Promise<unknown> {
+  if (action === "progress-load") {
+    const url = process.env["SUPABASE_URL"];
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !key) throw new Error("Supabase server is not configured.");
+    const client = createClient(url, key, {
+      global: {
+        headers: { Authorization: "Bearer " + String(input.accessToken ?? "") },
+        fetch: createUserSupabaseFetch(key),
+      },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+    const { data: identity, error: authError } = await client.auth.getUser(String(input.accessToken ?? ""));
+    if (authError || !identity.user) throw new Error("Unauthorized");
+    const [progressResult, profileResult] = await Promise.all([
+      client.from("user_progress")
+        .select("state, updated_at")
+        .eq("user_id", identity.user.id)
+        .maybeSingle(),
+      client.from("profiles")
+        .select("english_level, placement_test_completed")
+        .eq("id", identity.user.id)
+        .maybeSingle(),
+    ]);
+    if (progressResult.error || profileResult.error) {
+      throw new Error("Не удалось загрузить прогресс аккаунта.");
+    }
+    return {
+      progress: progressResult.data,
+      learnerProfile: profileResult.data,
+    };
+  }
   if (action === "progress-save") {
     const api = await import("@/lib/cloudy/progress.functions");
     return api.saveCloudyProgress({ data: input as never });
