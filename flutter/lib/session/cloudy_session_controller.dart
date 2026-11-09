@@ -91,6 +91,15 @@ class CloudySessionController extends ChangeNotifier {
     }
 
     final identity = session.user;
+    if (CloudyAuthPolicy.isUnderMinimumAge(identity.userMetadata?['age'])) {
+      await _auth.signOut();
+      _setError(
+        'Регистрация в Cloudy English Academy доступна с 13 лет. '
+            'Если возраст указан неверно, обратитесь в поддержку.',
+        status: CloudySessionStatus.guest,
+      );
+      return;
+    }
     final nextUser = CloudyAuthUser.fromSupabase(identity);
     if (_loadedUserId == identity.id && _user?.email == nextUser.email) {
       _user = nextUser;
