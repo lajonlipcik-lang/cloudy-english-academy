@@ -8,6 +8,7 @@ type AuthRequest = { channel?: string; type?: string; id?: string; action?: stri
 export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>, enabled = true) {
   const accessTokenRef = useRef<string | null>(null);
   const userIdRef = useRef<string | null>(null);
+  let passwordRecoveryPending = false;
 
   useEffect(() => {
     if (!enabled) return;
@@ -64,7 +65,9 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           progress,
           learnerProfile,
           progressLoadFailed,
+          passwordRecovery: passwordRecoveryPending,
         });
+        passwordRecoveryPending = false;
       } catch (err) {
         accessTokenRef.current = null;
         userIdRef.current = null;
@@ -351,6 +354,27 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           return;
         }
 
+        if (message.action === "resetPassword") {
+          const email = String(message.email ?? "").trim().toLowerCase();
+          if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) throw new Error("Введите корректный email.");
+          const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/?password-recovery=1`,
+          });
+          if (error) throw error;
+          reply({ ok: true });
+          return;
+        }
+
+        if (message.action === "updatePassword") {
+          const password = String(message.password ?? "");
+          if (password.length < 8) throw new Error("Пароль должен содержать не менее 8 символов.");
+          const { data, error } = await supabase.auth.updateUser({ password });
+          if (error) throw error;
+          if (!data.user) throw new Error("Не удалось обновить пароль.");
+          reply({ ok: true });
+          return;
+        }
+
         if (message.action === "signUp") {
           const { data, error } = await supabase.auth.signUp({
             email: String(message.email ?? "").trim().toLowerCase(),
@@ -505,7 +529,8 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
       }
     };
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") passwordRecoveryPending = true;
       void syncSession();
     });
 
