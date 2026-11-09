@@ -102,7 +102,7 @@ class _CloudyEnglishAppState extends State<CloudyEnglishApp> {
                   await SystemNavigator.pop();
                 }
               },
-              child: const Scaffold(
+              child: Scaffold(
                 backgroundColor: _background,
                 body: SafeArea(
                   top: false,
