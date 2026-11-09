@@ -367,6 +367,7 @@ bool isCloudyAnswerCorrect(
     return checkCloudyRecallAnswer(typedAnswer ?? '', exercise.answer);
   }
   if (exercise is CloudyBuilderExercise) {
+    if (builtOptionIndices.isEmpty) return false;
     final valid = builtOptionIndices.every(
       (index) => index >= 0 && index < exercise.options.length,
     );
