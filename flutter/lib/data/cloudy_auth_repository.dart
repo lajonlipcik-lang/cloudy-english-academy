@@ -26,7 +26,9 @@ class CloudyAuthUser {
     email: user.email ?? '',
     name: user.userMetadata?['name'] is String
         ? user.userMetadata!['name'] as String
-        : '',
+        : user.userMetadata?['display_name'] is String
+            ? user.userMetadata!['display_name'] as String
+            : '',
     age: CloudyAuthPolicy.ageFromMetadata(user.userMetadata?['age']),
   );
 }
@@ -59,7 +61,7 @@ class CloudyAuthPolicy {
     final age = value is num
         ? (value.isFinite && value == value.roundToDouble() ? value.toInt() : null)
         : value is String
-            ? int.tryParse(value)
+            ? int.tryParse(value.trim())
             : null;
     return age != null && age < 13;
   }
@@ -109,12 +111,14 @@ class CloudyAuthPolicy {
 class CloudyAuthRepository {
   CloudyAuthRepository(this._client);
 
-  static bool _initializedByRepository = false;
+  static Future<void>? _initialization;
 
   final SupabaseClient _client;
 
-  static Future<void> initialize() async {
-    if (_initializedByRepository) return;
+  static Future<void> initialize() =>
+      _initialization ??= _initialize();
+
+  static Future<void> _initialize() async {
     const url = String.fromEnvironment('SUPABASE_URL');
     const publishableKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
     if (url.isEmpty || publishableKey.isEmpty) {
@@ -122,8 +126,12 @@ class CloudyAuthRepository {
         'SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY must be provided at build time.',
       );
     }
-    await Supabase.initialize(url: url, anonKey: publishableKey);
-    _initializedByRepository = true;
+    try {
+      await Supabase.initialize(url: url, anonKey: publishableKey);
+    } catch (_) {
+      _initialization = null;
+      rethrow;
+    }
   }
 
   static CloudyAuthRepository fromInitializedClient() =>
