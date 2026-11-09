@@ -244,6 +244,7 @@ function mountShortsIntro(){
  later(()=>cloud.classList.add("settled"),c0+1050);
  later(()=>{const bounds=stage.getBoundingClientRect(),cb=cloud.getBoundingClientRect();stage.style.transformOrigin=(cb.left+cb.width/2-bounds.left)+"px "+(cb.top+cb.height*.55-bounds.top)+"px";const zoom=Math.max(innerWidth,innerHeight)/(cb.width*.5);stage.style.setProperty("--zs",Math.max(zoom*1.6,14));stage.classList.add("zoom");tone(220,.65,.045);later(()=>{flash.classList.add("on");[1047,1319,1568,2093].forEach((n,i)=>tone(n,.22,.035,i*.06));},600);later(finish,950);},c0+1350);
 }
+function refreshProfileContent(){if(T!==3)return;const screen=app.querySelector(".scr");if(screen)screen.innerHTML=prof()}
 function view(a=1,tabDirection=0){if(regionCheckPending){cloudLoader();return}if(regionCheckFailed){regionCheckError();return}roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr tab${T}${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest)void loadCommunityProfile();}
 function tab(k){if(!Number.isInteger(k)||k<0||k>3||k===T)return;const direction=k>T?1:-1;snd("tab");T=k;view(1,direction)}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
@@ -1526,14 +1527,14 @@ async function loadCommunityProfile(force=false){
  communityProfileLoading=true;communityProfileError="";
  try{const result=await authRequest("community-profile-get");if(S.user?.id!==uid)return;communityProfile={is_public:result.result?.is_public===true,bio:String(result.result?.bio||"").slice(0,240)};communityProfileUser=uid;communityFeedUser=null;communityFeed=[];communityInteractions={comments:[],reactions:[]};}
  catch(error){communityProfile=null;communityProfileUser=uid;communityProfileError=error.message||"Не удалось загрузить настройки публичного профиля.";toast(communityProfileError,false);}
- finally{communityProfileLoading=false;if(S.user?.id===uid&&(T===3||T===4)){view(0);if(T===4&&communityProfile?.is_public)void loadCommunityFeed();}}
+ finally{communityProfileLoading=false;if(S.user?.id===uid){if(T===3)refreshProfileContent();if(T===4){view(0);if(communityProfile?.is_public)void loadCommunityFeed();}}}
 }
 async function saveCommunityProfile(patch){
  if(!S.user||S.user.guest||!communityProfile||communityProfileSaving)return;
  const uid=S.user.id;const next={...communityProfile,...patch};communityProfileSaving=true;
  try{const response=await authRequest("community-profile-update",{payload:{is_public:next.is_public,bio:next.bio}});if(S.user?.id!==uid)return;communityProfile={is_public:response.result?.is_public===true,bio:String(response.result?.bio||"").slice(0,240)};toast("Настройки профиля сохранены.");}
- catch(error){toast(error.message||"Не удалось сохранить профиль.",false);if(T===3)view(0);}
- finally{communityProfileSaving=false;if(S.user?.id===uid&&T===3)view(0);}
+ catch(error){toast(error.message||"Не удалось сохранить профиль.",false);}
+ finally{communityProfileSaving=false;if(S.user?.id===uid&&T===3)refreshProfileContent();}
 }
 function toggleCommunityPublic(){if(!communityProfile)return;snd("tap");void saveCommunityProfile({is_public:!communityProfile.is_public});}
 function saveCommunityBio(value){if(!communityProfile)return;const bio=String(value||"").trim().slice(0,240);if(bio===communityProfile.bio)return;void saveCommunityProfile({bio});}
@@ -1543,7 +1544,7 @@ async function loadPrivacyCenter(force=false){
  privacyCenterLoading=true;
  try{const response=await authRequest("privacy-center-get");if(S.user?.id!==uid)return;privacyCenter=response.result||{aiTrainingConsent:false,requests:[]};privacyCenterUser=uid;}
  catch(error){privacyCenter={error:error.message||"Не удалось загрузить настройки конфиденциальности.",aiTrainingConsent:false,requests:[]};privacyCenterUser=uid;}
- finally{privacyCenterLoading=false;if(S.user?.id===uid&&T===3)view(0);}
+ finally{privacyCenterLoading=false;if(S.user?.id===uid&&T===3)refreshProfileContent();}
 }
 function privacyCenterCard(){
  if(!S.user||S.user.guest)return '<div class="card"><h3>Конфиденциальность</h3><p>Войдите в аккаунт, чтобы управлять согласиями и запросами по персональным данным.</p></div>';
