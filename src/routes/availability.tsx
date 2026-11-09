@@ -94,7 +94,7 @@ export function AvailabilityPage() {
         </section>
         <p className="mt-6 text-center text-xs leading-5 text-[#a8c9e5]">
           {copy.supportLead}{" "}
-          <a href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#91d8ff] underline underline-offset-4">{copy.support}</a>.
+          <a href="https://t.me/cloudysupport_t_bot" target="_blank" rel="noopener noreferrer" className="font-semibold text-[#91d8ff] underline underline-offset-4">{copy.support}</a>.
         </p>
       </div>
     </main>
