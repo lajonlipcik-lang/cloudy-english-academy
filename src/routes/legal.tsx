@@ -997,9 +997,9 @@ export function LegalPage() {
               <div className={`legal-faq${pageDirection === "fwd" ? " legal-page-transition" : ""}`}>
                 {LEGAL_FAQ.map(([question, answer], index) => <section className={`legal-faq-item${expandedFaq === index ? " is-open" : ""}`} key={question}>
                   <button type="button" className="legal-faq-trigger" aria-expanded={expandedFaq === index} onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}>
-                    {legalText(question, language)}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .35s cubic-bezier(.3,1.4,.5,1)" }} />
+                    {legalText(question ?? '', language)}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .35s cubic-bezier(.3,1.4,.5,1)" }} />
                   </button>
-                  <div className="legal-faq-answer"><div>{legalText(answer, language)}</div></div>
+                  <div className="legal-faq-answer"><div>{legalText(answer ?? '', language)}</div></div>
                 </section>)}
               </div>
               <div className="legal-kicker">{legalText("Все документы", language)}</div>
