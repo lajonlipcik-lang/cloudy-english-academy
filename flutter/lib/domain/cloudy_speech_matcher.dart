@@ -1,23 +1,13 @@
+import 'package:unorm_dart/unorm_dart.dart' as unorm;
+
 /// Mirrors src/server-assets/cloudy-speech.js.
 /// Short words stay exact-match only so son/sun and ship/sheep are not
 /// incorrectly accepted as the same pronunciation.
 String normalizeCloudySpeechText(String value) {
-  const replacements = <String, String>{
-    'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
-    'æ': 'ae', 'ç': 'c', 'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
-    'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i', 'ñ': 'n',
-    'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o', 'ö': 'o', 'ø': 'o',
-    'ù': 'u', 'ú': 'u', 'û': 'u', 'ü': 'u', 'ý': 'y', 'ÿ': 'y',
-    'ß': 'ss', 'œ': 'oe', 'ł': 'l', 'đ': 'd', 'ð': 'd', 'þ': 'th',
-  };
-  final lowered = value.toLowerCase().replaceAll('’', '').replaceAll("'", '');
-  final expanded = StringBuffer();
-  for (final rune in lowered.runes) {
-    final character = String.fromCharCode(rune);
-    expanded.write(replacements[character] ?? character);
-  }
-  return expanded
-      .toString()
+  final decomposed = unorm.nfkd(value.toLowerCase())
+      .replaceAll('’', '')
+      .replaceAll("'", '');
+  return decomposed
       .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
       .replaceAll(RegExp(r'\s+'), ' ')
       .trim();
