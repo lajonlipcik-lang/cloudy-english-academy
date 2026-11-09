@@ -6,10 +6,10 @@ void main() {
   group('Cloudy progress engine parity', () {
     test('rolls the daily counters while preserving the new day marker', () {
       final state = CloudyState.defaults().copyWith(
-        today: const CloudyToday(d: 'Sun Nov 08 2026', xp: 20, les: 1, ok: 4, claim: 1),
+        today: const CloudyToday(d: 'Sun Nov 8 2026', xp: 20, les: 1, ok: 4, claim: 1),
       );
       final rolled = rollCloudyDay(state, DateTime(2026, 11, 9, 12));
-      expect(rolled.today.d, 'Mon Nov 09 2026');
+      expect(rolled.today.d, 'Mon Nov 9 2026');
       expect(rolled.today.xp, 0);
       expect(rolled.today.les, 0);
       expect(rolled.today.ok, 0);
@@ -75,7 +75,7 @@ void main() {
     test('claims the daily chest only once after the configured goal', () {
       final state = CloudyState.defaults().copyWith(
         xp: 120,
-        today: const CloudyToday(d: 'Mon Nov 09 2026', xp: 30),
+        today: const CloudyToday(d: 'Mon Nov 9 2026', xp: 30),
       );
       final claimed = claimCloudyChest(state);
       expect(claimed?.xp, 145);
@@ -84,13 +84,13 @@ void main() {
 
     test('merges guest and account progress without losing either side', () {
       final guest = CloudyState.fromJson({
-        'xp': 20, 'streak': 4, 'last': 'Mon Nov 09 2026', 'lv': 'A1',
+        'xp': 20, 'streak': 4, 'last': 'Mon Nov 9 2026', 'lv': 'A1',
         'dn': {'A1': 3, 'A2': 0, 'B1': 0, 'B2': 0},
         'mis': {'hello': 2}, 'days': ['2026-11-09'], 'ach': ['first'],
         'acc': [2, 3], 'wk': {'k': '2026w45', 'xp': 20},
       });
       final account = CloudyState.fromJson({
-        'xp': 100, 'streak': 2, 'last': 'Sun Nov 08 2026', 'lv': 'A1',
+        'xp': 100, 'streak': 2, 'last': 'Sun Nov 8 2026', 'lv': 'A1',
         'dn': {'A1': 2, 'A2': 0, 'B1': 0, 'B2': 0},
         'mis': {'hello': 1, 'world': 1}, 'days': ['2026-11-08'], 'ach': ['s3'],
         'acc': [4, 5], 'wk': {'k': '2026w45', 'xp': 80},
@@ -102,7 +102,7 @@ void main() {
       expect(merged.days, ['2026-11-08', '2026-11-09']);
       expect(merged.achievements.toSet(), {'first', 's3'});
       expect(merged.week['xp'], 100);
-      expect(merged.last, 'Mon Nov 09 2026');
+      expect(merged.last, 'Mon Nov 9 2026');
     });
   });
 }
