@@ -207,7 +207,7 @@ export function LegalPage() {
 
       <style>{`
         .legal-redesign{position:fixed;inset:0;z-index:60;display:flex;justify-content:center;color:#fff;background:linear-gradient(165deg,#050d2b 0%,#0a2a73 56%,#123f83 100%);font-family:inherit;animation:legalEnter .5s cubic-bezier(.2,.85,.25,1) both}.legal-redesign.legal-closing{animation:legalExit .32s ease both}
-        .legal-redesign *{box-sizing:border-box}.legal-page-transition{animation:legalForward .42s cubic-bezier(.2,.85,.25,1) both}.legal-page-transition.legal-backward{animation:legalBackward .42s cubic-bezier(.2,.85,.25,1) both}.legal-faq-item .legal-faq-answer{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.85,.25,1);padding:0}.legal-faq-item .legal-faq-answer>div{overflow:hidden;min-height:0;padding:0 16px}.legal-faq-item.is-open .legal-faq-answer{grid-template-rows:1fr}.legal-faq-item.is-open .legal-faq-answer>div{padding-bottom:14px}.legal-section .legal-full-text{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.85,.25,1)}.legal-section .legal-full-text>div{overflow:hidden;min-height:0}.legal-section.is-expanded .legal-full-text{grid-template-rows:1fr}.legal-section.is-expanded .legal-full-toggle svg{transform:rotate(180deg)}.legal-full-toggle svg{transition:transform .35s}.legal-section.legal-flash{animation:legalFlash 1s ease both}
+        .legal-redesign *{box-sizing:border-box}.legal-page-transition{animation:legalForward .42s cubic-bezier(.2,.85,.25,1) both}.legal-page-transition.legal-backward{animation:legalBackward .42s cubic-bezier(.2,.85,.25,1) both}.legal-faq-item .legal-faq-answer{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.85,.25,1);padding:0}.legal-faq-item .legal-faq-answer>div{overflow:hidden;min-height:0;padding:0 16px}.legal-faq-item.is-open .legal-faq-answer{grid-template-rows:1fr}.legal-faq-item.is-open .legal-faq-answer>div{padding-bottom:14px}.legal-section .legal-full-text{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.85,.25,1)}.legal-section .legal-full-text>div{overflow:hidden;min-height:0}.legal-section.is-expanded .legal-full-text{grid-template-rows:1fr}.legal-section.is-expanded .legal-full-toggle svg{transform:rotate(180deg)}.legal-full-toggle svg{transition:transform .35s}.legal-section.legal-flash{animation:legalFlash 1s ease both}.legal-full-toggle{display:inline-flex;align-items:center;gap:7px;margin-top:8px;padding:8px 0;border:0;background:none;font-size:12px;font-weight:800;cursor:pointer}
         .legal-shell{width:100%;max-width:560px;height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
         .legal-topbar{display:flex;align-items:center;gap:12px;padding:12px 16px 10px;min-height:64px}
         .legal-back{width:42px;height:42px;flex:none;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center}
@@ -278,15 +278,17 @@ export function LegalPage() {
                 {active.sections.map(([heading], index) => <button type="button" key={heading} onClick={() => jumpToSection(index)}>{heading.replace(/^\d+\.\s*/, "")}</button>)}
               </div>
               {active.sections.map(([heading, body], index) => (
-                <article id={`legal-section-${index}`} className="legal-section" key={heading} style={{ "--i": Math.min(index, 10), "--tone": meta.tone } as React.CSSProperties}>
+                <article id={`legal-section-${index}`} className={`legal-section${expandedSections.has(index) ? " is-expanded" : ""}`} key={heading} style={{ "--i": Math.min(index, 10), "--tone": meta.tone } as React.CSSProperties}>
                   <h3><span>{/^\d+/.test(heading) ? heading.match(/^\d+/)?.[0] : index + 1}</span>{heading.replace(/^\d+\.\s*/, "")}</h3>
                   <p>{body}</p>
+                  <div className="legal-full-text"><div><p>{body}</p></div></div>
+                  <button type="button" className="legal-full-toggle legal-text-link" aria-expanded={expandedSections.has(index)} onClick={() => toggleSection(index)}>Полный юридический текст <ChevronDown size={15} /></button>
                 </article>
               ))}
               <button type="button" className="legal-back" onClick={backToList} style={{ width: "auto", borderRadius: 14, padding: "0 16px", display: "inline-flex", gap: 8, marginTop: 8 }}> <ArrowLeft size={17} /> Все документы</button>
             </div>
           ) : (
-            <>
+            <div className={`legal-home${pageDirection === "bck" ? " legal-page-transition legal-backward" : ""}`}>
               <section className="legal-hero">
                 <div className="legal-hero-mark"><Scale size={34} /></div>
                 <h1>Юридический центр</h1>
@@ -319,7 +321,7 @@ export function LegalPage() {
                 <ChevronDown size={20} style={{ transform: "rotate(-90deg)", opacity: .6 }} />
               </a>
               <div className="legal-footer">Cloudy English Academy · Юридический центр · Редакция от 9 ноября 2026 года</div>
-            </>
+            </div>
           )}
         </div>
       </div>
