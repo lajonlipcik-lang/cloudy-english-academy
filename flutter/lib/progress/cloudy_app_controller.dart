@@ -181,6 +181,10 @@ class CloudyAppController extends ChangeNotifier {
     }
   }
 
+  Future<void> resetPassword(String email) => _auth.resetPassword(email);
+
+  Future<void> updatePassword(String password) => _auth.updatePassword(password);
+
   Future<CloudyAuthUser> updateProfile({String? name, Object? age}) async {
     final updated = await _auth.updateProfile(name: name, age: age);
     user = updated;
