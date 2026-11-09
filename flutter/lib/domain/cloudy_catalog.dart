@@ -112,6 +112,40 @@ class CloudyCatalog {
 
   CloudyFoundation? foundationAt(int lessonIndex) => foundations[lessonIndex];
 
+  CloudyExercise? grammarExerciseAt(int lessonIndex, {String level = ''}) {
+    final foundation = foundationAt(lessonIndex);
+    if (foundation == null) return null;
+    return CloudyExercise(
+      kind: CloudyExerciseKind.grammar,
+      title: foundation.title,
+      body: foundation.body,
+      examples: foundation.examples,
+      tip: foundation.tip,
+      level: level,
+    );
+  }
+
+  List<CloudyExercise> buildLessonSequence(
+    int lessonIndex, {
+    required String level,
+    required bool microphoneEnabled,
+    required bool speechRecognitionAvailable,
+    CloudyRand? random,
+  }) {
+    final lesson = lessonAt(lessonIndex);
+    if (lesson == null) return const [];
+    return buildCloudyLessonSequence(
+      lessonIndex: lessonIndex,
+      lesson: lesson,
+      level: level,
+      vocabularyPool: vocabularyPool,
+      microphoneEnabled: microphoneEnabled,
+      speechRecognitionAvailable: speechRecognitionAvailable,
+      grammarIntro: grammarExerciseAt(lessonIndex, level: level),
+      random: random,
+    );
+  }
+
   List<CloudyLesson> lessonsForLevel(String level) => List.unmodifiable(
         (levels[level] ?? const <CloudySection>[])
             .expand((section) => section.lessonIndices)
