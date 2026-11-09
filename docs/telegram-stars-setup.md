@@ -37,7 +37,7 @@ Telegram Stars invoice creation requires a configured active monthly plan with c
 
 ## Existing support bot: do not replace its webhook blindly
 
-Telegram supports either long polling or one webhook receiver for a bot; setting a new webhook replaces the receiver. The new endpoint `POST /api/telegram/stars-webhook` handles account-link and Stars payment updates only. It must be integrated into the existing support bot's current update handler (or the current handler must safely forward all Telegram updates to it) before changing the bot webhook URL. This protects existing support commands and message routing.
+Telegram supports either long polling or one webhook receiver for a bot; setting a new webhook replaces the receiver. The new endpoint `POST /api/telegram/stars-webhook` handles account-link and Stars payment updates only. It must be integrated into the existing support bot's current update handler (or the current handler must safely forward all Telegram updates to it) before changing the bot webhook URL. This protects existing support commands and message routing. The current bot receiver must also subscribe to the Telegram update types `message`, `pre_checkout_query`, and `subscription` (plus any update types already used by support). Do not narrow `allowed_updates` in a way that drops existing support events.
 
 The endpoint checks Telegram's `X-Telegram-Bot-Api-Secret-Token` header against `TELEGRAM_WEBHOOK_SECRET`.
 
