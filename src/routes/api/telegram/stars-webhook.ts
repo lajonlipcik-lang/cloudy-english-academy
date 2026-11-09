@@ -105,13 +105,12 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
             const subscriptionUser = readObject(subscriptionUpdate['user']);
             const payload = String(subscriptionUpdate['invoice_payload'] ?? "");
             const state = String(subscriptionUpdate['state'] ?? "");
-            const { data: order, error: orderError } = await admin
-              ['from']("telegram_payment_orders")
+            const { data: order, error: orderError } = await admin['from']("telegram_payment_orders")
               .select("subscription_id,telegram_user_id")
               .eq("invoice_payload", payload)
               .maybeSingle();
             if (orderError) throw orderError;
-            if (order?['subscription']_id &&
+            if (order?.subscription_id &&
                 String(order.telegram_user_id) === String(subscriptionUser['id']) &&
                 ["active", "canceled", "failed"].includes(state)) {
               const changes = state === "active"
@@ -119,7 +118,7 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
                 : { cancel_at_period_end: true, canceled_at: state === "canceled" ? new Date().toISOString() : null, updated_at: new Date().toISOString() };
               const { error } = await admin['from']("subscriptions")
                 .update(changes)
-                .eq("id", order['subscription']_id);
+                .eq("id", order.subscription_id);
               if (error) throw error;
             }
             await markProcessed();
@@ -137,7 +136,7 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
               p_token_hash: tokenHash,
               p_telegram_user_id: fromId,
               p_telegram_chat_id: chatId,
-              p_telegram_username: message['from']?['user']name ?? null,
+              p_telegram_username: message.from?.username ?? null,
             });
             if (error) {
               await telegramApi(runtime.botToken, "sendMessage", {
@@ -160,8 +159,8 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
                 !payment.telegram_payment_charge_id || !Number.isSafeInteger(payment['total_amount'])) {
               throw new Error("Telegram sent an incomplete Stars payment update.");
             }
-            const expiresAt = typeof payment['subscription']_expiration_date === "number"
-              ? new Date(payment['subscription']_expiration_date * 1000).toISOString()
+            const expiresAt = typeof payment.subscription_expiration_date === "number"
+              ? new Date(payment.subscription_expiration_date * 1000).toISOString()
               : null;
             const { error } = await admin.rpc("apply_telegram_stars_payment", {
               p_invoice_payload: payment['invoice_payload'],
@@ -188,8 +187,7 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
 
           const refund = message['refunded_payment'];
           if (refund?.telegram_payment_charge_id) {
-            const { data: paymentRow, error: paymentError } = await admin
-              ['from']("subscription_payments")
+            const { data: paymentRow, error: paymentError } = await admin['from']("subscription_payments")
               .select("id,subscription_id")
               .eq("provider", "telegram_stars")
               .eq("provider_payment_id", refund.telegram_payment_charge_id)
