@@ -19,11 +19,12 @@ The query parameter cloudyNative=1 suppresses only the existing iOS Add to Home 
 - lib/domain/cloudy_exercise.dart models all eight current browser exercise/study card types and preserves their JSON contracts.
 - lib/domain/cloudy_state.dart models the persisted progress and settings contract using the current cl2 JSON keys.
 - lib/data/cloudy_progress_store.dart reads and writes the browser-compatible cl2 / cl2:<scope> namespaces and keeps guest data until an explicit server-confirmed merge.
+- lib/data/cloudy_auth_repository.dart ports password sign-in/sign-up, password reset, auth-session observation, and the existing 13+ profile-age rules using only the public Supabase publishable key. It is not yet connected to replacement native screens.
 - lib/domain/cloudy_logic.dart ports lesson sequencing, guided grammar prompts, choice/listening/builder/matching/pronunciation/review behavior, XP/streak rules, achievements, daily chest, guest/account merge, and server progress sanitization.
 - lib/domain/cloudy_learning_store.dart preserves adaptive mastery, spaced-review ordering, active sessions, and an offline event outbox in the existing learning-intelligence storage namespace.
 - Tests cover the catalog, eight exercise types, progress serialization/rules, local progress storage and safe guest merge, adaptive learning storage, and lesson sequence composition.
 - The existing application remains loaded by the WebView shell in lib/main.dart. These Dart modules are migration foundations and are not yet wired into replacement native screens.
-- Native authentication, native screens, platform audio/microphone integration, and full visual parity are not complete.
+- The auth repository is implemented but not yet wired into main.dart or native screens. Native screen navigation, server-authoritative progress/XP endpoints, platform audio/microphone integration, and full visual parity are not complete.
 
 ## Validation
 
