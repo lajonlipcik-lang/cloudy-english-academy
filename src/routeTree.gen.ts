@@ -14,6 +14,8 @@ import { Route as AvailabilityRouteImport } from './routes/availability'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ApiInternalSupportAiRouteImport } from './routes/api/internal/support-ai'
+import { Route as ApiTelegramStarsRouteImport } from './routes/api/telegram/stars'
+import { Route as ApiTelegramStarsWebhookRouteImport } from './routes/api/telegram/stars-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +42,16 @@ const ApiInternalSupportAiRoute = ApiInternalSupportAiRouteImport.update({
   path: '/api/internal/support-ai',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTelegramStarsRoute = ApiTelegramStarsRouteImport.update({
+  id: '/api/telegram/stars',
+  path: '/api/telegram/stars',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelegramStarsWebhookRoute = ApiTelegramStarsWebhookRouteImport.update({
+  id: '/api/telegram/stars-webhook',
+  path: '/api/telegram/stars-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +59,8 @@ export interface FileRoutesByFullPath {
   '/legal': typeof LegalRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
+  '/api/telegram/stars': typeof ApiTelegramStarsRoute
+  '/api/telegram/stars-webhook': typeof ApiTelegramStarsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +68,8 @@ export interface FileRoutesByTo {
   '/legal': typeof LegalRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
+  '/api/telegram/stars': typeof ApiTelegramStarsRoute
+  '/api/telegram/stars-webhook': typeof ApiTelegramStarsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,6 +78,8 @@ export interface FileRoutesById {
   '/legal': typeof LegalRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
+  '/api/telegram/stars': typeof ApiTelegramStarsRoute
+  '/api/telegram/stars-webhook': typeof ApiTelegramStarsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,6 +89,8 @@ export interface FileRouteTypes {
     | '/legal'
     | '/sitemap.xml'
     | '/api/internal/support-ai'
+    | '/api/telegram/stars'
+    | '/api/telegram/stars-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -93,6 +113,8 @@ export interface RootRouteChildren {
   LegalRoute: typeof LegalRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiInternalSupportAiRoute: typeof ApiInternalSupportAiRoute
+  ApiTelegramStarsRoute: typeof ApiTelegramStarsRoute
+  ApiTelegramStarsWebhookRoute: typeof ApiTelegramStarsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +154,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalSupportAiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/telegram/stars': {
+      id: '/api/telegram/stars'
+      path: '/api/telegram/stars'
+      fullPath: '/api/telegram/stars'
+      preLoaderRoute: typeof ApiTelegramStarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telegram/stars-webhook': {
+      id: '/api/telegram/stars-webhook'
+      path: '/api/telegram/stars-webhook'
+      fullPath: '/api/telegram/stars-webhook'
+      preLoaderRoute: typeof ApiTelegramStarsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -141,6 +177,8 @@ const rootRouteChildren: RootRouteChildren = {
   LegalRoute: LegalRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiInternalSupportAiRoute: ApiInternalSupportAiRoute,
+  ApiTelegramStarsRoute: ApiTelegramStarsRoute,
+  ApiTelegramStarsWebhookRoute: ApiTelegramStarsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
