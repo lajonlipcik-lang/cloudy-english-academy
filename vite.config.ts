@@ -1,6 +1,6 @@
-// Lovable's wrapper currently supplies the app's shared TanStack, React,
-// Tailwind, path-alias and development plugins. Override only the deployment
-// target here; keep the Lovable sandbox target unchanged during its preview.
+// Lovable's wrapper supplies the shared TanStack, React, Tailwind, path-alias,
+// development and Nitro plugins. Keep its sandbox defaults intact while
+// selecting Vercel's Nitro preset for non-sandbox builds.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
 const isLovableSandbox =
@@ -8,19 +8,8 @@ const isLovableSandbox =
 
 export default defineConfig({
   tanstackStart: {
-    // Keep the custom SSR wrapper, including the Cloudy region-access gate.
+    // Preserve the custom SSR wrapper, including the Cloudy region-access gate.
     server: { entry: "server" },
   },
-  ...(!isLovableSandbox
-    ? {
-        nitro: {
-          preset: "vercel",
-          output: {
-            dir: ".vercel/output",
-            serverDir: ".vercel/output/functions/__server.func",
-            publicDir: ".vercel/output/static",
-          },
-        },
-      }
-    : {}),
+  ...(!isLovableSandbox ? { nitro: { preset: "vercel" } } : {}),
 });
