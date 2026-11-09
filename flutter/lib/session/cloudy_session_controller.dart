@@ -267,6 +267,7 @@ class CloudySessionController extends ChangeNotifier {
     _disposed = true;
     unawaited(_authSubscription?.cancel());
     _mobileApi.close();
+    unawaited(_media.dispose());
     super.dispose();
   }
 }
