@@ -16,19 +16,19 @@ function validateToken(input: ChatHistoryInput) {
 function validateThread(value: unknown): ChatThreadInput {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Некорректный диалог.");
   const raw = value as Record<string, unknown>;
-  const id = String(raw.id ?? "");
+  const id = String(raw["id"] ?? "");
   if (!/^[A-Za-z0-9_-]{1,80}$/.test(id)) throw new Error("Некорректный идентификатор диалога.");
-  const title = String(raw.title ?? "Новый диалог").replace(/\s+/g, " ").trim().slice(0, 120) || "Новый диалог";
-  if (!Array.isArray(raw.messages) || raw.messages.length > 80) throw new Error("Некорректная история сообщений.");
-  const messages = raw.messages.map((entry): ChatMessage => {
+  const title = String(raw["title"] ?? "Новый диалог").replace(/\s+/g, " ").trim().slice(0, 120) || "Новый диалог";
+  if (!Array.isArray(raw["messages"]) || raw["messages"].length > 80) throw new Error("Некорректная история сообщений.");
+  const messages = raw["messages"].map((entry): ChatMessage => {
     if (!entry || typeof entry !== "object" || Array.isArray(entry)) throw new Error("Некорректное сообщение.");
     const message = entry as Record<string, unknown>;
-    if (message.r !== "u" && message.r !== "a") throw new Error("Некорректная роль сообщения.");
-    if (typeof message.t !== "string" || message.t.length > 8000) throw new Error("Сообщение слишком длинное.");
-    return { r: message.r, t: message.t };
+    if (message["r"] !== "u" && message["r"] !== "a") throw new Error("Некорректная роль сообщения.");
+    if (typeof message["t"] !== "string" || message["t"].length > 8000) throw new Error("Сообщение слишком длинное.");
+    return { r: message["r"], t: message["t"] };
   });
   if (JSON.stringify(messages).length > 700_000) throw new Error("История диалога слишком большая.");
-  return { id, title, messages, updatedAt: Number(raw.updatedAt) || Date.now() };
+  return { id, title, messages, updatedAt: Number(raw["updatedAt"]) || Date.now() };
 }
 
 async function getUserAndDb(token: string) {
@@ -72,7 +72,7 @@ export const saveCloudyChatThread = createServerFn({ method: "POST" })
       thread_id: thread.id,
       title: thread.title,
       messages: thread.messages,
-      updated_at: new Date(thread.updatedAt).toISOString(),
+      updated_at: new Date(thread.updatedAt ?? Date.now()).toISOString(),
     }, { onConflict: "user_id,thread_id" });
     if (error) throw new Error("Не удалось сохранить диалог в аккаунте.");
     return { ok: true, id: thread.id };
