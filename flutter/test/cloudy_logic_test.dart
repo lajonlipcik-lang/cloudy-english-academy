@@ -162,8 +162,8 @@ void main() {
       expect(withMic.where((item) => item.kind == 'm'), hasLength(1));
       expect(withMic.where((item) => item.kind == 'b'), hasLength(1));
       expect(withMic.where((item) => item.kind == 'p'), hasLength(1));
-      expect(withoutMic.where((item) => item.kind == CloudyExerciseKind.pronunciation), isEmpty);
-      final builder = withMic.firstWhere((item) => item.kind == CloudyExerciseKind.builder);
+      expect(withoutMic.where((item) => item.kind == 'p'), isEmpty);
+      final builder = withMic.firstWhere((item) => item.kind == 'b') as CloudyBuilderExercise;
       expect(builder.question, 'Я пью воду');
       expect(builder.answer, 'I drink water');
       expect(builder.options, containsAll(['I', 'drink', 'water']));
