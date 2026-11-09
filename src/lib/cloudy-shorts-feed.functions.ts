@@ -71,7 +71,7 @@ export const listShortsFeed = createServerFn({ method: "POST" })
     const authorIds = [...new Set((rows ?? []).map((row: any) => row.author_id))];
     const [{ data: likeRows, error: likesError }, { data: commentRows, error: commentsError }, { data: followRows, error: followsError }, { data: savedRows, error: savedError }] = await Promise.all([
       postIds.length ? content.from("shorts_likes").select("video_id,user_id").in("video_id", postIds) : Promise.resolve({ data: [], error: null }),
-      postIds.length ? content.from("shorts_comments").select("video_id").in("video_id", postIds).in("status", ["published", "pending_review"]) : Promise.resolve({ data: [], error: null }),
+      postIds.length ? content.from("shorts_comments").select("video_id").in("video_id", postIds).eq("status", "published") : Promise.resolve({ data: [], error: null }),
       viewerId && authorIds.length ? content.from("shorts_follows").select("following_id").eq("follower_id", viewerId).in("following_id", authorIds) : Promise.resolve({ data: [], error: null }),
       viewerId && postIds.length ? content.from("shorts_saved_posts").select("video_id").eq("user_id", viewerId).in("video_id", postIds) : Promise.resolve({ data: [], error: null }),
     ]);
