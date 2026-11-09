@@ -24,7 +24,7 @@ class CloudyLearningHomeScreen extends StatelessWidget {
     final level = state.level?.code ?? 'A1';
     final sections = catalog.levels[level] ?? const <CloudySection>[];
     final goal = math.max(1, state.settings.goal.toInt());
-    final progress = (state.today.xp / goal).clamp(0.0, 1.0);
+    final progress = (state.today.xp / goal).clamp(0.0, 1.0).toDouble();
     final ready = state.today.xp >= goal && state.today.claim == 0;
     return Scaffold(
       backgroundColor: const Color(0xFF050D2B),
