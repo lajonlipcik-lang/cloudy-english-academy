@@ -936,12 +936,11 @@ function shorts(){
  h+='</div><button class="shorts-create" aria-label="Создать публикацию" onclick="shortsUpload()">'+shortsIcon("plus")+'</button></section>';return h;
 }
 async function shortsLoadFeed(force=false){
- if(!S.user)return;
- const uid=S.user.id;if(shortsFeedLoading||(!force&&shortsFeedUser===uid))return;
+ const uid=S.user?.id||"public";if(shortsFeedLoading||(!force&&shortsFeedUser===uid))return;
  shortsFeedLoading=true;
- try{const response=await authRequest("shorts-feed-get");if(S.user?.id!==uid)return;const rows=Array.isArray(response.result?.videos)?response.result.videos:[];shortsLiveItems=rows.map(v=>({id:v.id,authorId:v.authorId||"",isOwn:v.isOwn===true,mediaType:v.mediaType||"video",author:v.authorName||"Участник",handle:"",avatarUrl:v.avatarUrl||null,initial:String(v.authorName||"У").trim().charAt(0).toUpperCase(),caption:v.caption||"",textContent:v.textContent||"",likes:Number(v.likes||0),comments:Number(v.comments||0),shares:0,isLiked:v.isLiked===true,isFollowingAuthor:v.isFollowingAuthor===true,isSaved:v.isSaved===true,videoUrl:v.playbackUrl,imageUrl:v.imageUrl,createdAt:v.publishedAt})).filter(v=>v.mediaType==="text"||v.videoUrl||v.imageUrl);shortsLiked=new Set(shortsLiveItems.filter(v=>v.isLiked).map(v=>v.id));shortsFollowing=new Set(shortsLiveItems.filter(v=>v.isFollowingAuthor).map(v=>v.authorId));shortsSaved=new Set(shortsLiveItems.filter(v=>v.isSaved).map(v=>v.id));shortsFeedUser=uid;}
+ try{const response=await authRequest("shorts-feed-get");if((S.user?.id||"public")!==uid)return;const rows=Array.isArray(response.result?.videos)?response.result.videos:[];shortsLiveItems=rows.map(v=>({id:v.id,authorId:v.authorId||"",isOwn:v.isOwn===true,mediaType:v.mediaType||"video",author:v.authorName||"Участник",handle:"",avatarUrl:v.avatarUrl||null,initial:String(v.authorName||"У").trim().charAt(0).toUpperCase(),caption:v.caption||"",textContent:v.textContent||"",likes:Number(v.likes||0),comments:Number(v.comments||0),shares:0,isLiked:v.isLiked===true,isFollowingAuthor:v.isFollowingAuthor===true,isSaved:v.isSaved===true,videoUrl:v.playbackUrl,imageUrl:v.imageUrl,createdAt:v.publishedAt})).filter(v=>v.mediaType==="text"||v.videoUrl||v.imageUrl);shortsLiked=new Set(shortsLiveItems.filter(v=>v.isLiked).map(v=>v.id));shortsFollowing=new Set(shortsLiveItems.filter(v=>v.isFollowingAuthor).map(v=>v.authorId));shortsSaved=new Set(shortsLiveItems.filter(v=>v.isSaved).map(v=>v.id));shortsFeedUser=uid;}
  catch(error){console.warn("[cloudy-shorts] feed load failed",error);if(force)toast(error.message||"Не удалось загрузить ленту Shorts.",false);}
- finally{shortsFeedLoading=false;if(T===4&&S.user?.id===uid)view(0);}
+ finally{shortsFeedLoading=false;if(T===4&&(S.user?.id||"public")===uid)view(0);}
 }
 
 function shortsIcon(name){const paths={search:'<circle cx="11" cy="11" r="7"></circle><path d="m16 16 5 5"></path>',comment:'<path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H6l-3 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"></path>',share:'<path d="M12 19V5"></path><path d="m6 11 6-6 6 6"></path><path d="M5 15v5h14v-5"></path>',bookmark:'<path d="M6 4.5A1.5 1.5 0 0 1 7.5 3h9A1.5 1.5 0 0 1 18 4.5V21l-6-4-6 4Z"></path>',volume:'<path d="M4 10v4h4l5 4V6l-5 4Z"></path><path d="M16 9a5 5 0 0 1 0 6"></path><path d="M18.5 6.5a9 9 0 0 1 0 11"></path>',muted:'<path d="M4 10v4h4l5 4V6l-5 4Z"></path><path d="m17 9 5 6m0-6-5 6"></path>',music:'<path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle>',menu:'<path d="M4 6h16M4 12h16M4 18h16"></path>',plus:'<path d="M12 5v14M5 12h14"></path>'};return '<svg class="shorts-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+(paths[name]||paths.plus)+'</svg>';}
@@ -1301,8 +1300,8 @@ async function shortsSubmitImage(){
   const started=await authRequest("shorts-upload-start",{payload:{mediaType:"image",fileName:file.name,mimeType:file.type||(/\\.png$/i.test(file.name)?"image/png":/\\.webp$/i.test(file.name)?"image/webp":"image/jpeg"),sizeBytes:file.size,caption,durationSeconds:0}});
   const ticket=started?.result;if(!ticket?.signedUrl||!ticket?.publishableKey||!ticket?.contentUrl)throw new Error("Сервер не подготовил защищённую загрузку.");
   if(button)button.textContent="Загружаем фото…";
-  const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString(),body=new FormData();body.append("cacheControl","3600");body.append("",file);
-  const response=await fetch(uploadUrl,{method:"PUT",headers:{apikey:ticket.publishableKey,Authorization:"Bearer "+ticket.publishableKey,"x-upsert":"false"},body});
+  const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
+  const response=await fetch(uploadUrl,{method:"PUT",headers:{apikey:ticket.publishableKey,Authorization:"Bearer "+ticket.publishableKey,"Content-Type":file.type||"application/octet-stream","x-upsert":"false"},body:file});
   if(!response.ok)throw new Error("Не удалось загрузить фотографию.");
   if(button)button.textContent="Проверяет Cloudy AI…";
   const finalized=await authRequest("shorts-upload-image-finalize",{payload:{videoId:ticket.videoId}});
@@ -1342,8 +1341,7 @@ async function shortsSubmitUpload(){
   if(notice)notice.querySelector("small").textContent="Загружаем видео в приватное хранилище. Не закрывай это окно.";
   const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
   
-  const uploadBody=new FormData();uploadBody.append("cacheControl","3600");uploadBody.append("",file);
-  const response=await fetch(uploadUrl,{method:"PUT",headers:{"apikey":ticket.publishableKey,"Authorization":"Bearer "+ticket.publishableKey,"x-upsert":"false"},body:uploadBody});
+  const response=await fetch(uploadUrl,{method:"PUT",headers:{"apikey":ticket.publishableKey,"Authorization":"Bearer "+ticket.publishableKey,"Content-Type":file.type||"video/mp4","x-upsert":"false"},body:file});
   if(!response.ok){let detail="";try{detail=(await response.json()).message||"";}catch{}throw new Error(detail||"Не удалось загрузить видео в защищённое хранилище.");}
   if(button)button.textContent="Отправляем на проверку…";
   const finalized=await authRequest("shorts-upload-finalize",{payload:{videoId:ticket.videoId}});
