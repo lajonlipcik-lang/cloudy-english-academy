@@ -48,7 +48,7 @@ void main() {
         level: 'A1', lessonIndex: 24, now: DateTime(2026, 11, 9, 12),
       );
       final event = await store.endSession(
-        'lesson_completed', now: DateTime(2026, 11, 9, 12, 5),
+        outcome: 'lesson_completed', now: DateTime(2026, 11, 9, 12, 5),
       );
       expect(event?['eventType'], 'lesson_completed');
       expect(event?['sessionId'], started);
