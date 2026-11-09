@@ -387,15 +387,17 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
       children: [
         _heading(e.title ?? 'Найдите пары', 'Соедини слова и перевод', 'Сначала выбери слово слева, затем его перевод справа.'),
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(child: Column(children: e.left.map((p) => _matchTile(
-            p.first,
+          Expanded(child: Column(children: e.left.asMap().entries.map((entry) => _matchTile(
+            entry.value.first,
+            key: ValueKey('cloudy-match-left-${entry.key}'),
             active: _pendingLeft == p.first,
             done: _matchedLeft.contains(p.first),
             onTap: () => setState(() => _pendingLeft = p.first),
           )).toList())),
           const SizedBox(width: 12),
-          Expanded(child: Column(children: e.right.map((p) => _matchTile(
-            p.first,
+          Expanded(child: Column(children: e.right.asMap().entries.map((entry) => _matchTile(
+            entry.value.first,
+            key: ValueKey('cloudy-match-right-${entry.key}'),
             active: false,
             done: _matchedRight.contains(p.first),
             onTap: _pendingLeft == null || _matchedRight.contains(p.first) ? null : () {
@@ -513,8 +515,9 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
     child: Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
   );
 
-  Widget _matchTile(String value, {required bool active, required bool done, VoidCallback? onTap}) =>
+  Widget _matchTile(String value, {Key? key, required bool active, required bool done, VoidCallback? onTap}) =>
       Padding(
+        key: key,
         padding: const EdgeInsets.only(bottom: 10),
         child: Material(
           color: done ? const Color(0xFF1C9A83).withValues(alpha: .55) : active ? _lessonBlue : Colors.white.withValues(alpha: .10),
