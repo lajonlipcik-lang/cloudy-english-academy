@@ -50,7 +50,7 @@ void main() {
     test('limits profile names to 40 characters and rejects empty updates', () {
       final updated = CloudyAuthPolicy.profileUpdateData(
         const {},
-        name: 'A' * 50,
+        name: ()=>List.filled(50, 'A').join(),
       );
       expect((updated['name'] as String).length, 40);
       expect(
