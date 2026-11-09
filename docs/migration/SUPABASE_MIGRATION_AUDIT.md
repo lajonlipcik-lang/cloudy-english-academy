@@ -76,3 +76,20 @@ The migration runner's ordering and identity rules must be checked. A runner tha
 ## Audit conclusion
 
 The destination Supabase project is currently empty. The single-project target is now documented, but the Core and Content migration tracks are still not proven safe to apply as one sequence. The duplicate Content migration prefix, the missing unified runner, the saved-posts RLS/grants gap, and the RPC behavior conflict are concrete blockers. No database changes should be made until the complete ordered history and hardening changes pass on a disposable Supabase database.
+
+
+
+## Verified blocker: Shorts text-post moderation
+
+A fresh read of the current runtime and SQL confirms the proposed co-located migration order is not yet safe:
+
+- Content migration `0008_shorts_photo_text_posts.sql` defines `apply_shorts_text_moderation` for both comments and `short_video` rows. For text-only posts it can approve the post; for video/image captions it deliberately escalates rather than approving the media.
+- Core migration `0017_shorts_caption_nonblocking.sql` replaces that same RPC and immediately returns `false` for every `short_video`, leaving comments as the only supported content type.
+- Runtime `createShortTextPost` calls `moderateOwnShortContent`, but the current helper is a no-op that returns an allow decision with `moderationApplied: false`. It does not invoke the database moderation RPC.
+- Consequently, a text-only post can be marked approved by the application without an actual moderation decision. The migration order alone cannot solve this: the runtime moderation path must be implemented and tested, and the final RPC must preserve the safe distinction between text-only posts and media captions.
+
+**Stop condition:** do not enable Shorts text publication in the migrated environment until server-side text moderation is real, fail-closed on provider errors, and covered by tests for allow/reject/review, plus regression tests proving that a safe caption cannot approve a video or image.
+
+## Verified free testing route
+
+The Supabase CLI local stack can be used without creating a paid Supabase branch. It requires a compatible local container runtime (Docker/Podman) and a canonical `supabase/migrations/` chain. The repository currently stores two separate migration directories, and the SQL histories still contain the Shorts RPC conflict above. Therefore a GitHub Actions migration test must wait until the canonical chain and RPC behavior are reconciled; a workflow that merely runs the current files in a guessed order would create false confidence.
