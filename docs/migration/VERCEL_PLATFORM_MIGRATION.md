@@ -35,6 +35,12 @@ Vercel alone does not replace PostgreSQL, identity, object storage, or a long-ru
 - Only the connected Lovable project's database is currently available through the integration. A second live Supabase project/database has not been independently verified. Do not infer its existence from documentation alone.
 - No database dump, Auth export, or Storage object archive has been produced yet.
 
+## Configuration inventory and build boundary
+
+- The source `.env` file was inspected without displaying values. It contains only Supabase project identifiers, project URLs, and publishable client keys (including Vite-prefixed equivalents); no service-role key was found in that file. Publishable keys are not database passwords, but a tracked local `.env` should still be replaced by a committed placeholder-only `.env.example` and ignored local environment files.
+- The build scripts are `vite dev`, `vite build`, and `vite preview`; CI commands include lint, typecheck, tests, and the media processor syntax check. The Lovable Vite config currently supplies framework/build plugins and defaults the Nitro target to Cloudflare. Replacing it requires an explicit Vercel-compatible TanStack Start/Nitro configuration and a production build test.
+- The current app dependency set includes Supabase JS and the Lovable AI Gateway; both are runtime dependencies, while the Lovable Vite/TanStack config is a development dependency. Removal must be sequenced after replacement adapters and integration tests are in place.
+
 ## Migration gates
 
 1. Reconcile Core vs Content ownership and identify every live source project.
