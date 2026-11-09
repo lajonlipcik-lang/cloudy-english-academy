@@ -14,6 +14,10 @@ import { Route as AvailabilityRouteImport } from './routes/availability'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ApiInternalSupportAiRouteImport } from './routes/api/internal/support-ai'
+import { Route as ApiTelegramCheckoutRouteImport } from './routes/api/telegram/checkout'
+import { Route as ApiTelegramOrdersResolveRouteImport } from './routes/api/telegram/orders/resolve'
+import { Route as ApiTelegramOrdersPrecheckRouteImport } from './routes/api/telegram/orders/precheck'
+import { Route as ApiTelegramPaymentsEventsRouteImport } from './routes/api/telegram/payments/events'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -41,12 +45,37 @@ const ApiInternalSupportAiRoute = ApiInternalSupportAiRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 
+const ApiTelegramCheckoutRoute = ApiTelegramCheckoutRouteImport.update({
+  id: '/api/telegram/checkout',
+  path: '/api/telegram/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelegramOrdersResolveRoute = ApiTelegramOrdersResolveRouteImport.update({
+  id: '/api/telegram/orders/resolve',
+  path: '/api/telegram/orders/resolve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelegramOrdersPrecheckRoute = ApiTelegramOrdersPrecheckRouteImport.update({
+  id: '/api/telegram/orders/precheck',
+  path: '/api/telegram/orders/precheck',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTelegramPaymentsEventsRoute = ApiTelegramPaymentsEventsRouteImport.update({
+  id: '/api/telegram/payments/events',
+  path: '/api/telegram/payments/events',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/availability': typeof AvailabilityRoute
   '/legal': typeof LegalRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/api/internal/support-ai': typeof ApiInternalSupportAiRoute
+  '/api/telegram/payments/events': typeof ApiTelegramPaymentsEventsRoute
+  '/api/telegram/orders/precheck': typeof ApiTelegramOrdersPrecheckRoute
+  '/api/telegram/orders/resolve': typeof ApiTelegramOrdersResolveRoute
+  '/api/telegram/checkout': typeof ApiTelegramCheckoutRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -71,6 +100,10 @@ export interface FileRouteTypes {
     | '/legal'
     | '/sitemap.xml'
     | '/api/internal/support-ai'
+    | '/api/telegram/payments/events'
+    | '/api/telegram/orders/precheck'
+    | '/api/telegram/orders/resolve'
+    | '/api/telegram/checkout'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -93,6 +126,10 @@ export interface RootRouteChildren {
   LegalRoute: typeof LegalRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiInternalSupportAiRoute: typeof ApiInternalSupportAiRoute
+  ApiTelegramPaymentsEventsRoute: typeof ApiTelegramPaymentsEventsRoute
+  ApiTelegramOrdersPrecheckRoute: typeof ApiTelegramOrdersPrecheckRoute
+  ApiTelegramOrdersResolveRoute: typeof ApiTelegramOrdersResolveRoute
+  ApiTelegramCheckoutRoute: typeof ApiTelegramCheckoutRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -132,6 +169,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalSupportAiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/telegram/payments/events': {
+      id: '/api/telegram/payments/events'
+      path: '/api/telegram/payments/events'
+      fullPath: '/api/telegram/payments/events'
+      preLoaderRoute: typeof ApiTelegramPaymentsEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telegram/orders/precheck': {
+      id: '/api/telegram/orders/precheck'
+      path: '/api/telegram/orders/precheck'
+      fullPath: '/api/telegram/orders/precheck'
+      preLoaderRoute: typeof ApiTelegramOrdersPrecheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telegram/orders/resolve': {
+      id: '/api/telegram/orders/resolve'
+      path: '/api/telegram/orders/resolve'
+      fullPath: '/api/telegram/orders/resolve'
+      preLoaderRoute: typeof ApiTelegramOrdersResolveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/telegram/checkout': {
+      id: '/api/telegram/checkout'
+      path: '/api/telegram/checkout'
+      fullPath: '/api/telegram/checkout'
+      preLoaderRoute: typeof ApiTelegramCheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -141,6 +206,10 @@ const rootRouteChildren: RootRouteChildren = {
   LegalRoute: LegalRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiInternalSupportAiRoute: ApiInternalSupportAiRoute,
+  ApiTelegramPaymentsEventsRoute: ApiTelegramPaymentsEventsRoute,
+  ApiTelegramOrdersPrecheckRoute: ApiTelegramOrdersPrecheckRoute,
+  ApiTelegramOrdersResolveRoute: ApiTelegramOrdersResolveRoute,
+  ApiTelegramCheckoutRoute: ApiTelegramCheckoutRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
