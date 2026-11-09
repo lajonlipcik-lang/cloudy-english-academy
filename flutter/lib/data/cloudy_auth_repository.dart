@@ -127,7 +127,7 @@ class CloudyAuthRepository {
           'SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY must be provided at build time.',
         );
       }
-      await Supabase.initialize(url: url, anonKey: publishableKey);
+      await Supabase.initialize(url: url, publishableKey: publishableKey);
     } catch (_) {
       _initialization = null;
       rethrow;
