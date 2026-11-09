@@ -55,6 +55,74 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
       learnerProfile: profileResult.data,
     };
   }
+  if (action === "subscription-status") {
+    const url = process.env["SUPABASE_URL"];
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !key) throw new Error("Supabase server is not configured.");
+    const client = createClient(url, key, {
+      global: {
+        headers: { Authorization: "Bearer " + String(input.accessToken ?? "") },
+        fetch: createUserSupabaseFetch(key),
+      },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    });
+    const { data: identity, error: authError } = await client.auth.getUser(String(input.accessToken ?? ""));
+    if (authError || !identity.user) throw new Error("Unauthorized");
+    const uid = identity.user.id;
+    const { data: rows, error: subscriptionError } = await client.from("subscriptions")
+      .select("id,plan_id,status,current_period_start,current_period_end,cancel_at_period_end,canceled_at,created_at")
+      .eq("user_id", uid)
+      .in("status", ["trialing", "active", "canceled"])
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (subscriptionError) throw new Error("Не удалось проверить подписку аккаунта.");
+    const subscription = rows?.[0] ?? null;
+    if (!subscription) {
+      return { hasAccess: false, status: "inactive", subscription: null, plan: null, entitlements: [] };
+    }
+
+    const periodEnd = typeof subscription.current_period_end === "string"
+      ? Date.parse(subscription.current_period_end)
+      : Number.NaN;
+    const status = String(subscription.status);
+    const withinPeriod = !Number.isFinite(periodEnd) || periodEnd > Date.now();
+    const hasAccess = withinPeriod && (
+      status === "active" || status === "trialing" ||
+      (status === "canceled" && Number.isFinite(periodEnd) && periodEnd > Date.now())
+    );
+
+    const [planResult, entitlementResult] = await Promise.all([
+      client.from("subscription_plans").select("code,name,entitlements")
+        .eq("id", subscription.plan_id).maybeSingle(),
+      hasAccess
+        ? client.from("subscription_entitlements")
+            .select("feature_key,enabled,usage_limit")
+            .eq("subscription_id", subscription.id)
+            .eq("user_id", uid)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+    if (planResult.error || entitlementResult.error) {
+      throw new Error("Не удалось загрузить права подписки.");
+    }
+    return {
+      hasAccess,
+      status: hasAccess ? status : (withinPeriod ? status : "expired"),
+      subscription: {
+        id: subscription.id,
+        currentPeriodStart: subscription.current_period_start,
+        currentPeriodEnd: subscription.current_period_end,
+        cancelAtPeriodEnd: subscription.cancel_at_period_end === true,
+        canceledAt: subscription.canceled_at,
+      },
+      plan: planResult.data ? {
+        code: planResult.data.code,
+        name: planResult.data.name,
+        entitlements: objectValue(planResult.data.entitlements),
+      } : null,
+      entitlements: entitlementResult.data ?? [],
+    };
+  }
+
   if (action === "progress-save") {
     const api = await import("@/lib/cloudy/progress.functions");
     return api.saveCloudyProgress({ data: input as never });
