@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { runWithAiFallback } from "@/lib/ai/router";
 import { CLOUDY_FOUNDATIONS, D, LI, LV, TQ } from "@/lib/cloudy/data";
-import { buildExercises } from "@/lib/cloudy/logic";
+import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, skipAnswer } from "@/lib/cloudy/logic";
 import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 const OWNER="lajonlipcik@gmail.com";
@@ -167,7 +167,7 @@ function runCloudyExerciseAudit(){
   const typeTotals:Record<string,number>={c:0,l:0,m:0,b:0,p:0,r:0};
   const levelRows:string[]=[];
   const failures:string[]=[];
-  let lessonCount=0,exerciseCount=0,manualPronunciation=0,variantCount=0;
+  let lessonCount=0,exerciseCount=0,manualPronunciation=0,variantCount=0,simulatedCompletions=0,simulatedXp=0;
   const randomFor=(seed:number)=>{let value=seed>>>0;return()=>{value=(value*1664525+1013904223)>>>0;return value/4294967296}};
   for(const level of ["A1","A2","B1","B2"]){
     const sections=(LV as any)[level]?.s??[];
@@ -182,6 +182,8 @@ function runCloudyExerciseAudit(){
         variantCount++;
         const exercises=buildExercises(lesson,pool,{mic:true},randomFor((lessonIndex+1)*1009+variant*7919));
         if(!Array.isArray(exercises)||!exercises.length){failures.push(level+" / "+lesson.t+": генератор не создал упражнения");lessonErrors++;continue;}
+        let simulatedState=defaultState();
+        let simulatedSession=newSession(lessonIndex,exercises);
         for(const ex of exercises as any[]){
           exerciseCount++;lessonTasks++;typeTotals[ex.k]=(typeTotals[ex.k]??0)+1;
           let issue="";
@@ -203,7 +205,21 @@ function runCloudyExerciseAudit(){
             if(!String(ex.a??"").trim())issue="у задания нет эталонного ответа";
           }else issue="неизвестный тип упражнения: "+String(ex.k);
           if(issue){lessonErrors++;failures.push(level+" / "+lesson.t+" / тип "+String(ex.k)+": "+issue);}
+          if(ex.k==="p"){
+            simulatedSession=skipAnswer(simulatedSession);
+          }else if(ex.k==="m"){
+            for(const pair of ex.L??[]){
+              const graded=applyAnswer(simulatedState,simulatedSession,true,String(pair?.[0]??""));
+              simulatedState=graded.state;simulatedSession=graded.session;
+            }
+          }else{
+            const graded=applyAnswer(simulatedState,simulatedSession,true,String(ex.en??""));
+            simulatedState=graded.state;simulatedSession=graded.session;
+          }
         }
+        const finished=finishLesson(simulatedState,simulatedSession);
+        if(finished.acc<100){lessonErrors++;failures.push(level+" / "+lesson.t+": симуляция правильных ответов завершилась с точностью ниже 100%");}
+        else {simulatedCompletions++;simulatedXp+=finished.gain;}
       }
       rows.push("• "+lesson.t+": "+lessonTasks+" проверок, "+(lessonErrors?"ошибок "+lessonErrors:"структура корректна"));
     }
@@ -223,6 +239,7 @@ function runCloudyExerciseAudit(){
     "Режим: изолированный тест генератора; прогресс, XP и аккаунты учеников не изменялись.",
     "Каталог: "+D.length+" уроков; проверено назначение по уровням: "+lessonCount+" уроков.",
     "Сгенерировано тестовых вариантов: "+variantCount+" (3 варианта на каждый урок).",
+    "Симуляция прохождения: "+simulatedCompletions+" завершённых уроков, расчётный XP "+simulatedXp+" (только в памяти, не начислялся аккаунтам).",
     "Проверено упражнений: "+exerciseCount+". Типы: "+Object.entries(typeTotals).map(([key,value])=>key+"="+value).join(", ")+".",
     "Произношение: "+manualPronunciation+" заданий проверены только на наличие эталонного слова; реальное распознавание речи требует микрофона и отдельного теста на устройстве.",
     "Экзаменационный банк: "+examValid+" из "+TQ.length+" вопросов имеют корректную структуру; структурных ошибок: "+examErrors+".",
@@ -237,7 +254,7 @@ function runCloudyExerciseAudit(){
     ...(failures.length>80?["• И ещё "+(failures.length-80)+" проблем не показано."]:[]),
     "",
     "Ограничение: это статический прогон реального генератора и ключей ответов. Он не подменяет ручную проверку качества формулировок, звука и UX на iPhone."
-  ].join("\\n"),audit:{lessons:lessonCount,variants:variantCount,exercises:exerciseCount,manualPronunciation,examValid,examTotal:TQ.length,grammarEntries,failures:totalFailures}};
+  ].join("\\n"),audit:{lessons:lessonCount,variants:variantCount,exercises:exerciseCount,simulatedCompletions,simulatedXp,manualPronunciation,examValid,examTotal:TQ.length,grammarEntries,failures:totalFailures}};
 }
 
 async function executeCloudyAdminCommand(db:any,user:any,raw:string){
