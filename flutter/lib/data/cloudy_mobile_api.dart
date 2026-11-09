@@ -81,7 +81,7 @@ class CloudyMobileApi {
     }
     final result = await _post('learning-events', {'events': events});
     final synced = result['synced'];
-    final accepted = result['accepted'];
+    final accepted = result['acceptedCount'];
     if (synced is num) return synced.toInt();
     if (accepted is num) return accepted.toInt();
     return events.length;
