@@ -59,8 +59,9 @@ void main() {
       final client = CloudyBackendClient(
         baseUrl: 'https://cloudy.example',
         client: MockClient((_) async => http.Response(
-          jsonEncode({'ok': false, 'error': 'Сначала войдите в аккаунт.'}),
+          utf8.encode(jsonEncode({'ok': false, 'error': 'Сначала войдите в аккаунт.'})),
           401,
+          headers: {'content-type': 'application/json; charset=utf-8'},
         )),
       );
       await expectLater(
