@@ -60,8 +60,11 @@ if [[ "$migration_count" != "33" ]]; then
   exit 1
 fi
 
-supabase start
+echo "Starting isolated local Postgres."
+supabase db start
+echo "Applying the complete migration history from an empty local database."
 supabase db reset
+echo "Running data-integrity and security assertions."
 
 psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
   -v ON_ERROR_STOP=1 \
