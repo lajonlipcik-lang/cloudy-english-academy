@@ -18,7 +18,8 @@ The query parameter cloudyNative=1 suppresses only the existing iOS Add to Home 
 - The current 60-lesson bilingual catalog is copied into assets/cloudy_catalog.json and parsed by lib/domain/cloudy_catalog.dart.
 - lib/domain/cloudy_exercise.dart models all eight current browser exercise/study card types and preserves their JSON contracts.
 - lib/domain/cloudy_state.dart models the persisted progress and settings contract using the current cl2 JSON keys.
-- lib/progress/cloudy_local_progress_store.dart and lib/progress/cloudy_progress_repository.dart reads and writes the browser-compatible cl2 / cl2:<scope> namespaces and keeps guest data until an explicit server-confirmed merge.
+- lib/progress/cloudy_local_progress_store.dart preserves the browser-compatible cl2 / cl2:<email> namespaces, guest/account separation, sync timestamps, and safe cloud activation.
+- lib/progress/cloudy_progress_repository.dart handles authenticated progress save, conflict recovery, and server-authoritative lesson XP.
 - lib/data/cloudy_auth_repository.dart ports password sign-in/sign-up, password reset, auth-session observation, and the existing 13+ profile-age rules using only the public Supabase publishable key. It is not yet connected to replacement native screens.
 - lib/data/cloudy_mobile_api.dart calls the existing authenticated /api/cloudy/mobile endpoint for progress load/save, server-authoritative lesson XP, and learning-event sync.
 - flutter/lib/domain/cloudy_exercise_builder.dart: exact lesson sequencing and typed exercise generation.
