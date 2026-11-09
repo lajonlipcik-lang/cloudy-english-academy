@@ -63,3 +63,19 @@ The native auth adapter reads the public Supabase project URL and publishable ke
 ## Acceptance gate
 
 Do not replace the compatibility shell, merge this branch into main, or call the Flutter version complete until all existing features and saved progress are verified against the current app. Demo-only screens and placeholder actions are not parity.
+\n## Native learning integration
+
+The native learning home and lesson flow are connected to the session/progress controller in `lib/native/cloudy_native_learning_app.dart`. The existing WebView runtime remains the default compatibility mode so profile, settings, authentication and other not-yet-ported sections stay available without being replaced prematurely.
+
+To opt into the native learning path when building the Flutter app, provide:
+
+```sh
+flutter run \
+  --dart-define=CLOUDY_NATIVE_LEARNING=true \
+  --dart-define=CLOUDY_API_BASE_URL=https://your-cloudy-host.example \
+  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=your-public-publishable-key
+```
+
+Use the actual existing Cloudy API host and Supabase public publishable key. Never put a Supabase service-role key in the mobile app. When native learning is enabled, lessons use the existing catalog, adaptive exercise ordering, guest/account progress storage, server award endpoint, learning-event sync, sound, TTS and speech recognition. Profile/settings and other sections open the existing web runtime until their native equivalents pass parity checks.
+
