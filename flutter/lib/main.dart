@@ -96,7 +96,7 @@ class _CloudyEnglishAppState extends State<CloudyEnglishApp> {
                 body: SafeArea(
                   top: false,
                   bottom: false,
-                  child: _CloudyWebView(),
+                  child: WebViewWidget(controller: _webView),
                 ),
               ),
             ),
