@@ -31,7 +31,7 @@ class CloudyLessonScreen extends StatefulWidget {
       onMatchingAttempt;
   final VoidCallback onAdvance;
   final VoidCallback onComplete;
-  final VoidCallback onPronunciationRequested;
+  final void Function(String word, ValueChanged<bool> onResult) onPronunciationRequested;
   final ValueChanged<String> onSpeak;
   final VoidCallback onSkipPronunciation;
   final VoidCallback? onExit;
@@ -460,7 +460,9 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
         Text(e.english, style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900)),
         const SizedBox(height: 16),
         FilledButton.icon(
-          onPressed: widget.onPronunciationRequested,
+          onPressed: () => widget.onPronunciationRequested(
+            e.english, (correct) => _submit(correct, e.english),
+          ),
           icon: const Icon(Icons.mic_rounded),
           label: const Text('Начать произношение'),
           style: FilledButton.styleFrom(backgroundColor: _lessonBlue, foregroundColor: Colors.white),
