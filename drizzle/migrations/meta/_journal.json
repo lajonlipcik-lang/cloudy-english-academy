@@ -169,6 +169,13 @@
       "when": 1794315600000,
       "tag": "0023_telegram_stars_refunds",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794319200000,
+      "tag": "0024_cloudy_lite_fallback",
+      "breakpoints": true
     }
   ]
 }
