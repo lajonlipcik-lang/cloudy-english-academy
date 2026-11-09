@@ -352,6 +352,7 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
           onSpeak: (word) => unawaited(widget.controller.speak(word)),
           onSkipPronunciation: _skipPronunciation,
           onExit: _handleExit,
+          allowAdvanceOnLast: true,
         ),
         if (_finishing)
           Positioned.fill(
