@@ -30,7 +30,7 @@ The current application remains authoritative until the Flutter version passes f
 - flutter/lib/data/cloudy_progress_store.dart: guest and account-scoped local progress persistence, compatible key selection, safe guest merge, and explicit post-sync cleanup.
 - flutter/lib/data/cloudy_auth_repository.dart: Supabase auth adapter and exact 13+ profile-age update policy; the adapter is not yet wired into native screens.
 - flutter/lib/data/cloudy_mobile_api.dart and src/routes/api/cloudy/mobile.ts: authenticated mobile API client/server contract for loading/saving progress, awarding lesson XP, and synchronizing learning events.
-- flutter/lib/domain/cloudy_logic.dart: lesson stages, exercise generation, guided grammar tasks, answer/retry rules, XP/streaks, achievements, daily chest, guest/account merge, and progress sanitization.
+- flutter/lib/domain/cloudy_exercise_builder.dart and lib/domain/cloudy_progress_engine.dart: lesson stages, exercise generation, guided grammar tasks, answer/retry rules, XP/streaks, achievements, daily chest, guest/account merge, and progress sanitization.
 - flutter/lib/domain/cloudy_learning_store.dart: local adaptive mastery, spaced-review prioritization, session tracking, and offline event outbox.
 - flutter/test/: parity-focused tests for progress, catalog loading, exercise serialization, learning persistence, guest/account progress merge, and exercise generation.
 - .github/workflows/flutter-ci.yml: Flutter dependency, analyzer, and test workflow for the migration branch.
