@@ -104,44 +104,6 @@ class _CloudyEnglishAppState extends State<CloudyEnglishApp> {
   }
 }
 
-class _CloudyWebView extends StatefulWidget {
-  const _CloudyWebView();
-
-  @override
-  State<_CloudyWebView> createState() => _CloudyWebViewState();
-}
-
-class _CloudyWebViewState extends State<_CloudyWebView> {
-  late final WebViewController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    const baseUrl = String.fromEnvironment('CLOUDY_API_BASE_URL');
-    final uri = Uri.parse(baseUrl);
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(_background)
-      ..setNavigationDelegate(NavigationDelegate(
-        onNavigationRequest: (request) {
-          final target = Uri.tryParse(request.url);
-          if (target == null) return NavigationDecision.prevent;
-          if (target.scheme == 'https' || target.scheme == 'http') {
-            return NavigationDecision.navigate;
-          }
-          return NavigationDecision.prevent;
-        },
-      ))
-      ..loadRequest(uri.replace(
-        path: '/',
-        queryParameters: {...uri.queryParameters, 'cloudyNative': '1'},
-      ));
-  }
-
-  @override
-  Widget build(BuildContext context) => WebViewWidget(controller: _controller);
-}
-
 class _ConfigurationError extends StatelessWidget {
   const _ConfigurationError({required this.message});
   final String message;
