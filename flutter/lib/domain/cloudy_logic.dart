@@ -333,7 +333,7 @@ List<CloudyExercise> buildCloudyLessonSequence({
   ));
   result.addAll(guidedCloudyExercises(lessonIndex, random: rand));
   final recall = cloudyShuffle(lesson.words, random: rand)
-      .take(math.min(3, lesson.words.length))
+      .take(lesson.words.length < 3 ? lesson.words.length : 3)
       .map((pair) => CloudyExercise(
         kind: CloudyExerciseKind.recall,
         question: pair.ru,
