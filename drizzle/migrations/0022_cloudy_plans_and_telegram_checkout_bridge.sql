@@ -57,6 +57,13 @@ BEGIN
   IF NOT FOUND OR v_token.expires_at <= now() THEN
     RAISE EXCEPTION 'Payment link is invalid or expired';
   END IF;
+  -- Load the plan for both first-time and idempotent retries. The consumed-token
+  -- branch also returns the invoice title/description and must not use an empty row.
+  SELECT * INTO v_plan FROM public.subscription_plans
+   WHERE id = v_token.plan_id;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Payment plan no longer exists';
+  END IF;
   IF v_token.consumed_at IS NOT NULL THEN
     IF v_token.telegram_user_id <> p_telegram_user_id OR v_token.order_id IS NULL THEN
       RAISE EXCEPTION 'Payment link already used';
@@ -66,7 +73,7 @@ BEGIN
       RAISE EXCEPTION 'Payment order is no longer available';
     END IF;
   ELSE
-    SELECT * INTO v_plan FROM public.subscription_plans
+    PERFORM 1 FROM public.subscription_plans
      WHERE id = v_token.plan_id AND is_active = true FOR SHARE;
     IF NOT FOUND OR v_plan.currency <> 'USD' OR v_plan.price_minor <> 400
        OR v_plan.billing_interval <> 'month' OR v_plan.interval_count <> 1
