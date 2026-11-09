@@ -13,13 +13,13 @@ export function CloudyAppFrame() {
   useEffect(() => {
     let disposed = false;
     let checkInProgress = false;
+    let hasConfirmedAccess = false;
 
     const refreshInstallState = () => setShowInstallGuide(isCloudyInstallRequired());
 
     const verifyRegionAccess = async () => {
       if (checkInProgress || disposed) return;
       checkInProgress = true;
-      setRegionAccess("checking");
 
       try {
         // A full-document HEAD request reaches the same server-side country gate.
@@ -33,9 +33,16 @@ export function CloudyAppFrame() {
           return;
         }
 
-        setRegionAccess(response.ok ? "allowed" : "unavailable");
+        if (response.ok) {
+          hasConfirmedAccess = true;
+          setRegionAccess("allowed");
+        } else if (!hasConfirmedAccess) {
+          setRegionAccess("unavailable");
+        }
       } catch {
-        if (!disposed) setRegionAccess("unavailable");
+        // A transient failure during a background recheck must not unmount
+        // an app whose regional access was already confirmed.
+        if (!disposed && !hasConfirmedAccess) setRegionAccess("unavailable");
       } finally {
         checkInProgress = false;
       }
