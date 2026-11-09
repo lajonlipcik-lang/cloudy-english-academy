@@ -17,10 +17,12 @@ class CloudyMobileApiException implements Exception {
 class CloudyRemoteProgress {
   const CloudyRemoteProgress({
     required this.state,
+    required this.hasProgressRow,
     required this.updatedAt,
     required this.learnerProfile,
   });
   final CloudyState state;
+  final bool hasProgressRow;
   final String? updatedAt;
   final Map<String, Object?>? learnerProfile;
 }
@@ -49,6 +51,7 @@ class CloudyMobileApi {
     final profile = result['learnerProfile'];
     return CloudyRemoteProgress(
       state: CloudyState.fromJson(rawState),
+      hasProgressRow: progress != null,
       updatedAt: progress?['updated_at'] is String
           ? progress!['updated_at'] as String
           : null,
