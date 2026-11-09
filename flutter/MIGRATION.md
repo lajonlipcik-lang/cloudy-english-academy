@@ -34,6 +34,8 @@ The current application remains authoritative until the Flutter version passes f
 - flutter/lib/data/cloudy_mobile_api.dart and src/routes/api/cloudy/mobile.ts: authenticated mobile API contract for progress load/save, lesson XP awards, and learning-event synchronization.
 - flutter/lib/services/cloudy_progress_sync_service.dart: account activation, guest migration, optimistic-concurrency retries, server XP awards, and event acknowledgement.
 - flutter/lib/session/cloudy_session_controller.dart: serialized Supabase session lifecycle and integration of progress, XP, and learning sync.
+- flutter/lib/screens/cloudy_learning_home_screen.dart: first native learning-tab implementation with the original gradient, level/XP/streak HUD, daily-goal ring, section banners, winding lesson nodes, lock/current/completed states, and animated Cloudy mascot. It is not yet wired into main.dart; the WebView compatibility shell remains active.
+- flutter/test/cloudy_learning_home_screen_test.dart: widget coverage for lesson unlock states, lesson navigation callback, and daily reward availability.
 - flutter/test/: parity-focused tests for catalog loading, exercise serialization/generation, progress, learning persistence, auth policy, mobile API, and sync conflicts.
 - .github/workflows/flutter-ci.yml: Flutter dependency, analyzer, and test workflow for the migration branch.
 
