@@ -71,6 +71,25 @@ export const Route = createFileRoute("/api/telegram/stars")({
             }
 
             const now = new Date();
+            const { data: currentSubscriptions, error: subscriptionsError } = await admin
+              .from("subscriptions")
+              .select("id,status,current_period_end")
+              .eq("user_id", userId)
+              .in("status", ["active", "trialing", "canceled"])
+              .order("created_at", { ascending: false })
+              .limit(10);
+            if (subscriptionsError) throw subscriptionsError;
+            const alreadyHasAccess = (currentSubscriptions ?? []).some((subscription) => {
+              const end = subscription.current_period_end;
+              return end == null || Date.parse(String(end)) > now.getTime();
+            });
+            if (alreadyHasAccess) {
+              return Response.json({
+                ok: false,
+                error: "У этого аккаунта уже есть активный доступ.",
+              }, { status: 409 });
+            }
+
             await admin.from("telegram_payment_orders")
               .update({ status: "expired", updated_at: now.toISOString() })
               .eq("user_id", userId)
