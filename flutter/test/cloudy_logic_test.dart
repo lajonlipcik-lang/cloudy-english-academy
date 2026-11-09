@@ -70,8 +70,51 @@ void main() {
       );
       expect(wrong.state.mistakes['father'], 1);
       expect(wrong.session.health, 4);
-      expect(wrong.session.total, 2);
+      expect(wrong.session.total, 1);
       expect(wrong.session.combo, 0);
+    });
+
+    test('does not count a wrong matching attempt in lesson accuracy', () {
+      const session = CloudySession(
+        lesson: 0, exercises: [], combo: 2, correct: 1, total: 3,
+      );
+      final wrong = applyCloudyMatchingAttempt(
+        CloudyState.defaults(), session,
+        englishWord: 'son', correct: false, totalPairs: 2,
+      );
+      expect(wrong.session.health, 4);
+      expect(wrong.session.combo, 0);
+      expect(wrong.session.correct, 1);
+      expect(wrong.session.total, 3);
+      expect(wrong.session.learnedMistakes, ['son']);
+
+      final ignored = applyCloudyMatchingAttempt(
+        wrong.state, wrong.session,
+        englishWord: 'mother', correct: true, totalPairs: 0,
+      );
+      expect(ignored.session, wrong.session);
+      expect(ignored.state, wrong.state);
+    });
+
+    test('uses the exact fixed question titles from the browser exercise engine', () {
+      final listening = cloudyChoiceQuestion(
+        'son', 'сын', 2,
+        const [CloudyPair('son', 'сын'), CloudyPair('sun', 'солнце')],
+        random: () => 0.25,
+      );
+      final russianToEnglish = cloudyChoiceQuestion(
+        'son', 'сын', 0,
+        const [CloudyPair('son', 'сын'), CloudyPair('sun', 'солнце')],
+        random: () => 0.25,
+      );
+      final englishToRussian = cloudyChoiceQuestion(
+        'son', 'сын', 1,
+        const [CloudyPair('son', 'сын'), CloudyPair('sun', 'солнце')],
+        random: () => 0.25,
+      );
+      expect((listening as CloudyListeningExercise).title, 'Что вы слышите?');
+      expect((russianToEnglish as CloudyChoiceExercise).title, 'Переведите на английский');
+      expect((englishToRussian as CloudyChoiceExercise).title, 'Что это значит?');
     });
 
     test('uses the same XP, star and accuracy formulas', () {
