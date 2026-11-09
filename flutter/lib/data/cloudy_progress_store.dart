@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../domain/cloudy_logic.dart';
+import '../domain/cloudy_progress_engine.dart';
 import '../domain/cloudy_state.dart';
 
 /// Local progress storage compatible with the browser app's cl2 key layout.
