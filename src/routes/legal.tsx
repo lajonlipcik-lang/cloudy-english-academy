@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, BookOpen, ChevronDown, CreditCard, FileText, Lock, MessageCircle, Scale, ScrollText, ShieldCheck, Users } from "lucide-react";\nimport type React from "react";
+import { ArrowLeft, BookOpen, ChevronDown, CreditCard, Lock, MessageCircle, Scale, ScrollText, ShieldCheck, Users } from "lucide-react";\nimport type { CSSProperties } from "react";
 
 type LegalSection = readonly [string, string];
 type LegalDocument = {
@@ -115,7 +115,7 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
   }
 ] as const;
 
-const LEGAL_META: Record<string, { tone: string; summary: string[]; icon: typeof FileText }> = {
+const LEGAL_META: Record<string, { tone: string; summary: string[]; icon: typeof ScrollText }> = {
   terms: { tone: "#54baff", icon: ScrollText, summary: ["Регистрация доступна с 13 лет; дополнительные требования зависят от законодательства страны.", "Профиль и публикации регулируются настройками приватности.", "Cloudy AI помогает с английским, но его ответы могут быть неточными.", "Запрещены травля, взлом, злоупотребления и перепродажа доступа.", "Запросы по аккаунту и персональным данным направляются в поддержку."] },
   privacy: { tone: "#67d6e8", icon: ShieldCheck, summary: ["Какие данные обрабатываются, зависит от используемых функций.", "Данные нужны для аккаунта, обучения, прогресса и безопасности.", "Для ответов Cloudy AI может использоваться внешняя инфраструктура.", "Дополнительное использование диалогов требует отдельного согласия.", "Запросы на доступ, исправление и удаление требуют обработки."] },
   consent: { tone: "#a8a1ff", icon: Lock, summary: ["Согласие на дополнительное использование диалогов добровольное.", "Оно не требуется для обычной работы Cloudy AI.", "По умолчанию согласие выключено.", "Согласие можно отозвать в центре конфиденциальности.", "Запись выбора не означает, что обучение моделей уже запущено."] },
@@ -154,7 +154,7 @@ export function LegalPage() {
   const openDocument = (id: string) => {
     setActiveId(id);
     setProgress(0);
-    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    scrollRef.current?.scrollTo({ top: 0, behavior: "auto" });
   };
   const backToList = () => {
     setActiveId(null);
@@ -228,7 +228,7 @@ export function LegalPage() {
         <div className="legal-scroll" ref={scrollRef} key={activeId ?? "home"}>
           {active && meta ? (
             <div className="legal-document">
-              <div className="legal-doc-head" style={{ "--tone": meta.tone } as React.CSSProperties}>
+              <div className="legal-doc-head" style={{ "--tone": meta.tone } as CSSProperties}>
                 <div className="legal-doc-icon"><meta.icon size={29} strokeWidth={1.8} /></div>
                 <div><h2>{active.title}</h2><p>{active.description} · {active.sections.length} разделов</p></div>
               </div>
