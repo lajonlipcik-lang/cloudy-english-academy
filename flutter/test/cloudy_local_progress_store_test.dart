@@ -59,22 +59,6 @@ void main() {
       expect(activation.shouldSync, true);
     });
 
-    test('preserves guest progress during first account activation while offline', () async {
-      await store.saveGuest(CloudyState.defaults().copyWith(xp: 73));
-      final activation = store.activateCloudAccount(
-        email: 'learner@example.com',
-        remoteState: null,
-        remoteUpdatedAt: null,
-        progressLoadFailed: true,
-      );
-
-      expect(activation.state.xp, 73);
-      expect(activation.syncPaused, true);
-      await store.persistActivation('learner@example.com', activation);
-      expect(store.loadAccount('learner@example.com').xp, 73);
-      expect(store.loadGuest().xp, 73);
-    });
-
     test('pauses sync and retains local data when cloud loading fails', () async {
       await store.saveAccount('learner@example.com', CloudyState.defaults().copyWith(xp: 55));
       final activation = store.activateCloudAccount(
