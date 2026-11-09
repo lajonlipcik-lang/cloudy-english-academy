@@ -1563,8 +1563,10 @@ async function toggleAiTrainingConsent(){
 }
 async function submitPrivacyRequest(type){
  if(!["access_export","correction","deletion"].includes(type))return;
+ let details="";
+ if(type==="correction"){details=String(prompt("Опишите, какие данные нужно исправить:")||"").trim();if(!details)return;if(details.length>2000){toast("Описание не должно превышать 2 000 символов.",false);return;}}
  if(type==="deletion"&&!confirm("Отправить запрос на удаление аккаунта и связанных данных? Это только заявка: аккаунт не будет удалён автоматически."))return;
- try{const response=await authRequest("privacy-request-create",{payload:{requestType:type}});if(response.result?.ok!==true)throw new Error("Не удалось отправить запрос.");toast("Запрос отправлен. Сохраните его статус в разделе конфиденциальности.");await loadPrivacyCenter(true);}
+ try{const response=await authRequest("privacy-request-create",{payload:{requestType:type,details}});if(response.result?.ok!==true)throw new Error("Не удалось отправить запрос.");toast("Запрос отправлен. Сохраните его статус в разделе конфиденциальности.");await loadPrivacyCenter(true);}
  catch(error){toast(error.message||"Не удалось отправить запрос.",false);}
 }
 function prof(){if(S.user&&!S.user.guest&&privacyCenterUser!==S.user.id&&!privacyCenterLoading)void loadPrivacyCenter();const g=Math.max(1,Number(S.set.goal)||30),C=2*Math.PI*40,p=Math.min(Math.max(0,Number(S.td.xp)||0)/g,1),s=S.set,a=S.acc[1]?Math.round(S.acc[0]/S.acc[1]*100):0;
