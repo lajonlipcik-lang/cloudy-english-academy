@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../auth/cloudy_auth_repository.dart';
 import '../domain/cloudy_exercise.dart';
@@ -310,20 +311,7 @@ class CloudyAppController extends ChangeNotifier {
     }
   }
 
-  String _backendToken() =>
-      _auth.currentUser == null ? '' : _authTokenFromSession();
-
-  String _authTokenFromSession() {
-    // The access token is read from the configured Supabase client by the
-    // repository, not copied into local storage or persisted by this controller.
-    return _sessionTokenProvider?.call() ?? '';
-  }
-
-  String Function()? _sessionTokenProvider;
-
-  void attachSessionTokenProvider(String Function() provider) {
-    _sessionTokenProvider = provider;
-  }
+  String _backendToken() => _auth.currentAccessToken ?? '';
 
   void _scheduleRetry() {
     if (_retryTimer != null || _pendingState == null || _disposed) return;
