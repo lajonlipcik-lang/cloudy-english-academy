@@ -33,10 +33,11 @@ The current application remains authoritative until the Flutter version passes f
 - flutter/lib/data/cloudy_auth_repository.dart: Supabase auth adapter and exact 13+ profile-age update policy; not yet wired into native screens.
 - flutter/lib/data/cloudy_mobile_api.dart and src/routes/api/cloudy/mobile.ts: authenticated mobile API contract for progress load/save, lesson XP awards, and learning-event synchronization.
 - flutter/lib/services/cloudy_progress_sync_service.dart: account activation, guest migration, optimistic-concurrency retries, server XP awards, and event acknowledgement.
+- flutter/lib/session/cloudy_session_controller.dart: serialized Supabase session lifecycle and integration of progress, XP, and learning sync.
 - flutter/test/: parity-focused tests for catalog loading, exercise serialization/generation, progress, learning persistence, auth policy, mobile API, and sync conflicts.
 - .github/workflows/flutter-ci.yml: Flutter dependency, analyzer, and test workflow for the migration branch.
 
-These are migration foundations, not evidence that the native app is complete or that all tests have passed. Native auth screen wiring, native UI, platform audio/microphone integration, and full parity validation remain outstanding.
+These are migration foundations, not evidence that the native app is complete or that all tests have passed. Native auth/profile screen wiring, native UI, platform audio/microphone integration, and full parity validation remain outstanding.
 
 ## Quality gates
 
