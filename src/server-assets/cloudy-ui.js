@@ -355,7 +355,10 @@
     if (!root) { busy = false; observeBody(); return; }
     trAttrs(root);
     var walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
-      acceptNode: function (n) { return n.nodeType === 1 && (SKIP[n.tagName] || SKIP_CHILDREN[n.tagName]) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+      acceptNode: function (n) {
+        if (n.nodeType === 1) return SKIP[n.tagName] ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+        return n.parentElement && SKIP_CHILDREN[n.parentElement.tagName] ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+      }
     });
     var t = { ru: "Cloudy English", en: "Cloudy English", uk: "Cloudy English" };
     document.title = t[P.lang] || "Cloudy English";
