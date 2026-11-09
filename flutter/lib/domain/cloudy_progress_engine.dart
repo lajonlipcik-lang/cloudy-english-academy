@@ -151,12 +151,9 @@ CloudyLessonResult finishCloudyLesson(
   var state = updateCloudyStreak(rollCloudyDay(original, now), now);
   final gain = authenticated ? 24 : cloudyLessonGain(session.health);
   final day = cloudyDayKey(now);
-  final allDays = authenticated || state.days.contains(day)
+  final days = authenticated || state.days.contains(day)
       ? List<String>.from(state.days)
-      : [...state.days, day];
-  final days = allDays.length > 60
-      ? allDays.sublist(allDays.length - 60)
-      : allDays;
+      : [...state.days, day].take(60).toList(growable: false);
   final weekCode = cloudyWeekKey(now);
   final week = authenticated
       ? Map<String, Object?>.from(state.week)
@@ -213,7 +210,7 @@ DateTime? _parseCloudyDate(String value) {
   final iso = DateTime.tryParse(value);
   if (iso != null) return iso;
 
-  final numeric = RegExp(r'^(\d{4})-(\d{1,2})-(\d{1,2})$').firstMatch(value);
+  final numeric = RegExp(r'^(\\d{4})-(\\d{1,2})-(\\d{1,2})$').firstMatch(value);
   if (numeric != null) {
     return DateTime(
       int.parse(numeric.group(1)!),
@@ -222,7 +219,7 @@ DateTime? _parseCloudyDate(String value) {
     );
   }
 
-  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\d{1,2}) (\d{4})$').firstMatch(value);
+  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\\d{1,2}) (\\d{4})$').firstMatch(value);
   if (match == null) return null;
   const months = {
     'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
@@ -257,10 +254,6 @@ CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
           'xp': (account.week['xp'] as num? ?? 0) + (guest.week['xp'] as num? ?? 0),
         }
       : Map<String, Object?>.from(guestIsNewer ? guest.week : account.week);
-  final mergedDays = [...{...account.days, ...guest.days}];
-  final days = mergedDays.length > 60
-      ? mergedDays.sublist(mergedDays.length - 60)
-      : mergedDays;
 
   return account.copyWith(
     xp: account.xp + guest.xp,
@@ -271,7 +264,55 @@ CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
     mistakes: mistakes,
     week: week,
     accuracy: [account.accuracy[0] + guest.accuracy[0], account.accuracy[1] + guest.accuracy[1]],
-    days: days,
+    days: [...{...account.days, ...guest.days}].take(60).toList(growable: false),
+    achievements: [...{...account.achievements, ...guest.achievements}],
+    perfectLessons: account.perfectLessons + guest.perfectLessons,
+    tested: account.tested > guest.tested ? account.tested : guest.tested,
+  );
+}
+).firstMatch(value);
+  if (match == null) return null;
+  const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};
+  final month = months[match.group(1)];
+  if (month == null) return null;
+  return DateTime(int.parse(match.group(3)!), month, int.parse(match.group(2)!));
+}
+
+CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
+  if (account == null) return guest;
+  final completed = <String, num>{};
+  for (final level in ['A1', 'A2', 'B1', 'B2']) {
+    final a = account.completed[level] ?? 0;
+    final g = guest.completed[level] ?? 0;
+    completed[level] = a > g ? a : g;
+  }
+
+  final mistakes = Map<String, num>.from(account.mistakes);
+  for (final entry in guest.mistakes.entries) {
+    mistakes[entry.key] = (mistakes[entry.key] ?? 0) + entry.value;
+  }
+
+  final guestDate = _parseCloudyDate(guest.last) ?? DateTime.fromMillisecondsSinceEpoch(0);
+  final accountDate = _parseCloudyDate(account.last) ?? DateTime.fromMillisecondsSinceEpoch(0);
+  final guestIsNewer = guestDate.isAfter(accountDate);
+  final sameWeek = account.week['k'] == guest.week['k'];
+  final week = sameWeek
+      ? <String, Object?>{
+          'k': account.week['k'],
+          'xp': (account.week['xp'] as num? ?? 0) + (guest.week['xp'] as num? ?? 0),
+        }
+      : Map<String, Object?>.from(guestIsNewer ? guest.week : account.week);
+
+  return account.copyWith(
+    xp: account.xp + guest.xp,
+    streak: account.streak > guest.streak ? account.streak : guest.streak,
+    last: guestIsNewer ? guest.last : account.last,
+    level: account.level ?? guest.level,
+    completed: completed,
+    mistakes: mistakes,
+    week: week,
+    accuracy: [account.accuracy[0] + guest.accuracy[0], account.accuracy[1] + guest.accuracy[1]],
+    days: [...{...account.days, ...guest.days}].take(60).toList(growable: false),
     achievements: [...{...account.achievements, ...guest.achievements}],
     perfectLessons: account.perfectLessons + guest.perfectLessons,
     tested: account.tested > guest.tested ? account.tested : guest.tested,
@@ -410,12 +451,9 @@ CloudyState applyCloudyServerAward(
 }) {
   final awarded = _number(award['awarded']);
   final day = cloudyDayKey(now);
-  final allDays = awarded > 0 && !state.days.contains(day)
-      ? [...state.days, day]
+  final days = awarded > 0 && !state.days.contains(day)
+      ? [...state.days, day].take(60).toList(growable: false)
       : List<String>.from(state.days);
-  final days = allDays.length > 60
-      ? allDays.sublist(allDays.length - 60)
-      : allDays;
   final today = state.today;
   return state.copyWith(
     xp: _number(award['total_xp'], state.xp),
@@ -543,13 +581,12 @@ CloudyAnswerResult applyCloudyMatchingAttempt(
   }
 
   final mistakes = Map<String, num>.of(state.mistakes);
-  final words = List<String>.of(session.mistakeWords);
-  if (englishWord.isNotEmpty) {
-    mistakes[englishWord] = (mistakes[englishWord] ?? 0) + 1;
-    if (!words.contains(englishWord)) words.add(englishWord);
-  }
+  mistakes[englishWord] = (mistakes[englishWord] ?? 0) + 1;
+  final words = session.mistakeWords.contains(englishWord)
+      ? session.mistakeWords
+      : [...session.mistakeWords, englishWord];
   return CloudyAnswerResult(
-    state: englishWord.isEmpty ? state : state.copyWith(mistakes: mistakes),
+    state: state.copyWith(mistakes: mistakes),
     session: session.copyWith(
       health: session.health - 1,
       combo: 0,
@@ -673,9 +710,6 @@ CloudyState sanitizeCloudyProgress(CloudyState input) {
     ),
   );
 }
-
-num _number(Object? value, [num fallback = 0]) =>
-    value is num && value.isFinite ? value : fallback;
 
 int _clampInt(num value, int min, int max) =>
     (value.isFinite ? value.toInt() : min).clamp(min, max).toInt();
