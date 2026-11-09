@@ -104,7 +104,7 @@ class CloudyAuthRepository {
 
     if (CloudyProfilePolicy.isUnderMinimumAge(user.userMetadata?['age'])) {
       await _client.auth.signOut();
-      throw const AuthException(
+      throw AuthException(
         'Регистрация в Cloudy English Academy доступна с 13 лет. '
         'Если возраст указан неверно, обратитесь в поддержку.',
       );
@@ -114,7 +114,7 @@ class CloudyAuthRepository {
 
   Future<CloudyAuthUser> updateProfile({String? name, Object? age}) async {
     final user = _client.auth.currentUser;
-    if (user == null) throw const AuthException('Сначала войдите в аккаунт.');
+    if (user == null) throw AuthException('Сначала войдите в аккаунт.');
 
     final update = CloudyProfilePolicy.buildUpdate(
       currentMetadata: Map<String, Object?>.from(user.userMetadata ?? const {}),
@@ -126,7 +126,7 @@ class CloudyAuthRepository {
     );
     final updatedUser = response.user;
     if (updatedUser == null) {
-      throw const AuthException('Не удалось обновить профиль.');
+      throw AuthException('Не удалось обновить профиль.');
     }
 
     if (update.displayName != null) {
