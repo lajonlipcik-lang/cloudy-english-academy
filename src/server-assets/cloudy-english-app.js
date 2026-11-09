@@ -531,7 +531,9 @@ async function introFinish(){
   snd('win');view();
  }catch(e){if(error)error.textContent=e.message||'Не удалось сохранить профиль. Попробуй ещё раз.'}
 }
-let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false,chatHistoryGeneration=0;let chatHistorySaveQueue=Promise.resolve();
+let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;
+let chatModelTier="lite",chatTeacherAccess=false,chatModelAccessLoaded=false;
+let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false,chatHistoryGeneration=0;let chatHistorySaveQueue=Promise.resolve();
 function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'><label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button><p style="margin:18px 0 0;font-size:12px;opacity:.72">Продолжая, ознакомьтесь с <a href="/legal" target="_top" style="color:#7fc2ff;text-decoration:underline">документами и правилами</a></p></div>`}
 async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap').value,er=$('#er'),b=$('#ab'),lbl=AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ',bad=m=>{er.textContent=m;er.classList.remove('shk');void er.offsetWidth;er.classList.add('shk');snd('bad')};
  if(!em.includes('@')||!em.includes('.'))return bad('Введите корректный email');if(pw.length<6)return bad('Пароль: минимум 6 символов');
@@ -805,6 +807,16 @@ function chatRender(){
     <header class="chat-topbar">
       <button class="chat-menu-button" onclick="chatToggleDrawer()" aria-label="Открыть историю"><span aria-hidden="true">☰</span></button>
       <div class="chat-top-title"><b>Клауди AI</b><small>Твой помощник по английскому</small></div>
+      <div class="chat-model-switcher">
+        <button class="chat-model-trigger" id="chatModelTrigger" type="button" aria-expanded="false" aria-controls="chatModelMenu" onclick="chatToggleModelMenu()">
+          <span class="chat-model-trigger-copy"><b id="chatModelName">Cloudy Lite 2.2</b><small id="chatModelCaption">Базовая модель</small></span><span class="chat-model-chevron" aria-hidden="true">⌄</span>
+        </button>
+        <div class="chat-model-menu" id="chatModelMenu" hidden>
+          <button class="chat-model-option selected" id="chatModelLite" type="button" onclick="chatChooseModel('lite')"><span class="chat-model-option-icon">☁️</span><span><b>Cloudy Lite 2.2</b><small>Базовая практика · доступен бесплатно</small></span><span class="chat-model-check">✓</span></button>
+          <button class="chat-model-option locked" id="chatModelTeacher" type="button" onclick="chatChooseModel('teacher')"><span class="chat-model-option-icon">✦</span><span><b>Cloudy Teacher 4.4</b><small id="chatTeacherCaption">Расширенная модель · подписка</small></span><span class="chat-model-lock" id="chatTeacherLock">🔒</span></button>
+          <div class="chat-model-menu-foot">Модель можно менять прямо во время диалога</div>
+        </div>
+      </div>
       <span class="chat-level-pill">${S.lv||"A1"}</span>
       <div class="chat-flag" title="English" aria-label="Флаг Великобритании">
         <svg viewBox="0 0 60 40" width="100%" height="100%" role="img" aria-hidden="true">
@@ -833,6 +845,7 @@ function chatRender(){
   </main>
 </section>`;
  renderChatHistory();
+ void loadChatModelAccess();
  if(CH.length){CH.forEach(m=>bub(m.r,m.t,false));scrollChat()}
  else{$("#msgs").innerHTML='<div class="chat-welcome"><div class="chat-welcome-mascot">'+mascot()+'</div><h2>Привет! Я Клауди.</h2><p>Давай практиковать английский. Я буду подбирать общение под твой уровень <b>'+(S.lv||"A1")+'</b>.</p><div class="chat-suggestions"><button onclick="chatSuggestion(\'Let’s practice introductions\')">Познакомимся на английском</button><button onclick="chatSuggestion(\'Help me improve my English grammar\')">Разберём грамматику</button><button onclick="chatSuggestion(\'Ask me an easy question for my level\')">Задай мне вопрос</button></div></div>'}
  const input=$("#ci");if(input)input.focus();
@@ -841,12 +854,48 @@ async function chat(){if(S.user?.guest){toast("Для практики с Кла
 function chatStartNew(){CH=[];activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatDrawerOpen=false;chatRender();snd("tab")}
 function chatOpenThread(id){const item=chatThreads.find(x=>x.id===id);if(!item)return;activeChatId=item.id;CH=item.messages.slice();chatDrawerOpen=false;chatRender();snd("tab")}
 function chatToggleDrawer(){chatDrawerOpen=!chatDrawerOpen;const shell=$("#chatShell");if(shell)shell.classList.toggle("drawer-open",chatDrawerOpen)}
+function chatModelStorageKey(){return "cloudy_chat_model_"+String(cloudUserId||"").replace(/[^a-zA-Z0-9_-]/g,"")}
+function updateChatModelSelector(){
+ const name=$("#chatModelName"),caption=$("#chatModelCaption"),lite=$("#chatModelLite"),teacher=$("#chatModelTeacher"),lock=$("#chatTeacherLock"),trigger=$("#chatModelTrigger");
+ if(name)name.textContent=chatModelTier==="teacher"?"Cloudy Teacher 4.4":"Cloudy Lite 2.2";
+ if(caption)caption.textContent=chatModelTier==="teacher"?"Расширенная модель":"Базовая модель";
+ if(lite)lite.classList.toggle("selected",chatModelTier==="lite");
+ if(teacher){teacher.classList.toggle("selected",chatModelTier==="teacher");teacher.classList.toggle("locked",!chatTeacherAccess);teacher.setAttribute("aria-disabled",chatTeacherAccess?"false":"true")}
+ if(lock)lock.textContent=chatTeacherAccess?"":"🔒";
+ if(trigger)trigger.setAttribute("aria-expanded",String(!$("#chatModelMenu")?.hidden));
+}
+async function loadChatModelAccess(){
+ const key=chatModelStorageKey();
+ try{const saved=localStorage.getItem(key);chatModelTier=saved==="teacher"?"teacher":"lite"}catch(e){chatModelTier="lite"}
+ try{
+  const response=await authRequest("chat-model-access");
+  chatTeacherAccess=response.result?.teacherAccess===true;
+  chatModelAccessLoaded=true;
+  if(chatModelTier==="teacher"&&!chatTeacherAccess){chatModelTier="lite";try{localStorage.setItem(key,"lite")}catch(e){}}
+ }catch(error){chatTeacherAccess=false;chatModelAccessLoaded=true;if(chatModelTier==="teacher")chatModelTier="lite"}
+ updateChatModelSelector();
+}
+function chatToggleModelMenu(){
+ const menu=$("#chatModelMenu");if(!menu)return;
+ menu.hidden=!menu.hidden;updateChatModelSelector();snd("tab");
+}
+function chatChooseModel(tier){
+ const menu=$("#chatModelMenu");if(tier!=="lite"&&tier!=="teacher")return;
+ if(tier==="teacher"&&!chatTeacherAccess){
+  if(menu)menu.hidden=true;updateChatModelSelector();snd("tap");
+  toast("Cloudy Teacher 4.4 доступен по подписке");
+  if(typeof openPlans==="function")openPlans();
+  return;
+ }
+ chatModelTier=tier;try{localStorage.setItem(chatModelStorageKey(),tier)}catch(e){}
+ if(menu)menu.hidden=true;updateChatModelSelector();snd("pick");
+}
 function chatSuggestion(value){const input=$("#ci");if(input){input.value=value;csend()}}
 function scrollChat(){const box=$('#msgs');if(box)box.scrollTop=box.scrollHeight}
 function bub(r,t,scroll=true){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);if(scroll)requestAnimationFrame(scrollChat);return d}
 function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
 async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await new Promise(resolve=>setTimeout(resolve,text.length>500?9:16))}el.classList.remove('chat-type-cursor')}
-async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bub('u',u);saveChatHistory()}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});saveChatHistory();snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}scrollChat()}
+async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bub('u',u);saveChatHistory()}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',chatModel:chatModelTier,history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});saveChatHistory();snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}scrollChat()}
 async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('send');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
 setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
 function amb(){const l=S.lv||"A1",a=$(".amb");document.body.dataset.lv=l;document.body.dataset.th="dark";if(a.dataset.l==l)return;a.dataset.l=l;a.innerHTML="";const n={A1:5,A2:16,B1:28,B2:4}[l],r=Math.random;for(let k=0;k<n;k++){const u=document.createElement("u"),z={A1:200+r()*220,A2:14+r()*40,B1:3+r()*6,B2:90}[l];u.style.cssText=`left:${r()*100}%;top:${r()*100}%;width:${z}px;height:${z}px;animation-delay:-${r()*12}s;animation-duration:${l=="A2"?7+r()*8:l=="B1"?2+r()*3:l=="B2"?12+r()*8:14+r()*8}s`;a.appendChild(u)}}
