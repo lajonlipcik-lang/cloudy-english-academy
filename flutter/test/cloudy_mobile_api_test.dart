@@ -24,7 +24,7 @@ void main() {
         client: MockClient((request) async {
           captured = request;
           return http.Response(
-            jsonEncode({'ok': true, 'result': {'accepted': 2}}),
+            jsonEncode({'ok': true, 'result': {'acceptedCount': 2}}),
             200,
           );
         }),
