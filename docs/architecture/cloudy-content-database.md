@@ -37,22 +37,23 @@ Use a staged policy: clear allowed content can be approved; clear violations are
 
 Public feed eligibility is checked against Core profiles.is_public. Resolve display names and bios from Core's safe profile projection; do not copy private profile data into Content.
 
-## Provisioning
+## Provisioning — current single-project deployment
 
-1. Create a separate Supabase project for Cloudy Content.
-2. Apply drizzle/migrations-content/0001_cloudy_content_core.sql, 0002_shorts_and_ai_moderation.sql and 0003_shorts_text_moderation_rpc.sql and 0004_shorts_private_storage.sql to the Content database only.
-3. Configure server-only CLOUDY_CONTENT_SUPABASE_URL and CLOUDY_CONTENT_SUPABASE_SERVICE_ROLE_KEY. Also configure CLOUDY_CONTENT_SUPABASE_PUBLISHABLE_KEY (the public, non-secret project key) for the signed-upload browser request; it is never a service-role credential.
-4. Do not change existing SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY or SUPABASE_SERVICE_ROLE_KEY; those continue to point to Core.
-5. Migration 0004 creates the private cloudy-shorts bucket (100 MB maximum; MP4, WebM and QuickTime). The server verifies Core Auth and upload restrictions, creates a draft row, and returns a two-hour signed upload capability. The embedded UI uploads the file directly to that signed URL and calls the server to verify the stored object; finalization moves it only to pending_review. This does not approve or publish media.
+The current migration target is one Supabase project. Core and Shorts/Content tables are co-located in the same project. The dedicated Content project remains a possible future separation, but it is not required for the current Vercel migration.
+
+1. Configure the normal Core server variables: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` and server-only `SUPABASE_SERVICE_ROLE_KEY`.
+2. Leave `CLOUDY_CONTENT_SUPABASE_URL` and `CLOUDY_CONTENT_SUPABASE_SERVICE_ROLE_KEY` unset so `getCloudyContentAdmin()` uses the Core project fallback.
+3. Apply Core migrations through `0015`, then apply Content migrations `0002`–`0010` (with the duplicate `0009` prefix resolved), then apply Core Shorts RPC migrations `0016`–`0018`. Use the detailed ordered plan in `docs/migration/SUPABASE_MIGRATION_SEQUENCE.md`.
+4. Do **not** apply `0001_cloudy_content_core.sql` to this project: Core migration `0014` already creates the community schema. Applying the legacy Content community migration can duplicate objects and alter grants.
+5. The private `cloudy-shorts` bucket is created by Content migration `0004` (100 MB maximum; MP4, WebM and QuickTime; later migration `0008` adds image MIME types). The server verifies Core Auth and upload restrictions, creates a draft row, and returns a signed upload capability. The browser uploads only with the scoped signed token; the server verifies the stored object before finalization. This upload-finalize step does not itself approve video media.
 
 ## Migration and rollout
 
-- Keep existing community tables in Core until Content is provisioned, migrated and verified.
-- Export/import existing posts, comments, reactions and reports with original UUIDs and timestamps; preserve moderation statuses and rate-limit counters where possible.
-- Existing AI provider records and AI configuration remain in Core and are not migrated.
-- Verify row counts and sample records before switching reads/writes.
-- Switch server endpoints to Content behind an explicit server configuration/feature flag.
-- Keep a rollback window; do not drop Core community tables during initial cutover.
+- For the current single-project migration, community and Shorts remain in the same destination Supabase project; there is no cross-project data switch.
+- Preserve user UUIDs, post/comment/reaction/report UUIDs, timestamps, moderation states and rate-limit data when importing existing records.
+- Existing AI provider records and AI configuration remain in Core and must be migrated securely; never export provider keys as plaintext into logs or source control.
+- Verify row counts, relationships and sample records before enabling the new deployment.
+- Keep the old Lovable/Core database intact during validation and rollback; do not drop or mutate its tables during initial cutover.
 - Privacy requests and optional-consent events stay in Core.
 
 ## Security
