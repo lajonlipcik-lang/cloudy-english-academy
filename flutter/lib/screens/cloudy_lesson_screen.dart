@@ -564,7 +564,10 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
             foregroundColor: _lessonNavy,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           ),
-          child: Text(_last ? 'Завершить урок' : 'Продолжить', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+          child: Text(
+            _last && !widget.allowAdvanceOnLast ? 'Завершить урок' : 'Продолжить',
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
+          ),
         ),
       ),
     );
