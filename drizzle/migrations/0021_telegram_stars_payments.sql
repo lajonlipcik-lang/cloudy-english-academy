@@ -46,6 +46,9 @@ CREATE TABLE IF NOT EXISTS public.telegram_payment_orders (
 );
 CREATE INDEX IF NOT EXISTS telegram_payment_orders_user_idx
   ON public.telegram_payment_orders (user_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS telegram_payment_orders_one_pending_per_user_uidx
+  ON public.telegram_payment_orders (user_id)
+  WHERE status = 'pending';
 CREATE UNIQUE INDEX IF NOT EXISTS telegram_payment_orders_charge_uidx
   ON public.telegram_payment_orders (last_charge_id)
   WHERE last_charge_id IS NOT NULL;
