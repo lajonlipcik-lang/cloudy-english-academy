@@ -1378,3 +1378,35 @@ body:has(.shorts-screen) .amb{display:none!important}
 .shorts-comment-row.nested .shorts-comment-avatar{width:28px;height:28px;font-size:11px}
 .shorts-comment-row.nested .shorts-comment-main{font-size:13px}
 .shorts-comment-compose button[aria-label="Отменить ответ"]{font-size:22px;min-width:30px}
+
+/* Cloudy subscription picker — uses the existing blue glass visual language */
+.plan-entry{margin-top:10px;border:1px solid rgba(207,233,255,.22);background:linear-gradient(110deg,rgba(255,255,255,.16),rgba(77,179,255,.16))}
+.plan-entry .mc-ic{background:linear-gradient(145deg,#fff,#cfe9ff);color:#1767bd}
+.cloudy-plans{color:#fff}
+.cloudy-plans-head{position:relative;text-align:center;padding:2px 22px 18px}
+.cloudy-plans-close{position:absolute;right:0;top:-7px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(255,255,255,.14);font-size:25px;line-height:1}
+.cloudy-plans-cloud{height:62px;display:grid;place-items:center;margin-bottom:7px}
+.cloudy-plans-cloud .ms{width:76px;height:60px}
+.cloudy-plans-head h3{font-size:23px;margin:0 0 7px;font-weight:900}
+.cloudy-plans-head p{font-size:13px;line-height:1.45;opacity:.78;margin:0 auto;max-width:290px}
+.cloudy-plan-grid{display:grid;grid-template-columns:1fr;gap:12px}
+.cloudy-plan-card{padding:17px;border-radius:22px;background:rgba(255,255,255,.105);border:1px solid rgba(255,255,255,.17);box-shadow:0 12px 28px rgba(0,0,0,.12)}
+.cloudy-plan-teacher{background:linear-gradient(145deg,rgba(207,233,255,.2),rgba(77,179,255,.16));border-color:rgba(207,233,255,.42);box-shadow:0 12px 30px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.12)}
+.cloudy-plan-kicker{font-size:10px;font-weight:900;letter-spacing:1.2px;opacity:.75;margin-bottom:7px}
+.cloudy-plan-card h4{font-size:20px;font-weight:900;margin:0 0 7px}
+.cloudy-plan-card h4 small{font-size:12px;opacity:.7}
+.cloudy-plan-price{font-size:31px;line-height:1.1;font-weight:900;letter-spacing:-.8px}
+.cloudy-plan-price em{font-style:normal;font-size:25px}
+.cloudy-plan-period{font-size:12px;opacity:.76;margin:4px 0 13px}
+.cloudy-plan-card ul{list-style:none;padding:0;margin:0 0 16px;display:grid;gap:9px}
+.cloudy-plan-card li{position:relative;padding-left:22px;font-size:13px;line-height:1.35}
+.cloudy-plan-card li:before{content:"✓";position:absolute;left:0;top:0;color:#cfe9ff;font-weight:900}
+.cloudy-plan-card .btn{font-size:14px;padding:14px 10px;letter-spacing:.2px}
+.cloudy-plan-card .btn.ghost{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);box-shadow:none;color:#fff}
+.cloudy-plan-buy{background:linear-gradient(110deg,#fff,#cfe9ff);box-shadow:0 5px 0 #76b9f0;color:#0a2a73}
+.cloudy-plan-buy:disabled{opacity:.65}
+.cloudy-plan-foot{display:block;text-align:center;font-size:11px;opacity:.7;margin-top:10px}
+.cloudy-plan-note{font-size:11px;line-height:1.45;text-align:center;opacity:.72;margin:13px 5px 0}
+.cloudy-plan-error{min-height:18px;color:#ffd6df;font-size:12px;line-height:1.35;text-align:center;margin:7px 0 0}
+@media(min-width:420px){.cloudy-plan-grid{grid-template-columns:1fr 1fr}.cloudy-plan-card{padding:15px 13px}.cloudy-plan-card h4{font-size:18px}.cloudy-plan-card li{font-size:12px}.cloudy-plan-card .btn{font-size:12px}}
+@media(max-width:360px){.cloudy-plan-card{padding:14px}.cloudy-plan-card h4{font-size:18px}.cloudy-plan-price{font-size:27px}}
