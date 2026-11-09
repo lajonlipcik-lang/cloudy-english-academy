@@ -373,7 +373,7 @@ export const Route = createFileRoute("/api/cloudy/mobile")({
             return Response.json({ ok: false, error: "Слишком большой запрос." }, { status: 413 });
           }
           const body = objectValue(await request.json());
-          const action = String(body.action ?? "");
+          const action = String(body['action'] ?? "");
           if (!/^[a-z][a-z0-9-]{1,63}$/.test(action)) {
             return Response.json({ ok: false, error: "Некорректное действие." }, { status: 400 });
           }
@@ -386,7 +386,7 @@ export const Route = createFileRoute("/api/cloudy/mobile")({
             return Response.json({ ok: false, error: "Сначала войдите в аккаунт." }, { status: 401 });
           }
 
-          const payload = objectValue(body.payload);
+          const payload = objectValue(body['payload']);
           const input = { ...payload, accessToken };
           if (JSON.stringify(input).length > 900_000) {
             return Response.json({ ok: false, error: "Слишком большой запрос." }, { status: 413 });
