@@ -318,27 +318,36 @@
     var n; while ((n = tw.nextNode())) { if (n.nodeType === 3) trText(n); else trAttrs(n); }
   }
   var queue = [], scheduled = false, busy = false;
+  var OBSERVER_OPTIONS = { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS };
+  function observeBody() {
+    if (document.body) mo.observe(document.body, OBSERVER_OPTIONS);
+  }
   function flush() {
-    scheduled = false; busy = true;
-    var q = queue; queue = [];
-    try { q.forEach(walk); } finally { busy = false; }
+    scheduled = false;
+    if (busy || !queue.length) return;
+    busy = true;
+    var q = Array.from(new Set(queue)); queue = [];
+    // Translation writes must not be fed back into the observer. MutationObserver
+    // callbacks run asynchronously, so the old busy flag alone could not stop
+    // self-triggered rescans and repeated full-tree work.
+    mo.disconnect();
+    try { q.forEach(walk); }
+    finally { mo.takeRecords(); busy = false; observeBody(); }
   }
   var mo = new MutationObserver(function (list) {
     if (busy) return;
     var need = false;
     list.forEach(function (m) {
-      if (m.type === "characterData") { queue.push(m.target); need = true; }
-      else if (m.type === "attributes") { queue.push(m.target); need = true; }
-      else m.addedNodes.forEach(function (n) { queue.push(n); need = true; });
+      if (m.type === "characterData" || m.type === "attributes") { queue.push(m.target); need = true; }
+      else m.addedNodes.forEach(function (n) { if (n.nodeType === 1 || n.nodeType === 3) { queue.push(n); need = true; } });
     });
     if (need && !scheduled) { scheduled = true; requestAnimationFrame(flush); }
   });
-  function startObserver() {
-    if (!document.body) return;
-    mo.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ATTRS });
-  }
+  function startObserver() { observeBody(); }
   function retranslateAll() {
-    busy = true; try { walk(document.body); } finally { busy = false; }
+    busy = true; mo.disconnect();
+    try { walk(document.body); }
+    finally { mo.takeRecords(); busy = false; observeBody(); }
     var t = { ru: "Cloudy English", en: "Cloudy English", uk: "Cloudy English" };
     document.title = t[P.lang] || "Cloudy English";
   }
