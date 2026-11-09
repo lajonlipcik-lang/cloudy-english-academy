@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import 'cloudy_exercise.dart';
+import 'cloudy_learning_store.dart';
 import 'cloudy_logic.dart';
-import 'cloudy_learning.dart';
 
 class CloudySection {
   const CloudySection({required this.name, required this.lessonIndices});
@@ -113,11 +114,10 @@ class CloudyCatalog {
 
   CloudyFoundation? foundationAt(int lessonIndex) => foundations[lessonIndex];
 
-  CloudyExercise? grammarExerciseAt(int lessonIndex, {String level = ''}) {
+  CloudyTheoryExercise? grammarExerciseAt(int lessonIndex, {String? level}) {
     final foundation = foundationAt(lessonIndex);
     if (foundation == null) return null;
-    return CloudyExercise(
-      kind: CloudyExerciseKind.grammar,
+    return CloudyTheoryExercise(
       title: foundation.title,
       body: foundation.body,
       examples: foundation.examples,
@@ -131,8 +131,7 @@ class CloudyCatalog {
     required String level,
     required bool microphoneEnabled,
     required bool speechRecognitionAvailable,
-    Map<String, CloudySkillEvidence> skills = const {},
-    int? nowMillis,
+    CloudyLearningStore? learningStore,
     CloudyRand? random,
   }) {
     final lesson = lessonAt(lessonIndex);
@@ -145,11 +144,7 @@ class CloudyCatalog {
       microphoneEnabled: microphoneEnabled,
       speechRecognitionAvailable: speechRecognitionAvailable,
       grammarIntro: grammarExerciseAt(lessonIndex, level: level),
-      prioritizePractice: (practice) => prioritizeCloudyExercises(
-        practice,
-        skills,
-        nowMillis: nowMillis ?? DateTime.now().millisecondsSinceEpoch,
-      ),
+      prioritizePractice: (practice) => learningStore?.prioritize(practice) ?? practice,
       random: random,
     );
   }
