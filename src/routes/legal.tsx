@@ -621,18 +621,18 @@ export function LegalPage() {
             <div key={active.id} className={`legal-document legal-page-transition${pageDirection === "bck" ? " legal-backward" : ""}`}>
               <div className="legal-doc-head" style={{ "--tone": meta.tone } as CSSProperties}>
                 <div className="legal-doc-icon"><meta.icon size={29} strokeWidth={1.8} /></div>
-                <div><h2>{active.title}</h2><p>{legalText(active.description, language)} · {active.sections.length} {legalText("разделов", language)}</p></div>
+                <div><h2>{legalText(active.title, language)}</h2><p>{legalText(active.description, language)} · {active.sections.length} {legalText("разделов", language)}</p></div>
               </div>
               <section className="legal-summary" style={{ "--tone": meta.tone } as React.CSSProperties}>
                 <h3>{legalText("Кратко о главном", language)}</h3>
                 <ul>{meta.summary.map((item, index) => <li key={index}><ShieldCheck size={17} /><span>{legalText(item, language)}</span></li>)}</ul>
               </section>
               <div className="legal-toc" aria-label="Навигация по разделам">
-                {active.sections.map(([heading], index) => <button type="button" key={heading} onClick={() => jumpToSection(index)}>{heading.replace(/^\d+\.\s*/, "")}</button>)}
+                {active.sections.map(([heading], index) => <button type="button" key={heading} onClick={() => jumpToSection(index)}>{legalText(heading, language).replace(/^\d+\.\s*/, "")}</button>)}
               </div>
               {active.sections.map(([heading, body], index) => (
                 <article id={`legal-section-${index}`} className={`legal-section${expandedSections.has(index) ? " is-expanded" : ""}`} key={heading} style={{ "--i": Math.min(index, 10), "--tone": meta.tone } as React.CSSProperties}>
-                  <h3><span>{/^\d+/.test(heading) ? heading.match(/^\d+/)?.[0] : index + 1}</span>{heading.replace(/^\d+\.\s*/, "")}</h3>
+                  <h3><span>{/^\d+/.test(heading) ? heading.match(/^\d+/)?.[0] : index + 1}</span>{legalText(heading, language).replace(/^\d+\.\s*/, "")}</h3>
                   <p>{body.length > 260 ? `${body.slice(0, 260).trimEnd()}…` : body}</p>
                   {body.length > 260 && <div className="legal-text-reveal"><div><p>{body}</p></div></div>}
                   {body.length > 260 && <button type="button" className="legal-full-toggle legal-text-link" aria-expanded={expandedSections.has(index)} onClick={() => toggleSection(index)}>{legalText(expandedSections.has(index) ? "Свернуть текст" : "Читать полный текст", language)} <ChevronDown size={15} /></button>}
