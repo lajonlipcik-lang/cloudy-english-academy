@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../domain/cloudy_catalog.dart';
@@ -282,19 +283,19 @@ class CloudyMascot extends StatefulWidget {
 }
 class _CloudyMascotState extends State<CloudyMascot> with SingleTickerProviderStateMixin {
   late final AnimationController blink = AnimationController(vsync: this, duration: const Duration(milliseconds: 140), reverseDuration: const Duration(milliseconds: 140));
+  Timer? _blinkTimer;
   @override
-  void initState() { super.initState(); _loop(); }
-  Future<void> _loop() async {
-    while (mounted) {
-      await Future<void>.delayed(const Duration(milliseconds: 3600));
-      if (!mounted) return;
-      await blink.forward();
-      if (!mounted) return;
-      await blink.reverse();
-    }
+  void initState() {
+    super.initState();
+    _blinkTimer = Timer.periodic(const Duration(milliseconds: 3900), (_) => _blinkOnce());
+  }
+  Future<void> _blinkOnce() async {
+    if (!mounted || blink.isAnimating) return;
+    await blink.forward();
+    if (mounted) await blink.reverse();
   }
   @override
-  void dispose() { blink.dispose(); super.dispose(); }
+  void dispose() { _blinkTimer?.cancel(); blink.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) => SizedBox(
     width: widget.size, height: widget.size * .8,
