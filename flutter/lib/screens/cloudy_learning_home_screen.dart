@@ -287,7 +287,7 @@ class _CloudyMascotState extends State<CloudyMascot> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _blinkTimer = Timer.periodic(const Duration(milliseconds: 3900), (_) => _blinkOnce());
+    _blinkTimer = Timer.periodic(const Duration(milliseconds: 3900), (_) => unawaited(_blinkOnce()));
   }
   Future<void> _blinkOnce() async {
     if (!mounted || blink.isAnimating) return;
