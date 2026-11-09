@@ -131,6 +131,8 @@ class CloudyAuthRepository {
 
   Stream<AuthState> get authChanges => _client.auth.onAuthStateChange;
 
+  String? get currentAccessToken => _client.auth.currentSession?.accessToken;
+
   CloudyAuthUser? get currentUser {
     final user = _client.auth.currentUser;
     return user == null ? null : CloudyAuthUser.fromSupabase(user);
