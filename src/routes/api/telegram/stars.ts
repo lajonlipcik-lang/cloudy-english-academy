@@ -36,7 +36,7 @@ export const Route = createFileRoute("/api/telegram/stars")({
           }
 
           if (action === "create-invoice") {
-            const planCode = typeof body['planCode'] === "string" ? body.planCode.trim() : "";
+            const planCode = typeof body['planCode'] === "string" ? body['planCode'].trim() : "";
             if (!/^[a-z][a-z0-9_]{1,47}$/.test(planCode)) {
               return Response.json({ ok: false, error: "Некорректный тариф." }, { status: 400 });
             }
