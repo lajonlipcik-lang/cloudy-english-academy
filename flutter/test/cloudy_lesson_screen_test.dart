@@ -110,10 +110,9 @@ void main() {
       ),
       onMatchingAttempt: (_, correct, __) => attempts.add(correct),
     ));
-    await tester.tap(find.text('apple').first);
+    await tester.tap(find.byKey(const ValueKey('cloudy-match-left-0')));
     await tester.pump();
-    expect(find.text('яблоко'), findsOneWidget);
-    await tester.tap(find.text('яблоко'));
+    await tester.tap(find.byKey(const ValueKey('cloudy-match-right-0')));
     await tester.pump();
     expect(attempts, [true]);
     expect(find.text('Все пары найдены!'), findsOneWidget);
