@@ -1,3 +1,4 @@
+
 const { D, LV, ALL, P } = window.CloudyCatalog;
 let SEC=[];
 const DEF=()=>({xp:0,streak:0,last:"",done:0,lv:"",dn:{A1:0,A2:0,B1:0,B2:0},acc:[0,0],mis:{},days:[],ach:[],wk:{k:"",xp:0},perf:0,tested:0,user:null,set:{snd:1,vol:.7,voice:1,goal:30,mic:1,th:"dark",rem:0,remT:"19:00"},td:{d:"",xp:0,les:0,ok:0,claim:0}});
