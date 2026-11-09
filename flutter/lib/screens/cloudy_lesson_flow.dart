@@ -127,19 +127,20 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
     if (_finished || _finishing) return;
     final questionIndex = _session.index;
     final exercise = _session.exercises[questionIndex];
-    final result = applyCloudyAnswer(
+    final result = applyCloudyMatchingAttempt(
       _progress,
       _session,
-      correct: correct,
       englishWord: englishWord,
+      correct: correct,
+      totalPairs: totalPairs,
     );
-    _session = result.session.copyWith(
-      matchingCorrect: correct
-          ? _session.matchingCorrect + 1
-          : _session.matchingCorrect,
-    );
+    _session = result.session;
     _queueProgressSave(result.state);
-    _queueLearningAnswer(exercise, correct: correct, questionIndex: questionIndex);
+    _queueLearningAnswer(
+      exercise,
+      correct: correct,
+      questionIndex: questionIndex,
+    );
     unawaited(widget.controller.playSound(
       correct ? CloudySound.match : CloudySound.bad,
       combo: _session.combo,
