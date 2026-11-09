@@ -65,7 +65,7 @@ String _dateString(DateTime value) {
 CloudyState rollCloudyDay(CloudyState state, DateTime now) {
   final today = _dateString(now);
   if (state.today.d == today) return state;
-  return state.copyWith(today: const CloudyToday());
+  return state.copyWith(today: CloudyToday(d: today));
 }
 
 CloudyState updateCloudyStreak(CloudyState state, DateTime now) {
