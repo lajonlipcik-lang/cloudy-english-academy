@@ -5,9 +5,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../data/cloudy_auth_repository.dart';
 import '../data/cloudy_mobile_api.dart';
+import '../domain/cloudy_exercise.dart';
+import '../domain/cloudy_learning_store.dart';
 import '../domain/cloudy_state.dart';
 import '../domain/cloudy_progress_engine.dart';
 import '../progress/cloudy_local_progress_store.dart';
+import '../services/cloudy_progress_sync_service.dart';
 
 enum CloudySessionStatus {
   starting,
@@ -27,11 +30,16 @@ class CloudySessionController extends ChangeNotifier {
     required CloudyMobileApi mobileApi,
   })  : _auth = auth,
         _localProgress = localProgress,
-        _mobileApi = mobileApi;
+        _mobileApi = mobileApi,
+        _progressSync = CloudyProgressSyncService(
+          localStore: localProgress,
+          api: mobileApi,
+        );
 
   final CloudyAuthRepository _auth;
   final CloudyLocalProgressStore _localProgress;
   final CloudyMobileApi _mobileApi;
+  final CloudyProgressSyncService _progressSync;
 
   StreamSubscription<AuthState>? _authSubscription;
   CloudySessionStatus _status = CloudySessionStatus.starting;
@@ -76,8 +84,7 @@ class CloudySessionController extends ChangeNotifier {
     if (session == null || event.event == AuthChangeEvent.signedOut) {
       _loadedUserId = null;
       _user = null;
-      await _localProgress.enterGuestMode();
-      _progress = _localProgress.loadGuest();
+      _progress = await _progressSync.activateGuest();
       _errorMessage = null;
       _publish(CloudySessionStatus.guest);
       return;
@@ -99,35 +106,16 @@ class CloudySessionController extends ChangeNotifier {
   }
 
   Future<void> _activateAccount(CloudyAuthUser user, String userId) async {
-    CloudyRemoteProgress? remote;
-    Object? loadError;
-    try {
-      remote = await _mobileApi.loadProgress();
-    } catch (error) {
-      loadError = error;
-    }
+    final result = await _progressSync.activateAccount(email: user.email);
     if (_disposed || _user?.id != user.id) return;
 
-    final activation = _localProgress.activateCloudAccount(
-      email: user.email,
-      remoteState: remote?.hasProgressRow == true ? remote!.state.toJson() : null,
-      remoteUpdatedAt: remote?.updatedAt,
-      progressLoadFailed: loadError != null,
-      profileLevel: remote?.learnerProfile?['english_level'] is String
-          ? remote!.learnerProfile!['english_level'] as String
-          : null,
-      placementTestCompleted:
-          remote?.learnerProfile?['placement_test_completed'] == true,
-    );
-    await _localProgress.persistActivation(user.email, activation);
-    if (_disposed || _user?.id != user.id) return;
-
-    _progress = activation.state;
+    _progress = result.state;
     _loadedUserId = userId;
-    if (activation.syncPaused) {
+    if (result.syncPaused) {
       _setError(
-        'Аккаунт открыт, но прогресс пока не синхронизирован. '
-        'Локальные данные сохранены; повторная синхронизация безопасно продолжится позже.',
+        result.error ??
+            'Аккаунт открыт, но прогресс пока не синхронизирован. '
+                'Локальные данные сохранены; повторная синхронизация безопасно продолжится позже.',
         status: CloudySessionStatus.offline,
       );
       return;
@@ -135,62 +123,12 @@ class CloudySessionController extends ChangeNotifier {
 
     _errorMessage = null;
     _publish(CloudySessionStatus.signedIn);
-    if (activation.shouldSync) {
-      await _syncActivatedProgress(user.email, activation);
-    }
-  }
-
-  Future<void> _syncActivatedProgress(
-    String email,
-    CloudyAccountActivation activation,
-  ) async {
-    await _localProgress.markDirty(email);
     try {
-      var candidate = activation.state;
-      var base = activation.baseState;
-      var version = activation.updatedAt;
-      var saved = false;
-      for (var attempt = 0; attempt < 3; attempt++) {
-        final result = await _mobileApi.saveProgress(
-          candidate,
-          expectedUpdatedAt: version,
-        );
-        if (result['ok'] == true) {
-          saved = true;
-          break;
-        }
-        if (result['conflict'] != true) break;
-        final rawRemote = result['state'];
-        if (rawRemote is! Map) break;
-        final remoteState = CloudyState.fromJson(rawRemote);
-        candidate = mergeCloudyConflictProgress(remoteState, candidate, base);
-        base = remoteState;
-        version = result['updated_at'] is String
-            ? result['updated_at'] as String
-            : null;
-        await _localProgress.saveAccount(email, candidate);
-        _progress = candidate;
-      }
-      if (!saved) {
-        _setError(
-          'Не удалось подтвердить синхронизацию прогресса. '
-          'Локальная копия сохранена, повторная попытка не потеряет данные.',
-          status: CloudySessionStatus.offline,
-        );
-        return;
-      }
-      _progress = candidate;
-      await _localProgress.saveAccount(email, candidate);
-      await _localProgress.markSynced(email, noPendingChanges: true);
+      await _progressSync.syncLearningEvents();
     } catch (_) {
-      _setError(
-        'Прогресс сохранён на устройстве, но не отправлен на сервер. '
-        'Повторите синхронизацию при подключении к интернету.',
-        status: CloudySessionStatus.offline,
-      );
+      // The event outbox remains on-device and can be retried later.
     }
   }
-
 
   /// Retries the account progress handshake after a network interruption.
   /// The remote snapshot is fetched again before any write is attempted.
@@ -201,19 +139,69 @@ class CloudySessionController extends ChangeNotifier {
     await _activateAccount(currentUser, currentUser.id);
   }
 
-  /// Persists the latest in-memory state before attempting any cloud write.
+  /// Saves locally first, then syncs with the server using revision checks.
   Future<void> saveProgress(CloudyState next) async {
-    _progress = next;
-    final email = _user?.email;
-    if (email == null) {
-      await _localProgress.saveGuest(next);
-      _publish(_status);
+    final result = await _progressSync.saveLocal(next);
+    _progress = result.state;
+    if (result.syncPaused && _user != null) {
+      _setError(
+        result.error ??
+            'Прогресс сохранён на устройстве, но пока не отправлен на сервер.',
+        status: CloudySessionStatus.offline,
+      );
       return;
     }
-    await _localProgress.saveAccount(email, next);
-    await _localProgress.markDirty(email);
-    _publish(_status);
+    _errorMessage = null;
+    _publish(_user == null ? CloudySessionStatus.guest : CloudySessionStatus.signedIn);
   }
+
+  Future<void> syncProgress() async {
+    if (_user == null) return;
+    final result = await _progressSync.syncCurrent();
+    _progress = result.state;
+    if (result.syncPaused) {
+      _setError(
+        result.error ?? 'Не удалось синхронизировать прогресс.',
+        status: CloudySessionStatus.offline,
+      );
+    } else {
+      _errorMessage = null;
+      _publish(CloudySessionStatus.signedIn);
+    }
+  }
+
+  Future<CloudyState> awardLesson(CloudySession session, {DateTime? now}) async {
+    final updated = await _progressSync.awardLesson(_progress, session, now: now);
+    _progress = updated;
+    _publish(_status);
+    return updated;
+  }
+
+  Future<Map<String, Object?>?> recordLearningAnswer(
+    CloudyExercise exercise, {
+    required bool correct,
+    bool retry = false,
+    bool skipped = false,
+    int? questionIndex,
+    num? responseSeconds,
+    String? selectedAnswer,
+    String? correctAnswer,
+    DateTime? now,
+  }) => _progressSync.recordLearningAnswer(
+    exercise,
+    correct: correct,
+    retry: retry,
+    skipped: skipped,
+    questionIndex: questionIndex,
+    responseSeconds: responseSeconds,
+    selectedAnswer: selectedAnswer,
+    correctAnswer: correctAnswer,
+    now: now,
+  );
+
+  Future<int> syncLearningEvents() => _progressSync.syncLearningEvents();
+
+  Future<CloudyLearningStore> get learningStore => _progressSync.learningStore;
 
   Future<void> enterGuestMode() async {
     await _auth.signOut();
