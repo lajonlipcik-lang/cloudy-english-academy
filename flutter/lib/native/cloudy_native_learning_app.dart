@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/cloudy_auth_repository.dart';
 import '../data/cloudy_mobile_api.dart';
@@ -361,10 +362,19 @@ class _ExistingCloudyAppPageState extends State<_ExistingCloudyAppPage> {
           final trusted = target.host == widget.baseUri.host ||
               target.host.endsWith('.supabase.co') ||
               target.host.endsWith('.supabase.in');
-          return trusted &&
-                  (target.scheme == 'https' || target.scheme == 'http')
-              ? NavigationDecision.navigate
-              : NavigationDecision.prevent;
+          if (trusted &&
+              (target.scheme == 'https' || target.scheme == 'http')) {
+            return NavigationDecision.navigate;
+          }
+          if (target.scheme == 'https' ||
+              target.scheme == 'http' ||
+              target.scheme == 'mailto' ||
+              target.scheme == 'tel') {
+            unawaited(
+              launchUrl(target, mode: LaunchMode.externalApplication),
+            );
+          }
+          return NavigationDecision.prevent;
         },
       ))
       ..loadRequest(widget.baseUri.replace(
