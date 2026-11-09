@@ -82,6 +82,7 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
   void _queueLearningAnswer(
     CloudyExercise exercise, {
     required bool correct,
+    required int questionIndex,
     String? selectedAnswer,
   }) {
     _learningQueue = _learningQueue.then((_) async {
@@ -89,7 +90,7 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
       await widget.controller.recordLearningAnswer(
         exercise,
         correct: correct,
-        questionIndex: _session.index,
+        questionIndex: questionIndex,
         selectedAnswer: selectedAnswer,
       );
       await widget.controller.syncLearningEvents();
@@ -100,7 +101,8 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
 
   void _onAnswer(bool correct, String? englishWord) {
     if (_finished || _finishing) return;
-    final exercise = _session.exercises[_session.index];
+    final questionIndex = _session.index;
+    final exercise = _session.exercises[questionIndex];
     final result = applyCloudyAnswer(
       _progress,
       _session,
@@ -109,7 +111,7 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
     );
     _session = result.session;
     _queueProgressSave(result.state);
-    _queueLearningAnswer(exercise, correct: correct);
+    _queueLearningAnswer(exercise, correct: correct, questionIndex: questionIndex);
     unawaited(widget.controller.playSound(
       correct ? CloudySound.ok : CloudySound.bad,
       combo: _session.combo,
@@ -123,7 +125,8 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
     int totalPairs,
   ) {
     if (_finished || _finishing) return;
-    final exercise = _session.exercises[_session.index];
+    final questionIndex = _session.index;
+    final exercise = _session.exercises[questionIndex];
     final result = applyCloudyAnswer(
       _progress,
       _session,
@@ -136,7 +139,7 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
           : _session.matchingCorrect,
     );
     _queueProgressSave(result.state);
-    _queueLearningAnswer(exercise, correct: correct);
+    _queueLearningAnswer(exercise, correct: correct, questionIndex: questionIndex);
     unawaited(widget.controller.playSound(
       correct ? CloudySound.match : CloudySound.bad,
       combo: _session.combo,
