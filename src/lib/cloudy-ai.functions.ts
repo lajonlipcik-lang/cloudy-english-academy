@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 import { runWithAiFallback } from "@/lib/ai/router";
 import { CLOUDY_FOUNDATIONS, D, LI, LV, TQ } from "@/lib/cloudy/data";
-import { applyAnswer, buildExercises, defaultState, finishLesson, newSession, skipAnswer } from "@/lib/cloudy/logic";
+import { advance, applyAnswer, buildExercises, defaultState, finishLesson, newSession, skipAnswer } from "@/lib/cloudy/logic";
 import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 const OWNER="lajonlipcik@gmail.com";
@@ -216,6 +216,8 @@ function runCloudyExerciseAudit(){
             const graded=applyAnswer(simulatedState,simulatedSession,true,String(ex.en??""));
             simulatedState=graded.state;simulatedSession=graded.session;
           }
+          const nextSession=advance(simulatedSession,pool,randomFor((lessonIndex+1)*65537+variant*257+lessonTasks));
+          if(nextSession)simulatedSession=nextSession;
         }
         const finished=finishLesson(simulatedState,simulatedSession);
         if(finished.acc<100){lessonErrors++;failures.push(level+" / "+lesson.t+": симуляция правильных ответов завершилась с точностью ниже 100%");}
