@@ -74,17 +74,15 @@ class CloudyMobileApi {
     'level': level,
   });
 
-  Future<int> syncLearningEvents(List<Map<String, Object?>> events) async {
-    if (events.isEmpty) return 0;
+  Future<List<String>> syncLearningEvents(List<Map<String, Object?>> events) async {
+    if (events.isEmpty) return const [];
     if (events.length > 50) {
       throw const CloudyMobileApiException('Слишком много событий в одном запросе.');
     }
     final result = await _post('learning-events', {'events': events});
-    final synced = result['synced'];
-    final accepted = result['acceptedCount'];
-    if (synced is num) return synced.toInt();
-    if (accepted is num) return accepted.toInt();
-    return events.length;
+    final acceptedIds = result['acceptedEventIds'];
+    if (acceptedIds is List) return acceptedIds.whereType<String>().toList(growable: false);
+    return const [];
   }
 
   Future<Map<String, Object?>> _post(
