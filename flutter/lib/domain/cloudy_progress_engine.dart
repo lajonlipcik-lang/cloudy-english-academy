@@ -59,7 +59,7 @@ String _dateString(DateTime value) {
   const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   final d = value.toLocal();
-  return '${weekdays[d.weekday - 1]} ${months[d.month - 1]} ${d.day.toString().padLeft(2, '0')} ${d.year}';
+  return '${weekdays[d.weekday - 1]} ${months[d.month - 1]} ${d.day.toString()} ${d.year}';
 }
 
 CloudyState rollCloudyDay(CloudyState state, DateTime now) {
@@ -196,7 +196,7 @@ CloudyState? claimCloudyChest(CloudyState state) {
 DateTime? _parseCloudyDate(String value) {
   final iso = DateTime.tryParse(value);
   if (iso != null) return iso;
-  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\d{2}) (\d{4})).firstMatch(value);
+  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\d{1,2}) (\d{4})).firstMatch(value);
   if (match == null) return null;
   const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};
   final month = months[match.group(1)];
