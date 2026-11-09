@@ -93,7 +93,7 @@
         '<div class="sp-block"><div class="sp-cap">Цветовая тема</div><div class="sp-swatches">' + accents + '</div></div>' +
         '<div class="sp-block"><div class="sp-cap">Шрифт</div><div class="sp-fonts">' + fonts + '</div></div>' +
         '<div class="sp-block"><div class="sp-cap">Анимации</div>' + seg([["full", "Плавные"], ["calm", "Спокойные"], ["off", "Выключены"]], P.motion, "CloudyUI.motion") + '</div>' +
-        '', 0) +
+        0) +
       (lock ? "" : section("Обучение", ic("book"),
         '<div class="sp-block"><div class="sp-cap">Цель на день</div>' + seg(goals, String(set.goal || 30), "CloudyUI.goal") + '</div>' +
         row("Звуковые эффекты", sw(set.snd, "CloudyUI.tog('snd')", "Звуковые эффекты")) +
