@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft, BookOpen, ChevronDown, CreditCard, Lock, MessageCircle, Scale, ScrollText, ShieldCheck, Users } from "lucide-react";\nimport type { CSSProperties } from "react";
+import { ArrowLeft, BookOpen, ChevronDown, CreditCard, Lock, MessageCircle, Scale, ScrollText, ShieldCheck, Users } from "lucide-react";
+import type { CSSProperties } from "react";
 
 type LegalSection = readonly [string, string];
 type LegalDocument = {
