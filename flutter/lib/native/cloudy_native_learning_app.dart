@@ -55,7 +55,7 @@ class _CloudyNativeLearningAppState extends State<CloudyNativeLearningApp> {
     }
 
     await CloudyAuthRepository.initialize();
-    final auth = CloudyAuthRepository.configured();
+    final auth = CloudyAuthRepository.fromInitializedClient();
     final localProgress = await CloudyLocalProgressStore.create();
     final mobileApi = CloudyMobileApi(
       baseUrl: apiBaseUrl,
