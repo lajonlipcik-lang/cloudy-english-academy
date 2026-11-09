@@ -162,7 +162,7 @@ void main() {
       final local = CloudyLocalProgressStore(preferences);
       await local.saveAccount('learner@example.com', CloudyState.fromJson({'xp': 40, 'lv': 'A1'}));
       final api = _FakeCloudyApi(
-        remote: const CloudyRemoteProgress(
+        remote: CloudyRemoteProgress(
           state: CloudyState.defaults(),
           hasProgressRow: false,
           updatedAt: null,
