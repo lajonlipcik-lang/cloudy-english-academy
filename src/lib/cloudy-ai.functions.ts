@@ -796,8 +796,52 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
     return { ...input, accessToken: token, id, contentType };
   })
   .handler(async ({ data }) => {
-    await ctx(data.accessToken);
-    return { ok: true, decision: "allow", reason: "Подписи и комментарии не проходят предварительную модерацию.", moderationApplied: false, mediaReviewed: false };
+    const { db: coreDb, user } = await ctx(data.accessToken);
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const contentDb = getCloudyContentAdmin();
+
+    // This endpoint is only for text-only posts. Captions on video/photo media
+    // must never approve the underlying media; those use separate media review.
+    const { data: post, error: postError } = await contentDb
+      .from("shorts_videos")
+      .select("id,author_id,media_type,status,moderation_status,caption,text_content")
+      .eq("id", data.id)
+      .eq("author_id", user.id)
+      .maybeSingle();
+    if (postError || !post || post.status !== "draft" || post.moderation_status !== "pending") {
+      throw new Error("Черновик текста не найден или уже обработан.");
+    }
+    if (post.media_type !== "text") {
+      throw new Error("Предварительная текстовая модерация не может одобрять фото или видео.");
+    }
+
+    const body = String(post.text_content || post.caption || "").trim();
+    if (!body || body.length > 2000) throw new Error("Текст публикации пуст или слишком длинный.");
+
+    const moderation = await runCloudyContentTextModeration(coreDb, "short_video", body, 2000);
+    const { data: applied, error: moderationError } = await contentDb.rpc("apply_shorts_text_moderation", {
+      p_content_type: "short_video",
+      p_content_id: post.id,
+      p_decision: moderation.decision,
+      p_reason: moderation.reason,
+      p_labels: moderation.labels,
+      p_confidence: moderation.confidence,
+      p_model: moderation.model,
+      p_policy_version: "cloudy-content-text-v1",
+    });
+    if (moderationError || !applied) {
+      throw new Error("Не удалось сохранить решение модерации текста.");
+    }
+
+    return {
+      ok: true,
+      decision: moderation.decision,
+      reason: moderation.reason,
+      moderationApplied: true,
+      mediaReviewed: false,
+      videoId: post.id,
+      status: moderation.decision === "allow" ? "approved" : moderation.decision === "reject" ? "removed" : "pending_review",
+    };
   });
 
 
