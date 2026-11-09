@@ -29,7 +29,7 @@ VA VC VE VG VI VN VU
 WF WS
 YE YT
 ZA ZM ZW
-`.trim().split(/\\s+/).filter((code) => code !== "RU");
+`.trim().split(/\s+/).filter((code) => code !== "RU");
 
 const COPY: Record<SiteLanguage, {
   back: string; title: string; intro: string; detail: string; count: string;
