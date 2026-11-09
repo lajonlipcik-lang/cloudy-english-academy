@@ -15,10 +15,10 @@ class CloudyLearningStore {
   final SharedPreferences _preferences;
   final String scope;
 
-  String get _key => 'cl2:learning-intelligence:${scope.isEmpty ? 'guest' : scope}'.substring(
-    0,
-    min('cl2:learning-intelligence:${scope.isEmpty ? 'guest' : scope}'.length, 210),
-  );
+  String get _key {
+    final value = 'cl2:learning-intelligence:' + (scope.isEmpty ? 'guest' : scope);
+    return value.length <= 210 ? value : value.substring(0, 210);
+  }
 
   static Future<CloudyLearningStore> create({String scope = 'guest'}) async =>
       CloudyLearningStore(await SharedPreferences.getInstance(), scope: scope);
@@ -133,7 +133,7 @@ class CloudyLearningStore {
     var data = _read();
     final active = _map(data['activeSession']);
     if (active['sessionId'] is String) {
-      await endSession('lesson_abandoned', now: now);
+      await endSession(outcome: 'lesson_abandoned', now: now);
       data = _read();
     }
     final startedAt = (now ?? DateTime.now()).millisecondsSinceEpoch;
@@ -167,10 +167,10 @@ class CloudyLearningStore {
     return sessionId;
   }
 
-  Future<Map<String, Object?>?> endSession([
-    String outcome = 'lesson_completed', {
+  Future<Map<String, Object?>?> endSession({
+    String outcome = 'lesson_completed',
     DateTime? now,
-  }]) async {
+  }) async {
     final data = _read();
     final session = _map(data['activeSession']);
     final sessionId = session['sessionId'];
@@ -285,7 +285,7 @@ class CloudyLearningStore {
 
   List<Map<String, Object?>> pending({int limit = 50}) {
     final events = (_read()['events'] as List).cast<Map<String, Object?>>();
-    final safeLimit = _clamp(limit <= 0 ? 50 : limit, 1, 50);
+    final safeLimit = (limit <= 0 ? 50 : limit).clamp(1, 50).toInt();
     return events.where((event) => event['synced'] != true && event['eventId'] != null)
         .take(safeLimit)
         .map((event) => Map<String, Object?>.from(event)..remove('synced'))
@@ -361,12 +361,14 @@ class CloudyLearningStore {
   static num _number(Object? value, [num fallback = 0]) =>
       value is num && value.isFinite ? value : fallback;
 
-  static String _cleanText(Object? value, int max) => (value ?? '')
-      .toString()
-      .replaceAll(RegExp(r'[ -]'), ' ')
-      .replaceAll(RegExp(r's+'), ' ')
-      .trim()
-      .substring(0, min((value ?? '').toString().replaceAll(RegExp(r'[ -]'), ' ').replaceAll(RegExp(r's+'), ' ').trim().length, max));
+  static String _cleanText(Object? value, int max) {
+    final cleaned = (value ?? '')
+        .toString()
+        .replaceAll(RegExp(r'[\u0000-\u001f\u007f]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    return cleaned.length <= max ? cleaned : cleaned.substring(0, max);
+  }
 
   static Map<String, Object?> _map(Object? value) {
     if (value is Map<String, Object?>) return value;
