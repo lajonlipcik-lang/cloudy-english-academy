@@ -16,6 +16,7 @@ class CloudyLessonScreen extends StatefulWidget {
     required this.session,
     required this.onAnswer,
     required this.onMatchingAttempt,
+    required this.onAdvance,
     required this.onComplete,
     required this.onPronunciationRequested,
     required this.onSkipPronunciation,
@@ -27,6 +28,7 @@ class CloudyLessonScreen extends StatefulWidget {
   final void Function(bool correct, String? englishWord) onAnswer;
   final void Function(String englishWord, bool correct, int totalPairs)
       onMatchingAttempt;
+  final VoidCallback onAdvance;
   final VoidCallback onComplete;
   final VoidCallback onPronunciationRequested;
   final VoidCallback onSkipPronunciation;
@@ -41,6 +43,7 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
   String? _feedback;
   bool? _wasCorrect;
   final List<String> _assembled = [];
+  final List<String> _assembledKeys = [];
   final Set<String> _usedTokens = {};
   final Set<String> _matchedLeft = {};
   final Set<String> _matchedRight = {};
@@ -66,6 +69,7 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
     _feedback = null;
     _wasCorrect = null;
     _assembled.clear();
+    _assembledKeys.clear();
     _usedTokens.clear();
     _matchedLeft.clear();
     _matchedRight.clear();
@@ -93,8 +97,7 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
       widget.onComplete();
     } else {
       // The owner advances the canonical CloudySession and supplies it back.
-      // This callback is intentionally not simulated locally.
-      widget.onComplete();
+      widget.onAdvance();
     }
   }
 
@@ -321,7 +324,7 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
             : _assembled.asMap().entries.map((entry) => GestureDetector(
                 onTap: _wasCorrect == null ? () => setState(() {
                   _assembled.removeAt(entry.key);
-                  _usedTokens.remove(entry.value);
+                  _usedTokens.remove(_assembledKeys.removeAt(entry.key));
                 }) : null,
                 child: _token(entry.value, selected: true),
               )).toList(),
@@ -332,7 +335,9 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
         children: e.options.asMap().entries.where((entry) => !_usedTokens.contains('${entry.key}:${entry.value}')).map((entry) =>
           GestureDetector(
             onTap: _wasCorrect == null ? () => setState(() {
-              _usedTokens.add('${entry.key}:${entry.value}');
+              final key = '${entry.key}:${entry.value}';
+              _usedTokens.add(key);
+              _assembledKeys.add(key);
               _assembled.add(entry.value);
             }) : null,
             child: _token(entry.value),
@@ -342,7 +347,7 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
       const SizedBox(height: 16),
       OutlinedButton(
         onPressed: _assembled.isEmpty || _wasCorrect != null ? null : () => setState(() {
-          _assembled.clear(); _usedTokens.clear();
+          _assembled.clear(); _assembledKeys.clear(); _usedTokens.clear();
         }),
         child: const Text('Очистить ответ'),
       ),
