@@ -4,6 +4,8 @@ import cloudyAdminJs from "./server-assets/cloudy-admin.js?raw";
 import cloudyCatalogJs from "./server-assets/cloudy-catalog.js?raw";
 import cloudyEnglishAppJs from "./server-assets/cloudy-english-app.js?raw";
 import cloudyEnglishCss from "./server-assets/cloudy-english.css?raw";
+import cloudyUiCss from "./server-assets/cloudy-ui.css?raw";
+import cloudyUiJs from "./server-assets/cloudy-ui.js?raw";
 import cloudyEnglishHtml from "./server-assets/cloudy-english.html?raw";
 import cloudyExercisesJs from "./server-assets/cloudy-exercises.js?raw";
 import cloudyLearningJs from "./server-assets/cloudy-learning.js?raw";
@@ -28,6 +30,8 @@ type LearningAsset = {
 const LEARNING_ASSETS = new Map<string, LearningAsset>([
   ["/cloudy-english.html", { body: cloudyEnglishHtml, contentType: "text/html; charset=utf-8" }],
   ["/cloudy-english.css", { body: cloudyEnglishCss, contentType: "text/css; charset=utf-8" }],
+  ["/cloudy-ui.css", { body: cloudyUiCss, contentType: "text/css; charset=utf-8" }],
+  ["/cloudy-ui.js", { body: cloudyUiJs, contentType: "text/javascript; charset=utf-8" }],
   ["/cloudy-admin.js", { body: cloudyAdminJs, contentType: "text/javascript; charset=utf-8" }],
   ["/cloudy-catalog.js", { body: cloudyCatalogJs, contentType: "text/javascript; charset=utf-8" }],
   ["/cloudy-english-app.js", { body: cloudyEnglishAppJs, contentType: "text/javascript; charset=utf-8" }],
