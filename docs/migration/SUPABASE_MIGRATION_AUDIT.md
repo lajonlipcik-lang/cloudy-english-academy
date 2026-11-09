@@ -106,3 +106,41 @@ Application code has now been changed on `migration/vercel-platform` so text-onl
 The historical Core migration `0017_shorts_caption_nonblocking.sql` was deliberately restored unchanged. Editing an old migration would risk checksum/history drift on databases where it has already run. A new additive SQL migration must be generated with the Supabase CLI and placed after the current Core sequence. Until that migration is tested and applied, the existing comment-only RPC will reject the text-post moderation call, so new text posts remain in manual review rather than being auto-published.
 
 The existing GitHub CI workflow now also runs for pushes and pull requests on `migration/vercel-platform`, so typecheck, lint, tests and production build are checked on this branch rather than only on `main`.
+
+
+
+## Source database inventory — read-only inspection (2026-11-09)
+
+The original Lovable project was located in the connected Lovable workspace and its database is enabled. The inventory below was obtained using read-only queries; no source rows, settings, or storage objects were changed.
+
+| Area | Source count / state |
+|---|---:|
+| Auth users | 5 |
+| Auth identities | 5 (email provider) |
+| Confirmed email accounts | 4 of 5 |
+| Accounts with password hashes | 5 of 5 |
+| Anonymous / soft-deleted accounts | 0 / 0 |
+| Profiles | 5 |
+| User progress | 4 |
+| User learning profiles | 4 |
+| XP awards | 12 |
+| XP ledger rows | 4 |
+| Learning events | 743 |
+| Cloudy AI chat threads | 3 |
+| Community posts / comments / reactions / reports | 1 / 1 / 1 / 1 |
+| Shorts videos / comments / likes | 7 / 7 / 7 |
+| Shorts follows / saved posts / comment likes | 0 / 0 / 0 |
+| Moderation events | 26 |
+| Storage objects | 7 (about 31.6 MB) |
+
+All inspected user-ID references in profiles, progress, learning events, chat, community authors and Shorts authors resolve to one of the five Auth users; no orphans were found.
+
+### Source configuration differences and migration cautions
+
+- The source has one Storage bucket named `cloudy-shorts`, currently marked **public**, with a 100 MiB limit and MP4, WebM, QuickTime, JPEG, PNG and WebP MIME types. The reviewed target migration creates this bucket as **private**. The current server feed uses signed URLs, so the private target is intentional, but signed-URL playback and upload must be tested before cutover.
+- The bucket contains 7 objects totalling approximately 31.6 MB. Storage object metadata is in Postgres, but file bytes are external Storage objects and require a separate object-copy step.
+- The AI Vault contains one enabled Groq provider row. Its API-key field is populated while the legacy ciphertext/IV fields are null. No key value was queried or exposed. Preserve it only through a secret-safe transfer path, or re-enter/rotate it in the destination after cutover.
+- The five Auth users all have password hashes; four are email-confirmed. Preserve UUIDs and compatible password hashes if the Auth schema transfer is validated. Do not migrate active sessions, refresh tokens, or one-time recovery/confirmation tokens; users should sign in again on the new project.
+- The source reports only five rows in `drizzle.__drizzle_migrations`, which is not a complete record of the schema visible in the database. The repository SQL and the actual source schema must both be reconciled; do not rely on the source migration journal alone.
+
+**Data-transfer status:** inventory only. No Auth users, public-table rows, AI secrets, Storage objects, or settings have been written to the destination project.
