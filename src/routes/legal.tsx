@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BookOpen, ChevronDown, CreditCard, FileText, Lock, MessageCircle, Scale, ScrollText, ShieldCheck, Users } from "lucide-react";\nimport type React from "react";
 
 type LegalSection = readonly [string, string];
 type LegalDocument = {
@@ -114,131 +114,176 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
     ]
   }
 ] as const;
-function CloudyMascot() {
-  return (
-    <svg viewBox="0 0 100 80" aria-hidden="true" className="h-14 w-16 shrink-0">
-      <defs>
-        <linearGradient id="cloudyLegalMascot" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="1" stopColor="#bfe0ff" />
-        </linearGradient>
-      </defs>
-      <path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#cloudyLegalMascot)" />
-      <g fill="#06143a"><circle cx="40" cy="45" r="5" /><circle cx="62" cy="45" r="5" /></g>
-      <g fill="#fff"><circle cx="42" cy="43" r="1.8" /><circle cx="64" cy="43" r="1.8" /></g>
-      <path d="M44 54q7 8 14 0" stroke="#06143a" strokeWidth="3" fill="none" strokeLinecap="round" />
-      <g fill="#ff9fb0" opacity=".55"><circle cx="31" cy="55" r="4" /><circle cx="71" cy="55" r="4" /></g>
-    </svg>
-  );
-}
+
+const LEGAL_META: Record<string, { tone: string; summary: string[]; icon: typeof FileText }> = {
+  terms: { tone: "#54baff", icon: ScrollText, summary: ["Регистрация доступна с 13 лет; дополнительные требования зависят от законодательства страны.", "Профиль и публикации регулируются настройками приватности.", "Cloudy AI помогает с английским, но его ответы могут быть неточными.", "Запрещены травля, взлом, злоупотребления и перепродажа доступа.", "Запросы по аккаунту и персональным данным направляются в поддержку."] },
+  privacy: { tone: "#67d6e8", icon: ShieldCheck, summary: ["Какие данные обрабатываются, зависит от используемых функций.", "Данные нужны для аккаунта, обучения, прогресса и безопасности.", "Для ответов Cloudy AI может использоваться внешняя инфраструктура.", "Дополнительное использование диалогов требует отдельного согласия.", "Запросы на доступ, исправление и удаление требуют обработки."] },
+  consent: { tone: "#a8a1ff", icon: Lock, summary: ["Согласие на дополнительное использование диалогов добровольное.", "Оно не требуется для обычной работы Cloudy AI.", "По умолчанию согласие выключено.", "Согласие можно отозвать в центре конфиденциальности.", "Запись выбора не означает, что обучение моделей уже запущено."] },
+  community: { tone: "#ff9d80", icon: Users, summary: ["Относитесь к другим пользователям уважительно.", "Не публикуйте чужие персональные и конфиденциальные сведения.", "Запрещены угрозы, травля, спам и попытки нарушить работу сервиса.", "Материалы могут проверяться по жалобам.", "Решения модерации можно обжаловать через поддержку."] },
+  payments: { tone: "#ffd36b", icon: CreditCard, summary: ["Правила применяются только к платным функциям, если они доступны.", "Цена, валюта и срок доступа должны быть показаны до оплаты.", "Возвраты рассматриваются по применимому законодательству.", "Сам документ не означает, что платёжный механизм уже подключён."] },
+  parents: { tone: "#88d5a7", icon: Users, summary: ["Минимальный возраст регистрации — 13 лет.", "Для пользователей 13–17 лет могут действовать требования о согласии представителя.", "В приложении нет автоматической проверки полномочий родителя.", "Родитель может обратиться в поддержку по вопросам данных несовершеннолетнего."] },
+  guide: { tone: "#8db8ff", icon: BookOpen, summary: ["Защищайте данные входа и настройки аккаунта.", "Не отправляйте в чаты пароли, документы и финансовые сведения.", "Проверяйте настройки видимости перед публикацией.", "Cloudy AI может ошибаться — важные сведения перепроверяйте.", "По вопросам данных и аккаунта обращайтесь в поддержку."] },
+};
+
+const LEGAL_FAQ = [
+  ["Как открыть нужный документ?", "Выберите карточку на главном экране юридического центра. Внутри документа есть краткое изложение и переходы к отдельным разделам."],
+  ["Где задать вопрос о своих данных?", "Напишите в официальную поддержку Cloudy English. Не отправляйте пароли, коды входа и полные платёжные реквизиты."],
+  ["Можно ли отказаться от дополнительного использования диалогов?", "Да. Такое согласие отделено от обычной работы сервиса, выключено по умолчанию и может быть отозвано в центре конфиденциальности."],
+];
 
 export function LegalPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+  const [progress, setProgress] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const active = LEGAL_DOCUMENTS.find((document) => document.id === activeId);
+  const meta = active ? LEGAL_META[active.id] : null;
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+    const update = () => {
+      const max = element.scrollHeight - element.clientHeight;
+      setProgress(max > 0 ? Math.min(100, (element.scrollTop / max) * 100) : 0);
+    };
+    element.addEventListener("scroll", update, { passive: true });
+    update();
+    return () => element.removeEventListener("scroll", update);
+  }, [activeId]);
+
+  const openDocument = (id: string) => {
+    setActiveId(id);
+    setProgress(0);
+    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  };
+  const backToList = () => {
+    setActiveId(null);
+    setProgress(0);
+    scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+  };
+  const jumpToSection = (index: number) => {
+    scrollRef.current?.querySelector(`#legal-section-${index}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden px-4 pb-8 pt-[max(18px,env(safe-area-inset-top))] text-white" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', background: "linear-gradient(165deg, #050d2b 0%, #0a2a73 48%, #3aa0ff 100%) fixed" }}>
-      <style>{`@keyframes legalCloudFloat { 0%,100% { transform: translate3d(0,0,0) rotate(-3deg); } 50% { transform: translate3d(12px,-15px,0) rotate(3deg); } } @media (prefers-reduced-motion: reduce) { .legal-cloud-float { animation: none !important; } }`}</style>
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="legal-cloud-float absolute left-[5%] top-[17%] opacity-[0.10]" style={{ animation: "legalCloudFloat 8s ease-in-out infinite" }}><CloudyMascot /></div>
-        <div className="legal-cloud-float absolute right-[4%] top-[43%] scale-[0.72] opacity-[0.09]" style={{ animation: "legalCloudFloat 10s ease-in-out -3s infinite" }}><CloudyMascot /></div>
-        <div className="legal-cloud-float absolute bottom-[9%] left-[16%] scale-[0.58] opacity-[0.08]" style={{ animation: "legalCloudFloat 9s ease-in-out -5s infinite" }}><CloudyMascot /></div>
-        <div className="legal-cloud-float absolute right-[20%] top-[76%] scale-[0.48] opacity-[0.07]" style={{ animation: "legalCloudFloat 11s ease-in-out -2s infinite" }}><CloudyMascot /></div>
-      </div>
-      <div className="relative z-10 mx-auto max-w-3xl">
-        <header className="pb-6 pt-3">
-          <div className="flex items-center gap-3">
-            <CloudyMascot />
-            <div>
-              <p className="text-sm font-extrabold tracking-wide text-white">Cloudy English Academy</p>
-              <p className="text-xs tracking-[.12em] text-[#55c9f2]">ЮРИДИЧЕСКИЙ ЦЕНТР</p>
-            </div>
-          </div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#e8f5ff]">{active ? active.title : "Правила и документы"}</h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#a7c4df]">
-            {active ? active.description : "Всё важное об использовании Cloudy English Academy, конфиденциальности и безопасности обучения."}
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#55c9f2]">
-            <span>Версия 1.0</span>
-            <span>Редакция от 9 ноября 2026 года</span>
-          </div>
+    <main className="legal-redesign">
+      <style>{`
+        .legal-redesign{position:fixed;inset:0;z-index:60;display:flex;justify-content:center;color:#fff;background:linear-gradient(165deg,#050d2b 0%,#0a2a73 56%,#123f83 100%);font-family:inherit;animation:legalEnter .42s cubic-bezier(.2,.85,.25,1) both}
+        .legal-redesign *{box-sizing:border-box}
+        .legal-shell{width:100%;max-width:560px;height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+        .legal-topbar{display:flex;align-items:center;gap:12px;padding:12px 16px 10px;min-height:64px}
+        .legal-back{width:42px;height:42px;flex:none;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center}
+        .legal-top-title{flex:1;min-width:0;font-size:19px;font-weight:900;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .legal-progress{height:3px;margin:0 16px;background:rgba(255,255,255,.1);border-radius:4px;overflow:hidden}
+        .legal-progress i{display:block;height:100%;background:linear-gradient(90deg,#4db3ff,#fff);transition:width .15s}
+        .legal-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:14px 16px calc(34px + env(safe-area-inset-bottom,0px))}
+        .legal-scroll::-webkit-scrollbar{display:none}
+        .legal-hero{text-align:center;padding:24px 18px 22px;margin:2px 0 22px;border-radius:28px;background:linear-gradient(135deg,#4db3ff,#2d86f2);box-shadow:0 5px 0 #1a58b5,0 16px 30px rgba(0,0,0,.25)}
+        .legal-hero-mark{width:58px;height:58px;margin:0 auto 10px;border-radius:20px;background:rgba(255,255,255,.2);display:grid;place-items:center}
+        .legal-hero h1{margin:0 0 8px;font-size:25px;line-height:1.15;font-weight:900}
+        .legal-hero p{margin:0;font-size:14px;line-height:1.5;font-weight:700;opacity:.94}
+        .legal-kicker{margin:22px 4px 10px;font-size:12px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:#9cc9ed}
+        .legal-cards{display:grid;gap:10px}
+        .legal-card{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border-radius:22px;text-align:left;color:#fff;background:rgba(255,255,255,.085);border:1px solid rgba(255,255,255,.12);transition:transform .2s,background .2s;animation:legalRise .45s both;animation-delay:calc(var(--i)*45ms)}
+        .legal-card:active{transform:scale(.98);background:rgba(255,255,255,.15)}
+        .legal-card-icon{width:52px;height:52px;flex:none;border-radius:17px;display:grid;place-items:center;background:color-mix(in srgb,var(--tone) 24%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--tone) 50%,transparent);color:var(--tone)}
+        .legal-card-copy{flex:1;min-width:0}.legal-card-copy b{display:block;font-size:15px;line-height:1.25}.legal-card-copy small{display:block;margin-top:4px;font-size:12px;line-height:1.4;opacity:.72}
+        .legal-chevron{opacity:.55;flex:none}
+        .legal-faq{display:grid;gap:8px}
+        .legal-faq-item{border-radius:18px;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.1);overflow:hidden}
+        .legal-faq-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px 16px;border:0;background:none;color:#fff;font-weight:800;font-size:14px;text-align:left}
+        .legal-faq-answer{padding:0 16px 14px;color:#c4d9ec;font-size:13px;line-height:1.55}
+        .legal-support{display:flex;align-items:center;gap:14px;margin-top:22px;padding:16px;border-radius:22px;text-decoration:none;color:#fff;background:linear-gradient(135deg,rgba(255,255,255,.15),rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.16)}
+        .legal-support-icon{width:44px;height:44px;flex:none;border-radius:15px;background:rgba(77,179,255,.2);display:grid;place-items:center;color:#8fd3ff}
+        .legal-support-copy{flex:1;min-width:0}.legal-support-copy b{display:block;font-size:15px}.legal-support-copy small{display:block;margin-top:3px;font-size:12px;opacity:.72}
+        .legal-doc-head{display:flex;align-items:center;gap:14px;margin:8px 0 16px}
+        .legal-doc-icon{width:62px;height:62px;flex:none;border-radius:20px;display:grid;place-items:center;background:color-mix(in srgb,var(--tone) 24%,transparent);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--tone) 52%,transparent);color:var(--tone)}
+        .legal-doc-head h2{margin:0;font-size:21px;line-height:1.2;font-weight:900}.legal-doc-head p{margin:5px 0 0;font-size:12px;opacity:.72}
+        .legal-summary{padding:16px;border-radius:24px;margin-bottom:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--tone) 23%,transparent),rgba(255,255,255,.055));border:1px solid color-mix(in srgb,var(--tone) 38%,transparent)}
+        .legal-summary h3{margin:0 0 12px;font-size:16px;font-weight:900}
+        .legal-summary ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+        .legal-summary li{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;font-weight:700;color:#e1f1ff}
+        .legal-summary li svg{flex:none;margin-top:1px;color:var(--tone)}
+        .legal-toc{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;margin:0 -16px 4px;padding-left:16px;padding-right:16px;scrollbar-width:none}
+        .legal-toc::-webkit-scrollbar{display:none}
+        .legal-toc button{flex:none;border:0;border-radius:99px;padding:8px 13px;background:rgba(255,255,255,.1);color:#fff;font-weight:800;font-size:12px;white-space:nowrap}
+        .legal-section{scroll-margin-top:12px;padding:15px 16px 14px;margin-bottom:10px;border-radius:22px;background:rgba(255,255,255,.075);border:1px solid rgba(255,255,255,.1);animation:legalRise .42s both;animation-delay:calc(var(--i)*35ms)}
+        .legal-section h3{display:flex;align-items:center;gap:10px;margin:0 0 9px;font-size:15px;line-height:1.3;font-weight:900}
+        .legal-section h3 span{min-width:28px;height:28px;padding:0 6px;border-radius:10px;display:grid;place-items:center;font-size:12px;background:var(--tone);color:#06143a}
+        .legal-section p{margin:0;color:#d0e1f1;font-size:14px;line-height:1.62;white-space:pre-line}
+        .legal-footer{padding:18px 4px 4px;text-align:center;color:#84afd5;font-size:11px}
+        .legal-text-link{color:#8fd3ff;word-break:break-all}
+        @keyframes legalEnter{from{opacity:0;transform:translateY(34px)}}
+        @keyframes legalRise{from{opacity:0;transform:translateY(10px)}}
+        @media(prefers-reduced-motion:reduce){.legal-redesign,.legal-redesign *{animation:none!important;transition:none!important}}
+      `}</style>
+      <div className="legal-shell">
+        <header className="legal-topbar">
+          <button type="button" className="legal-back" aria-label={active ? "Назад к документам" : "Вернуться к обучению"} onClick={active ? backToList : () => { window.location.href = "/"; }}>
+            <ArrowLeft size={21} />
+          </button>
+          <div className="legal-top-title">{active ? active.title : "Документы и правила"}</div>
         </header>
-
-        {active ? (
-          <section className="pt-5 text-[#d8edff]" aria-labelledby="legal-document-title">
-            <button
-              type="button"
-              onClick={() => { setActiveId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="mb-5 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526579]"
-            >
-              <ArrowLeft size={16} aria-hidden="true" /> Все документы
-            </button>
-            <div className="mb-6">
-              <h2 id="legal-document-title" className="text-xl font-bold text-[#e8f5ff]">{active.title}</h2>
-              <p className="mt-1 text-xs text-[#55c9f2]">Версия 1.0 · 9 ноября 2026 года</p>
-            </div>
-            <div className="space-y-0">
-              {active.sections.map(([heading, body]) => (
-                <article key={heading} className="py-5">
-                  <h3 className="text-base font-semibold text-[#d8edff]">{heading}</h3>
-                  <p className="mt-2 whitespace-pre-line text-[15px] leading-7 text-[#b6cde2]">{body}</p>
+        <div className="legal-progress" aria-label="Прогресс чтения"><i style={{ width: progress + "%" }} /></div>
+        <div className="legal-scroll" ref={scrollRef} key={activeId ?? "home"}>
+          {active && meta ? (
+            <div className="legal-document">
+              <div className="legal-doc-head" style={{ "--tone": meta.tone } as React.CSSProperties}>
+                <div className="legal-doc-icon"><meta.icon size={29} strokeWidth={1.8} /></div>
+                <div><h2>{active.title}</h2><p>{active.description} · {active.sections.length} разделов</p></div>
+              </div>
+              <section className="legal-summary" style={{ "--tone": meta.tone } as React.CSSProperties}>
+                <h3>Кратко о главном</h3>
+                <ul>{meta.summary.map((item, index) => <li key={index}><ShieldCheck size={17} /><span>{item}</span></li>)}</ul>
+              </section>
+              <div className="legal-toc" aria-label="Навигация по разделам">
+                {active.sections.map(([heading], index) => <button type="button" key={heading} onClick={() => jumpToSection(index)}>{heading.replace(/^\d+\.\s*/, "")}</button>)}
+              </div>
+              {active.sections.map(([heading, body], index) => (
+                <article id={`legal-section-${index}`} className="legal-section" key={heading} style={{ "--i": Math.min(index, 10), "--tone": meta.tone } as React.CSSProperties}>
+                  <h3><span>{/^\d+/.test(heading) ? heading.match(/^\d+/)?.[0] : index + 1}</span>{heading.replace(/^\d+\.\s*/, "")}</h3>
+                  <p>{body}</p>
                 </article>
               ))}
+              <button type="button" className="legal-back" onClick={backToList} style={{ width: "auto", borderRadius: 14, padding: "0 16px", display: "inline-flex", gap: 8, marginTop: 8 }}> <ArrowLeft size={17} /> Все документы</button>
             </div>
-            <button
-              type="button"
-              onClick={() => { setActiveId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526579]"
-            >
-              <ArrowLeft size={16} aria-hidden="true" /> Назад к документам
-            </button>
-          </section>
-        ) : (
-          <>
-            <section className="py-4 text-[#d8edff]">
-              <div className="mb-2">
-                <h2 className="text-lg font-extrabold">Юридическая информация</h2>
+          ) : (
+            <>
+              <section className="legal-hero">
+                <div className="legal-hero-mark"><Scale size={34} /></div>
+                <h1>Юридический центр</h1>
+                <p>Документы Cloudy English Academy — понятные объяснения, правила и важная информация о данных.</p>
+              </section>
+              <div className="legal-kicker">Документы и правила</div>
+              <div className="legal-cards">
+                {LEGAL_DOCUMENTS.map((document, index) => {
+                  const item = LEGAL_META[document.id];
+                  const Icon = item.icon;
+                  return <button type="button" className="legal-card" key={document.id} style={{ "--i": index, "--tone": item.tone } as React.CSSProperties} onClick={() => openDocument(document.id)}>
+                    <span className="legal-card-icon"><Icon size={25} strokeWidth={1.8} /></span>
+                    <span className="legal-card-copy"><b>{document.title}</b><small>{document.description}</small></span>
+                    <ChevronDown className="legal-chevron" size={19} style={{ transform: "rotate(-90deg)" }} />
+                  </button>;
+                })}
               </div>
-              <div className="space-y-1">
-                {LEGAL_DOCUMENTS.map((document) => (
-                    <button
-                      key={document.id}
-                      type="button"
-                      onClick={() => { setActiveId(document.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      aria-label={`Открыть документ: ${document.title}`}
-                      className="flex min-h-[68px] w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-[#102d4b]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62c6f3]"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[15px] font-semibold text-[#d8edff]">{document.title}</span>
-                        <span className="mt-1 block text-sm leading-5 text-[#91b0cc]">{document.description}</span>
-                      </span>
-                    </button>
-                ))}
+              <div className="legal-kicker">Частые вопросы</div>
+              <div className="legal-faq">
+                {LEGAL_FAQ.map(([question, answer], index) => <section className="legal-faq-item" key={question}>
+                  <button type="button" className="legal-faq-trigger" aria-expanded={expandedFaq === index} onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}>
+                    {question}<ChevronDown size={18} style={{ transform: expandedFaq === index ? "rotate(180deg)" : "none", transition: "transform .2s" }} />
+                  </button>
+                  {expandedFaq === index && <div className="legal-faq-answer">{answer}</div>}
+                </section>)}
               </div>
-            </section>
-
-          </>
-        )}
-
-        <section className="py-5">
-          <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-[rgba(6,20,58,0.48)] p-4 shadow-[0_12px_34px_rgba(0,0,0,0.28)] sm:p-5">
-            <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-[#36bdf2]/20 blur-2xl" aria-hidden="true" />
-            <div className="relative flex items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-[.14em] text-[#70d7f5]">Мы на связи</p>
-                <h2 className="mt-1 text-lg font-extrabold text-[#e7f6ff]">Нужна помощь?</h2>
-                <p className="mt-1 text-sm font-semibold text-[#8cdbfa]">Поддержка в Telegram</p>
-                <p className="mt-1 text-sm leading-6 text-[#c0d9eb]">Свяжитесь с командой Cloudy English. Поможем с аккаунтом, обучением, прогрессом и любыми вопросами о работе приложения.</p>
-                <a href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#63c1ff] to-[#2c7bef] px-5 py-2.5 text-sm font-bold text-white shadow-[0_5px_0_#1a58b5,0_12px_24px_rgba(0,0,0,0.18)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#258bd7] focus-visible:ring-offset-2">
-                  Связаться
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <footer className="py-3 text-center text-xs text-[#78a9d0]">Cloudy English Academy · Юридический центр</footer>
-        <a href="/" className="block min-h-10 pb-2 text-center text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]">Вернуться к обучению</a>
+              <a className="legal-support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">
+                <span className="legal-support-icon"><MessageCircle size={23} /></span>
+                <span className="legal-support-copy"><b>Нужна помощь?</b><small>Официальная поддержка Cloudy English в Telegram</small></span>
+                <ChevronDown size={20} style={{ transform: "rotate(-90deg)", opacity: .6 }} />
+              </a>
+              <div className="legal-footer">Cloudy English Academy · Юридический центр · Редакция от 9 ноября 2026 года</div>
+            </>
+          )}
+        </div>
       </div>
     </main>
   );
