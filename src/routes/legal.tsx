@@ -480,6 +480,142 @@ const LEGAL_TRANSLATIONS: Record<string, readonly [string, string]> = {
     "Допомога"
   ]
 };
+
+Object.assign(LEGAL_TRANSLATIONS, {
+  "Регистрация доступна с 13 лет; дополнительные требования зависят от законодательства страны.": [
+    "Registration is available from age 13; additional requirements depend on local law.",
+    "Реєстрація доступна з 13 років; додаткові вимоги залежать від законодавства країни."
+  ],
+  "Профиль и публикации регулируются настройками приватности.": [
+    "Profiles and posts are governed by privacy settings.",
+    "Профілі та публікації регулюються налаштуваннями приватності."
+  ],
+  "Cloudy AI помогает с английским, но его ответы могут быть неточными.": [
+    "Cloudy AI helps with English, but its answers may be inaccurate.",
+    "Cloudy AI допомагає з англійською, але його відповіді можуть бути неточними."
+  ],
+  "Запрещены травля, взлом, злоупотребления и перепродажа доступа.": [
+    "Bullying, hacking, abuse, and resale of access are prohibited.",
+    "Заборонені цькування, злам, зловживання та перепродаж доступу."
+  ],
+  "Запросы по аккаунту и персональным данным направляются в поддержку.": [
+    "Account and personal-data requests should be sent to support.",
+    "Запити щодо облікового запису й персональних даних надсилайте до служби підтримки."
+  ],
+  "Какие данные обрабатываются, зависит от используемых функций.": [
+    "The data processed depends on the features you use.",
+    "Дані, що обробляються, залежать від функцій, якими ви користуєтеся."
+  ],
+  "Данные нужны для аккаунта, обучения, прогресса и безопасности.": [
+    "Data is used for accounts, learning, progress, and security.",
+    "Дані потрібні для облікового запису, навчання, прогресу та безпеки."
+  ],
+  "Для ответов Cloudy AI может использоваться внешняя инфраструктура.": [
+    "Cloudy AI may use external infrastructure to generate responses.",
+    "Для відповідей Cloudy AI може використовуватися зовнішня інфраструктура."
+  ],
+  "Дополнительное использование диалогов требует отдельного согласия.": [
+    "Additional use of conversations requires separate consent.",
+    "Додаткове використання діалогів потребує окремої згоди."
+  ],
+  "Запросы на доступ, исправление и удаление требуют обработки.": [
+    "Access, correction, and deletion requests must be processed.",
+    "Запити на доступ, виправлення та видалення потребують опрацювання."
+  ],
+  "Согласие на дополнительное использование диалогов добровольное.": [
+    "Consent to additional use of conversations is voluntary.",
+    "Згода на додаткове використання діалогів є добровільною."
+  ],
+  "Оно не требуется для обычной работы Cloudy AI.": [
+    "It is not required for normal Cloudy AI operation.",
+    "Вона не потрібна для звичайної роботи Cloudy AI."
+  ],
+  "По умолчанию согласие выключено.": [
+    "Consent is off by default.",
+    "За замовчуванням згоду вимкнено."
+  ],
+  "Согласие можно отозвать в центре конфиденциальности.": [
+    "Consent can be withdrawn in the Privacy Center.",
+    "Згоду можна відкликати в Центрі конфіденційності."
+  ],
+  "Запись выбора не означает, что обучение моделей уже запущено.": [
+    "Recording your choice does not mean model training has started.",
+    "Фіксація вашого вибору не означає, що навчання моделей уже розпочалося."
+  ],
+  "Относитесь к другим пользователям уважительно.": [
+    "Treat other users with respect.",
+    "Ставтеся до інших користувачів із повагою."
+  ],
+  "Не публикуйте чужие персональные и конфиденциальные сведения.": [
+    "Do not publish other people's personal or confidential information.",
+    "Не публікуйте чужі персональні та конфіденційні відомості."
+  ],
+  "Запрещены угрозы, травля, спам и попытки нарушить работу сервиса.": [
+    "Threats, bullying, spam, and attempts to disrupt the service are prohibited.",
+    "Заборонені погрози, цькування, спам і спроби порушити роботу сервісу."
+  ],
+  "Материалы могут проверяться по жалобам.": [
+    "Content may be reviewed following reports.",
+    "Матеріали можуть перевірятися за скаргами."
+  ],
+  "Решения модерации можно обжаловать через поддержку.": [
+    "Moderation decisions can be appealed through support.",
+    "Рішення модерації можна оскаржити через службу підтримки."
+  ],
+  "Правила применяются только к платным функциям, если они доступны.": [
+    "These terms apply only to paid features, if available.",
+    "Правила застосовуються лише до платних функцій, якщо вони доступні."
+  ],
+  "Цена, валюта и срок доступа должны быть показаны до оплаты.": [
+    "The price, currency, and access period must be shown before payment.",
+    "Ціна, валюта та строк доступу мають бути показані до оплати."
+  ],
+  "Возвраты рассматриваются по применимому законодательству.": [
+    "Refunds are handled under applicable law.",
+    "Повернення коштів розглядаються відповідно до застосовного законодавства."
+  ],
+  "Сам документ не означает, что платёжный механизм уже подключён.": [
+    "This document does not mean that payment processing is already enabled.",
+    "Сам документ не означає, що платіжний механізм уже підключено."
+  ],
+  "Минимальный возраст регистрации — 13 лет.": [
+    "The minimum registration age is 13.",
+    "Мінімальний вік для реєстрації — 13 років."
+  ],
+  "Для пользователей 13–17 лет могут действовать требования о согласии представителя.": [
+    "Users aged 13–17 may be subject to guardian-consent requirements.",
+    "Для користувачів віком 13–17 років можуть діяти вимоги щодо згоди законного представника."
+  ],
+  "В приложении нет автоматической проверки полномочий родителя.": [
+    "The app does not automatically verify a parent's authority.",
+    "Застосунок не перевіряє автоматично повноваження батьків."
+  ],
+  "Родитель может обратиться в поддержку по вопросам данных несовершеннолетнего.": [
+    "A parent can contact support about a minor's data.",
+    "Батьки можуть звернутися до служби підтримки щодо даних неповнолітнього."
+  ],
+  "Защищайте данные входа и настройки аккаунта.": [
+    "Keep your sign-in details and account settings secure.",
+    "Захищайте дані для входу та налаштування облікового запису."
+  ],
+  "Не отправляйте в чаты пароли, документы и финансовые сведения.": [
+    "Do not send passwords, documents, or financial information in chats.",
+    "Не надсилайте в чати паролі, документи та фінансову інформацію."
+  ],
+  "Проверяйте настройки видимости перед публикацией.": [
+    "Check visibility settings before posting.",
+    "Перевіряйте налаштування видимості перед публікацією."
+  ],
+  "Cloudy AI может ошибаться — важные сведения перепроверяйте.": [
+    "Cloudy AI can make mistakes; verify important information.",
+    "Cloudy AI може помилятися — перевіряйте важливу інформацію."
+  ],
+  "По вопросам данных и аккаунта обращайтесь в поддержку.": [
+    "Contact support about data or account questions.",
+    "Звертайтеся до служби підтримки з питань даних та облікового запису."
+  ]
+});
+
 function legalText(value: string, language: SiteLanguage): string {
   if (language === "ru") return value;
   const translated = LEGAL_TRANSLATIONS[value];
@@ -500,6 +636,7 @@ export function LegalPage() {
   const meta = active ? LEGAL_META[active.id] : null;
 
   useEffect(() => subscribeSiteLanguage(setLanguage), []);
+  useEffect(() => { document.title = legalText("Документы и правила", language) + " — Cloudy English Academy"; }, [language]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
