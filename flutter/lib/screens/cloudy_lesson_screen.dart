@@ -533,7 +533,7 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
     final exercise = _exercise;
     final canContinue = exercise is CloudyTheoryExercise ||
         exercise is CloudyVocabularyExercise ||
-        _wasCorrect == true;
+        _wasCorrect != null;
     if (!canContinue) return const SizedBox(height: 16);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 18),
