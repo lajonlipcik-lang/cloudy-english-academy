@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../domain/cloudy_exercise.dart';
+import '../domain/cloudy_exercise_builder.dart';
 import '../domain/cloudy_progress_engine.dart';
 import '../domain/cloudy_state.dart';
 import '../services/cloudy_sound_service.dart';
@@ -17,7 +18,8 @@ class CloudyLessonFlow extends StatefulWidget {
     required this.title,
     required this.initialSession,
     required this.controller,
-    this.levelLessonIndices = const {},
+    this.levelLessonIndices = cloudyLessonsByLevel,
+    this.vocabularyPool = const [],
     this.onFinished,
     this.onExit,
   }) : assert(initialSession.exercises.length > 0);
@@ -26,6 +28,7 @@ class CloudyLessonFlow extends StatefulWidget {
   final CloudySession initialSession;
   final CloudySessionController controller;
   final Map<String, List<int>> levelLessonIndices;
+  final List<CloudyPair> vocabularyPool;
   final ValueChanged<CloudyState>? onFinished;
   final VoidCallback? onExit;
 
@@ -150,12 +153,16 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
 
   void _onAdvance() {
     if (_finished || _finishing) return;
-    if (_session.index >= _session.exercises.length - 1) {
+    final next = advanceCloudySession(
+      _session,
+      widget.vocabularyPool,
+    );
+    if (next == null) {
       unawaited(_completeLesson());
       return;
     }
     setState(() {
-      _session = _session.copyWith(index: _session.index + 1);
+      _session = next;
     });
     unawaited(widget.controller.playSound(CloudySound.go));
     unawaited(_trackOpenedQuestion());
