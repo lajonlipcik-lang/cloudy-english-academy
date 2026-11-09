@@ -147,7 +147,7 @@ class CloudyCatalog {
     );
   }
 
-  Future<List<CloudyExercise>> buildAdaptiveLessonSequence(
+  List<CloudyExercise> buildAdaptiveLessonSequence(
     int lessonIndex, {
     required String level,
     required bool microphoneEnabled,
@@ -155,7 +155,7 @@ class CloudyCatalog {
     required CloudyLearningStore learningStore,
     DateTime? now,
     CloudyRand? random,
-  }) async {
+  }) {
     final lesson = lessonAt(lessonIndex);
     if (lesson == null) return const [];
     final sequence = buildLessonSequence(
@@ -171,7 +171,7 @@ class CloudyCatalog {
         (lesson.words.length < 3 ? lesson.words.length : 3);
     final prefix = sequence.take(studyStages).toList(growable: false);
     final practice = sequence.skip(studyStages).toList(growable: false);
-    final prioritized = await learningStore.prioritize(practice, now: now);
+    final prioritized = learningStore.prioritize(practice, now: now);
     return [...prefix, ...prioritized];
   }
 
