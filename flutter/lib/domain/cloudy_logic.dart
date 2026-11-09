@@ -43,6 +43,24 @@ class CloudyExercise {
   final bool speaks;
   final List<String> options;
   final List<CloudyPair> left, right, words, examples;
+
+  CloudyExercise copyWith({List<String>? options}) => CloudyExercise(
+    kind: kind,
+    question: question,
+    answer: answer,
+    english: english,
+    speaks: speaks,
+    options: options ?? this.options,
+    title: title,
+    left: left,
+    right: right,
+    words: words,
+    examples: examples,
+    body: body,
+    tip: tip,
+    level: level,
+    skillId: skillId,
+  );
 }
 
 class CloudySession {
@@ -301,7 +319,11 @@ const Map<int, List<CloudyExercise>> _guidedVerbPath = {
 
 List<CloudyExercise> guidedCloudyExercises(int lessonIndex, {CloudyRand? random}) {
   final rand = random ?? math.Random().nextDouble;
-  return cloudyShuffle(List<CloudyExercise>.of(_guidedVerbPath[lessonIndex] ?? const []), random: rand);
+  return (_guidedVerbPath[lessonIndex] ?? const <CloudyExercise>[])
+      .map((exercise) => exercise.copyWith(
+        options: cloudyShuffle(exercise.options, random: rand),
+      ))
+      .toList(growable: false);
 }
 
 List<CloudyExercise> buildCloudyLessonSequence({
