@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'cloudy_state.dart';
 
 typedef CloudyRand = double Function();
+typedef CloudyExercisePrioritizer = List<CloudyExercise> Function(List<CloudyExercise>);
 
 class CloudyPair {
   const CloudyPair(this.en, this.ru, {this.extra});
@@ -334,6 +335,7 @@ List<CloudyExercise> buildCloudyLessonSequence({
   required bool microphoneEnabled,
   required bool speechRecognitionAvailable,
   CloudyExercise? grammarIntro,
+  CloudyExercisePrioritizer? prioritizePractice,
   CloudyRand? random,
 }) {
   final rand = random ?? math.Random().nextDouble;
@@ -364,12 +366,13 @@ List<CloudyExercise> buildCloudyLessonSequence({
         title: 'Вспомни слово без подсказок',
       ));
   result.addAll(recall);
-  result.addAll(buildCloudyExercises(
+  final practice = buildCloudyExercises(
     lesson,
     vocabularyPool,
     microphoneEnabled: microphoneEnabled && speechRecognitionAvailable,
     random: rand,
-  ));
+  );
+  result.addAll(prioritizePractice?.call(practice) ?? practice);
   return result;
 }
 
