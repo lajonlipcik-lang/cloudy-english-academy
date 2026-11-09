@@ -135,28 +135,31 @@ CloudyLessonResult finishCloudyLesson(
   CloudyState original,
   CloudySession session, {
   required DateTime now,
+  bool authenticated = false,
   Map<String, List<int>> levelLessonIndices = const {},
 }) {
   var state = updateCloudyStreak(rollCloudyDay(original, now), now);
-  final gain = cloudyLessonGain(session.health);
+  final gain = authenticated ? 24 : cloudyLessonGain(session.health);
   final day = cloudyDayKey(now);
-  final days = state.days.contains(day)
+  final days = authenticated || state.days.contains(day)
       ? List<String>.from(state.days)
       : [...state.days, day].take(60).toList(growable: false);
   final weekCode = cloudyWeekKey(now);
-  final week = state.week['k'] != weekCode
-      ? <String, Object?>{'k': weekCode, 'xp': 0}
-      : Map<String, Object?>.from(state.week);
-  week['xp'] = (week['xp'] as num? ?? 0) + gain;
+  final week = authenticated
+      ? Map<String, Object?>.from(state.week)
+      : state.week['k'] != weekCode
+          ? <String, Object?>{'k': weekCode, 'xp': 0}
+          : Map<String, Object?>.from(state.week);
+  if (!authenticated) week['xp'] = (week['xp'] as num? ?? 0) + gain;
 
   final today = state.today;
   state = state.copyWith(
-    xp: state.xp + gain,
+    xp: authenticated ? state.xp : state.xp + gain,
     days: days,
     week: week,
-    perfectLessons: state.perfectLessons + (session.health >= 5 && !session.review ? 1 : 0),
+    perfectLessons: state.perfectLessons + (!authenticated && session.health >= 5 && !session.review ? 1 : 0),
     today: CloudyToday(
-      d: today.d, xp: today.xp + gain,
+      d: today.d, xp: authenticated ? today.xp : today.xp + gain,
       les: today.les + (session.review ? 0 : 1),
       ok: today.ok + session.correct, claim: today.claim,
     ),
@@ -424,5 +427,39 @@ CloudyState mergeCloudyConflictProgress(
     tested: remote.tested != 0 || local.tested != 0 ? 1 : 0,
     settings: settings,
     today: today,
+  );
+}
+
+
+/// Applies the authoritative XP-ledger response after an authenticated lesson.
+/// The lesson result itself is saved first; only the server can award account XP.
+CloudyState applyCloudyServerAward(
+  CloudyState state,
+  CloudySession session,
+  Map<String, Object?> award, {
+  required DateTime now,
+}) {
+  final awarded = _number(award['awarded']);
+  final day = cloudyDayKey(now);
+  final days = awarded > 0 && !state.days.contains(day)
+      ? [...state.days, day].take(60).toList(growable: false)
+      : List<String>.from(state.days);
+  final today = state.today;
+  return state.copyWith(
+    xp: _number(award['total_xp'], state.xp),
+    days: days,
+    week: {
+      'k': award['week_key']?.toString() ?? '',
+      'xp': _number(award['week_xp']),
+    },
+    perfectLessons: state.perfectLessons +
+        (awarded > 0 && session.health >= 5 && !session.review ? 1 : 0),
+    today: CloudyToday(
+      d: today.d,
+      xp: today.xp + awarded,
+      les: today.les,
+      ok: today.ok,
+      claim: today.claim,
+    ),
   );
 }
