@@ -616,6 +616,100 @@ Object.assign(LEGAL_TRANSLATIONS, {
   ]
 });
 
+Object.assign(LEGAL_TRANSLATIONS, {
+  "Не допускаются травля, угрозы, преследование, унижение, намеренное запугивание и публикация материалов, нарушающих закон или права других людей.": [
+    "Bullying, threats, harassment, humiliation, deliberate intimidation, and publishing content that violates the law or other people's rights are not allowed.",
+    "Не допускаються цькування, погрози, переслідування, приниження, навмисне залякування та публікація матеріалів, що порушують закон або права інших людей."
+  ],
+  "Не публикуйте пароли, адрес проживания, номера документов, финансовые сведения, личные контакты и чужие персональные данные. Не просите других пользователей раскрывать такую информацию.": [
+    "Do not publish passwords, home addresses, document numbers, financial details, personal contact information, or other people's personal data. Do not ask other users to disclose such information.",
+    "Не публікуйте паролі, домашні адреси, номери документів, фінансові відомості, особисті контакти та чужі персональні дані. Не просіть інших користувачів розкривати таку інформацію."
+  ],
+  "Перед публикацией проверьте настройки видимости и содержание материала. Не публикуйте чужие фотографии, тексты или персональные данные без законного основания. Администрация может ограничить доступ к материалу, если он нарушает правила или создаёт угрозу безопасности.": [
+    "Before posting, check the visibility settings and the content. Do not publish other people's photos, texts, or personal data without a lawful basis. The administration may restrict access to content that violates the rules or creates a safety risk.",
+    "Перед публікацією перевірте налаштування видимості та зміст матеріалу. Не публікуйте чужі фотографії, тексти чи персональні дані без законних підстав. Адміністрація може обмежити доступ до матеріалу, якщо він порушує правила або створює загрозу безпеці."
+  ],
+  "Запрещены взлом, обход ограничений, вмешательство в чужие аккаунты или прогресс, распространение вредоносного кода, автоматизированные действия, создающие чрезмерную нагрузку, и использование платформы для незаконных целей.": [
+    "Hacking, bypassing restrictions, interfering with other accounts or progress, distributing malicious code, automated activity that creates excessive load, and using the platform for illegal purposes are prohibited.",
+    "Заборонені злам, обхід обмежень, втручання в чужі облікові записи або прогрес, поширення шкідливого коду, автоматизовані дії, що створюють надмірне навантаження, та використання платформи з незаконною метою."
+  ],
+  "Не отправляйте Cloudy AI пароли, платёжные реквизиты, документы и другие конфиденциальные сведения. Ответы формируются автоматически, могут содержать ошибки и не являются профессиональной консультацией. Не используйте ответы ИИ как единственный источник для важных решений.": [
+    "Do not send passwords, payment details, documents, or other confidential information to Cloudy AI. Responses are generated automatically, may contain errors, and are not professional advice. Do not rely on AI responses as the sole source for important decisions.",
+    "Не надсилайте Cloudy AI паролі, платіжні реквізити, документи та інші конфіденційні відомості. Відповіді генеруються автоматично, можуть містити помилки й не є професійною консультацією. Не використовуйте відповіді ШІ як єдине джерело для важливих рішень."
+  ],
+  "О нарушениях сообщайте через официальную поддержку Cloudy English: https://t.me/cloudysupportt_bot. По возможности укажите ссылку или описание материала и причину обращения, но не отправляйте лишние персональные данные. Администрация может запросить уточнения, ограничить видимость материала, вынести предупреждение или временно ограничить аккаунт. Решение можно обжаловать через поддержку.": [
+    "Report violations through official Cloudy English support: https://t.me/cloudysupportt_bot. If possible, include a link or description of the content and explain the issue, but do not send unnecessary personal data. The administration may request clarification, limit content visibility, issue a warning, or temporarily restrict an account. You can appeal a decision through support.",
+    "Повідомляйте про порушення через офіційну підтримку Cloudy English: https://t.me/cloudysupportt_bot. За можливості додайте посилання або опис матеріалу та поясніть причину звернення, але не надсилайте зайві персональні дані. Адміністрація може попросити уточнення, обмежити видимість матеріалу, винести попередження або тимчасово обмежити обліковий запис. Рішення можна оскаржити через службу підтримки."
+  ],
+  "Этот раздел применяется только к платным функциям, для которых в приложении явно показаны цена и условия покупки. Само наличие этого документа не означает, что подписка, платёжный шлюз или автоматическое списание уже подключены.": [
+    "This section applies only to paid features for which the app clearly displays the price and purchase terms. The existence of this document does not mean that a subscription, payment gateway, or automatic billing is currently enabled.",
+    "Цей розділ застосовується лише до платних функцій, для яких у застосунку чітко зазначено ціну та умови придбання. Наявність цього документа не означає, що підписку, платіжний шлюз або автоматичне списання вже підключено."
+  ],
+  "До подтверждения покупки пользователю должны быть показаны цена, валюта, состав услуги, срок доступа, периодичность списаний и условия автоматического продления, если они применяются. Если эти сведения не показаны до подтверждения, не считайте покупку согласованной на неуказанных условиях.": [
+    "Before a purchase is confirmed, the user must be shown the price, currency, what is included, access period, billing frequency, and automatic-renewal terms, if applicable. If this information is not shown before confirmation, the purchase must not be treated as agreed to on undisclosed terms.",
+    "До підтвердження покупки користувачеві мають бути показані ціна, валюта, склад послуги, строк доступу, періодичність списань та умови автоматичного продовження, якщо вони застосовуються. Якщо ці відомості не показані до підтвердження, не вважайте, що користувач погодився на невказані умови."
+  ],
+  "Платёж обрабатывается выбранным платёжным провайдером, если такая функция доступна. Условия провайдера могут применяться дополнительно. Сохраняйте подтверждение операции. Не отправляйте в поддержку полный номер карты, CVV/CVC, пароли или одноразовые коды.": [
+    "If available, payments are processed by the selected payment provider. The provider's terms may also apply. Keep your transaction confirmation. Do not send support your full card number, CVV/CVC, passwords, or one-time codes.",
+    "Якщо така функція доступна, платіж обробляється обраним платіжним провайдером. Додатково можуть застосовуватися умови провайдера. Зберігайте підтвердження операції. Не надсилайте службі підтримки повний номер картки, CVV/CVC, паролі або одноразові коди."
+  ],
+  "Запросы о возврате рассматриваются с учётом условий, показанных при покупке, правил платёжного провайдера и обязательных норм законодательства о защите потребителей. Этот документ не устанавливает фиксированный срок возврата и не отменяет обязательные права потребителя.": [
+    "Refund requests are considered in light of the terms shown at purchase, the payment provider's rules, and mandatory consumer-protection laws. This document does not set a fixed refund period or waive mandatory consumer rights.",
+    "Запити на повернення коштів розглядаються з урахуванням умов, показаних під час покупки, правил платіжного провайдера та обов’язкових норм законодавства про захист прав споживачів. Цей документ не встановлює фіксований строк повернення й не скасовує обов’язкових прав споживача."
+  ],
+  "По вопросам списаний, доступа к оплаченной функции или возврата обратитесь в официальную поддержку: https://t.me/cloudysupportt_bot. Укажите дату и сумму операции и идентификатор заказа, если он отображается; не передавайте полные платёжные реквизиты.": [
+    "For questions about charges, access to a paid feature, or refunds, contact official support: https://t.me/cloudysupportt_bot. Provide the transaction date and amount and the order ID, if shown. Do not share full payment details.",
+    "Щодо списань, доступу до оплаченої функції або повернення коштів звертайтеся до офіційної підтримки: https://t.me/cloudysupportt_bot. Укажіть дату й суму операції та ідентифікатор замовлення, якщо він відображається; не передавайте повні платіжні реквізити."
+  ],
+  "Минимальный возраст регистрации в Cloudy English Academy — 13 лет. Для пользователей 13–17 лет применимые требования к согласию родителя или представителя зависят от законодательства страны пользователя и характера обработки данных.": [
+    "The minimum registration age for Cloudy English Academy is 13. For users aged 13–17, parental or guardian consent requirements depend on the user's country laws and the type of data processing.",
+    "Мінімальний вік реєстрації в Cloudy English Academy — 13 років. Для користувачів віком 13–17 років вимоги щодо згоди батьків або законного представника залежать від законодавства країни користувача та характеру обробки даних."
+  ],
+  "В приложении пока нет автоматизированного механизма проверки личности родителя и его полномочий. Поэтому не следует считать, что одно лишь указание возраста или нажатие переключателя в приложении подтверждает родительское согласие там, где закон требует его проверять. Родителю следует обратиться в поддержку до использования функции, для которой такое согласие обязательно.": [
+    "The app does not currently have an automated process for verifying a parent's identity or authority. Therefore, entering an age or toggling a setting in the app must not be treated as proof of parental consent where the law requires verification. A parent should contact support before a feature requiring such consent is used.",
+    "У застосунку наразі немає автоматизованого механізму перевірки особи батьків та їхніх повноважень. Тому саме зазначення віку або перемикання налаштування в застосунку не підтверджує батьківську згоду там, де закон вимагає її перевірки. Перед використанням функції, для якої така згода обов’язкова, батькам слід звернутися до служби підтримки."
+  ],
+  "Обсудите с подростком безопасное использование цифровых сервисов. Не размещайте в профиле и чатах домашний адрес, телефон, документы, пароли, сведения о школе и другую информацию, не нужную для обучения. Не отправляйте в Cloudy AI конфиденциальные сведения.": [
+    "Discuss safe use of digital services with your teenager. Do not post a home address, phone number, documents, passwords, school information, or other details not needed for learning in profiles or chats. Do not send confidential information to Cloudy AI.",
+    "Обговоріть із підлітком безпечне користування цифровими сервісами. Не розміщуйте в профілі та чатах домашню адресу, номер телефону, документи, паролі, відомості про школу та іншу інформацію, не потрібну для навчання. Не надсилайте Cloudy AI конфіденційні відомості."
+  ],
+  "Cloudy AI — фирменный помощник Cloudy English Academy, который использует внешние модели и техническую инфраструктуру для формирования ответов. Он помогает с изучением английского и функциями приложения, но может ошибаться и не заменяет преподавателя или профильного специалиста.": [
+    "Cloudy AI is the branded assistant of Cloudy English Academy. It uses external models and technical infrastructure to generate responses. It helps with English learning and app features, but may make mistakes and does not replace a teacher or qualified professional.",
+    "Cloudy AI — фірмовий помічник Cloudy English Academy, який використовує зовнішні моделі та технічну інфраструктуру для формування відповідей. Він допомагає з вивченням англійської та функціями застосунку, але може помилятися й не замінює викладача або профільного фахівця."
+  ],
+  "Родитель или законный представитель может обратиться с вопросом о данных несовершеннолетнего, запросом на доступ, исправление или удаление. Для защиты ребёнка поддержка может попросить подтвердить личность и полномочия заявителя. Не отправляйте пароль ребёнка или полные платёжные данные.": [
+    "A parent or legal guardian may contact support with questions about a minor's data or request access, correction, or deletion. To protect the child, support may ask the requester to verify their identity and authority. Do not send the child's password or full payment details.",
+    "Батьки або законний представник можуть звернутися із запитанням щодо даних неповнолітнього чи запитом на доступ, виправлення або видалення. Для захисту дитини служба підтримки може попросити підтвердити особу та повноваження заявника. Не надсилайте пароль дитини або повні платіжні дані."
+  ],
+  "Официальная поддержка Cloudy English: https://t.me/cloudysupportt_bot.": [
+    "Official Cloudy English support: https://t.me/cloudysupportt_bot.",
+    "Офіційна підтримка Cloudy English: https://t.me/cloudysupportt_bot."
+  ],
+  "Используйте личный аккаунт и не передавайте пароль или коды входа другим людям.": [
+    "Use your personal account and never share your password or sign-in codes.",
+    "Користуйтеся особистим обліковим записом і не передавайте іншим пароль або коди входу."
+  ],
+  "Проверяйте настройки видимости перед публикацией. Если изменение данных недоступно в профиле, обратитесь в поддержку.": [
+    "Check visibility settings before posting. If you cannot change your data in your profile, contact support.",
+    "Перевіряйте налаштування видимості перед публікацією. Якщо змінити дані в профілі неможливо, зверніться до служби підтримки."
+  ],
+  "Не отправляйте в чаты пароли, документы, домашний адрес, финансовые сведения и другую конфиденциальную информацию.": [
+    "Do not send passwords, documents, your home address, financial details, or other confidential information in chats.",
+    "Не надсилайте в чати паролі, документи, домашню адресу, фінансові відомості та іншу конфіденційну інформацію."
+  ],
+  "Cloudy AI помогает изучать английский и пользоваться приложением. Ответы могут быть неточными; важную информацию проверяйте.": [
+    "Cloudy AI helps you learn English and use the app. Its answers may be inaccurate, so verify important information.",
+    "Cloudy AI допомагає вивчати англійську та користуватися застосунком. Відповіді можуть бути неточними — перевіряйте важливу інформацію."
+  ],
+  "Необязательное согласие на дополнительное использование диалогов выключено по умолчанию и может быть отозвано в центре конфиденциальности.": [
+    "Optional consent to additional use of conversations is off by default and can be withdrawn in the Privacy Center.",
+    "Необов’язкова згода на додаткове використання діалогів вимкнена за замовчуванням і може бути відкликана в Центрі конфіденційності."
+  ],
+  "Экспорт можно запросить в центре конфиденциальности; он охватывает данные основной базы в пределах, указанных в интерфейсе. Запрос на удаление регистрируется и требует обработки, а не удаляет всё мгновенно.": [
+    "You can request an export in the Privacy Center; it covers the main database data described in the interface. A deletion request is recorded for processing and does not erase everything immediately.",
+    "Експорт можна запросити в Центрі конфіденційності; він охоплює дані основної бази в межах, зазначених в інтерфейсі. Запит на видалення реєструється та потребує опрацювання, а не видаляє все миттєво."
+  ]
+});
 function legalText(value: string, language: SiteLanguage): string {
   if (language === "ru") return value;
   const translated = LEGAL_TRANSLATIONS[value];
@@ -770,8 +864,8 @@ export function LegalPage() {
               {active.sections.map(([heading, body], index) => (
                 <article id={`legal-section-${index}`} className={`legal-section${expandedSections.has(index) ? " is-expanded" : ""}`} key={heading} style={{ "--i": Math.min(index, 10), "--tone": meta.tone } as React.CSSProperties}>
                   <h3><span>{/^\d+/.test(heading) ? heading.match(/^\d+/)?.[0] : index + 1}</span>{legalText(heading, language).replace(/^\d+\.\s*/, "")}</h3>
-                  <p>{body.length > 260 ? `${body.slice(0, 260).trimEnd()}…` : body}</p>
-                  {body.length > 260 && <div className="legal-text-reveal"><div><p>{body}</p></div></div>}
+                  <p>{legalText(body, language).length > 260 ? `${legalText(body, language).slice(0, 260).trimEnd()}…` : legalText(body, language)}</p>
+                  {body.length > 260 && <div className="legal-text-reveal"><div><p>{legalText(body, language)}</p></div></div>}
                   {body.length > 260 && <button type="button" className="legal-full-toggle legal-text-link" aria-expanded={expandedSections.has(index)} onClick={() => toggleSection(index)}>{legalText(expandedSections.has(index) ? "Свернуть текст" : "Читать полный текст", language)} <ChevronDown size={15} /></button>}
                 </article>
               ))}
