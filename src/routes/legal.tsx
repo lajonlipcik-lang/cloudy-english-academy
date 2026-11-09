@@ -298,6 +298,7 @@ export function LegalPage() {
               <div className="legal-cards">
                 {LEGAL_DOCUMENTS.map((document, index) => {
                   const item = LEGAL_META[document.id];
+                  if (!item) return null;
                   const Icon = item.icon;
                   return <button type="button" className="legal-card" key={document.id} style={{ "--i": index, "--tone": item.tone } as React.CSSProperties} onClick={() => openDocument(document.id)}>
                     <span className="legal-card-icon"><Icon size={25} strokeWidth={1.8} /></span>
