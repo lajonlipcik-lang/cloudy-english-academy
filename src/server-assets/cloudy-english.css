@@ -1363,3 +1363,7 @@ body:has(.shorts-screen) .amb{display:none!important}
   .shorts-search-input{width:min(38vw,145px);font-size:11px}
   .shorts-search-close{flex-basis:28px;width:28px;height:28px}
 }
+
+
+/* Ensure search filtering hides feed cards despite component display rules. */
+.shorts-video[hidden]{display:none!important}
