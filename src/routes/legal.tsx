@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
-import { ArrowUpRight, ClipboardList, CreditCard, FileText, LockKeyhole, MessageCircle, Scale, ShieldCheck, UserRound, Users } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, ClipboardList, CreditCard, FileText, LockKeyhole, MessageCircle, Scale, ShieldCheck, UserRound, Users } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 
 type LegalSection = readonly [string, string];
 type LegalDocument = {
@@ -214,7 +213,7 @@ export function LegalPage() {
               </div>
               <div className="lgl-short">
                 <div className="lgl-short-t"><span aria-hidden="true"><activeMeta.icon size={20} /></span><b>Кратко о документе</b></div>
-                <ul>{activeMeta.highlights.map((item, index) => <li key={item} style={{ ["--i" as string]: index } as CSSProperties}><i aria-hidden="true">✓</i><span>{item}</span></li>)}</ul>
+                <ul>{activeMeta.highlights.map((item, index) => <li key={item} style={{ ["--i" as string]: index } as CSSProperties}><i aria-hidden="true"><Check size={14} /></i><span>{item}</span></li>)}</ul>
                 <p className="mt-3 text-xs leading-relaxed text-white/65">Полные условия приведены ниже. Краткое содержание не заменяет текст документа.</p>
               </div>
               <div className="lgl-toc" aria-label="Навигация по разделам">
