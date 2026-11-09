@@ -67,7 +67,7 @@ class CloudyAuthRepository {
         'Передайте их через --dart-define при сборке Flutter.',
       );
     }
-    await Supabase.initialize(url: url, anonKey: publishableKey);
+    await Supabase.initialize(url: url, publishableKey: publishableKey);
     _initialized = true;
   }
 
