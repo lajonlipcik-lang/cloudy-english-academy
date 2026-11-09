@@ -21,6 +21,59 @@ void main() {
       expect(checkCloudyRecallAnswer('hello there', 'hello'), isFalse);
     });
 
+    test('validates all answer formats without changing their exact rules', () {
+      const choice = CloudyChoiceExercise(
+        question: 'привет', answer: 'hello', english: 'hello',
+        speak: false, options: ['goodbye', 'hello'], title: 'Переведите',
+      );
+      const listening = CloudyListeningExercise(
+        answer: 'son', english: 'son', options: ['sun', 'son'], title: 'Что услышали?',
+      );
+      const builder = CloudyBuilderExercise(
+        question: 'Я иду домой.', answer: 'I go home.',
+        options: ['I', 'go', 'home.'], title: 'Собери предложение',
+      );
+      const recall = CloudyRecallExercise(
+        question: 'привет', answer: 'hello', english: 'hello', title: 'Вспомни',
+      );
+
+      expect(isCloudyAnswerCorrect(choice, selectedOption: 1), isTrue);
+      expect(isCloudyAnswerCorrect(choice, selectedOption: 0), isFalse);
+      expect(isCloudyAnswerCorrect(listening, selectedOption: 1), isTrue);
+      expect(isCloudyAnswerCorrect(builder, builtOptionIndices: [0, 1, 2]), isTrue);
+      expect(isCloudyAnswerCorrect(builder, builtOptionIndices: [2, 1, 0]), isFalse);
+      expect(isCloudyAnswerCorrect(recall, typedAnswer: ' HELLO!! '), isTrue);
+    });
+
+    test('scores a matching exercise only after the final pair is found', () {
+      const session = CloudySession(lesson: 0, exercises: []);
+      final first = applyCloudyMatchingAttempt(
+        CloudyState.defaults(), session,
+        englishWord: 'son', correct: true, totalPairs: 2,
+      );
+      expect(first.session.matchingCorrect, 1);
+      expect(first.session.correct, 0);
+      expect(first.session.total, 0);
+
+      final second = applyCloudyMatchingAttempt(
+        first.state, first.session,
+        englishWord: 'mother', correct: true, totalPairs: 2,
+      );
+      expect(second.session.matchingCorrect, 2);
+      expect(second.session.correct, 1);
+      expect(second.session.total, 1);
+      expect(second.session.combo, 1);
+
+      final wrong = applyCloudyMatchingAttempt(
+        second.state, second.session,
+        englishWord: 'father', correct: false, totalPairs: 2,
+      );
+      expect(wrong.state.mistakes['father'], 1);
+      expect(wrong.session.health, 4);
+      expect(wrong.session.total, 2);
+      expect(wrong.session.combo, 0);
+    });
+
     test('uses the same XP, star and accuracy formulas', () {
       expect(cloudyLessonGain(5), 30);
       expect(cloudyLessonGain(0), 15);
