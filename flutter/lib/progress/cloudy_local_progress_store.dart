@@ -115,7 +115,10 @@ class CloudyLocalProgressStore {
 
     if (progressLoadFailed) {
       return CloudyAccountActivation(
-        state: localState,
+        // If this is the first account activation, preserve guest progress
+        // locally while the server is unreachable. Replacing it with defaults
+        // here would make a later retry treat the empty account save as real.
+        state: localExists ? localState : guestState,
         baseState: CloudyState.defaults(),
         updatedAt: remoteUpdatedAt,
         shouldSync: false,
