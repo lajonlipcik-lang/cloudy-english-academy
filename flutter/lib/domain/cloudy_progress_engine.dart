@@ -196,9 +196,22 @@ CloudyState? claimCloudyChest(CloudyState state) {
 DateTime? _parseCloudyDate(String value) {
   final iso = DateTime.tryParse(value);
   if (iso != null) return iso;
-  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\d{1,2}) (\d{4})).firstMatch(value);
+
+  final numeric = RegExp(r'^(\\d{4})-(\\d{1,2})-(\\d{1,2})$').firstMatch(value);
+  if (numeric != null) {
+    return DateTime(
+      int.parse(numeric.group(1)!),
+      int.parse(numeric.group(2)!),
+      int.parse(numeric.group(3)!),
+    );
+  }
+
+  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\\d{1,2}) (\\d{4})$').firstMatch(value);
   if (match == null) return null;
-  const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};
+  const months = {
+    'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12,
+  };
   final month = months[match.group(1)];
   if (month == null) return null;
   return DateTime(int.parse(match.group(3)!), month, int.parse(match.group(2)!));
@@ -290,5 +303,126 @@ CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
     achievements: [...{...account.achievements, ...guest.achievements}],
     perfectLessons: account.perfectLessons + guest.perfectLessons,
     tested: account.tested > guest.tested ? account.tested : guest.tested,
+  );
+}
+
+
+/// Three-way conflict merge used by the current Cloudy multi-device sync.
+/// The remote XP ledger remains authoritative; local-only changes are merged
+/// against the last acknowledged base snapshot instead of overwriting peers.
+CloudyState mergeCloudyConflictProgress(
+  CloudyState remote,
+  CloudyState local,
+  CloudyState base,
+) {
+  num counter(num remoteValue, num localValue, num baseValue) {
+    final value = remoteValue + localValue - baseValue;
+    return value < 0 ? 0 : value;
+  }
+
+  final remoteSettings = remote.settings;
+  final localSettings = local.settings;
+  final baseSettings = base.settings;
+  Object? setting(Object? remoteValue, Object? localValue, Object? baseValue) {
+    final localChanged = localValue != baseValue;
+    return localChanged && localValue != null
+        ? localValue
+        : (remoteValue ?? localValue);
+  }
+
+  final settings = CloudySettings(
+    snd: setting(remoteSettings.snd, localSettings.snd, baseSettings.snd) as num,
+    vol: setting(remoteSettings.vol, localSettings.vol, baseSettings.vol) as num,
+    voice: setting(remoteSettings.voice, localSettings.voice, baseSettings.voice) as num,
+    goal: setting(remoteSettings.goal, localSettings.goal, baseSettings.goal) as num,
+    mic: setting(remoteSettings.mic, localSettings.mic, baseSettings.mic) as num,
+    th: 'dark',
+    rem: setting(remoteSettings.rem, localSettings.rem, baseSettings.rem) as num,
+    remT: setting(remoteSettings.remT, localSettings.remT, baseSettings.remT) as String,
+  );
+
+  final completed = <String, num>{};
+  for (final level in ['A1', 'A2', 'B1', 'B2']) {
+    final r = remote.completed[level] ?? 0;
+    final l = local.completed[level] ?? 0;
+    completed[level] = r > l ? r : l;
+  }
+
+  final achievementSet = <String>{...remote.achievements, ...local.achievements};
+  final daySet = <String>{...remote.days, ...local.days};
+  final days = daySet.toList()
+    ..sort((a, b) {
+      final left = _parseCloudyDate(a)?.millisecondsSinceEpoch ?? 0;
+      final right = _parseCloudyDate(b)?.millisecondsSinceEpoch ?? 0;
+      return left.compareTo(right);
+    });
+
+  final words = <String>{
+    ...remote.mistakes.keys, ...local.mistakes.keys, ...base.mistakes.keys,
+  };
+  final mistakes = <String, num>{};
+  for (final word in words) {
+    final count = counter(
+      remote.mistakes[word] ?? 0,
+      local.mistakes[word] ?? 0,
+      base.mistakes[word] ?? 0,
+    );
+    if (count > 0) mistakes[word] = count;
+  }
+
+  final accuracy = <num>[
+    counter(remote.accuracy[0], local.accuracy[0], base.accuracy[0]),
+    counter(remote.accuracy[1], local.accuracy[1], base.accuracy[1]),
+  ];
+
+  CloudyToday today;
+  if (remote.today.d == local.today.d && remote.today.d == base.today.d) {
+    today = CloudyToday(
+      d: local.today.d,
+      xp: counter(remote.today.xp, local.today.xp, base.today.xp),
+      les: counter(remote.today.les, local.today.les, base.today.les),
+      ok: counter(remote.today.ok, local.today.ok, base.today.ok),
+      claim: remote.today.claim != 0 || local.today.claim != 0 ? 1 : 0,
+    );
+  } else if (remote.today.d == local.today.d) {
+    today = CloudyToday(
+      d: remote.today.d,
+      xp: remote.today.xp > local.today.xp ? remote.today.xp : local.today.xp,
+      les: remote.today.les > local.today.les ? remote.today.les : local.today.les,
+      ok: remote.today.ok > local.today.ok ? remote.today.ok : local.today.ok,
+      claim: remote.today.claim != 0 || local.today.claim != 0 ? 1 : 0,
+    );
+  } else {
+    final localDay = _parseCloudyDate(local.today.d)?.millisecondsSinceEpoch ?? 0;
+    final remoteDay = _parseCloudyDate(remote.today.d)?.millisecondsSinceEpoch ?? 0;
+    today = localDay > remoteDay ? local.today : remote.today;
+  }
+
+  final localLast = _parseCloudyDate(local.last)?.millisecondsSinceEpoch ?? 0;
+  final remoteLast = _parseCloudyDate(remote.last)?.millisecondsSinceEpoch ?? 0;
+  final localIsNewer = localLast > remoteLast;
+  final remoteIsNewer = remoteLast > localLast;
+  final level = local.level ?? remote.level;
+
+  return remote.copyWith(
+    xp: remote.xp,
+    streak: localIsNewer
+        ? local.streak
+        : remoteIsNewer
+            ? remote.streak
+            : (remote.streak > local.streak ? remote.streak : local.streak),
+    last: localIsNewer ? local.last : remoteIsNewer ? remote.last : local.last,
+    level: level,
+    clearLevel: level == null,
+    completed: completed,
+    accuracy: accuracy,
+    mistakes: mistakes,
+    days: days.length > 60 ? days.sublist(days.length - 60) : days,
+    achievements: achievementSet.toList(growable: false),
+    week: remote.week.isNotEmpty ? remote.week : local.week,
+    perfectLessons: counter(remote.perfectLessons, local.perfectLessons, base.perfectLessons),
+    tested: remote.tested != 0 || local.tested != 0 ? 1 : 0,
+    settings: settings,
+    today: today,
   );
 }
