@@ -176,6 +176,13 @@
       "when": 1794319200000,
       "tag": "0024_cloudy_lite_fallback",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794319200001,
+      "tag": "0025_cloudy_teacher_stars_price",
+      "breakpoints": true
     }
   ]
 }
