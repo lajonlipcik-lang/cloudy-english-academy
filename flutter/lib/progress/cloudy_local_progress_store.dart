@@ -115,7 +115,7 @@ class CloudyLocalProgressStore {
 
     if (progressLoadFailed) {
       return CloudyAccountActivation(
-        state: localExists ? localState : guestState,
+        state: localState,
         baseState: CloudyState.defaults(),
         updatedAt: remoteUpdatedAt,
         shouldSync: false,
