@@ -165,7 +165,10 @@ setBg();renderModes();
   const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
   let n;while((n=walker.nextNode())){
    const raw=n.nodeValue||"",trim=raw.trim(),v=T[trim];
-   if(v&&v[col])n.nodeValue=raw.replace(trim,v[col]);
+   let out=v&&v[col]?v[col]:null;
+   const over=trim.match(/^Видео длиннее (.+)\\. Выбери режим подлиннее\\.$/);
+   if(!out&&over){const duration=over[1].replace(/ мин$/," min").replace(/ с$/," sec");out=lang==="en"?"Video exceeds "+duration+". Choose a longer mode.":"Відео довше за "+duration.replace(/ min$/," хв").replace(/ sec$/," с")+". Обери довший режим."}
+   if(out)n.nodeValue=raw.replace(trim,out);
   }
   document.querySelectorAll("[placeholder],[aria-label],[title]").forEach(el=>{
    ["placeholder","aria-label","title"].forEach(a=>{const v=T[el.getAttribute(a)];if(v&&v[col])el.setAttribute(a,v[col])});
