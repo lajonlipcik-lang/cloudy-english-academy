@@ -918,7 +918,7 @@ function shorts(){
   if(x.mediaType==="image")media='<div class="shorts-photo-media"><img src="'+url+'" alt="Фото публикации" loading="lazy"></div>';
   else if(x.mediaType==="text")media='<div class="shorts-text-media"><div class="shorts-text-card"><span class="shorts-text-kicker">CLOUDY ENGLISH · SHORTS</span><div class="shorts-text-copy">'+shortsEscapeText(x.textContent||x.caption)+'</div><span class="shorts-text-cloud">☁</span></div></div>';
   else media='<div class="shorts-real-media" style="position:absolute;inset:0"><video class="shorts-real-video" style="width:100%;height:100%;object-fit:cover;background:#000" src="'+url+'" playsinline muted loop preload="metadata"></video></div>';
-  h+='<article class="shorts-video shorts-theme-blue shorts-post-'+(x.mediaType||"video")+'" data-short-id="'+id+'">'+media+'<div class="shorts-shade"></div><div class="shorts-actions"><div class="shorts-author-avatar">'+initial+'</div>'+'<button class="shorts-action shorts-like '+(shortsLiked.has(x.id)?"liked":"")+'" aria-label="Нравится" onclick="shortsLike(\''+id+'\')"><span class="shorts-cloud-like">'+mascot(shortsLiked.has(x.id)?"h":"s")+'</span><small>'+shortsCount(x.likes,shortsLiked.has(x.id))+'</small></button><button class="shorts-action" aria-label="Комментарии" onclick="shortsComments(\''+id+'\')"><span class="shorts-action-icon">'+shortsIcon("comment")+'</span><small>'+shortsCount(x.comments,false)+'</small></button><div class="shorts-post-menu-wrap"><button type="button" class="shorts-action shorts-post-menu-trigger" aria-label="Ещё" aria-expanded="false" onclick="shortsTogglePostMenu(\''+id+'\')"><span class="shorts-action-icon">'+shortsIcon("menu")+'</span><small>Ещё</small></button></div><button class="shorts-action '+(shortsSaved.has(x.id)?"saved":"")+'" aria-label="Сохранить" onclick="shortsSave(\''+id+'\')"><span class="shorts-action-icon">'+shortsIcon("bookmark")+'</span><small>'+(shortsSaved.has(x.id)?"Сохранено":"Сохранить")+'</small></button>'+(x.mediaType==="video"?'<button class="shorts-action sound-toggle" aria-label="Звук" onclick="shortsToggleSound()"><span class="shorts-action-icon">'+shortsIcon(shortsMuted?"muted":"volume")+'</span><small>Звук</small></button>':'')+'</div><div class="shorts-caption"><div class="shorts-author-line"><b>'+author+'</b><span>'+handle+'</span><button class="shorts-follow '+(shortsFollowing.has(x.id)?"following":"")+'" onclick="shortsFollow(\''+id+'\')">'+(shortsFollowing.has(x.id)?"Вы подписаны":"+ Подписаться")+'</button></div>'+(x.mediaType==="text"?"":'<p>'+caption+'</p>')+'<div class="shorts-audio">'+(x.mediaType==="video"?shortsIcon("music")+' Оригинальный звук · Cloudy English':x.mediaType==="image"?"Фотография · Cloudy English":"Учебная заметка · Cloudy English")+'</div></div></article>';
+  h+='<article class="shorts-video shorts-theme-blue shorts-post-'+(x.mediaType||"video")+'" data-short-id="'+id+'" data-search-text="'+shortsEscapeText([x.author,x.handle,x.caption,x.textContent].filter(Boolean).join(" "))+'">'+media+'<div class="shorts-shade"></div><div class="shorts-actions"><div class="shorts-author-avatar">'+(x.avatarUrl?'<img src="'+shortsEscapeText(x.avatarUrl)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':initial)+'</div>'+'<button class="shorts-action shorts-like '+(shortsLiked.has(x.id)?"liked":"")+'" aria-label="Нравится" onclick="shortsLike(\''+id+'\')"><span class="shorts-cloud-like">'+mascot(shortsLiked.has(x.id)?"h":"s")+'</span><small>'+shortsCount(x.likes,shortsLiked.has(x.id))+'</small></button><button class="shorts-action" aria-label="Комментарии" onclick="shortsComments(\''+id+'\')"><span class="shorts-action-icon">'+shortsIcon("comment")+'</span><small>'+shortsCount(x.comments,false)+'</small></button><div class="shorts-post-menu-wrap"><button type="button" class="shorts-action shorts-post-menu-trigger" aria-label="Ещё" aria-expanded="false" onclick="shortsTogglePostMenu(\''+id+'\')"><span class="shorts-action-icon">'+shortsIcon("menu")+'</span><small>Ещё</small></button></div><button class="shorts-action '+(shortsSaved.has(x.id)?"saved":"")+'" aria-label="Сохранить" onclick="shortsSave(\''+id+'\')"><span class="shorts-action-icon">'+shortsIcon("bookmark")+'</span><small>'+(shortsSaved.has(x.id)?"Сохранено":"Сохранить")+'</small></button>'+(x.mediaType==="video"?'<button class="shorts-action sound-toggle" aria-label="Звук" onclick="shortsToggleSound()"><span class="shorts-action-icon">'+shortsIcon(shortsMuted?"muted":"volume")+'</span><small>Звук</small></button>':'')+'</div><div class="shorts-caption"><div class="shorts-author-line"><b>'+author+'</b><span>'+handle+'</span><button class="shorts-follow '+(shortsFollowing.has(x.authorId)?"following":"")+'" onclick="shortsFollow(\''+id+'\')">'+(shortsFollowing.has(x.authorId)?"Вы подписаны":"+ Подписаться")+'</button></div>'+(x.mediaType==="text"?"":'<p>'+caption+'</p>')+'<div class="shorts-audio">'+(x.mediaType==="video"?shortsIcon("music")+' Оригинальный звук · Cloudy English':x.mediaType==="image"?"Фотография · Cloudy English":"Учебная заметка · Cloudy English")+'</div></div></article>';
  });
  h+='</div><button class="shorts-create" aria-label="Создать публикацию" onclick="shortsUpload()">'+shortsIcon("plus")+'</button></section>';return h;
 }
@@ -936,7 +936,7 @@ function shortsSetMode(m){shortsFeedMode=m;view(0);}
 function shortsPaintLike(x,animate=true){const card=document.querySelector('[data-short-id="'+x.id+'"]');if(!card)return;const btn=card.querySelector(".shorts-like");if(!btn)return;btn.classList.toggle("liked",!!x.isLiked);const cloud=btn.querySelector(".shorts-cloud-like");if(cloud){cloud.innerHTML=mascot(x.isLiked?"h":"s");if(animate){cloud.classList.remove("cloud-pop");void cloud.offsetWidth;cloud.classList.add("cloud-pop");}}const n=btn.querySelector("small");if(n)n.textContent=shortsCount(x.likes,false);}
 async function shortsLike(id){const x=shortsLiveItems.find(v=>v.id===id);if(!x)return;if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы ставить лайки.",false);return;}const previousLiked=!!x.isLiked,previousLikes=Number(x.likes||0);x.isLiked=!previousLiked;x.likes=Math.max(0,previousLikes+(x.isLiked?1:-1));if(x.isLiked)shortsLiked.add(id);else shortsLiked.delete(id);shortsPaintLike(x,true);x.likeDesired=x.isLiked;if(x.likePending)return;x.likePending=true;try{while(x.likeSynced!==x.likeDesired){const target=x.likeDesired;const response=await authRequest("shorts-like-set",{payload:{videoId:id,like:target}});x.likeSynced=response.result?.isLiked===true;if(x.likeSynced!==target){x.likeDesired=x.likeSynced;break;}x.likes=Number(response.result?.likes??x.likes);if(x.likeDesired!==target)continue;}if(x.isLiked!==x.likeSynced){x.isLiked=x.likeSynced;x.likes=Math.max(0,Number(x.likes||0)+(x.isLiked?1:-1));if(x.isLiked)shortsLiked.add(id);else shortsLiked.delete(id);shortsPaintLike(x,false);}}catch(error){x.isLiked=previousLiked;x.likes=previousLikes;if(x.isLiked)shortsLiked.add(id);else shortsLiked.delete(id);shortsPaintLike(x,false);toast(error.message||"Не удалось сохранить лайк.",false);}finally{x.likePending=false;delete x.likeDesired;delete x.likeSynced;}}
 async function shortsSave(id){if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы сохранять публикации.",false);return;}const item=shortsLiveItems.find(v=>v.id===id);if(!item||item.savePending)return;item.savePending=true;const desired=!shortsSaved.has(id);try{const response=await authRequest("shorts-save-set",{payload:{videoId:id,saved:desired}});if(response.result?.isSaved===true)shortsSaved.add(id);else shortsSaved.delete(id);item.isSaved=desired;const card=document.querySelector('[data-short-id="'+id+'"]');const btn=card?.querySelector('[aria-label="Сохранить"]');if(btn){btn.classList.toggle("saved",desired);const label=btn.querySelector("small");if(label)label.textContent=desired?"Сохранено":"Сохранить";}}catch(error){toast(error.message||"Не удалось изменить сохранённые публикации.",false);}finally{item.savePending=false;}}
-async function shortsFollow(id){const x=shortsLiveItems.find(v=>v.id===id);if(!x?.authorId||x.isOwn)return;if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы подписываться.",false);return;}const next=!shortsFollowing.has(x.authorId);try{const response=await authRequest("shorts-follow-set",{payload:{authorId:x.authorId,follow:next}});if(response.result?.isFollowing)shortsFollowing.add(x.authorId);else shortsFollowing.delete(x.authorId);shortsLiveItems.forEach(item=>{if(item.authorId===x.authorId)item.isFollowingAuthor=!!response.result?.isFollowing;});document.querySelectorAll('[data-short-id="'+id+'"] .shorts-follow').forEach(btn=>{btn.classList.toggle("following",!!response.result?.isFollowing);btn.textContent=response.result?.isFollowing?"Вы подписаны":"+ Подписаться";});if(shortsFeedMode==="following")view(0);}catch(error){toast(error.message||"Не удалось изменить подписку.",false);}}
+async function shortsFollow(id){const x=shortsLiveItems.find(v=>v.id===id);if(!x?.authorId||x.isOwn)return;if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы подписываться.",false);return;}if(x.followPending)return;x.followPending=true;const authorId=x.authorId;const next=!shortsFollowing.has(authorId);try{const response=await authRequest("shorts-follow-set",{payload:{authorId,follow:next}});const isFollowing=!!response.result?.isFollowing;if(isFollowing)shortsFollowing.add(authorId);else shortsFollowing.delete(authorId);shortsLiveItems.forEach(item=>{if(item.authorId===authorId)item.isFollowingAuthor=isFollowing;});document.querySelectorAll(".shorts-video").forEach(card=>{const item=shortsLiveItems.find(post=>post.id===card.dataset.shortId);if(item?.authorId===authorId){const btn=card.querySelector(".shorts-follow");if(btn){btn.classList.toggle("following",isFollowing);btn.textContent=isFollowing?"Вы подписаны":"+ Подписаться";}}});if(shortsFeedMode==="following")view(0);}catch(error){toast(error.message||"Не удалось изменить подписку.",false);}finally{x.followPending=false;}}
 let shortsPlaybackObserver=null,shortsActiveVideo=null,shortsActiveCard=null,shortsCardVisibility=new Map();
 function shortsPauseAll(except=null){document.querySelectorAll(".shorts-real-video").forEach(video=>{if(video!==except){video.pause();video.closest(".shorts-video")?.classList.remove("is-playing");}});if(!except)shortsActiveVideo=null;}
 function shortsStopFeedPlayback(){
@@ -1014,25 +1014,63 @@ if(!window.__cloudyShortsVisibilityBound){
 function shortsToggleSound(){shortsMuted=!shortsMuted;if(shortsActiveVideo)shortsActiveVideo.muted=shortsMuted;document.querySelectorAll(".sound-toggle .shorts-action-icon").forEach(x=>x.innerHTML=shortsIcon(shortsMuted?"muted":"volume"));}
 async function shortsShare(id){const item=shortsLiveItems.find(x=>x.id===id);const url=location.href.split("#")[0]+"#short-"+encodeURIComponent(id);try{if(navigator.share){await navigator.share({title:"Cloudy Shorts",text:item?.caption||"Посмотри видео в Cloudy Shorts",url});}else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(url);toast("Ссылка на видео скопирована.");}else{toast("Поделиться сейчас не удалось.",false);}}catch(error){if(error?.name!=="AbortError")toast("Не удалось поделиться видео.",false);}}
 function shortsTogglePostMenu(id){const card=Array.from(document.querySelectorAll(".shorts-video")).find(item=>item.dataset.shortId===id);if(!card)return;const wrap=card.querySelector(".shorts-post-menu-wrap");if(!wrap)return;const existing=wrap.querySelector(".shorts-post-menu");if(existing){existing.remove();wrap.querySelector("button")?.setAttribute("aria-expanded","false");return;}document.querySelectorAll(".shorts-post-menu").forEach(menu=>menu.remove());document.querySelectorAll(".shorts-post-menu-trigger").forEach(button=>button.setAttribute("aria-expanded","false"));const post=shortsLiveItems.find(item=>item.id===id);const menu=document.createElement("div");menu.className="shorts-post-menu";const share=document.createElement("button");share.type="button";share.textContent="Поделиться видео";share.addEventListener("click",()=>{menu.remove();wrap.querySelector("button")?.setAttribute("aria-expanded","false");shortsShare(id);});menu.append(share);if(post?.isOwn){const remove=document.createElement("button");remove.type="button";remove.className="danger";remove.textContent="Удалить видео";remove.addEventListener("click",()=>{menu.remove();wrap.querySelector("button")?.setAttribute("aria-expanded","false");shortsDeletePost(id);});menu.append(remove);}wrap.append(menu);wrap.querySelector("button")?.setAttribute("aria-expanded","true");}
-function shortsSearch(){const q=prompt("Найти видео по английскому:");if(q?.trim())toast("Поиск подключим на следующем этапе.");}
+function shortsSearch(){
+ const topbar=document.querySelector(".shorts-topbar"),feed=document.querySelector("#shorts-feed");
+ if(!topbar||!feed)return;
+ const existing=topbar.querySelector(".shorts-search-input");
+ const apply=()=>{
+  const query=String(existing?.value||"").trim().toLocaleLowerCase("ru");
+  let visible=0;
+  feed.querySelectorAll(".shorts-video").forEach(card=>{
+   const match=!query||String(card.dataset.searchText||"").toLocaleLowerCase("ru").includes(query);
+   card.hidden=!match;if(match)visible++;
+  });
+  let empty=feed.querySelector(".shorts-search-empty");
+  if(query&&visible===0){
+   if(!empty){empty=document.createElement("div");empty.className="shorts-search-empty";empty.textContent="Ничего не найдено. Попробуй другое слово.";feed.appendChild(empty);}
+  }else empty?.remove();
+ };
+ if(existing){
+  existing.remove();topbar.querySelector(".shorts-search-close")?.remove();
+  const trigger=topbar.querySelector(".shorts-search");if(trigger)trigger.hidden=false;
+  feed.querySelectorAll(".shorts-video").forEach(card=>card.hidden=false);
+  feed.querySelector(".shorts-search-empty")?.remove();
+  return;
+ }
+ const trigger=topbar.querySelector(".shorts-search");if(!trigger)return;
+ trigger.hidden=true;
+ trigger.insertAdjacentHTML("afterend",'<input class="shorts-search-input" type="search" inputmode="search" maxlength="80" placeholder="Найти публикацию…" aria-label="Поиск публикаций"><button type="button" class="shorts-search-close" aria-label="Закрыть поиск">×</button>');
+ const input=topbar.querySelector(".shorts-search-input");
+ input.addEventListener("input",apply);
+ input.addEventListener("keydown",event=>{if(event.key==="Escape")shortsSearch();});
+ topbar.querySelector(".shorts-search-close")?.addEventListener("click",()=>shortsSearch());
+ input.focus();
+}
 let shortsCommentLikes=new Set(),shortsCommentSort="top",shortsReplyTo=null;
-let shortsLiveComments=[],shortsLiveCommentsVideoId=null,shortsLiveCommentsLoading=false;
+let shortsLiveComments=[],shortsLiveCommentsVideoId=null,shortsLiveCommentsLoading=false,shortsLiveCommentsRequest=0;
 function shortsIsLiveId(id){return /^[0-9a-f-]{36}$/i.test(String(id||""));}
 function shortsEscapeText(value){return String(value??"").replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));}
 function shortsCommentTime(value){const d=new Date(value);return Number.isNaN(d.getTime())?"":d.toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});}
 async function shortsLoadLiveComments(id){
- if(shortsLiveCommentsLoading)return;
+ const requestId=++shortsLiveCommentsRequest;
+ const sheetEl=$(".sb .sh");
+ if(!sheetEl)return;
  shortsLiveCommentsLoading=true;
- const sheetEl=$(".sb .sh");if(sheetEl)sheetEl.innerHTML='<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><div class="shorts-comments-loading">Загружаем комментарии…</div></div>';
+ sheetEl.dataset.videoId=id;
+ sheetEl.innerHTML='<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><div class="shorts-comments-loading">Загружаем комментарии…</div></div>';
+ const isCurrent=()=>requestId===shortsLiveCommentsRequest&&sheetEl.isConnected&&$(".sb .sh")===sheetEl&&sheetEl.dataset.videoId===id;
  try{
   const response=await authRequest("shorts-comments-get",{payload:{videoId:id}});
+  if(!isCurrent())return;
   shortsLiveComments=Array.isArray(response.result?.comments)?response.result.comments:[];
   shortsLiveCommentsVideoId=id;
   shortsRenderComments(id);
  }catch(error){
-  const target=$(".sb .sh");
-  if(target)target.innerHTML='<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><div class="shorts-comments-empty">'+shortsEscapeText(error.message||"Не удалось загрузить комментарии.")+'</div><div class="shorts-comment-compose"><button onclick="closeSh()">Закрыть</button></div></div>';
- }finally{shortsLiveCommentsLoading=false;}
+  if(!isCurrent())return;
+  sheetEl.innerHTML='<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><div class="shorts-comments-empty">'+shortsEscapeText(error.message||"Не удалось загрузить комментарии.")+'</div><div class="shorts-comment-compose"><button onclick="closeSh()">Закрыть</button></div></div>';
+ }finally{
+  if(requestId===shortsLiveCommentsRequest)shortsLiveCommentsLoading=false;
+ } 
 }
 function shortsRenderComments(id){
  const x=shortsItems.find(v=>v.id===id)||{id,comments:0};
@@ -1092,7 +1130,7 @@ function shortsBindCommentSheetDismiss(){
   surface.addEventListener("pointercancel",cancel);
  });
 }
-function shortsComments(id){shortsCommentSort="top";shortsReplyTo=null;shortsLiveCommentsVideoId=null;shortsLiveComments=[];sheet('<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><header class="shorts-comments-header"><div><b>Комментарии</b><span>'+shortsCount((shortsItems.find(v=>v.id===id)||{}).comments||0,false)+'</span></div><button aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></header><div class="shorts-comments-loading">Загружаем обсуждение…</div></div>');shortsRenderComments(id);}
+function shortsComments(id){shortsLiveCommentsRequest++;shortsLiveCommentsLoading=false;shortsCommentSort="top";shortsReplyTo=null;shortsLiveCommentsVideoId=null;shortsLiveComments=[];sheet('<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><header class="shorts-comments-header"><div><b>Комментарии</b><span>'+shortsCount((shortsItems.find(v=>v.id===id)||{}).comments||0,false)+'</span></div><button aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></header><div class="shorts-comments-loading">Загружаем обсуждение…</div></div>');shortsRenderComments(id);}
 function shortsSortComments(sort,id){shortsCommentSort=sort;shortsRenderComments(id);}
 function shortsCommentLike(id){if(shortsCommentLikes.has(id))shortsCommentLikes.delete(id);else shortsCommentLikes.add(id);const videoId=$(".sb")?.dataset?.videoId||"say-tell";shortsRenderComments(videoId);}
 function shortsReply(id,name){shortsReplyTo={id,name};const input=$("#shorts-comment-input");if(input){input.placeholder="Ответ для "+name+"…";input.focus();}}
