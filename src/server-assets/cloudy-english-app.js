@@ -12,7 +12,28 @@ let cloudUserId=null,cloudSyncTimer=0,cloudSyncRetry=0,cloudSyncInFlight=null,cl
 let sessionHydrating=window.parent!==window;
 let sessionHydrationTimer=0;
 let cloudProgressPending=false;
+let regionCheckPending=true,regionCheckFailed=false,regionCheckPromise=null;
 function cloudLoader(){app.innerHTML=`<div style="min-height:100svh;display:grid;place-items:center;background:var(--bg,#0b1020);color:var(--text,#fff);font:600 15px system-ui"><div style="text-align:center"><div style="font-size:42px;margin-bottom:12px">☁️</div>Загружаем твой прогресс…</div></div>`}
+function regionCheckError(){app.innerHTML=`<div role="status" style="min-height:100svh;display:grid;place-items:center;background:var(--bg,#0b1020);color:var(--text,#fff);font:600 15px system-ui;padding:24px"><div style="text-align:center;max-width:320px"><div style="font-size:42px;margin-bottom:12px">☁️</div><p>Не удалось проверить доступность сервиса.</p><p style="font-size:13px;opacity:.75">Проверьте подключение к интернету и повторите попытку.</p><button class="btn" type="button" onclick="retryCloudyRegionCheck()">ПОВТОРИТЬ ПРОВЕРКУ</button></div></div>`}
+async function verifyCloudyRegion(){
+ if(regionCheckPromise)return regionCheckPromise;
+ regionCheckPending=true;regionCheckFailed=false;cloudLoader();
+ regionCheckPromise=(async()=>{
+  try{
+   const response=await fetch("/",{method:"HEAD",cache:"no-store",credentials:"same-origin"});
+   if(response.status===403){
+    try{window.top.location.replace("/")}catch(_){window.location.replace("/")}
+    return false;
+   }
+   if(!response.ok)throw new Error("Region check failed: "+response.status);
+   regionCheckPending=false;return true;
+  }catch(error){
+   regionCheckPending=false;regionCheckFailed=true;regionCheckError();return false;
+  }finally{regionCheckPromise=null}
+ })();
+ return regionCheckPromise;
+}
+async function retryCloudyRegionCheck(){const allowed=await verifyCloudyRegion();if(allowed)continueCloudyBoot()}
 const cloneProgressState=state=>JSON.parse(JSON.stringify(state||{}));
 const progressNumber=value=>Number.isFinite(Number(value))?Number(value):0;
 const mergeCounter=(remoteValue,localValue,baseValue)=>Math.max(0,progressNumber(remoteValue)+progressNumber(localValue)-progressNumber(baseValue));
@@ -150,7 +171,8 @@ function renderInstallGate(){
 }
 function checkCloudyInstall(){if(isInstalledCloudy()){try{localStorage.setItem('cloudyHomeInstalled','1')}catch(e){}view();return}const note=$('#installNote');if(note)note.textContent='Пока Cloudy открыт во вкладке Safari. Вернись на главный экран iPhone и запусти Cloudy с новой иконки — тогда установка подтвердится.';const panel=$('.install-panel');if(panel){panel.classList.remove('shk');void panel.offsetWidth;panel.classList.add('shk')}}
 function ensureCloudyInstallGate(){if(!isAppleMobile()||isInstalledCloudy())return;if(!document.querySelector('#app .install-gate'))renderInstallGate()}
-function bootCloudy(){if(isAppleMobile()&&!isInstalledCloudy()){renderInstallGate();setInterval(ensureCloudyInstallGate,20000);window.addEventListener('pageshow',ensureCloudyInstallGate);window.addEventListener('focus',ensureCloudyInstallGate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureCloudyInstallGate()});return}if(sessionHydrating){cloudLoader();return}view()}
+function continueCloudyBoot(){if(regionCheckPending||regionCheckFailed)return;if(isAppleMobile()&&!isInstalledCloudy()){renderInstallGate();setInterval(ensureCloudyInstallGate,20000);window.addEventListener('pageshow',ensureCloudyInstallGate);window.addEventListener('focus',ensureCloudyInstallGate);document.addEventListener('visibilitychange',()=>{if(!document.hidden)ensureCloudyInstallGate()});return}if(sessionHydrating){cloudLoader();return}view()}
+function bootCloudy(){cloudLoader();void verifyCloudyRegion().then(allowed=>{if(allowed)continueCloudyBoot()})}
 function mountShortsIntro(){
  if(T!==4||document.getElementById("cloudy-shorts-intro"))return;
  let seen=false;try{seen=sessionStorage.getItem("cloudyIntro")==="1"&&!/[?&]intro(?:=|&|$)/.test(location.search);}catch(_){}
@@ -222,7 +244,7 @@ function mountShortsIntro(){
  later(()=>cloud.classList.add("settled"),c0+1050);
  later(()=>{const bounds=stage.getBoundingClientRect(),cb=cloud.getBoundingClientRect();stage.style.transformOrigin=(cb.left+cb.width/2-bounds.left)+"px "+(cb.top+cb.height*.55-bounds.top)+"px";const zoom=Math.max(innerWidth,innerHeight)/(cb.width*.5);stage.style.setProperty("--zs",Math.max(zoom*1.6,14));stage.classList.add("zoom");tone(220,.65,.045);later(()=>{flash.classList.add("on");[1047,1319,1568,2093].forEach((n,i)=>tone(n,.22,.035,i*.06));},600);later(finish,950);},c0+1350);
 }
-function view(a=1,tabDirection=0){roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr tab${T}${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest)void loadCommunityProfile();}
+function view(a=1,tabDirection=0){if(regionCheckPending){cloudLoader();return}if(regionCheckFailed){regionCheckError();return}roll();amb();if(!S.user){remoteLearningProfile=null;remoteLearningProfileUser=null;return authV()}if(!S.lv){if(!S.user.guest&&cloudProgressPending)return cloudLoader();return welcome()}SEC=LV[S.lv].s;app.innerHTML=`<div class="scr tab${T}${a?"":" na"}${tabDirection?" tab-screen":""}"${tabDirection?` data-tab-direction="${tabDirection}"`:""}>${[learn,quests,lg,prof][T]()}</div>`+nav();if(T===0)void loadRemoteLearningProfile();if(T===3&&!S.user?.guest)void loadCommunityProfile();}
 function tab(k){if(!Number.isInteger(k)||k<0||k>3||k===T)return;const direction=k>T?1:-1;snd("tab");T=k;view(1,direction)}
 const LVS=["A1","A2","B1","B2"],nxt=l=>LVS[LVS.indexOf(l)+1];
 const LI={A1:["Начальный","Знаю базовые слова и фразы"],A2:["Элементарный","Могу говорить на простые темы"],B1:["Средний","Поддерживаю беседу на знакомые темы"],B2:["Выше среднего","Свободно общаюсь и читаю сложные тексты"]};
