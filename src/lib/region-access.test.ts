@@ -20,6 +20,20 @@ describe("Cloudy regional access gate", () => {
     expect(isCloudyRegionBlocked(request)).toBe(false);
   });
 
+  it("allows requests from another country when Vercel provides its geolocation header", () => {
+    const request = new Request("https://cloudy.example/", {
+      headers: { "x-vercel-ip-country": "US", "x-vercel-id": "iad1::abc123" },
+    });
+    expect(isCloudyRegionBlocked(request)).toBe(false);
+  });
+
+  it("blocks Russia when Vercel provides its geolocation header", () => {
+    const request = new Request("https://cloudy.example/", {
+      headers: { "x-vercel-ip-country": "RU", "x-vercel-id": "iad1::abc123" },
+    });
+    expect(isCloudyRegionBlocked(request)).toBe(true);
+  });
+
   it("fails closed when country metadata is missing or unknown", () => {
     expect(isCloudyRegionBlocked(new Request("https://cloudy.example/", {
       headers: { ...edgeHeaders, "cf-ipcountry": "XX" },
