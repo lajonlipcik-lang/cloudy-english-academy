@@ -73,6 +73,16 @@ class CloudySubscriptionAccess {
       const CloudySubscriptionAccess(hasAccess: false, status: 'inactive');
 }
 
+class CloudyTelegramLink {
+  const CloudyTelegramLink({
+    required this.url,
+    required this.expiresInSeconds,
+  });
+
+  final String url;
+  final int expiresInSeconds;
+}
+
 class CloudyMobileApiException implements Exception {
   const CloudyMobileApiException(this.message, {this.statusCode});
   final String message;
@@ -134,6 +144,31 @@ class CloudyMobileApi {
     return CloudySubscriptionAccess.fromJson(result);
   }
 
+  Future<CloudyTelegramLink> createTelegramLink() async {
+    final result = await _postRaw(_telegramEndpoint, {'action': 'create-link'});
+    final url = result['url'];
+    final expires = result['expiresInSeconds'];
+    if (url is! String || !url.startsWith('https://t.me/')) {
+      throw const CloudyMobileApiException('Сервер не вернул ссылку Telegram.');
+    }
+    return CloudyTelegramLink(
+      url: url,
+      expiresInSeconds: expires is int ? expires : 600,
+    );
+  }
+
+  Future<String> createTelegramStarsInvoice({required String planCode}) async {
+    final result = await _postRaw(_telegramEndpoint, {
+      'action': 'create-invoice',
+      'planCode': planCode,
+    });
+    final orderId = result['orderId'];
+    if (result['sent'] != true || orderId is! String) {
+      throw const CloudyMobileApiException('Не удалось отправить счёт Telegram Stars.');
+    }
+    return orderId;
+  }
+
   Future<Map<String, Object?>> saveProgress(
     CloudyState state, {
     String? expectedUpdatedAt,
@@ -161,9 +196,16 @@ class CloudyMobileApi {
     return const [];
   }
 
+  Uri get _telegramEndpoint => Uri.parse('$_baseUrl/api/telegram/stars');
+
   Future<Map<String, Object?>> _post(
     String action,
     Map<String, Object?> payload,
+  ) => _postRaw(_endpoint, {'action': action, 'payload': payload});
+
+  Future<Map<String, Object?>> _postRaw(
+    Uri endpoint,
+    Map<String, Object?> body,
   ) async {
     final token = await _accessToken();
     if (token == null || token.isEmpty) {
@@ -174,13 +216,13 @@ class CloudyMobileApi {
     }
     final response = await _client
         .post(
-          _endpoint,
+          endpoint,
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: jsonEncode({'action': action, 'payload': payload}),
+          body: jsonEncode(body),
         )
         .timeout(const Duration(seconds: 20));
 
