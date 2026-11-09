@@ -1404,8 +1404,7 @@ async function shortsPublishExternal(detail){
  if(!ticket?.signedUrl||!ticket?.publishableKey||!ticket?.contentUrl||!ticket?.videoId||!ticket?.token)throw new Error("Сервер не подготовил защищённую загрузку.");
  progress(12);
  const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
- const body=new FormData();body.append("cacheControl","3600");body.append("",file);
- const response=await fetch(uploadUrl,{method:"PUT",headers:{apikey:ticket.publishableKey,Authorization:"Bearer "+ticket.publishableKey,"x-upsert":"false"},body});
+ const response=await fetch(uploadUrl,{method:"PUT",headers:{apikey:ticket.publishableKey,Authorization:"Bearer "+ticket.publishableKey,"Content-Type":mimeType,"x-upsert":"false"},body:file});
  if(!response.ok){let message="";try{message=(await response.json()).message||"";}catch(_){}throw new Error(message||"Не удалось загрузить файл в защищённое хранилище.");}
  progress(78);
  const finalized=await authRequest(image?"shorts-upload-image-finalize":"shorts-upload-finalize",{payload:{videoId:ticket.videoId}});
