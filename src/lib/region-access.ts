@@ -157,7 +157,7 @@ export function createCloudyRegionBlockedResponse(): Response {
       <a href="/availability" id="region-availability">Country availability</a>
       <a href="/legal" id="region-legal">Legal documents</a>
     </nav>
-    <a class="support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">Contact support</a>
+    <a class="support" href="https://t.me/cloudysupport_t_bot" target="_blank" rel="noopener noreferrer">Contact support</a>
     <p class="footer">Cloudy English Academy · © 2026</p>
   </main>
   <script>
