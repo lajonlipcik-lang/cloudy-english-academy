@@ -408,7 +408,7 @@ const Auth={
   finally{cloudProgressPending=false}
  },
  start(email,name,isAdmin=false,age=null){ls('cl2s',email);load('cl2:'+email);const savedAge=Number(S.user?.age);const validAge=Number.isInteger(Number(age))&&Number(age)>=13&&Number(age)<=120?Number(age):Number.isInteger(savedAge)&&savedAge>=13&&savedAge<=120?savedAge:null;S.user={email,name,age:validAge,isAdmin:!!isAdmin};save();window.CloudyAdmin?.setUser(S.user);return S.user},
- guest(){ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость',age:null};save();window.CloudyAdmin?.setUser(S.user)},
+ guest(){resetChatHistoryState();ls('cl2s','');load('cl2');S.user={guest:1,name:'Гость',age:null};save();window.CloudyAdmin?.setUser(S.user)},
  async signOut(){await authRequest('signOut');resetChatHistoryState();cloudUserId=null;cloudUpdatedAt=null;cloudSyncPending=null;cloudSyncInFlight=null;clearTimeout(cloudSyncTimer);clearTimeout(cloudSyncRetry);cloudSyncRetry=0;ls('cl2s','');load('cl2');S.user=null;window.CloudyAdmin?.setUser(null)}
 };
 let INTRO={name:'',age:18,step:0};
@@ -660,7 +660,7 @@ async function loadChatHistory(){
  chatHistoryAccountId=account;
  const task=(async()=>{
   try{
-   const response=await authRequest("chat-history-get");
+   const response=await authRequest("chat-history-get",{payload:{accountId:account}});
    if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
    const remote=Array.isArray(response.result?.chats)?response.result.chats:[];
    const merged=new Map(remote.map(thread=>[thread.id,thread]));
@@ -668,7 +668,7 @@ async function loadChatHistory(){
     if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
     const cloudThread=merged.get(localThread.id);
     if(!cloudThread||(Number(localThread.updatedAt)||0)>(Number(cloudThread.updatedAt)||0)){
-     await authRequest("chat-history-save",{payload:{thread:localThread}});
+     await authRequest("chat-history-save",{payload:{accountId:account,thread:localThread}});
      if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
      merged.set(localThread.id,localThread);
     }
@@ -702,7 +702,7 @@ function saveChatHistory(){
  if(!key||chatHistoryAccountId!==saveAccount)return;
  try{localStorage.setItem(key,JSON.stringify(chatThreads))}catch(e){}
  renderChatHistory();
- chatHistorySaveQueue=chatHistorySaveQueue.catch(()=>{}).then(()=>String(cloudUserId||"")===saveAccount&&chatHistoryGeneration===saveGeneration?authRequest("chat-history-save",{payload:{thread:item}}):Promise.resolve()).catch(error=>{
+ chatHistorySaveQueue=chatHistorySaveQueue.catch(()=>{}).then(()=>String(cloudUserId||"")===saveAccount&&chatHistoryGeneration===saveGeneration?authRequest("chat-history-save",{payload:{accountId:saveAccount,thread:item}}):Promise.resolve()).catch(error=>{
   console.warn("[cloudy-chat] thread save failed",error);
   if(!chatHistorySaveNotice){chatHistorySaveNotice=true;toast("Не удалось сохранить чат в аккаунте. Проверьте соединение.",false)}
  });
@@ -713,12 +713,15 @@ function renderChatHistory(){
  list.innerHTML=chatThreads.map(item=>{const id=chatEscape(item.id),title=chatEscape(item.title||"Новый диалог");return '<div class="chat-history-row"><button type="button" class="chat-history-item '+(item.id===activeChatId?'active':'')+'" onclick="chatOpenThread(\''+id+'\')"><span class="chat-history-dot"></span><span>'+title+'</span></button><button type="button" class="chat-history-delete" aria-label="Удалить диалог" title="Удалить диалог" onclick="event.stopPropagation();chatDeleteThread(\''+id+'\')">'+'<svg class="i chat-trash-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="m19 6-1 14H6L5 6"/><path d="M10 11v5M14 11v5"/></svg>'+'</button></div>'}).join("");
 }
 async function chatDeleteThread(id){
+ const account=String(cloudUserId||""),generation=chatHistoryGeneration;
+ if(!account||chatHistoryAccountId!==account)return;
  const item=chatThreads.find(x=>x.id===id);if(!item)return;
  if(!confirm('Удалить диалог «'+String(item.title||"Новый диалог").replace(/[<>]/g,"") + '»?'))return;
- try{await authRequest("chat-history-delete",{payload:{threadId:id}})}
+ try{await authRequest("chat-history-delete",{payload:{accountId:account,threadId:id}})}
  catch(error){toast("Не удалось удалить диалог из аккаунта. Попробуйте ещё раз.",false);return}
+ if(String(cloudUserId||"")!==account||chatHistoryGeneration!==generation)return;
  chatThreads=chatThreads.filter(x=>x.id!==id);
- try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
+ try{localStorage.setItem(chatHistoryKey(account),JSON.stringify(chatThreads))}catch(e){}
  if(activeChatId===id){CH=[];activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatRender()}
  else renderChatHistory();
  snd("tab");
