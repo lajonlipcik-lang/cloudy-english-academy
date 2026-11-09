@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../domain/cloudy_progress_engine.dart';
 import '../domain/cloudy_state.dart';
 
 class CloudyAccountActivation {
@@ -56,10 +57,16 @@ class CloudyLocalProgressStore {
   }
 
   Future<void> saveGuest(CloudyState state) =>
-      _preferences.setString(guestKey, jsonEncode(state.toJson()));
+      _preferences.setString(
+        guestKey,
+        jsonEncode(sanitizeCloudyProgress(state).toJson()),
+      );
 
   Future<void> saveAccount(String email, CloudyState state) =>
-      _preferences.setString(accountKey(email), jsonEncode(state.toJson()));
+      _preferences.setString(
+        accountKey(email),
+        jsonEncode(sanitizeCloudyProgress(state).toJson()),
+      );
 
   Future<void> saveActive(CloudyState state) async {
     final email = activeAccountEmail;
