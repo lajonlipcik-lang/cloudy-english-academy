@@ -19,6 +19,7 @@ class CloudyLessonScreen extends StatefulWidget {
     required this.onAdvance,
     required this.onComplete,
     required this.onPronunciationRequested,
+    required this.onSpeak,
     required this.onSkipPronunciation,
     this.onExit,
   });
@@ -31,6 +32,7 @@ class CloudyLessonScreen extends StatefulWidget {
   final VoidCallback onAdvance;
   final VoidCallback onComplete;
   final VoidCallback onPronunciationRequested;
+  final ValueChanged<String> onSpeak;
   final VoidCallback onSkipPronunciation;
   final VoidCallback? onExit;
 
@@ -279,6 +281,10 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _heading(e.title, e.question, 'Выбери один правильный ответ.'),
+      if (e.speak) Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+        onPressed: () => widget.onSpeak(e.english),
+        icon: const Icon(Icons.volume_up_rounded), label: const Text('Прослушать слово'),
+      )),
       ...e.options.map((option) => _option(
         option,
         selected: _selected == option,
@@ -295,10 +301,17 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _heading(e.title, 'Что ты слышишь?', 'Прослушай слово и выбери правильный вариант.'),
-      _panel(Row(children: [
-        const Icon(Icons.volume_up_rounded, color: _lessonCyan, size: 30),
-        const SizedBox(width: 12),
-        Expanded(child: Text(e.english, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900))),
+      _panel(Column(children: [
+        const Icon(Icons.headphones_rounded, color: _lessonCyan, size: 34),
+        const SizedBox(height: 10),
+        const Text('Нажми, чтобы прослушать', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: () => widget.onSpeak(e.english),
+          icon: const Icon(Icons.volume_up_rounded),
+          label: const Text('Прослушать'),
+          style: FilledButton.styleFrom(backgroundColor: _lessonBlue, foregroundColor: Colors.white),
+        ),
       ])),
       const SizedBox(height: 18),
       ...e.options.map((option) => _option(
