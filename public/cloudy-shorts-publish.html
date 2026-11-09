@@ -174,10 +174,10 @@ privUI();
  let lang="ru";
  try{lang=JSON.parse(localStorage.getItem(KEY)||"{}").lang||"ru"}catch(e){}
  if(!["ru","en","uk"].includes(lang))lang="ru";
- const col=lang==="en"?0:lang==="uk"?1:-1;
- if(col<0)return;
+ let col=lang==="en"?0:lang==="uk"?1:-1;
  const translate=()=>{
   document.documentElement.lang=lang;
+  if(col<0)return;
   const title=document.querySelector("title");
   if(title){const v=T[title.textContent];if(v)title.textContent=v[col]}
   const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
