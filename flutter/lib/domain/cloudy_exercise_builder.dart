@@ -310,38 +310,5 @@ bool isCloudyAnswerCorrect(
   return false;
 }
 
-bool isCloudyAnswerCorrect(
-  CloudyExercise exercise, {
-  int? selectedOption,
-  List<int> builtOptionIndices = const [],
-  String? typedAnswer,
-}) {
-  if (exercise is CloudyRecallExercise) {
-    return checkCloudyRecallAnswer(typedAnswer ?? '', exercise.answer);
-  }
-  if (exercise is CloudyBuilderExercise) {
-    if (builtOptionIndices.isEmpty) return false;
-    final valid = builtOptionIndices.every(
-      (index) => index >= 0 && index < exercise.options.length,
-    );
-    if (!valid) return false;
-    final answer = builtOptionIndices.map((index) => exercise.options[index]).join(' ');
-    return answer.toLowerCase() == exercise.answer.toLowerCase();
-  }
-  if (exercise is CloudyChoiceExercise) {
-    return selectedOption != null &&
-        selectedOption >= 0 &&
-        selectedOption < exercise.options.length &&
-        exercise.options[selectedOption] == exercise.answer;
-  }
-  if (exercise is CloudyListeningExercise) {
-    return selectedOption != null &&
-        selectedOption >= 0 &&
-        selectedOption < exercise.options.length &&
-        exercise.options[selectedOption] == exercise.answer;
-  }
-  return false;
-}
-
 String cloudyLessonTitle(int index, List<CloudyLesson> lessons) =>
     index >= 0 && index < lessons.length ? lessons[index].title : '';
