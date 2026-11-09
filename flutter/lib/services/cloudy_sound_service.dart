@@ -82,7 +82,7 @@ class CloudyToneGenerator {
   }
 
   static List<CloudyTone> tonesFor(CloudySound sound, {int combo = 0}) {
-    final boost = 1 + math.min(combo, 7) * 0.07;
+    final boost = 1.0 + math.min(combo, 7).toDouble() * 0.07;
     return switch (sound) {
       CloudySound.tap => const [
           CloudyTone(frequency: 560, delay: 0, duration: 0.07, waveform: CloudyWaveform.triangle),
