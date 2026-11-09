@@ -204,7 +204,8 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           }
           const api = await import("@/lib/cloudy-ai.functions");
           let result: unknown;
-          if (message.action === "admin-users") result = await api.listCloudyUsers({ data: payload });
+          if (message.action === "chat-model-access") result = await api.getCloudyChatModelAccess({ data: payload as never });
+          else if (message.action === "admin-users") result = await api.listCloudyUsers({ data: payload });
           else if (message.action === "admin-providers") result = await api.listAiProviders({ data: payload });
           else if (message.action === "admin-provider-save") result = await api.saveAiProvider({ data: payload as never });
           else if (message.action === "admin-provider-delete") result = await api.deleteAiProvider({ data: payload as never });
