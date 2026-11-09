@@ -24,18 +24,20 @@ The current application remains authoritative until the Flutter version passes f
 ## Current Flutter implementation
 
 - flutter/lib/main.dart: WebView compatibility shell; the existing web application is still the runtime UI.
-- flutter/assets/cloudy_catalog.json: current lesson catalogue asset.
+- flutter/assets/cloudy_catalog.json and flutter/lib/domain/cloudy_catalog.dart: complete 60-lesson curriculum, level sections, and 27 grammar foundations.
+- flutter/lib/domain/cloudy_exercise.dart: typed JSON-compatible models for all eight exercise/study card types.
 - flutter/lib/domain/cloudy_state.dart: persisted progress/settings model using the current cl2 JSON keys.
-- flutter/lib/domain/cloudy_logic.dart: Dart port of lesson generation, grading, progress, XP, streak, achievements, daily chest, guest/account merge, and server progress sanitization.
-- flutter/test/cloudy_state_test.dart and flutter/test/cloudy_logic_test.dart: compatibility tests for the Dart model and engine.
+- flutter/lib/domain/cloudy_logic.dart: lesson stages, exercise generation, guided grammar tasks, answer/retry rules, XP/streaks, achievements, daily chest, guest/account merge, and progress sanitization.
+- flutter/lib/domain/cloudy_learning_store.dart: local adaptive mastery, spaced-review prioritization, session tracking, and offline event outbox.
+- flutter/test/: parity-focused tests for progress, catalog loading, exercise serialization, learning persistence, and exercise generation.
 - .github/workflows/flutter-ci.yml: Flutter dependency, analyzer, and test workflow for the migration branch.
 
-These are migration foundations, not evidence that the native app is complete. The native screen layer, native authentication, media integrations, and full parity validation remain outstanding.
+These are migration foundations, not evidence that the native app is complete or that all tests have passed. The native screen layer, native authentication, media integrations, backend event synchronization, and full parity validation remain outstanding.
 
 ## Quality gates
 
 1. Keep the original web application unchanged.
-2. Verify each Dart data contract against its TypeScript source.
+2. Verify each Dart data contract against its TypeScript and browser-runtime source.
 3. Run formatting, flutter analyze, and flutter test for every logic change.
 4. Port one feature area at a time and retain the original behavior.
 5. Compare screenshots and interaction flows on iPhone and Android.
