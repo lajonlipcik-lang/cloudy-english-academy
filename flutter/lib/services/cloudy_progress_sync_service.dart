@@ -164,8 +164,8 @@ class CloudyProgressSyncService {
         uploaded: false,
       );
     }
-    await localStore.markDirty(email);
     if (_syncPaused) {
+      await localStore.markDirty(email);
       return CloudyProgressSyncResult(
         state: state,
         syncPaused: true,
@@ -303,6 +303,7 @@ class CloudyProgressSyncService {
     CloudySession session, {
     DateTime? now,
   }) => _serialize(() async {
+    if (session.review) return state;
     final email = _activeEmail ?? localStore.activeAccountEmail;
     if (_syncPaused) {
       throw const CloudyMobileApiException(
@@ -348,7 +349,7 @@ class CloudyProgressSyncService {
     String? selectedAnswer,
     String? correctAnswer,
     DateTime? now,
-  }) async {
+  }) => _serialize(() async {
     final store = await learningStore;
     return store.record(
       exercise,
@@ -361,14 +362,14 @@ class CloudyProgressSyncService {
       correctAnswer: correctAnswer,
       now: now,
     );
-  }
+  });
 
-  Future<int> syncLearningEvents() async {
+  Future<int> syncLearningEvents() => _serialize(() async {
     if (_activeEmail == null || _syncPaused) return 0;
     final store = await learningStore;
     final events = store.pending(limit: 50);
     if (events.isEmpty) return 0;
     final acceptedIds = await api.syncLearningEvents(events);
     return store.acknowledge(acceptedIds);
-  }
+  });
 }
