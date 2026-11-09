@@ -22,6 +22,7 @@ class CloudyLessonScreen extends StatefulWidget {
     required this.onSpeak,
     required this.onSkipPronunciation,
     this.onExit,
+    this.allowAdvanceOnLast = false,
   });
 
   final String title;
@@ -35,6 +36,7 @@ class CloudyLessonScreen extends StatefulWidget {
   final ValueChanged<String> onSpeak;
   final VoidCallback onSkipPronunciation;
   final VoidCallback? onExit;
+  final bool allowAdvanceOnLast;
 
   @override
   State<CloudyLessonScreen> createState() => _CloudyLessonScreenState();
@@ -95,7 +97,7 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
   }
 
   void _advance() {
-    if (_last) {
+    if (_last && !widget.allowAdvanceOnLast) {
       widget.onComplete();
     } else {
       // The owner advances the canonical CloudySession and supplies it back.
