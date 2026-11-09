@@ -58,7 +58,7 @@ void main() {
     test('preserves safe server errors and status codes', () async {
       final client = CloudyBackendClient(
         baseUrl: 'https://cloudy.example',
-        client: MockClient((_) async => http.Response(
+        client: MockClient((_) async => http.Response.bytes(
           utf8.encode(jsonEncode({'ok': false, 'error': 'Сначала войдите в аккаунт.'})),
           401,
           headers: {'content-type': 'application/json; charset=utf-8'},
