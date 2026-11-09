@@ -101,7 +101,8 @@ describe("Cloudy regional access gate", () => {
     expect(html).not.toContain('class="logo"');
     expect(html).toContain('id="region-availability">Country availability</a>');
     expect(html).toContain('availability: "Доступность по странам"');
-    expect(html).toContain('href="/legal">Юридические документы</a>');
+    expect(html).toContain('id="region-legal">Legal documents</a>');
+    expect(html).toContain('legal: "Юридические документы"');
     expect(html).toContain("https://t.me/cloudysupport_t_bot");
     expect(html).not.toContain("border: 1px solid");
     expect(html).not.toContain("<hr");
