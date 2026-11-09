@@ -1,3 +1,4 @@
+import 'cloudy_exercise.dart';
 import 'cloudy_state.dart';
 
 class CloudySession {
@@ -9,7 +10,7 @@ class CloudySession {
 
   final bool review;
   final int lesson;
-  final List<CloudyExercisePlaceholder> exercises;
+  final List<CloudyExercise> exercises;
   final int index, health, combo, correct, total;
   final List<String> mistakeWords;
   final bool retryPhase;
@@ -24,12 +25,6 @@ class CloudySession {
     total: total ?? this.total, mistakeWords: mistakeWords ?? this.mistakeWords,
     retryPhase: retryPhase ?? this.retryPhase,
   );
-}
-
-/// Session exercise payloads are kept outside progress state; this lightweight
-/// marker lets the progress engine remain independent of UI rendering.
-class CloudySessionExercisePlaceholder {
-  const CloudySessionExercisePlaceholder();
 }
 
 class CloudyAnswerResult {
@@ -201,7 +196,55 @@ CloudyState? claimCloudyChest(CloudyState state) {
 DateTime? _parseCloudyDate(String value) {
   final iso = DateTime.tryParse(value);
   if (iso != null) return iso;
-  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\\d{2}) (\\d{4})$').firstMatch(value);
+  final match = RegExp(r'^[A-Za-z]{3} ([A-Za-z]{3}) (\d{2}) (\d{4})).firstMatch(value);
+  if (match == null) return null;
+  const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};
+  final month = months[match.group(1)];
+  if (month == null) return null;
+  return DateTime(int.parse(match.group(3)!), month, int.parse(match.group(2)!));
+}
+
+CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
+  if (account == null) return guest;
+  final completed = <String, num>{};
+  for (final level in ['A1', 'A2', 'B1', 'B2']) {
+    final a = account.completed[level] ?? 0;
+    final g = guest.completed[level] ?? 0;
+    completed[level] = a > g ? a : g;
+  }
+
+  final mistakes = Map<String, num>.from(account.mistakes);
+  for (final entry in guest.mistakes.entries) {
+    mistakes[entry.key] = (mistakes[entry.key] ?? 0) + entry.value;
+  }
+
+  final guestDate = _parseCloudyDate(guest.last) ?? DateTime.fromMillisecondsSinceEpoch(0);
+  final accountDate = _parseCloudyDate(account.last) ?? DateTime.fromMillisecondsSinceEpoch(0);
+  final guestIsNewer = guestDate.isAfter(accountDate);
+  final sameWeek = account.week['k'] == guest.week['k'];
+  final week = sameWeek
+      ? <String, Object?>{
+          'k': account.week['k'],
+          'xp': (account.week['xp'] as num? ?? 0) + (guest.week['xp'] as num? ?? 0),
+        }
+      : Map<String, Object?>.from(guestIsNewer ? guest.week : account.week);
+
+  return account.copyWith(
+    xp: account.xp + guest.xp,
+    streak: account.streak > guest.streak ? account.streak : guest.streak,
+    last: guestIsNewer ? guest.last : account.last,
+    level: account.level ?? guest.level,
+    completed: completed,
+    mistakes: mistakes,
+    week: week,
+    accuracy: [account.accuracy[0] + guest.accuracy[0], account.accuracy[1] + guest.accuracy[1]],
+    days: [...{...account.days, ...guest.days}].take(60).toList(growable: false),
+    achievements: [...{...account.achievements, ...guest.achievements}],
+    perfectLessons: account.perfectLessons + guest.perfectLessons,
+    tested: account.tested > guest.tested ? account.tested : guest.tested,
+  );
+}
+).firstMatch(value);
   if (match == null) return null;
   const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};
   final month = months[match.group(1)];
