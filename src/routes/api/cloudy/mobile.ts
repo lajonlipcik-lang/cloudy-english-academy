@@ -56,41 +56,42 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     if (action === "privacy-data-export") return api.exportCloudyPersonalData({ data: input as never });
   }
 
-  if (action.startsWith("shorts-")) {
-    if (action === "shorts-feed-get" || action === "shorts-profile-get" ||
-        action === "shorts-post-delete" || action === "shorts-profile-update" ||
-        action === "shorts-profile-image-url" || action === "shorts-follow-set" ||
-        action === "shorts-like-set" || action === "shorts-save-set" ||
-        action === "shorts-comments-get" || action === "shorts-comment-create" ||
-        action === "shorts-comment-like-set" || action === "shorts-moderate" ||
-        action === "shorts-frame-review" || action === "shorts-audio-review") {
-      const api = await import("@/lib/cloudy-shorts-feed.functions");
-      switch (action) {
-        case "shorts-feed-get": return api.listShortsFeed({ data: input as never });
-        case "shorts-profile-get": return api.getShortsCreatorProfile({ data: input as never });
-        case "shorts-post-delete": return api.deleteOwnShortPost({ data: input as never });
-        case "shorts-profile-update": return api.updateShortsCreatorProfile({ data: input as never });
-        case "shorts-profile-image-url": return api.createShortsProfileImageUpload({ data: input as never });
-        case "shorts-follow-set": return api.setShortsFollow({ data: input as never });
-        case "shorts-like-set": return api.setShortsLike({ data: input as never });
-        case "shorts-save-set": return api.setShortsSavedPost({ data: input as never });
-        case "shorts-comments-get": return api.getShortsComments({ data: input as never });
-        case "shorts-comment-create": return api.createShortComment({ data: input as never });
-        case "shorts-comment-like-set": return api.setShortCommentLike({ data: input as never });
-        case "shorts-moderate": return api.moderateOwnShortContent({ data: input as never });
-        case "shorts-frame-review": return api.analyzeShortVideoFrames({ data: input as never });
-        case "shorts-audio-review": return api.analyzeShortVideoAudio({ data: input as never });
-      }
+  if (["shorts-moderate", "shorts-frame-review", "shorts-audio-review",
+       "shorts-comments-get", "shorts-comment-create", "shorts-comment-like-set"].includes(action)) {
+    const api = await import("@/lib/cloudy-ai.functions");
+    switch (action) {
+      case "shorts-moderate": return api.moderateOwnShortContent({ data: input as never });
+      case "shorts-frame-review": return api.analyzeShortVideoFrames({ data: input as never });
+      case "shorts-audio-review": return api.analyzeShortVideoAudio({ data: input as never });
+      case "shorts-comments-get": return api.getShortsComments({ data: input as never });
+      case "shorts-comment-create": return api.createShortComment({ data: input as never });
+      case "shorts-comment-like-set": return api.setShortCommentLike({ data: input as never });
     }
+  }
 
-    if (action === "shorts-upload-start" || action === "shorts-upload-finalize" ||
-        action === "shorts-upload-image-finalize" || action === "shorts-text-create") {
-      const api = await import("@/lib/cloudy-shorts-upload.functions");
-      if (action === "shorts-upload-start") return api.createShortVideoUpload({ data: input as never });
-      if (action === "shorts-upload-finalize") return api.finalizeShortVideoUpload({ data: input as never });
-      if (action === "shorts-upload-image-finalize") return api.finalizeShortImageUpload({ data: input as never });
-      return api.createShortTextPost({ data: input as never });
+  if (["shorts-feed-get", "shorts-profile-get", "shorts-post-delete",
+       "shorts-profile-update", "shorts-profile-image-url", "shorts-follow-set",
+       "shorts-like-set", "shorts-save-set"].includes(action)) {
+    const api = await import("@/lib/cloudy-shorts-feed.functions");
+    switch (action) {
+      case "shorts-feed-get": return api.listShortsFeed({ data: input as never });
+      case "shorts-profile-get": return api.getShortsCreatorProfile({ data: input as never });
+      case "shorts-post-delete": return api.deleteOwnShortPost({ data: input as never });
+      case "shorts-profile-update": return api.updateShortsCreatorProfile({ data: input as never });
+      case "shorts-profile-image-url": return api.createShortsProfileImageUpload({ data: input as never });
+      case "shorts-follow-set": return api.setShortsFollow({ data: input as never });
+      case "shorts-like-set": return api.setShortsLike({ data: input as never });
+      case "shorts-save-set": return api.setShortsSavedPost({ data: input as never });
     }
+  }
+
+  if (["shorts-upload-start", "shorts-upload-finalize",
+       "shorts-upload-image-finalize", "shorts-text-create"].includes(action)) {
+    const api = await import("@/lib/cloudy-shorts-upload.functions");
+    if (action === "shorts-upload-start") return api.createShortVideoUpload({ data: input as never });
+    if (action === "shorts-upload-finalize") return api.finalizeShortVideoUpload({ data: input as never });
+    if (action === "shorts-upload-image-finalize") return api.finalizeShortImageUpload({ data: input as never });
+    return api.createShortTextPost({ data: input as never });
   }
 
   throw new Error("Это действие пока не поддерживается в мобильном клиенте.");
