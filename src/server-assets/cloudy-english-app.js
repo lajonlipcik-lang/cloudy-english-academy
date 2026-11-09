@@ -807,16 +807,6 @@ function chatRender(){
     <header class="chat-topbar">
       <button class="chat-menu-button" onclick="chatToggleDrawer()" aria-label="Открыть историю"><span aria-hidden="true">☰</span></button>
       <div class="chat-top-title"><b>Клауди AI</b><small>Твой помощник по английскому</small></div>
-      <div class="chat-model-switcher">
-        <button class="chat-model-trigger" id="chatModelTrigger" type="button" aria-expanded="false" aria-controls="chatModelMenu" onclick="chatToggleModelMenu()">
-          <span class="chat-model-trigger-copy"><b id="chatModelName">Cloudy Lite 2.2</b><small id="chatModelCaption">Базовая модель</small></span><span class="chat-model-chevron" aria-hidden="true">⌄</span>
-        </button>
-        <div class="chat-model-menu" id="chatModelMenu" hidden>
-          <button class="chat-model-option selected" id="chatModelLite" type="button" onclick="chatChooseModel('lite')"><span class="chat-model-option-icon">☁️</span><span><b>Cloudy Lite 2.2</b><small>Базовая практика · доступен бесплатно</small></span><span class="chat-model-check">✓</span></button>
-          <button class="chat-model-option locked" id="chatModelTeacher" type="button" onclick="chatChooseModel('teacher')"><span class="chat-model-option-icon">✦</span><span><b>Cloudy Teacher 4.4</b><small id="chatTeacherCaption">Расширенная модель · подписка</small></span><span class="chat-model-lock" id="chatTeacherLock">🔒</span></button>
-          <div class="chat-model-menu-foot">Модель можно менять прямо во время диалога</div>
-        </div>
-      </div>
       <span class="chat-level-pill">${S.lv||"A1"}</span>
       <div class="chat-flag" title="English" aria-label="Флаг Великобритании">
         <svg viewBox="0 0 60 40" width="100%" height="100%" role="img" aria-hidden="true">
@@ -840,7 +830,18 @@ function chatRender(){
         </div>
         <button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button>
       </div>
-      <div class="chat-disclaimer">Клауди помогает практиковать английский на уровне ${S.lv||"A1"}</div>
+      <div class="chat-composer-meta">
+        <div class="chat-model-switcher">
+          <button class="chat-model-trigger" id="chatModelTrigger" type="button" aria-expanded="false" aria-controls="chatModelMenu" onclick="chatToggleModelMenu()">
+            <span class="chat-model-dot" aria-hidden="true"></span><span class="chat-model-trigger-copy"><b id="chatModelName">Cloudy Lite 2.2</b></span><span class="chat-model-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="chat-model-menu" id="chatModelMenu" hidden>
+            <button class="chat-model-option selected" id="chatModelLite" type="button" onclick="chatChooseModel('lite')"><span class="chat-model-option-icon">☁</span><span><b>Cloudy Lite 2.2</b><small>Бесплатная модель</small></span><span class="chat-model-check">✓</span></button>
+            <button class="chat-model-option locked" id="chatModelTeacher" type="button" onclick="chatChooseModel('teacher')"><span class="chat-model-option-icon">✦</span><span><b>Cloudy Teacher 4.4</b><small id="chatTeacherCaption">Расширенная модель</small></span><span class="chat-model-lock" id="chatTeacherLock" aria-label="Требуется подписка"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2M3.5 7h9v7h-9z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+          </div>
+        </div>
+        <div class="chat-disclaimer">Клауди помогает практиковать английский</div>
+      </div>
     </div>
   </main>
 </section>`;
@@ -861,7 +862,7 @@ function updateChatModelSelector(){
  if(caption)caption.textContent=chatModelTier==="teacher"?"Расширенная модель":"Базовая модель";
  if(lite)lite.classList.toggle("selected",chatModelTier==="lite");
  if(teacher){teacher.classList.toggle("selected",chatModelTier==="teacher");teacher.classList.toggle("locked",!chatTeacherAccess);teacher.setAttribute("aria-disabled",chatTeacherAccess?"false":"true")}
- if(lock)lock.textContent=chatTeacherAccess?"":"🔒";
+ if(lock)lock.style.display=chatTeacherAccess?"none":"grid";
  if(trigger)trigger.setAttribute("aria-expanded",String(!$("#chatModelMenu")?.hidden));
 }
 async function loadChatModelAccess(){
