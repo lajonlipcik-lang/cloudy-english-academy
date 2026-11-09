@@ -16,8 +16,9 @@ class CloudyLearningStore {
   final String scope;
 
   String get _key {
-    final value = 'cl2:learning-intelligence:' + (scope.isEmpty ? 'guest' : scope);
-    return value.length <= 210 ? value : value.substring(0, 210);
+    final value = scope.isEmpty ? 'guest' : scope;
+    final limited = value.length <= 180 ? value : value.substring(0, 180);
+    return 'cl2:learning-intelligence:' + limited;
   }
 
   static Future<CloudyLearningStore> create({String scope = 'guest'}) async =>
@@ -111,8 +112,8 @@ class CloudyLearningStore {
       'sessionId': session['sessionId'],
       'level': session['level'],
       'lessonIndex': session['lessonIndex'],
-      'exerciseType': _cleanText(exerciseType ?? exercise?.kind, 24),
-      'skillId': _cleanText(skillId ?? (exercise == null ? '' : _skillFor(exercise)), 90),
+      'exerciseType': _nullableCleanText(exerciseType ?? exercise?.kind, 24),
+      'skillId': _nullableCleanText(skillId ?? (exercise == null ? '' : _skillFor(exercise)), 90),
       'questionIndex': questionIndex == null ? null : questionIndex.clamp(0, 1000),
       'correct': null,
       'retry': false,
@@ -245,8 +246,8 @@ class CloudyLearningStore {
       'correct': correct,
       'retry': retry,
       'responseSeconds': responseSeconds == null ? null : _clamp(responseSeconds.round(), 0, 3600),
-      'selectedAnswer': _cleanText(selectedAnswer, 160),
-      'correctAnswer': _cleanText(correctAnswer ?? _defaultAnswer(exercise), 160),
+      'selectedAnswer': _nullableCleanText(selectedAnswer, 160),
+      'correctAnswer': _nullableCleanText(correctAnswer ?? _defaultAnswer(exercise), 160),
       'synced': false,
     });
     return {'skillId': skillId, ...nextSkill};
@@ -360,6 +361,11 @@ class CloudyLearningStore {
 
   static num _number(Object? value, [num fallback = 0]) =>
       value is num && value.isFinite ? value : fallback;
+
+  static String? _nullableCleanText(Object? value, int max) {
+    final cleaned = _cleanText(value, max);
+    return cleaned.isEmpty ? null : cleaned;
+  }
 
   static String _cleanText(Object? value, int max) {
     final cleaned = (value ?? '')
