@@ -344,12 +344,40 @@
     if (need && !scheduled) { scheduled = true; requestAnimationFrame(flush); }
   });
   function startObserver() { observeBody(); }
+  var translationRun = 0;
   function retranslateAll() {
-    busy = true; mo.disconnect();
-    try { walk(document.body); }
-    finally { mo.takeRecords(); busy = false; observeBody(); }
+    // A language switch can touch thousands of nodes. Process them in small
+    // animation-frame batches so the settings tap and the rest of the UI stay responsive.
+    var run = ++translationRun;
+    busy = true;
+    mo.disconnect();
+    var root = document.body;
+    if (!root) { busy = false; observeBody(); return; }
+    trAttrs(root);
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) { return n.nodeType === 1 && (SKIP[n.tagName] || SKIP_CHILDREN[n.tagName]) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+    });
     var t = { ru: "Cloudy English", en: "Cloudy English", uk: "Cloudy English" };
     document.title = t[P.lang] || "Cloudy English";
+    function batch() {
+      if (run !== translationRun) return;
+      var started = performance.now(), count = 0, n;
+      while (count < 250 && performance.now() - started < 7 && (n = walker.nextNode())) {
+        if (n.nodeType === 3) trText(n);
+        else trAttrs(n);
+        count++;
+      }
+      if (n) {
+        requestAnimationFrame(batch);
+      } else {
+        mo.takeRecords();
+        busy = false;
+        observeBody();
+        // Catch DOM changes that happened while the observer was paused.
+        if (queue.length && !scheduled) { scheduled = true; requestAnimationFrame(flush); }
+      }
+    }
+    requestAnimationFrame(batch);
   }
 
   /* ---------- helpers ---------- */
@@ -491,7 +519,7 @@
       paint(true);
     },
     motion: function (v) { API.set("motion", v); },
-    lang: function (v) { if (!["ru","en","uk"].includes(v)) return; P.lang = v; persist(); applyPrefs(); retranslateAll(); try { window.dispatchEvent(new CustomEvent("cloudy:languagechange", { detail: { language: v } })); if (window.parent && window.parent !== window) window.parent.postMessage({ type: "cloudy:languagechange", language: v }, window.location.origin); } catch (e) {} snd_("pick"); paint(true); },
+    lang: function (v) { if (!["ru","en","uk"].includes(v) || P.lang === v) return; P.lang = v; persist(); applyPrefs(); try { window.dispatchEvent(new CustomEvent("cloudy:languagechange", { detail: { language: v } })); if (window.parent && window.parent !== window) window.parent.postMessage({ type: "cloudy:languagechange", language: v }, window.location.origin); } catch (e) {} snd_("pick"); paint(true); },
     tog: function (k) {
       var s = S_(); if (!s) return;
       s.set[k] = s.set[k] ? 0 : 1; save_(); snd_("tap");
