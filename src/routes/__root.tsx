@@ -54,7 +54,7 @@ function RootShell({ children }: { children: ReactNode }) {
   window.addEventListener("cloudy:languagechange", applyLanguage);
   window.addEventListener("storage", applyLanguage);
   const onMessage = (event: MessageEvent) => {
-   if (event.origin === window.location.origin && event.data?.type === "cloudy:languagechange") applyLanguage();
+   if (event.origin === window.location.origin && event.data?.type === "cloudy:languagechange") { applyLanguage(); window.dispatchEvent(new CustomEvent("cloudy:languagechange")); }
   };
   window.addEventListener("message", onMessage);
   return () => {
