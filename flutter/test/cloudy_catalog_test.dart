@@ -65,7 +65,7 @@ void main() {
       );
 
       final catalog = await CloudyCatalog.load();
-      final sequence = await catalog.buildAdaptiveLessonSequence(
+      final sequence = catalog.buildAdaptiveLessonSequence(
         24,
         level: 'A1',
         microphoneEnabled: false,
