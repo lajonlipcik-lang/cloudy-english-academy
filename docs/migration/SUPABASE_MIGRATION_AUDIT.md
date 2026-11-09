@@ -93,3 +93,16 @@ A fresh read of the current runtime and SQL confirms the proposed co-located mig
 ## Verified free testing route
 
 The Supabase CLI local stack can be used without creating a paid Supabase branch. It requires a compatible local container runtime (Docker/Podman) and a canonical `supabase/migrations/` chain. The repository currently stores two separate migration directories, and the SQL histories still contain the Shorts RPC conflict above. Therefore a GitHub Actions migration test must wait until the canonical chain and RPC behavior are reconciled; a workflow that merely runs the current files in a guessed order would create false confidence.
+
+
+## Follow-up implementation status
+
+Application code has now been changed on `migration/vercel-platform` so text-only Shorts posts no longer receive a hard-coded `allow`:
+- The server verifies the Core Auth identity and confirms the row belongs to that user.
+- It requires a pending draft with `media_type = 'text'`.
+- It runs the configured Core AI Vault moderation chain and submits the actual decision to the Content moderation RPC.
+- Provider, parsing, or RPC failures remain fail-closed: the upload handler moves only still-pending drafts to `pending_review`.
+
+The historical Core migration `0017_shorts_caption_nonblocking.sql` was deliberately restored unchanged. Editing an old migration would risk checksum/history drift on databases where it has already run. A new additive SQL migration must be generated with the Supabase CLI and placed after the current Core sequence. Until that migration is tested and applied, the existing comment-only RPC will reject the text-post moderation call, so new text posts remain in manual review rather than being auto-published.
+
+The existing GitHub CI workflow now also runs for pushes and pull requests on `migration/vercel-platform`, so typecheck, lint, tests and production build are checked on this branch rather than only on `main`.
