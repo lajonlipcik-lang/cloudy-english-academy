@@ -39,7 +39,7 @@ void main() {
       expect(sequence.first.kind, CloudyExerciseKind.grammar);
       expect(sequence[1].kind, CloudyExerciseKind.vocabulary);
       expect(sequence.first.examples, isNotEmpty);
-      expect(sequence[1].words, hasLength(5));
+      expect(sequence[1].words, hasLength(10));
       expect(sequence.where((item) => item.kind == CloudyExerciseKind.builder).length, greaterThanOrEqualTo(2));
       expect(sequence.where((item) => item.kind == CloudyExerciseKind.recall), hasLength(3));
       expect(sequence.where((item) => item.kind == CloudyExerciseKind.pronunciation), hasLength(1));
