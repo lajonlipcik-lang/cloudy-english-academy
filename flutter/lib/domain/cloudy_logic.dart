@@ -5,9 +5,10 @@ import 'cloudy_state.dart';
 typedef CloudyRand = double Function();
 
 class CloudyPair {
-  const CloudyPair(this.en, this.ru);
+  const CloudyPair(this.en, this.ru, {this.extra});
   final String en;
   final String ru;
+  final String? extra;
 }
 
 class CloudyLesson {
