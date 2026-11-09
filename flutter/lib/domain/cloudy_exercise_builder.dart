@@ -24,9 +24,6 @@ bool isCloudyLessonInLevel(int index, String level) =>
 List<int> cloudyLevelLessons(String level) =>
     List.unmodifiable(cloudyLessonsByLevel[level] ?? const <int>[]);
 
-int _clampInt(num value, int min, int max) =>
-    (value.isFinite ? value.toInt() : min).clamp(min, max).toInt();
-
 List<T> cloudyShuffle<T>(List<T> input, {CloudyRand? random}) {
   final result = List<T>.of(input);
   final rand = random ?? math.Random().nextDouble;
@@ -290,4 +287,38 @@ bool checkCloudyRecallAnswer(String input, String expected) {
       .replaceAll(RegExp(r'[.!?]+$'), '')
       .replaceAll(RegExp(r'\s+'), ' ');
   return normalized == expected.toLowerCase();
+}
+
+
+/// Grades the selected option or the ordered tokens used by the native runner.
+bool isCloudyAnswerCorrect(
+  CloudyExercise exercise, {
+  int? selectedOption,
+  List<int>? builtOptionIndices,
+}) {
+  if (exercise is CloudyChoiceExercise) {
+    return selectedOption != null &&
+        selectedOption >= 0 &&
+        selectedOption < exercise.options.length &&
+        exercise.options[selectedOption] == exercise.answer;
+  }
+  if (exercise is CloudyListeningExercise) {
+    return selectedOption != null &&
+        selectedOption >= 0 &&
+        selectedOption < exercise.options.length &&
+        exercise.options[selectedOption] == exercise.answer;
+  }
+  if (exercise is CloudyBuilderExercise) {
+    if (builtOptionIndices == null || builtOptionIndices.isEmpty) return false;
+    if (builtOptionIndices.any(
+      (index) => index < 0 || index >= exercise.options.length,
+    )) {
+      return false;
+    }
+    final answer = builtOptionIndices
+        .map((index) => exercise.options[index])
+        .join(' ');
+    return answer == exercise.answer;
+  }
+  return false;
 }
