@@ -47,6 +47,7 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
           const eventType = update.pre_checkout_query ? "pre_checkout_query"
             : readObject(update.message).successful_payment ? "successful_payment"
             : readObject(update.message).refunded_payment ? "refunded_payment"
+            : update.subscription ? "subscription"
             : "other";
           const eventKey = Number.isSafeInteger(updateId) ? String(updateId) : "";
           if (!eventKey) return Response.json({ ok: true });
@@ -94,6 +95,32 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
               ok: valid,
               ...(!valid ? { error_message: "Счёт недействителен или срок его действия истёк. Создайте новый." } : {}),
             });
+            await markProcessed();
+            return Response.json({ ok: true });
+          }
+
+          const subscriptionUpdate = readObject(update.subscription);
+          if (Object.keys(subscriptionUpdate).length) {
+            const subscriptionUser = readObject(subscriptionUpdate.user);
+            const payload = String(subscriptionUpdate.invoice_payload ?? "");
+            const state = String(subscriptionUpdate.state ?? "");
+            const { data: order, error: orderError } = await admin
+              .from("telegram_payment_orders")
+              .select("subscription_id,telegram_user_id")
+              .eq("invoice_payload", payload)
+              .maybeSingle();
+            if (orderError) throw orderError;
+            if (order?.subscription_id &&
+                String(order.telegram_user_id) === String(subscriptionUser.id) &&
+                ["active", "canceled", "failed"].includes(state)) {
+              const changes = state === "active"
+                ? { cancel_at_period_end: false, canceled_at: null, updated_at: new Date().toISOString() }
+                : { cancel_at_period_end: true, canceled_at: state === "canceled" ? new Date().toISOString() : null, updated_at: new Date().toISOString() };
+              const { error } = await admin.from("subscriptions")
+                .update(changes)
+                .eq("id", order.subscription_id);
+              if (error) throw error;
+            }
             await markProcessed();
             return Response.json({ ok: true });
           }
