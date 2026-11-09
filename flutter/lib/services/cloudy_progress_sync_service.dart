@@ -37,6 +37,16 @@ class CloudyProgressSyncService {
   CloudyState _baseState = CloudyState.defaults();
   CloudyLearningStore? _learningStore;
   bool _syncPaused = false;
+  Future<void> _operationQueue = Future<void>.value();
+
+  Future<T> _serialize<T>(Future<T> Function() operation) {
+    final result = _operationQueue.then((_) => operation());
+    _operationQueue = result.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace __) {},
+    );
+    return result;
+  }
 
   String? get activeEmail => _activeEmail;
 
@@ -143,7 +153,8 @@ class CloudyProgressSyncService {
     );
   }
 
-  Future<CloudyProgressSyncResult> saveLocal(CloudyState state) async {
+  Future<CloudyProgressSyncResult> saveLocal(CloudyState state) =>
+      _serialize(() async {
     await localStore.saveActive(state);
     final email = _activeEmail ?? localStore.activeAccountEmail;
     if (email == null) {
@@ -163,10 +174,13 @@ class CloudyProgressSyncService {
         error: 'Синхронизация приостановлена до повторной загрузки серверного прогресса.',
       );
     }
-    return syncCurrent();
-  }
+    return _syncCurrent();
+  });
 
-  Future<CloudyProgressSyncResult> syncCurrent() async {
+  Future<CloudyProgressSyncResult> syncCurrent() =>
+      _serialize(_syncCurrent);
+
+  Future<CloudyProgressSyncResult> _syncCurrent() async {
     final email = _activeEmail ?? localStore.activeAccountEmail;
     if (email == null) {
       return CloudyProgressSyncResult(
