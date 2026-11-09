@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:cloudy_english/domain/cloudy_exercise.dart';
 import 'package:cloudy_english/domain/cloudy_state.dart';
 import 'package:cloudy_english/domain/cloudy_progress_engine.dart';
 
