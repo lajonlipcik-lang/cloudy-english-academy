@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloudy_english/domain/cloudy_catalog.dart';
+import 'package:cloudy_english/domain/cloudy_learning.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -64,9 +65,7 @@ void main() {
       );
       final practiceStart = sequence.indexWhere(
         (item) => item.kind == CloudyExerciseKind.choice ||
-            item.kind == CloudyExerciseKind.listening ||
-            item.kind == CloudyExerciseKind.builder ||
-            item.kind == CloudyExerciseKind.matching,
+            item.kind == CloudyExerciseKind.listening,
       );
       expect(sequence[practiceStart].english, 'friend');
     });
