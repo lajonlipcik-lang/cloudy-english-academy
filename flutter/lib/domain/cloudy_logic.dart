@@ -128,22 +128,12 @@ CloudyExercise cloudyChoiceQuestion(
     [CloudyPair(english, russian), ...distractors], random: rand,
   );
 
-  const listeningTitles = [
-    'Что вы услышали?', 'Прослушайте и выберите слово', 'Какое слово произнесено?',
-  ];
-  const englishTitles = [
-    'Что это значит?', 'Выберите перевод слова', 'Как переводится это слово?',
-  ];
-  const russianTitles = [
-    'Переведите на английский', 'Как сказать это по-английски?', 'Выберите английский перевод',
-  ];
-
   if (mode == 2) {
     return CloudyListeningExercise(
       answer: english,
       english: english,
       options: options.map((pair) => pair.first).toList(),
-      title: _randomTitle(listeningTitles, rand),
+      title: 'Что вы слышите?',
     );
   }
   return CloudyChoiceExercise(
@@ -152,7 +142,7 @@ CloudyExercise cloudyChoiceQuestion(
     english: english,
     speak: mode != 0,
     options: options.map((pair) => mode != 0 ? pair.second : pair.first).toList(),
-    title: _randomTitle(mode != 0 ? englishTitles : russianTitles, rand),
+    title: mode != 0 ? 'Что это значит?' : 'Переведите на английский',
   );
 }
 
@@ -173,11 +163,13 @@ List<CloudyExercise> buildCloudyExercises(
   }
 
   final matching = cloudyShuffle(lesson.words, random: rand).take(4).toList();
-  output.add(CloudyMatchingExercise(
-    left: cloudyShuffle(matching.map((pair) => CloudyPair(pair.first, pair.first)).toList(), random: rand),
-    right: cloudyShuffle(matching.map((pair) => CloudyPair(pair.second, pair.first)).toList(), random: rand),
-    title: 'Найдите пары',
-  ));
+  if (matching.isNotEmpty) {
+    output.add(CloudyMatchingExercise(
+      left: cloudyShuffle(matching.map((pair) => CloudyPair(pair.first, pair.first)).toList(), random: rand),
+      right: cloudyShuffle(matching.map((pair) => CloudyPair(pair.second, pair.first)).toList(), random: rand),
+      title: 'Найдите пары',
+    ));
+  }
 
   const bankTitles = [
     'Составьте предложение на английском',
@@ -397,20 +389,20 @@ CloudyAnswerResult applyCloudyMatchingAttempt(
   required bool correct,
   required int totalPairs,
 }) {
+  if (totalPairs <= 0 || session.matchingCorrect >= totalPairs) {
+    return CloudyAnswerResult(state: state, session: session);
+  }
   if (correct) {
     final completedPairs = session.matchingCorrect + 1;
-    if (completedPairs >= totalPairs) {
-      final result = applyCloudyAnswer(
-        state, session, true, englishWord: englishWord,
-      );
-      return CloudyAnswerResult(
-        state: result.state,
-        session: result.session.copyWith(matchingCorrect: completedPairs),
-      );
-    }
+    final isComplete = completedPairs == totalPairs;
     return CloudyAnswerResult(
       state: state,
-      session: session.copyWith(matchingCorrect: completedPairs),
+      session: session.copyWith(
+        matchingCorrect: completedPairs,
+        correct: isComplete ? session.correct + 1 : session.correct,
+        total: isComplete ? session.total + 1 : session.total,
+        combo: isComplete ? session.combo + 1 : session.combo,
+      ),
     );
   }
 
@@ -424,7 +416,6 @@ CloudyAnswerResult applyCloudyMatchingAttempt(
     session: session.copyWith(
       health: session.health - 1,
       combo: 0,
-      total: session.total + 1,
       learnedMistakes: learned,
     ),
   );
