@@ -1,6 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloudy_english/domain/cloudy_catalog.dart';
-import 'package:cloudy_english/domain/cloudy_learning.dart';
+import 'package:cloudy_english/domain/cloudy_exercise.dart';
+import 'package:cloudy_english/domain/cloudy_learning_store.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -22,8 +24,8 @@ void main() {
       final catalog = await CloudyCatalog.load();
       final firstSentence = catalog.lessonAt(0)!.sentences.first;
 
-      expect(firstSentence.ru, 'Привет, меня зовут Анна.');
-      expect(firstSentence.en, 'Hello, my name is Anna.');
+      expect(firstSentence.second, 'Привет, меня зовут Анна.');
+      expect(firstSentence.first, 'Hello, my name is Anna.');
       expect(firstSentence.extra, 'you the');
     });
 
@@ -37,37 +39,45 @@ void main() {
         random: () => 0.25,
       );
 
-      expect(sequence.first.kind, CloudyExerciseKind.grammar);
-      expect(sequence[1].kind, CloudyExerciseKind.vocabulary);
-      expect(sequence.first.examples, isNotEmpty);
-      expect(sequence[1].words, hasLength(10));
-      expect(sequence.where((item) => item.kind == CloudyExerciseKind.builder).length, greaterThanOrEqualTo(2));
-      expect(sequence.where((item) => item.kind == CloudyExerciseKind.recall), hasLength(3));
-      expect(sequence.where((item) => item.kind == CloudyExerciseKind.pronunciation), hasLength(1));
+      expect(sequence.first.kind, 't');
+      expect(sequence[1].kind, 'v');
+      expect((sequence.first as CloudyTheoryExercise).examples, isNotEmpty);
+      expect((sequence[1] as CloudyVocabularyExercise).words, hasLength(10));
+      expect(sequence.where((item) => item.kind == 'b').length, greaterThanOrEqualTo(2));
+      expect(sequence.where((item) => item.kind == 'r'), hasLength(3));
+      expect(sequence.where((item) => item.kind == 'p'), hasLength(1));
     });
 
     test('moves due weak vocabulary into the front of the practice block', () async {
+      SharedPreferences.setMockInitialValues({});
+      final learningStore = await CloudyLearningStore.create(scope: 'catalog-test');
+      await learningStore.record(
+        const CloudyChoiceExercise(
+          question: 'друг',
+          answer: 'friend',
+          english: 'friend',
+          speak: false,
+          options: ['friend'],
+          title: 'Переведите',
+        ),
+        correct: false,
+        now: DateTime(2026, 11, 1),
+      );
+
       final catalog = await CloudyCatalog.load();
-      final sequence = catalog.buildLessonSequence(
+      final sequence = await catalog.buildAdaptiveLessonSequence(
         24,
         level: 'A1',
         microphoneEnabled: false,
         speechRecognitionAvailable: false,
-        skills: {
-          'vocabulary:friend': const CloudySkillEvidence(
-            mastery: 0.4,
-            evidence: 3,
-            dueAt: 1,
-          ),
-        },
-        nowMillis: 1000,
+        learningStore: learningStore,
+        now: DateTime(2026, 11, 9),
         random: () => 0.25,
       );
       final practiceStart = sequence.indexWhere(
-        (item) => item.kind == CloudyExerciseKind.choice ||
-            item.kind == CloudyExerciseKind.listening,
+        (item) => item.kind == 'c' || item.kind == 'l',
       );
-      expect(sequence[practiceStart].english, 'friend');
+      expect((sequence[practiceStart] as CloudyChoiceExercise).english, 'friend');
     });
 
     test('does not add microphone exercises when recognition is unavailable', () async {
@@ -79,7 +89,7 @@ void main() {
         speechRecognitionAvailable: false,
         random: () => 0.25,
       );
-      expect(sequence.where((item) => item.kind == CloudyExerciseKind.pronunciation), isEmpty);
+      expect(sequence.where((item) => item.kind == 'p'), isEmpty);
     });
 
     test('maps level sections to the exact lesson indices', () async {
