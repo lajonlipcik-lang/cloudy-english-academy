@@ -78,6 +78,54 @@ String _normalizeToken(String token) => token.toLowerCase().replaceAll(
   RegExp(r"^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$", unicode: true), '',
 );
 
+CloudyExercise _cloudyPracticeChoiceQuestion(
+  String english,
+  String russian,
+  int mode,
+  List<CloudyPair> pool,
+  CloudyRand random,
+) {
+  const listeningTitles = [
+    'Что вы услышали?',
+    'Прослушайте и выберите слово',
+    'Какое слово произнесено?',
+  ];
+  const englishTitles = [
+    'Что это значит?',
+    'Выберите перевод слова',
+    'Как переводится это слово?',
+  ];
+  const russianTitles = [
+    'Переведите на английский',
+    'Как сказать это по-английски?',
+    'Выберите английский перевод',
+  ];
+
+  final exercise = cloudyChoiceQuestion(
+    english, russian, mode, pool, random: random,
+  );
+  if (exercise is CloudyListeningExercise) {
+    return CloudyListeningExercise(
+      answer: exercise.answer,
+      english: exercise.english,
+      options: exercise.options,
+      title: _randomTitle(listeningTitles, random),
+    );
+  }
+  final choice = exercise as CloudyChoiceExercise;
+  return CloudyChoiceExercise(
+    question: choice.question,
+    answer: choice.answer,
+    english: choice.english,
+    speak: choice.speak,
+    options: choice.options,
+    title: _randomTitle(
+      mode == 0 ? russianTitles : englishTitles,
+      random,
+    ),
+  );
+}
+
 List<CloudyExercise> buildCloudyExercises(
   CloudyLesson lesson, List<CloudyPair> pool, {
   required bool microphoneEnabled, CloudyRand? random,
@@ -87,7 +135,7 @@ List<CloudyExercise> buildCloudyExercises(
 
   for (var index = 0; index < lesson.words.length; index++) {
     final pair = lesson.words[index];
-    output.add(cloudyChoiceQuestion(pair.first, pair.second, index % 3, pool, random: rand));
+    output.add(_cloudyPracticeChoiceQuestion(pair.first, pair.second, index % 3, pool, rand));
   }
 
   final matching = cloudyShuffle(lesson.words, random: rand).take(4).toList();
