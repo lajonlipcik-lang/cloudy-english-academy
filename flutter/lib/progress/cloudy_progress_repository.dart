@@ -13,6 +13,7 @@ class CloudyProgressSaveResult {
 }
 
 class CloudyLessonAward {
+  static int _int(Object? value) => value is num ? value.toInt() : 0;
   const CloudyLessonAward({
     required this.awarded, required this.totalXp, required this.weekKey,
     required this.weekXp, required this.dailyLessons, required this.updatedAt,
@@ -103,5 +104,4 @@ class CloudyProgressRepository {
     );
   }
 
-  static int _int(Object? value) => value is num ? value.toInt() : 0;
 }
