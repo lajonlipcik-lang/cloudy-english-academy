@@ -51,13 +51,13 @@ export function isCloudyRegionBlocked(request: Request): boolean {
 
 export function createCloudyRegionBlockedResponse(): Response {
   const html = `<!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#071b49">
   <meta name="robots" content="noindex,nofollow">
-  <title>Cloudy English — доступность сервиса</title>
+  <title>Cloudy English — Service availability</title>
   <style>
     :root {
       color-scheme: dark;
@@ -148,18 +148,60 @@ export function createCloudyRegionBlockedResponse(): Response {
   <div class="glow one" aria-hidden="true"></div>
   <div class="glow two" aria-hidden="true"></div>
   <main>
-    <svg class="cloud-mascot" viewBox="0 0 100 80" role="img" aria-label="Облачко Cloudy English"><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="#dff1ff"/><g class="eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.8" fill="#fff"/><circle cx="64" cy="43" r="1.8" fill="#fff"/></g><path d="M44 54q7 8 14 0" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg>
+    <svg class="cloud-mascot" viewBox="0 0 100 80" role="img" aria-label="Cloudy English cloud mascot"><path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="#dff1ff"/><g class="eyes"><circle cx="40" cy="45" r="5" fill="#06143a"/><circle cx="62" cy="45" r="5" fill="#06143a"/><circle cx="42" cy="43" r="1.8" fill="#fff"/><circle cx="64" cy="43" r="1.8" fill="#fff"/></g><path d="M44 54q7 8 14 0" stroke="#06143a" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="31" cy="55" r="4" fill="#ff9fb0" opacity=".55"/><circle cx="71" cy="55" r="4" fill="#ff9fb0" opacity=".55"/></svg>
     <p class="brand">Cloudy English Academy</p>
-    <h1>Сейчас мы недоступны в вашем регионе</h1>
-    <p class="lead">К сожалению, Cloudy English Academy пока не может предоставить доступ из страны, определённой для вашего подключения.</p>
-    <p class="details">Это связано с региональными ограничениями и доступностью технических поставщиков сервиса. Если вы считаете, что страна определена неверно, пожалуйста, свяжитесь с нашей поддержкой.</p>
-    <nav class="links" aria-label="Документы">
-      <a href="/availability">Доступность по странам</a>
-      <a href="/legal">Юридические документы</a>
+    <h1 id="region-title">Cloudy English is not available in your region</h1>
+    <p class="lead" id="region-lead">Cloudy English Academy cannot currently provide access from the country detected for your connection.</p>
+    <p class="details" id="region-details">This is due to regional restrictions and the availability of the service’s technical providers. If you believe your country was detected incorrectly, please contact our support team.</p>
+    <nav class="links" aria-label="Documents" id="region-links">
+      <a href="/availability" id="region-availability">Country availability</a>
+      <a href="/legal" id="region-legal">Legal documents</a>
     </nav>
-    <a class="support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">Связаться с поддержкой</a>
+    <a class="support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">Contact support</a>
     <p class="footer">Cloudy English Academy · © 2026</p>
   </main>
+  <script>
+    (function () {
+      var lang = "en";
+      try {
+        var prefs = JSON.parse(localStorage.getItem("cloudy-ui-v1") || "{}");
+        if (prefs.lang === "ru" || prefs.lang === "uk") lang = prefs.lang;
+      } catch (_) {}
+      var copy = {
+        en: {
+          title: "Cloudy English is not available in your region",
+          lead: "Cloudy English Academy cannot currently provide access from the country detected for your connection.",
+          details: "This is due to regional restrictions and the availability of the service’s technical providers. If you believe your country was detected incorrectly, please contact our support team.",
+          availability: "Country availability", legal: "Legal documents", support: "Contact support", docs: "Documents",
+          pageTitle: "Cloudy English — Service availability", mascot: "Cloudy English cloud mascot"
+        },
+        ru: {
+          title: "Сейчас мы недоступны в вашем регионе",
+          lead: "К сожалению, Cloudy English Academy пока не может предоставить доступ из страны, определённой для вашего подключения.",
+          details: "Это связано с региональными ограничениями и доступностью технических поставщиков сервиса. Если вы считаете, что страна определена неверно, пожалуйста, свяжитесь с нашей поддержкой.",
+          availability: "Доступность по странам", legal: "Юридические документы", support: "Связаться с поддержкой", docs: "Документы",
+          pageTitle: "Cloudy English — доступность сервиса", mascot: "Облачко Cloudy English"
+        },
+        uk: {
+          title: "Cloudy English наразі недоступний у вашому регіоні",
+          lead: "На жаль, Cloudy English Academy поки не може надати доступ із країни, визначеної для вашого підключення.",
+          details: "Це пов’язано з регіональними обмеженнями та доступністю технічних постачальників сервісу. Якщо ви вважаєте, що країну визначено неправильно, зверніться до нашої служби підтримки.",
+          availability: "Доступність за країнами", legal: "Юридичні документи", support: "Зв’язатися з підтримкою", docs: "Документи",
+          pageTitle: "Cloudy English — доступність сервісу", mascot: "Хмаринка Cloudy English"
+        }
+      }[lang];
+      document.documentElement.lang = lang;
+      document.title = copy.pageTitle;
+      document.getElementById("region-title").textContent = copy.title;
+      document.getElementById("region-lead").textContent = copy.lead;
+      document.getElementById("region-details").textContent = copy.details;
+      document.getElementById("region-availability").textContent = copy.availability;
+      document.getElementById("region-legal").textContent = copy.legal;
+      document.getElementById("region-links").setAttribute("aria-label", copy.docs);
+      document.querySelector(".support").textContent = copy.support;
+      document.querySelector(".cloud-mascot").setAttribute("aria-label", copy.mascot);
+    })();
+  </script>
 </body>
 </html>`;
 
