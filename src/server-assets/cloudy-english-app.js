@@ -923,7 +923,7 @@ let shortsSaved=new Set();
 function shorts(){
  
  const items=shortsFeedMode==="following"?shortsLiveItems.filter(x=>shortsFollowing.has(x.authorId)):shortsLiveItems;
- let h='<section class="shorts-screen"><div class="shorts-topbar"><div class="shorts-brand"><b>CLOUDY <i>SHORTS</i></b></div><div class="shorts-tabs"><button class="'+(shortsFeedMode==="following"?"active":"")+'" onclick="shortsSetMode(\'following\')">Подписки</button><button class="'+(shortsFeedMode==="for-you"?"active":"")+'" onclick="shortsSetMode(\'for-you\')">Для вас</button></div><button class="shorts-search" aria-label="Поиск" onclick="shortsSearch()">'+shortsIcon("search")+'</button></div><div class="shorts-feed" id="shorts-feed">';
+ let h='<section class="shorts-screen"><div class="shorts-topbar"><div class="shorts-tabs"><button class="'+(shortsFeedMode==="following"?"active":"")+'" onclick="shortsSetMode(\'following\')">Подписки</button><button class="'+(shortsFeedMode==="for-you"?"active":"")+'" onclick="shortsSetMode(\'for-you\')">Для вас</button></div><button class="shorts-search" aria-label="Поиск" onclick="shortsSearch()">'+shortsIcon("search")+'</button></div><div class="shorts-feed" id="shorts-feed">';
  if(!items.length)h+='<div class="shorts-empty-state">'+(shortsFeedLoading?'Загружаем публикации…':shortsFeedMode==="following"?'Здесь появятся публикации авторов, на которых ты подпишешься.':'Пока нет публикаций. Поделись первым учебным материалом!')+'</div>';
  items.forEach(x=>{
   const id=shortsEscapeText(x.id),author=shortsEscapeText(x.author),handle=shortsEscapeText(x.handle),caption=shortsEscapeText(x.caption),url=shortsEscapeText(x.videoUrl||x.imageUrl||""),initial=shortsEscapeText(x.initial);
