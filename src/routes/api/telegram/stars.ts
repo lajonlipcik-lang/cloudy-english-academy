@@ -81,6 +81,9 @@ export const Route = createFileRoute("/api/telegram/stars")({
             if (subscriptionsError) throw subscriptionsError;
             const alreadyHasAccess = (currentSubscriptions ?? []).some((subscription) => {
               const end = subscription.current_period_end;
+              if (subscription.status === "canceled") {
+                return end != null && Date.parse(String(end)) > now.getTime();
+              }
               return end == null || Date.parse(String(end)) > now.getTime();
             });
             if (alreadyHasAccess) {
