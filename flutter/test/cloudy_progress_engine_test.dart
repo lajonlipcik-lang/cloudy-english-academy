@@ -226,6 +226,48 @@ void main() {
       expect(result.state.perfectLessons, 0);
     });
 
+    test('sanitizes local progress using the server whitelist and limits', () {
+      final input = CloudyState.fromJson({
+        'streak': 9000,
+        'dn': {'A1': 999, 'A2': 999, 'B1': 99, 'B2': 99},
+        'acc': [9999999, 9999999],
+        'mis': {'son': 12000, '': 3},
+        'set': {'vol': 2, 'goal': 1, 'remT': '25:61'},
+        'td': {'xp': 999999, 'les': 9999, 'ok': 999999, 'claim': 9},
+      });
+      final safe = sanitizeCloudyProgress(input);
+
+      expect(safe.streak, 3650);
+      expect(safe.completed, {'A1': 24, 'A2': 24, 'B1': 6, 'B2': 6});
+      expect(safe.accuracy, [1000000, 1000000]);
+      expect(safe.mistakes, {'son': 10000});
+      expect(safe.settings.vol, 1);
+      expect(safe.settings.goal, 5);
+      expect(safe.settings.remT, '19:00');
+      expect(safe.today.xp, 100000);
+      expect(safe.today.les, 1000);
+      expect(safe.today.claim, 1);
+    });
+
+    test('exposes achievements only when their original conditions are met', () {
+      final state = CloudyState.defaults().copyWith(
+        xp: 500,
+        streak: 7,
+        perfectLessons: 1,
+        completed: const {'A1': 21, 'A2': 0, 'B1': 0, 'B2': 0},
+        tested: 1,
+      );
+      final unlocked = cloudyAchievements(state)
+          .where((achievement) => achievement.unlocked)
+          .map((achievement) => achievement.id)
+          .toSet();
+      expect(unlocked, {
+        'first', 's3', 's7', 'perf', 'x1', 'x5', 'a1', 'tst',
+      });
+      expect(newCloudyAchievements(state).length, 8);
+      expect(hasCloudyProgress(state), isTrue);
+    });
+
     test('claims the daily chest only once after the configured goal', () {
       final state = CloudyState.defaults().copyWith(
         xp: 120,
