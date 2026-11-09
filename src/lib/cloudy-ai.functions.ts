@@ -177,7 +177,7 @@ function runCloudyExerciseAudit(){
       const lesson=(D as any)[lessonIndex];
       lessonCount++;
       if(!lesson||!Array.isArray(lesson.w)||!Array.isArray(lesson.s)){failures.push(level+" урок "+lessonIndex+": отсутствуют данные урока");continue;}
-      let lessonTasks=0,lessonErrors=0;
+      let lessonTasks=0,lessonErrors=0,lessonAccuracy=0,lessonStars=0,lessonXp=0;
       for(let variant=0;variant<3;variant++){
         variantCount++;
         const exercises=buildExercises(lesson,pool,{mic:true},randomFor((lessonIndex+1)*1009+variant*7919));
@@ -222,8 +222,9 @@ function runCloudyExerciseAudit(){
         const finished=finishLesson(simulatedState,simulatedSession);
         if(finished.acc<100){lessonErrors++;failures.push(level+" / "+lesson.t+": симуляция правильных ответов завершилась с точностью ниже 100%");}
         else {simulatedCompletions++;simulatedXp+=finished.gain;}
+        lessonAccuracy+=finished.acc;lessonStars+=finished.stars;lessonXp+=finished.gain;
       }
-      rows.push("• "+lesson.t+": "+lessonTasks+" проверок, "+(lessonErrors?"ошибок "+lessonErrors:"структура корректна")+", точность "+finished.acc+"%, "+finished.stars+" звезды, "+finished.gain+" XP (тестовая симуляция)");
+      rows.push("• "+lesson.t+": "+lessonTasks+" проверок, "+(lessonErrors?"ошибок "+lessonErrors:"структура корректна")+", точность "+Math.round(lessonAccuracy/3)+"% средняя точность, "+(lessonStars/3).toFixed(1)+" звезды в среднем, "+lessonXp+" XP за 3 прогона (тестовая симуляция)");
     }
     levelRows.push(level+" ("+lessonIds.length+" уроков):\\n"+rows.join("\\n"));
   }
