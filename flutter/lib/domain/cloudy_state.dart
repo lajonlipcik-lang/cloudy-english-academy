@@ -123,7 +123,7 @@ class CloudyState {
       today: CloudyToday.fromJson(map['td']),
     );
 
-    if (!map.containsKey('dn') && _number(map['done']) != 0 && map['lv'] == null) {
+    if (!map.containsKey('dn') && _number(map['done']) != 0 && !map.containsKey('lv')) {
       return CloudyState(
         xp: state.xp, streak: state.streak, last: state.last,
         level: CloudyLevel.a1,
