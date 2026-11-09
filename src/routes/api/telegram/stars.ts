@@ -69,6 +69,26 @@ export const Route = createFileRoute("/api/telegram/stars")({
               return Response.json({ ok: false, error: "Название платёжного тарифа должно быть настроено (до 32 символов)." }, { status: 409 });
             }
 
+            const now = new Date();
+            await admin.from("telegram_payment_orders")
+              .update({ status: "expired", updated_at: now.toISOString() })
+              .eq("user_id", userId)
+              .eq("status", "pending")
+              .lte("expires_at", now.toISOString());
+            const { data: pendingOrder, error: pendingError } = await admin
+              .from("telegram_payment_orders")
+              .select("id")
+              .eq("user_id", userId)
+              .eq("status", "pending")
+              .maybeSingle();
+            if (pendingError) throw pendingError;
+            if (pendingOrder) {
+              return Response.json({
+                ok: false,
+                error: "У вас уже есть неоплаченный счёт в Telegram. Завершите его или дождитесь окончания срока.",
+              }, { status: 409 });
+            }
+
             const invoicePayload = `cs_${randomToken()}`;
             const { data: order, error: orderError } = await admin
               .from("telegram_payment_orders")
