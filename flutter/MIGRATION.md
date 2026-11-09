@@ -24,19 +24,19 @@ The current application remains authoritative until the Flutter version passes f
 ## Current Flutter implementation
 
 - flutter/lib/main.dart: WebView compatibility shell; the existing web application is still the runtime UI.
-- flutter/assets/cloudy_catalog.json and flutter/lib/domain/cloudy_catalog.dart: complete 60-lesson curriculum, level sections, and 27 grammar foundations.
+- flutter/assets/cloudy_catalog.json and flutter/lib/domain/cloudy_catalog.dart: complete 60-lesson curriculum, level sections, and grammar foundations.
 - flutter/lib/domain/cloudy_exercise.dart: typed JSON-compatible models for all eight exercise/study card types.
-- flutter/lib/domain/cloudy_state.dart: persisted progress/settings model using the current cl2 JSON keys.
-- flutter/lib/progress/cloudy_local_progress_store.dart: guest/account progress persistence, sync timestamps, and cloud activation policy.
-- flutter/lib/progress/cloudy_progress_repository.dart: authenticated save, conflict recovery, and server-authoritative lesson XP.
-- flutter/lib/data/cloudy_auth_repository.dart: Supabase auth adapter and exact 13+ profile-age update policy; the adapter is not yet wired into native screens.
-- flutter/lib/data/cloudy_mobile_api.dart and src/routes/api/cloudy/mobile.ts: authenticated mobile API client/server contract for loading/saving progress, awarding lesson XP, and synchronizing learning events.
-- flutter/lib/domain/cloudy_exercise_builder.dart and lib/domain/cloudy_progress_engine.dart: lesson stages, exercise generation, guided grammar tasks, answer/retry rules, XP/streaks, achievements, daily chest, guest/account merge, and progress sanitization.
-- flutter/lib/domain/cloudy_learning_store.dart: local adaptive mastery, spaced-review prioritization, session tracking, and offline event outbox.
-- flutter/test/: parity-focused tests for progress, catalog loading, exercise serialization, learning persistence, guest/account progress merge, and exercise generation.
+- flutter/lib/domain/cloudy_exercise_builder.dart: lesson exercise generation, staged lesson flow, guided grammar tasks, and answer validation.
+- flutter/lib/domain/cloudy_progress_engine.dart: progress rules, review flow, XP/streaks, server awards, and three-way conflict merge.
+- flutter/lib/domain/cloudy_learning_store.dart: adaptive mastery, spaced-review prioritization, session tracking, and offline event outbox.
+- flutter/lib/progress/cloudy_local_progress_store.dart: cl2-compatible guest/account persistence and dirty/synced metadata.
+- flutter/lib/data/cloudy_auth_repository.dart: Supabase auth adapter and exact 13+ profile-age update policy; not yet wired into native screens.
+- flutter/lib/data/cloudy_mobile_api.dart and src/routes/api/cloudy/mobile.ts: authenticated mobile API contract for progress load/save, lesson XP awards, and learning-event synchronization.
+- flutter/lib/services/cloudy_progress_sync_service.dart: account activation, guest migration, optimistic-concurrency retries, server XP awards, and event acknowledgement.
+- flutter/test/: parity-focused tests for catalog loading, exercise serialization/generation, progress, learning persistence, auth policy, mobile API, and sync conflicts.
 - .github/workflows/flutter-ci.yml: Flutter dependency, analyzer, and test workflow for the migration branch.
 
-These are migration foundations, not evidence that the native app is complete or that all tests have passed. The native screen layer, native authentication, media integrations, backend event synchronization, and full parity validation remain outstanding.
+These are migration foundations, not evidence that the native app is complete or that all tests have passed. Native auth screen wiring, native UI, platform audio/microphone integration, and full parity validation remain outstanding.
 
 ## Quality gates
 
