@@ -217,7 +217,7 @@ export const createShortTextPost = createServerFn({ method: "POST" })
         published:result.decision==="allow",message:result.reason};
     } catch(error) {
       await content.from("shorts_videos").update({status:"pending_review",moderation_status:"needs_human_review",
-        moderation_reason:"Автоматическая проверка текста временно недоступна; публикация ожидает ручной проверки."}).eq("id",id).eq("author_id",user.id);
+        moderation_reason:"Автоматическая проверка текста временно недоступна; публикация ожидает ручной проверки."}).eq("id",id).eq("author_id",user.id).eq("status","draft").eq("moderation_status","pending");
       return {ok:true,videoId:id,status:"pending_review",published:false,
         message:"Текст ожидает ручной проверки: "+(error instanceof Error?error.message:"AI unavailable")};
     }
