@@ -45,6 +45,32 @@ void main() {
       expect(sequence.where((item) => item.kind == CloudyExerciseKind.pronunciation), hasLength(1));
     });
 
+    test('moves due weak vocabulary into the front of the practice block', () async {
+      final catalog = await CloudyCatalog.load();
+      final sequence = catalog.buildLessonSequence(
+        24,
+        level: 'A1',
+        microphoneEnabled: false,
+        speechRecognitionAvailable: false,
+        skills: {
+          'vocabulary:friend': const CloudySkillEvidence(
+            mastery: 0.4,
+            evidence: 3,
+            dueAt: 1,
+          ),
+        },
+        nowMillis: 1000,
+        random: () => 0.25,
+      );
+      final practiceStart = sequence.indexWhere(
+        (item) => item.kind == CloudyExerciseKind.choice ||
+            item.kind == CloudyExerciseKind.listening ||
+            item.kind == CloudyExerciseKind.builder ||
+            item.kind == CloudyExerciseKind.matching,
+      );
+      expect(sequence[practiceStart].english, 'friend');
+    });
+
     test('does not add microphone exercises when recognition is unavailable', () async {
       final catalog = await CloudyCatalog.load();
       final sequence = catalog.buildLessonSequence(
