@@ -581,12 +581,13 @@ CloudyAnswerResult applyCloudyMatchingAttempt(
   }
 
   final mistakes = Map<String, num>.of(state.mistakes);
-  mistakes[englishWord] = (mistakes[englishWord] ?? 0) + 1;
-  final words = session.mistakeWords.contains(englishWord)
-      ? session.mistakeWords
-      : [...session.mistakeWords, englishWord];
+  final words = List<String>.of(session.mistakeWords);
+  if (englishWord.isNotEmpty) {
+    mistakes[englishWord] = (mistakes[englishWord] ?? 0) + 1;
+    if (!words.contains(englishWord)) words.add(englishWord);
+  }
   return CloudyAnswerResult(
-    state: state.copyWith(mistakes: mistakes),
+    state: englishWord.isEmpty ? state : state.copyWith(mistakes: mistakes),
     session: session.copyWith(
       health: session.health - 1,
       combo: 0,
