@@ -2,7 +2,7 @@ name: Cloudy CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, migration/vercel-platform]
   pull_request:
     branches: [main]
 
