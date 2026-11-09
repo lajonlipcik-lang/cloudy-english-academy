@@ -18,7 +18,7 @@ DECLARE
   v_parent_video_id uuid;
   v_parent_status text;
 BEGIN
-  IF p_author_id IS NULL OR p_video_id IS NULL OR char_length(btrim(p_body)) NOT BETWEEN 1 AND 500 THEN
+  IF p_author_id IS NULL OR p_video_id IS NULL OR p_body IS NULL OR char_length(btrim(p_body)) NOT BETWEEN 1 AND 500 THEN
     RAISE EXCEPTION 'INVALID_COMMENT';
   END IF;
 
