@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import { ArrowUpRight, ArrowLeft, ClipboardList, CreditCard, FileText, LockKeyhole, MessageCircle, Scale, ShieldCheck, UserRound, Users } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
@@ -114,15 +116,30 @@ export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [
     ]
   }
 ] as const;
+
+const LEGAL_PAGE_STYLES = "/* Cloudy Legal — документы простым языком */\n.lgl-root{position:fixed;inset:0;z-index:60;display:flex;justify-content:center;\n  background:linear-gradient(165deg,var(--bg0,#050d2b) 0%,var(--bg1,#0a2a73) 100%);\n  animation:lglIn .5s cubic-bezier(.2,.85,.25,1) both}\n.lgl-root.out{animation:lglOut .32s ease both}\n@keyframes lglIn{from{opacity:0;transform:translateY(48px)}}\n@keyframes lglOut{to{opacity:0;transform:translateY(40px)}}\n.lgl-in{position:relative;width:100%;max-width:560px;height:100%;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}\n.lgl-top{display:flex;align-items:center;gap:12px;padding:12px 16px 10px}\n.lgl-top h3{margin:0;flex:1;font-size:19px;font-weight:900;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.lgl-back{width:42px;height:42px;flex:none;border:0;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:22px;line-height:1;display:grid;place-items:center;padding:0;transition:transform .25s cubic-bezier(.3,1.4,.5,1)}\n.lgl-back:active{transform:scale(.88)}\n.lgl-prog{height:3px;background:rgba(255,255,255,.1);margin:0 16px;border-radius:3px;overflow:hidden}\n.lgl-prog i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--a1,#4db3ff),#fff);border-radius:3px;transition:width .15s linear}\n.lgl-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;padding:14px 16px calc(34px + env(safe-area-inset-bottom,0px))}\n.lgl-scroll::-webkit-scrollbar{display:none}\n.lgl-pg.fwd{animation:lglFwd .42s cubic-bezier(.2,.85,.25,1) both}\n.lgl-pg.bck{animation:lglBck .42s cubic-bezier(.2,.85,.25,1) both}\n@keyframes lglFwd{from{opacity:0;transform:translateX(36px)}}\n@keyframes lglBck{from{opacity:0;transform:translateX(-36px)}}\n\n/* hero */\n.lgl-hero{text-align:center;padding:22px 18px 20px;margin-bottom:18px;border-radius:28px;background:linear-gradient(135deg,var(--a1,#4db3ff),var(--a2,#2d86f2));box-shadow:0 5px 0 var(--a3,#1a58b5),0 16px 30px rgba(0,0,0,.28)}\n.lgl-hero-ic{font-size:50px;line-height:1;margin-bottom:8px;display:inline-block;animation:float 3s ease-in-out infinite}\n.lgl-hero h2{margin:0 0 8px;font-size:24px;font-weight:900;line-height:1.15}\n.lgl-hero p{margin:0;font-size:14px;line-height:1.45;font-weight:600;opacity:.92}\n.lgl-h{margin:22px 4px 10px;font-size:13px;font-weight:900;letter-spacing:.8px;text-transform:uppercase;opacity:.7}\n\n/* FAQ + expanders */\n.lgl-faq{display:grid;gap:8px}\n.lgl-q{border-radius:18px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);overflow:hidden;animation:rise2 .5s both;animation-delay:calc(var(--i)*55ms + 120ms)}\n.lgl-q>button{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:14px 16px;border:0;background:none;color:#fff;font-weight:800;font-size:15px;text-align:left;line-height:1.3}\n.lgl-q>button i{flex:none;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;font-style:normal;font-size:18px;transition:transform .4s cubic-bezier(.3,1.4,.5,1)}\n.lgl-q.open>button i{transform:rotate(135deg)}\n.lgl-x{display:grid;grid-template-rows:0fr;transition:grid-template-rows .4s cubic-bezier(.2,.85,.25,1)}\n.lgl-x>div{overflow:hidden;min-height:0}\n.open>.lgl-x,.open .lgl-x{grid-template-rows:1fr}\n.lgl-q .lgl-x p{margin:0;padding:0 16px 6px;font-size:14px;line-height:1.5;opacity:.92;font-weight:500}\n.lgl-more{border:0;background:none;color:#8fd3ff;font-weight:800;font-size:13px;padding:6px 16px 14px}\n\n/* document cards */\n.lgl-cards{display:grid;gap:10px}\n.lgl-card{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border-radius:22px;text-align:left;color:#fff;\n  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);animation:rise2 .5s both;animation-delay:calc(var(--i)*60ms + 250ms);\n  transition:transform .2s cubic-bezier(.3,1.4,.5,1),background .25s}\n.lgl-card:active{transform:scale(.97);background:rgba(255,255,255,.15)}\n.lgl-ic{flex:none;width:52px;height:52px;border-radius:17px;display:grid;place-items:center;font-size:27px;background:color-mix(in srgb,var(--h) 30%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--h) 55%,transparent)}\n.lgl-ct{flex:1;min-width:0}.lgl-ct b{display:block;font-size:16px;line-height:1.2}\n.lgl-ct small{display:block;margin-top:3px;font-size:12px;line-height:1.35;opacity:.72;font-weight:600}\n.lgl-card em{flex:none;font-style:normal;font-size:11px;font-weight:900;padding:4px 9px;border-radius:99px;background:rgba(255,255,255,.12)}\n\n/* support */\n.lgl-support{display:flex;align-items:center;gap:14px;margin-top:22px;padding:14px 16px;border-radius:22px;text-decoration:none;color:#fff;\n  background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(255,255,255,.07));border:1px solid rgba(255,255,255,.16);transition:transform .2s cubic-bezier(.3,1.4,.5,1)}\n.lgl-support:active{transform:scale(.97)}\n.lgl-sup-ic{font-size:30px}.lgl-support b{display:block;font-size:15px}.lgl-support small{display:block;opacity:.75;font-weight:600;font-size:12px;margin-top:2px}\n.lgl-support>span:nth-child(2){flex:1}.lgl-support i{font-style:normal;font-size:26px;opacity:.55}\n\n/* document view */\n.lgl-dh{display:flex;align-items:center;gap:14px;margin-bottom:14px}\n.lgl-dh-ic{flex:none;width:62px;height:62px;border-radius:20px;display:grid;place-items:center;font-size:32px;background:color-mix(in srgb,var(--h) 30%,transparent);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--h) 60%,transparent);animation:pop .5s both}\n.lgl-dh h2{margin:0;font-size:22px;line-height:1.15;font-weight:900}\n.lgl-dh p{margin:4px 0 0;font-size:13px;opacity:.75;font-weight:700;line-height:1.35}\n.lgl-short{padding:16px;border-radius:26px;margin-bottom:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--h) 26%,transparent),rgba(255,255,255,.06));border:1px solid color-mix(in srgb,var(--h) 45%,transparent)}\n.lgl-short-t{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:17px}.lgl-short-t span{font-size:22px}\n.lgl-short ul{list-style:none;margin:0;padding:0;display:grid;gap:9px}\n.lgl-short li{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;line-height:1.4;font-weight:700;animation:rise2 .45s both;animation-delay:calc(var(--i)*70ms + 150ms)}\n.lgl-short li i{flex:none;width:22px;height:22px;border-radius:50%;margin-top:1px;display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:900;background:var(--h);color:#06143a}\n.lgl-toc{display:flex;gap:8px;overflow-x:auto;padding:2px 0 14px;scrollbar-width:none;margin:0 -16px;padding-left:16px;padding-right:16px}\n.lgl-toc::-webkit-scrollbar{display:none}\n.lgl-toc button{flex:none;border:0;border-radius:99px;padding:8px 13px;background:rgba(255,255,255,.1);color:#fff;font-weight:800;font-size:12.5px;white-space:nowrap;transition:background .25s,transform .2s}\n.lgl-toc button:active{background:rgba(255,255,255,.22);transform:scale(.94)}\n.lgl-sec{padding:15px 16px 10px;margin-bottom:10px;border-radius:22px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);animation:rise2 .5s both;animation-delay:calc(var(--i)*50ms + 200ms)}\n.lgl-sec.flash{animation:lglFlash 1s ease both}\n@keyframes lglFlash{0%,100%{box-shadow:0 0 0 0 transparent}30%{box-shadow:0 0 0 3px var(--h)}}\n.lgl-sec-h{display:flex;align-items:center;gap:10px;margin-bottom:8px}\n.lgl-n{flex:none;min-width:28px;height:28px;padding:0 6px;border-radius:10px;display:grid;place-items:center;font-size:13px;font-weight:900;background:var(--h);color:#06143a}\n.lgl-sec h4{margin:0;font-size:16px;line-height:1.25;font-weight:900}\n.lgl-sec>p{margin:0;font-size:15px;line-height:1.55;font-weight:500;opacity:.95}\n.lgl-sec a,.lgl-x a{color:#8fd3ff;word-break:break-all}\n.lgl-ox{margin-top:8px}\n.lgl-orig{display:flex;align-items:center;gap:6px;border:0;background:none;color:rgba(255,255,255,.65);font-size:12.5px;font-weight:800;padding:8px 0;letter-spacing:.3px}\n.lgl-orig i{font-style:normal;font-size:16px;transition:transform .4s cubic-bezier(.3,1.4,.5,1)}\n.lgl-ox.open .lgl-orig i{transform:rotate(180deg)}\n.lgl-o{margin:0 0 10px;padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.22);font-size:13px;line-height:1.55;opacity:.85;font-weight:500}\n\nhtml[data-motion=\"off\"] .lgl-root,html[data-motion=\"off\"] .lgl-root *{animation:none!important}\n\n.lgl-root{--bg0:#050d2b;--bg1:#0a2a73;--a1:#4db3ff;--a2:#2d86f2;--a3:#1a58b5;color:#fff}\n.lgl-hero-ic{display:grid;place-items:center;width:62px;height:62px;margin:0 auto 12px;border-radius:20px;background:rgba(255,255,255,.16);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2)}\n.lgl-card{font:inherit;cursor:pointer}\n.lgl-card:focus-visible,.lgl-back:focus-visible,.lgl-q>button:focus-visible,.lgl-toc button:focus-visible,.lgl-orig:focus-visible,.lgl-more:focus-visible{outline:2px solid #8fd3ff;outline-offset:3px}\n.lgl-card .lgl-ic svg,.lgl-dh-ic svg,.lgl-hero-ic svg,.lgl-support svg{width:27px;height:27px}\n.lgl-card .lgl-ic{display:grid;place-items:center}\n.lgl-dh-ic{display:grid;place-items:center}\n.lgl-hero-ic svg{width:34px;height:34px}\n.lgl-support .lgl-sup-ic{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:rgba(255,255,255,.14)}\n.lgl-sec:not(.expanded)>p{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}\n.lgl-sec.expanded>p{display:block}\n.lgl-empty{padding:16px;border-radius:18px;background:rgba(255,255,255,.08);font-size:14px;line-height:1.5}\n.lgl-root a{color:#8fd3ff}\n.lgl-support{color:#fff!important}\n.lgl-support .lgl-support-copy{flex:1;min-width:0}\n.lgl-scroll{scroll-behavior:smooth}\n@media(max-width:380px){.lgl-card{gap:10px;padding:12px}.lgl-ic{width:46px;height:46px}.lgl-card em{display:none}.lgl-hero{padding:19px 15px}.lgl-dh h2{font-size:19px}}\n@media(prefers-reduced-motion:reduce){.lgl-root,.lgl-root *{animation:none!important;scroll-behavior:auto!important;transition:none!important}}\n";
+
+const LEGAL_META: Record<string, { color: string; label: string; icon: typeof FileText; highlights: string[] }> = {
+  terms: { color: "#62c5ff", label: "Условия", icon: Scale, highlights: ["Как пользоваться Cloudy English", "Правила аккаунта, материалов и сообщества", "Доступность сервиса и обращения в поддержку"] },
+  privacy: { color: "#58d6c0", label: "Данные", icon: ShieldCheck, highlights: ["Какие данные могут обрабатываться", "Как работают Cloudy AI и внешние поставщики", "Как запросить экспорт, исправление или удаление"] },
+  consent: { color: "#a99aff", label: "Согласие", icon: LockKeyhole, highlights: ["Дополнительное использование диалогов необязательно", "Согласие выключено по умолчанию", "Согласие можно отозвать в центре конфиденциальности"] },
+  community: { color: "#ff9eae", label: "Правила", icon: Users, highlights: ["Уважительное общение и защита приватности", "Запрет травли, угроз и вмешательства в аккаунты", "Жалобы рассматриваются через поддержку"] },
+  payments: { color: "#ffd16b", label: "Платежи", icon: CreditCard, highlights: ["Условия действуют для платных функций, если они доступны", "Цена и периодичность должны быть показаны до покупки", "Возвраты учитывают обязательные права потребителей"] },
+  parents: { color: "#7ed7e8", label: "Родителям", icon: UserRound, highlights: ["Минимальный возраст регистрации — 13 лет", "Требования к согласию зависят от страны", "В приложении пока нет автоматической проверки полномочий"] },
+  guide: { color: "#b5c4ff", label: "Памятка", icon: ClipboardList, highlights: ["Коротко об аккаунте и профиле", "Как беречь личные данные", "Где управлять согласием и запросами"] },
+};
+
+const LEGAL_FAQ = [
+  ["С чего начать?", "Откройте нужный документ в списке. Внутри есть краткое содержание, переходы к разделам и полный текст условий."],
+  ["Как связаться с поддержкой?", "Используйте кнопку «Связаться» внизу юридического центра. Она открывает официальный Telegram поддержки Cloudy English."],
+  ["Можно ли отозвать согласие на улучшение ИИ?", "Да. Необязательное согласие управляется отдельно в центре конфиденциальности профиля и по умолчанию выключено."],
+  ["Как запросить копию или удаление данных?", "Войдите в аккаунт, откройте профиль и центр конфиденциальности. Запрос на удаление отправляется на рассмотрение и не удаляет аккаунт автоматически."]
+];
+
 function CloudyMascot() {
   return (
     <svg viewBox="0 0 100 80" aria-hidden="true" className="h-14 w-16 shrink-0">
-      <defs>
-        <linearGradient id="cloudyLegalMascot" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="1" stopColor="#bfe0ff" />
-        </linearGradient>
-      </defs>
+      <defs><linearGradient id="cloudyLegalMascot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#fff" /><stop offset="1" stopColor="#bfe0ff" /></linearGradient></defs>
       <path d="M26 68a18 18 0 0 1-2-37 24 24 0 0 1 46-6 20 20 0 0 1 6 43z" fill="url(#cloudyLegalMascot)" />
       <g fill="#06143a"><circle cx="40" cy="45" r="5" /><circle cx="62" cy="45" r="5" /></g>
       <g fill="#fff"><circle cx="42" cy="43" r="1.8" /><circle cx="64" cy="43" r="1.8" /></g>
@@ -134,111 +151,136 @@ function CloudyMascot() {
 
 export function LegalPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const active = LEGAL_DOCUMENTS.find((document) => document.id === activeId);
+  const activeMeta = active ? LEGAL_META[active.id] : null;
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node) return;
+    const update = () => {
+      const max = node.scrollHeight - node.clientHeight;
+      setScrollProgress(max > 0 ? Math.min(100, Math.round((node.scrollTop / max) * 100)) : 0);
+    };
+    update();
+    node.addEventListener("scroll", update, { passive: true });
+    return () => node.removeEventListener("scroll", update);
+  }, [activeId]);
+
+  const openDocument = (id: string) => {
+    setActiveId(id);
+    setExpandedSections([]);
+    setScrollProgress(0);
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  };
+  const goHome = () => {
+    setActiveId(null);
+    setExpandedSections([]);
+    setScrollProgress(0);
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  };
+  const jumpToSection = (index: number) => {
+    const target = document.getElementById("legal-section-" + index);
+    target?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const toggleSection = (heading: string) => {
+    setExpandedSections((current) => current.includes(heading) ? current.filter((item) => item !== heading) : [...current, heading]);
+  };
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden px-4 pb-8 pt-[max(18px,env(safe-area-inset-top))] text-white" style={{ fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', background: "linear-gradient(165deg, #050d2b 0%, #0a2a73 48%, #3aa0ff 100%) fixed" }}>
-      <style>{`@keyframes legalCloudFloat { 0%,100% { transform: translate3d(0,0,0) rotate(-3deg); } 50% { transform: translate3d(12px,-15px,0) rotate(3deg); } } @media (prefers-reduced-motion: reduce) { .legal-cloud-float { animation: none !important; } }`}</style>
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
-        <div className="legal-cloud-float absolute left-[5%] top-[17%] opacity-[0.10]" style={{ animation: "legalCloudFloat 8s ease-in-out infinite" }}><CloudyMascot /></div>
-        <div className="legal-cloud-float absolute right-[4%] top-[43%] scale-[0.72] opacity-[0.09]" style={{ animation: "legalCloudFloat 10s ease-in-out -3s infinite" }}><CloudyMascot /></div>
-        <div className="legal-cloud-float absolute bottom-[9%] left-[16%] scale-[0.58] opacity-[0.08]" style={{ animation: "legalCloudFloat 9s ease-in-out -5s infinite" }}><CloudyMascot /></div>
-        <div className="legal-cloud-float absolute right-[20%] top-[76%] scale-[0.48] opacity-[0.07]" style={{ animation: "legalCloudFloat 11s ease-in-out -2s infinite" }}><CloudyMascot /></div>
-      </div>
-      <div className="relative z-10 mx-auto max-w-3xl">
-        <header className="pb-6 pt-3">
-          <div className="flex items-center gap-3">
-            <CloudyMascot />
-            <div>
-              <p className="text-sm font-extrabold tracking-wide text-white">Cloudy English Academy</p>
-              <p className="text-xs tracking-[.12em] text-[#55c9f2]">ЮРИДИЧЕСКИЙ ЦЕНТР</p>
-            </div>
-          </div>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#e8f5ff]">{active ? active.title : "Правила и документы"}</h1>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-[#a7c4df]">
-            {active ? active.description : "Всё важное об использовании Cloudy English Academy, конфиденциальности и безопасности обучения."}
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-[#55c9f2]">
-            <span>Версия 1.0</span>
-            <span>Редакция от 9 ноября 2026 года</span>
-          </div>
+    <main className="lgl-root" aria-label="Юридический центр Cloudy English">
+      <style>{LEGAL_PAGE_STYLES}</style>
+      <div className="lgl-in">
+        <header className="lgl-top">
+          {active ? (
+            <button type="button" className="lgl-back" onClick={goHome} aria-label="Вернуться ко всем документам"><ArrowLeft size={21} /></button>
+          ) : <div className="lgl-back" aria-hidden="true"><CloudyMascot /></div>}
+          <h3>{active ? active.title : "Юридический центр"}</h3>
+          {active ? <span className="text-xs font-bold text-white/65">{scrollProgress}%</span> : <span className="text-xs font-bold text-white/65">Версия 1.0</span>}
         </header>
-
-        {active ? (
-          <section className="pt-5 text-[#d8edff]" aria-labelledby="legal-document-title">
-            <button
-              type="button"
-              onClick={() => { setActiveId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="mb-5 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526579]"
-            >
-              <ArrowLeft size={16} aria-hidden="true" /> Все документы
-            </button>
-            <div className="mb-6">
-              <h2 id="legal-document-title" className="text-xl font-bold text-[#e8f5ff]">{active.title}</h2>
-              <p className="mt-1 text-xs text-[#55c9f2]">Версия 1.0 · 9 ноября 2026 года</p>
-            </div>
-            <div className="space-y-0">
-              {active.sections.map(([heading, body]) => (
-                <article key={heading} className="py-5">
-                  <h3 className="text-base font-semibold text-[#d8edff]">{heading}</h3>
-                  <p className="mt-2 whitespace-pre-line text-[15px] leading-7 text-[#b6cde2]">{body}</p>
-                </article>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => { setActiveId(null); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="mt-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#526579]"
-            >
-              <ArrowLeft size={16} aria-hidden="true" /> Назад к документам
-            </button>
-          </section>
-        ) : (
-          <>
-            <section className="py-4 text-[#d8edff]">
-              <div className="mb-2">
-                <h2 className="text-lg font-extrabold">Юридическая информация</h2>
+        {active && <div className="lgl-prog" aria-label="Прогресс чтения"><i style={{ width: scrollProgress + "%" }} /></div>}
+        <div className="lgl-scroll" ref={scrollRef} key={activeId || "home"}>
+          {active && activeMeta ? (
+            <article className="lgl-pg fwd" style={{ ["--h" as string]: activeMeta.color } as CSSProperties}>
+              <div className="lgl-dh">
+                <div className="lgl-dh-ic"><activeMeta.icon size={30} /></div>
+                <div><h2>{active.title}</h2><p>{active.description}</p></div>
               </div>
-              <div className="space-y-1">
-                {LEGAL_DOCUMENTS.map((document) => (
-                    <button
-                      key={document.id}
-                      type="button"
-                      onClick={() => { setActiveId(document.id); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                      aria-label={`Открыть документ: ${document.title}`}
-                      className="flex min-h-[68px] w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition hover:bg-[#102d4b]/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#62c6f3]"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-[15px] font-semibold text-[#d8edff]">{document.title}</span>
-                        <span className="mt-1 block text-sm leading-5 text-[#91b0cc]">{document.description}</span>
-                      </span>
-                    </button>
+              <div className="lgl-short">
+                <div className="lgl-short-t"><span aria-hidden="true"><activeMeta.icon size={20} /></span><b>Кратко о документе</b></div>
+                <ul>{activeMeta.highlights.map((item, index) => <li key={item} style={{ ["--i" as string]: index } as CSSProperties}><i aria-hidden="true">✓</i><span>{item}</span></li>)}</ul>
+                <p className="mt-3 text-xs leading-relaxed text-white/65">Полные условия приведены ниже. Краткое содержание не заменяет текст документа.</p>
+              </div>
+              <div className="lgl-toc" aria-label="Навигация по разделам">
+                {active.sections.map(([heading], index) => (
+                  <button type="button" key={heading} onClick={() => jumpToSection(index)}>{heading.replace(/^\d+\.\s*/, "")}</button>
                 ))}
               </div>
-            </section>
-
-          </>
-        )}
-
-        <section className="py-5">
-          <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-[rgba(6,20,58,0.48)] p-4 shadow-[0_12px_34px_rgba(0,0,0,0.28)] sm:p-5">
-            <div className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full bg-[#36bdf2]/20 blur-2xl" aria-hidden="true" />
-            <div className="relative flex items-start gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold uppercase tracking-[.14em] text-[#70d7f5]">Мы на связи</p>
-                <h2 className="mt-1 text-lg font-extrabold text-[#e7f6ff]">Нужна помощь?</h2>
-                <p className="mt-1 text-sm font-semibold text-[#8cdbfa]">Поддержка в Telegram</p>
-                <p className="mt-1 text-sm leading-6 text-[#c0d9eb]">Свяжитесь с командой Cloudy English. Поможем с аккаунтом, обучением, прогрессом и любыми вопросами о работе приложения.</p>
-                <a href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#63c1ff] to-[#2c7bef] px-5 py-2.5 text-sm font-bold text-white shadow-[0_5px_0_#1a58b5,0_12px_24px_rgba(0,0,0,0.18)] transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#258bd7] focus-visible:ring-offset-2">
-                  Связаться
-                </a>
+              {active.sections.map(([heading, body], index) => {
+                const expanded = expandedSections.includes(heading);
+                const splitAt = body.indexOf(". ");
+                const preview = splitAt > 50 ? body.slice(0, splitAt + 1) : body.slice(0, 220);
+                return (
+                  <section id={"legal-section-" + index} key={heading} className={"lgl-sec" + (expanded ? " expanded" : "")} style={{ ["--i" as string]: index, ["--h" as string]: activeMeta.color } as CSSProperties}>
+                    <div className="lgl-sec-h"><span className="lgl-n">{index + 1}</span><h4>{heading.replace(/^\d+\.\s*/, "")}</h4></div>
+                    <p>{expanded ? body : preview}</p>
+                    {body.length > preview.length && <button type="button" className="lgl-orig" onClick={() => toggleSection(heading)} aria-expanded={expanded}><span>{expanded ? "Свернуть раздел" : "Читать полный раздел"}</span><i>⌄</i></button>}
+                  </section>
+                );
+              })}
+              <button type="button" className="lgl-support" onClick={() => window.open("https://t.me/cloudysupportt_bot", "_blank", "noopener,noreferrer")}>
+                <span className="lgl-sup-ic"><MessageCircle size={25} /></span>
+                <span className="lgl-support-copy"><b>Остались вопросы?</b><small>Напишите в официальную поддержку</small></span>
+                <ArrowUpRight size={21} />
+              </button>
+              <p className="mt-4 text-center text-xs text-white/45">Редакция от 9 ноября 2026 года</p>
+            </article>
+          ) : (
+            <div className="lgl-pg fwd">
+              <section className="lgl-hero">
+                <div className="lgl-hero-ic"><CloudyMascot /></div>
+                <h2>Правила и документы</h2>
+                <p>Юридическая информация, конфиденциальность и безопасность обучения в Cloudy English Academy.</p>
+              </section>
+              <h4 className="lgl-h">Документы</h4>
+              <div className="lgl-cards">
+                {LEGAL_DOCUMENTS.map((document, index) => {
+                  const meta = LEGAL_META[document.id];
+                  const Icon = meta.icon;
+                  return (
+                    <button type="button" key={document.id} className="lgl-card" style={{ ["--i" as string]: index, ["--h" as string]: meta.color } as CSSProperties} onClick={() => openDocument(document.id)} aria-label={"Открыть документ: " + document.title}>
+                      <span className="lgl-ic"><Icon size={26} /></span>
+                      <span className="lgl-ct"><b>{document.title}</b><small>{document.description}</small></span>
+                      <em>{meta.label}</em>
+                      <ArrowUpRight size={18} aria-hidden="true" />
+                    </button>
+                  );
+                })}
               </div>
+              <h4 className="lgl-h">Частые вопросы</h4>
+              <div className="lgl-faq">
+                {LEGAL_FAQ.map(([question, answer], index) => (
+                  <div className={"lgl-q" + (openFaq === index ? " open" : "")} key={question} style={{ ["--i" as string]: index } as CSSProperties}>
+                    <button type="button" onClick={() => setOpenFaq(openFaq === index ? null : index)} aria-expanded={openFaq === index}>
+                      <span>{question}</span><i aria-hidden="true">+</i>
+                    </button>
+                    <div className="lgl-x"><div><p>{answer}</p></div></div>
+                  </div>
+                ))}
+              </div>
+              <a className="lgl-support" href="https://t.me/cloudysupportt_bot" target="_blank" rel="noopener noreferrer">
+                <span className="lgl-sup-ic"><MessageCircle size={25} /></span>
+                <span className="lgl-support-copy"><b>Поддержка Cloudy English</b><small>Помощь с аккаунтом, обучением и документами</small></span>
+                <ArrowUpRight size={21} />
+              </a>
+              <footer className="py-6 text-center text-xs text-white/45">Cloudy English Academy · Юридический центр · 9 ноября 2026 года</footer>
+              <a href="/" className="block pb-5 text-center text-sm font-bold text-[#8fd3ff]">Вернуться к обучению</a>
             </div>
-          </div>
-        </section>
-
-        <footer className="py-3 text-center text-xs text-[#78a9d0]">Cloudy English Academy · Юридический центр</footer>
-        <a href="/" className="block min-h-10 pb-2 text-center text-sm font-semibold text-[#70c5ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#718096]">Вернуться к обучению</a>
+          )}
+        </div>
       </div>
     </main>
   );
