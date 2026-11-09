@@ -270,14 +270,6 @@ CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
     tested: account.tested > guest.tested ? account.tested : guest.tested,
   );
 }
-).firstMatch(value);
-  if (match == null) return null;
-  const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};
-  final month = months[match.group(1)];
-  if (month == null) return null;
-  return DateTime(int.parse(match.group(3)!), month, int.parse(match.group(2)!));
-}
-
 CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
   if (account == null) return guest;
   final completed = <String, num>{};
