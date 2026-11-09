@@ -145,6 +145,86 @@ void main() {
       expect(skipped.correct, 0);
     });
 
+    test('counts a matching exercise once and never counts wrong pair attempts in accuracy', () {
+      const session = CloudySession(
+        review: false, lesson: 0, exercises: [], combo: 2,
+      );
+
+      final wrong = applyCloudyMatchingAttempt(
+        CloudyState.defaults(), session,
+        englishWord: 'son', correct: false, totalPairs: 2,
+      );
+      expect(wrong.state.mistakes['son'], 1);
+      expect(wrong.session.health, 4);
+      expect(wrong.session.combo, 0);
+      expect(wrong.session.total, 0);
+      expect(wrong.session.mistakeWords, ['son']);
+
+      final firstPair = applyCloudyMatchingAttempt(
+        wrong.state, wrong.session,
+        englishWord: 'mother', correct: true, totalPairs: 2,
+      );
+      expect(firstPair.session.matchingCorrect, 1);
+      expect(firstPair.session.correct, 0);
+      expect(firstPair.session.total, 0);
+
+      final finalPair = applyCloudyMatchingAttempt(
+        firstPair.state, firstPair.session,
+        englishWord: 'father', correct: true, totalPairs: 2,
+      );
+      expect(finalPair.session.matchingCorrect, 2);
+      expect(finalPair.session.correct, 1);
+      expect(finalPair.session.total, 1);
+      expect(finalPair.session.combo, 1);
+
+      final ignored = applyCloudyMatchingAttempt(
+        finalPair.state, finalPair.session,
+        englishWord: 'another', correct: true, totalPairs: 2,
+      );
+      expect(ignored.session, finalPair.session);
+    });
+
+    test('appends one retry phase for up to three remembered mistakes', () {
+      const initial = CloudySession(
+        review: false,
+        lesson: 0,
+        exercises: [
+          CloudyChoiceExercise(
+            question: 'сын', answer: 'son', english: 'son',
+            speak: false, options: ['son'], title: 'Переведите',
+          ),
+        ],
+        mistakeWords: ['son', 'missing'],
+      );
+      final next = advanceCloudySession(
+        initial,
+        const [CloudyPair('son', 'сын')],
+        random: () => 0.25,
+      );
+      expect(next, isNotNull);
+      expect(next!.retryPhase, isTrue);
+      expect(next.exercises, hasLength(2));
+      expect((next.exercises.last as CloudyChoiceExercise).english, 'son');
+      expect(advanceCloudySession(next, const []), isNull);
+    });
+
+    test('does not increase daily lesson count when finishing a review session', () {
+      final state = CloudyState.defaults().copyWith(
+        today: const CloudyToday(
+          d: 'Mon Nov 9 2026', xp: 12, les: 3, ok: 4, claim: 0,
+        ),
+      );
+      const review = CloudySession(
+        review: true, lesson: -1, exercises: [], correct: 1, total: 1,
+      );
+      final result = finishCloudyLesson(
+        state, review, now: DateTime(2026, 11, 9, 12),
+      );
+      expect(result.state.today.les, 3);
+      expect(result.state.today.ok, 5);
+      expect(result.state.perfectLessons, 0);
+    });
+
     test('claims the daily chest only once after the configured goal', () {
       final state = CloudyState.defaults().copyWith(
         xp: 120,
