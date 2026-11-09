@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -52,13 +54,14 @@ class _CloudyEnglishAppState extends State<CloudyEnglishApp> {
         onNavigationRequest: (request) {
           final target = Uri.tryParse(request.url);
           if (target == null) return NavigationDecision.prevent;
-          if (target.host == _baseUri.host &&
-              (target.scheme == 'https' || target.scheme == 'http')) {
+          final trustedHost = target.host == _baseUri.host ||
+              target.host.endsWith('.supabase.co') || target.host.endsWith('.supabase.in');
+          if (trustedHost && (target.scheme == 'https' || target.scheme == 'http')) {
             return NavigationDecision.navigate;
           }
           if (target.scheme == 'https' || target.scheme == 'http' ||
               target.scheme == 'mailto' || target.scheme == 'tel') {
-            launchUrl(target, mode: LaunchMode.externalApplication);
+            unawaited(launchUrl(target, mode: LaunchMode.externalApplication));
           }
           return NavigationDecision.prevent;
         },
