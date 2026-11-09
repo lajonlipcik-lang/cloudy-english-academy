@@ -15,11 +15,14 @@ The query parameter cloudyNative=1 suppresses only the existing iOS Add to Home 
 ## Current implementation status
 
 - Flutter package and iOS/Android plugin dependencies are declared in pubspec.yaml.
-- The current 60-lesson bilingual catalog is copied into assets/cloudy_catalog.json.
-- Cloudy progress serialization and settings are represented in lib/domain/cloudy_state.dart.
-- The lesson/progress rules are being ported in lib/domain/cloudy_logic.dart, with parity-focused tests under test/.
-- The existing application remains loaded by the WebView shell in lib/main.dart.
-- Native authentication, native screens, audio/microphone integration, and full visual parity are not complete.
+- The current 60-lesson bilingual catalog is copied into assets/cloudy_catalog.json and parsed by lib/domain/cloudy_catalog.dart.
+- lib/domain/cloudy_exercise.dart models all eight current browser exercise/study card types and preserves their JSON contracts.
+- lib/domain/cloudy_state.dart models the persisted progress and settings contract using the current cl2 keys.
+- lib/domain/cloudy_logic.dart ports lesson sequencing, guided grammar prompts, choice/listening/builder/matching/pronunciation/review behavior, XP/streak rules, achievements, daily chest, guest/account merge, and server progress sanitization.
+- lib/domain/cloudy_learning_store.dart preserves adaptive mastery, spaced-review ordering, active sessions, and an offline event outbox in the existing learning-intelligence storage namespace.
+- Tests cover the catalog, eight exercise types, progress serialization/rules, adaptive learning storage, and lesson sequence composition.
+- The existing application remains loaded by the WebView shell in lib/main.dart. These Dart modules are migration foundations and are not yet wired into replacement native screens.
+- Native authentication, native screens, platform audio/microphone integration, and full visual parity are not complete.
 
 ## Validation
 
@@ -50,12 +53,11 @@ Never put a Supabase service-role or secret key in the Flutter app.
 ## Migration sequence
 
 1. Freeze and document the current data contracts and progression policy.
-2. Port the exact lesson catalog and prove catalog parity.
-3. Port progress normalization, exercise generation, lesson grading, XP/streaks, achievements, daily goals, and guest/account merge; run parity tests.
-4. Port authentication, Supabase persistence, conflict handling, and server event synchronization.
-5. Port every screen and interaction, including profile, settings, AI chat, Shorts, legal/access pages, audio, microphone, retries, and original sound effects.
-6. Compare every screen and interaction against the current application on iPhone and Android.
-7. Optimize only after parity; never trade fidelity or features for speed.
+2. Verify the exact lesson catalog, all eight exercise types, and every exercise-generation rule.
+3. Port and connect authentication, Supabase persistence, conflict handling, and server event synchronization.
+4. Port every screen and interaction, including profile, settings, AI chat, Shorts, legal/access pages, audio, microphone, retries, and original sound effects.
+5. Compare every screen and interaction against the current application on iPhone and Android.
+6. Optimize only after parity; never trade fidelity or features for speed.
 
 ## Acceptance gate
 
