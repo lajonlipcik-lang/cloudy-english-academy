@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../domain/cloudy_logic.dart';
 import '../domain/cloudy_state.dart';
 
 /// Persists Cloudy's existing cl2 progress contract on the device.
@@ -71,14 +70,6 @@ class CloudyProgressRepository {
   Future<CloudyState> loadActive() {
     final email = activeAccountEmail;
     return email == null ? loadGuest() : loadAccount(email);
-  }
-
-  Future<CloudyState> mergeGuestIntoAccount(String email) async {
-    final guest = await loadGuest();
-    final account = await loadAccount(email);
-    final merged = sanitizeCloudyProgress(mergeCloudyProgress(guest, account));
-    await saveAccount(email, merged);
-    return merged;
   }
 
   Future<CloudyState> _load(String key) async {
