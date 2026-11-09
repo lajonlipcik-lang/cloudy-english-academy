@@ -168,4 +168,50 @@ CREATE POLICY "users read own entitlements"
     )
   );
 
+
+-- The database, not the mobile client, decides whether the latest subscription
+-- currently grants access. Prefer a still-valid paid period over an unfinished
+-- checkout row so starting a renewal does not revoke an existing entitlement.
+CREATE OR REPLACE VIEW public.my_subscription_access
+WITH (security_invoker = true)
+AS
+SELECT
+  s.id,
+  s.status,
+  CASE
+    WHEN s.status IN ('active', 'trialing') THEN
+      (s.current_period_end IS NULL OR s.current_period_end > now())
+    WHEN s.status = 'canceled' THEN
+      (s.current_period_end IS NOT NULL AND s.current_period_end > now())
+    ELSE false
+  END AS has_access,
+  s.current_period_start,
+  s.current_period_end,
+  s.cancel_at_period_end,
+  s.canceled_at,
+  p.code AS plan_code,
+  p.name AS plan_name,
+  p.entitlements AS plan_entitlements
+FROM public.subscriptions s
+JOIN public.subscription_plans p ON p.id = s.plan_id
+WHERE s.user_id = (select auth.uid())
+  AND s.id = (
+    SELECT latest.id
+    FROM public.subscriptions latest
+    WHERE latest.user_id = (select auth.uid())
+    ORDER BY
+      CASE
+        WHEN latest.status IN ('active', 'trialing')
+          AND (latest.current_period_end IS NULL OR latest.current_period_end > now()) THEN 0
+        WHEN latest.status = 'canceled'
+          AND latest.current_period_end > now() THEN 0
+        ELSE 1
+      END,
+      latest.created_at DESC,
+      latest.id DESC
+    LIMIT 1
+  );
+
+GRANT SELECT ON public.my_subscription_access TO authenticated;
+
 -- Provider events intentionally have no client-facing policies or grants.
