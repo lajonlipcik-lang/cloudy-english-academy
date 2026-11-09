@@ -157,25 +157,58 @@ setBg();renderModes();
  try{lang=JSON.parse(localStorage.getItem(KEY)||"{}").lang||"ru"}catch(e){}
  if(!["ru","en","uk"].includes(lang))lang="ru";
  let col=lang==="en"?0:lang==="uk"?1:-1;
- const translate=()=>{
-  document.documentElement.lang=lang;
-  if(col<0)return;
-  const title=document.querySelector("title");
-  if(title){const v=T[title.textContent];if(v)title.textContent=v[col]}
-  const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-  let n;while((n=walker.nextNode())){
-   const raw=n.nodeValue||"",trim=raw.trim(),v=T[trim];
-   let out=v&&v[col]?v[col]:null;
-   const over=trim.match(/^Видео длиннее (.+)\. Выбери режим подлиннее\.$/);
-   if(!out&&over){const duration=over[1].replace(/ мин$/," min").replace(/ с$/," sec");out=lang==="en"?"Video exceeds "+duration+". Choose a longer mode.":"Відео довше за "+duration.replace(/ min$/," хв").replace(/ sec$/," с")+". Обери довший режим."}
-   if(out)n.nodeValue=raw.replace(trim,out);
-  }
-  document.querySelectorAll("[placeholder],[aria-label],[title]").forEach(el=>{
-   ["placeholder","aria-label","title"].forEach(a=>{const v=T[el.getAttribute(a)];if(v&&v[col])el.setAttribute(a,v[col])});
+ const translateTitle=()=>{const title=document.querySelector("title");if(title){const v=T[title.textContent];if(v&&col>=0)title.textContent=v[col]}};
+ const translateAttributes=(el)=>{
+  if(!el||el.nodeType!==1)return;
+  ["placeholder","aria-label","title"].forEach(a=>{
+   const current=el.getAttribute(a),v=current&&T[current];
+   if(v&&col>=0&&v[col]&&v[col]!==current)el.setAttribute(a,v[col]);
   });
  };
- translate();
- new MutationObserver(()=>translate()).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","aria-label","title"]});
+ const translateText=(node)=>{
+  if(!node||node.nodeType!==3||!node.parentElement)return;
+  const tag=node.parentElement.tagName;
+  if(tag==="SCRIPT"||tag==="STYLE"||tag==="TEXTAREA")return;
+  const raw=node.nodeValue||"",trim=raw.trim(),v=T[trim];
+  let out=v&&col>=0?v[col]:null;
+  const over=trim.match(/^Видео длиннее (.+)\\. Выбери режим подлиннее\\.$/);
+  if(!out&&over){const duration=over[1].replace(/ мин$/," min").replace(/ с$/," sec");out=lang==="en"?"Video exceeds "+duration+". Choose a longer mode.":"Відео довше за "+duration.replace(/ min$/," хв").replace(/ sec$/," с")+". Обери довший режим."}
+  if(out&&out!==trim)node.nodeValue=raw.replace(trim,out);
+ };
+ const translateSubtree=(root)=>{
+  if(!root)return;
+  if(root.nodeType===3){translateText(root);return}
+  if(root.nodeType!==1&&root.nodeType!==9&&root.nodeType!==11)return;
+  if(root.nodeType===1)translateAttributes(root);
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_ELEMENT|NodeFilter.SHOW_TEXT);
+  let node;
+  while((node=walker.nextNode())){
+   if(node.nodeType===1)translateAttributes(node);
+   else translateText(node);
+  }
+ };
+ const pending=new Set();
+ let scheduled=false,busy=false;
+ const flush=()=>{
+  scheduled=false;
+  if(busy||!pending.size)return;
+  busy=true;
+  observer.disconnect();
+  try{const batch=Array.from(pending);pending.clear();batch.forEach(translateSubtree)}
+  finally{observer.takeRecords();busy=false;observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","aria-label","title"]})}
+  if(pending.size&&!scheduled){scheduled=true;requestAnimationFrame(flush)}
+ };
+ const observer=new MutationObserver(records=>{
+  if(busy)return;
+  records.forEach(record=>{
+   if(record.type==="childList")record.addedNodes.forEach(node=>pending.add(node));
+   else pending.add(record.target);
+  });
+  if(pending.size&&!scheduled){scheduled=true;requestAnimationFrame(flush)}
+ });
+ translateTitle();
+ translateSubtree(document.body);
+ observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder","aria-label","title"]});
  window.addEventListener("storage",e=>{if(e.key===KEY)location.reload()});
  window.addEventListener("cloudy:languagechange",e=>{const l=e.detail?.language;if(["ru","en","uk"].includes(l)){lang=l;location.reload()}});
 })();
