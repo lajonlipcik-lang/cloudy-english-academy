@@ -123,6 +123,8 @@ void main() {
       expect(access.planName, 'Премиум');
       expect(access.planEntitlements['ai_tutor'], isTrue);
       expect(access.featureEntitlements.single['feature_key'], 'ai_tutor');
+      expect(access.canUseFeature('ai_tutor'), isTrue);
+      expect(access.canUseFeature('unknown_feature'), isFalse);
       api.close();
     });
 
@@ -149,6 +151,7 @@ void main() {
       expect(access.hasAccess, isFalse);
       expect(access.status, 'inactive');
       expect(access.planCode, isNull);
+      expect(access.canUseFeature('ai_tutor'), isFalse);
       api.close();
     });
 
