@@ -257,6 +257,10 @@ CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
           'xp': (account.week['xp'] as num? ?? 0) + (guest.week['xp'] as num? ?? 0),
         }
       : Map<String, Object?>.from(guestIsNewer ? guest.week : account.week);
+  final mergedDays = [...{...account.days, ...guest.days}];
+  final days = mergedDays.length > 60
+      ? mergedDays.sublist(mergedDays.length - 60)
+      : mergedDays;
 
   return account.copyWith(
     xp: account.xp + guest.xp,
@@ -267,60 +271,7 @@ CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
     mistakes: mistakes,
     week: week,
     accuracy: [account.accuracy[0] + guest.accuracy[0], account.accuracy[1] + guest.accuracy[1]],
-    days: (() {
-      final mergedDays = [...{...account.days, ...guest.days}];
-      return mergedDays.length > 60
-          ? mergedDays.sublist(mergedDays.length - 60)
-          : mergedDays;
-    })(),
-    achievements: [...{...account.achievements, ...guest.achievements}],
-    perfectLessons: account.perfectLessons + guest.perfectLessons,
-    tested: account.tested > guest.tested ? account.tested : guest.tested,
-  );
-}
-).firstMatch(value);
-  if (match == null) return null;
-  const months = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12};
-  final month = months[match.group(1)];
-  if (month == null) return null;
-  return DateTime(int.parse(match.group(3)!), month, int.parse(match.group(2)!));
-}
-
-CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
-  if (account == null) return guest;
-  final completed = <String, num>{};
-  for (final level in ['A1', 'A2', 'B1', 'B2']) {
-    final a = account.completed[level] ?? 0;
-    final g = guest.completed[level] ?? 0;
-    completed[level] = a > g ? a : g;
-  }
-
-  final mistakes = Map<String, num>.from(account.mistakes);
-  for (final entry in guest.mistakes.entries) {
-    mistakes[entry.key] = (mistakes[entry.key] ?? 0) + entry.value;
-  }
-
-  final guestDate = _parseCloudyDate(guest.last) ?? DateTime.fromMillisecondsSinceEpoch(0);
-  final accountDate = _parseCloudyDate(account.last) ?? DateTime.fromMillisecondsSinceEpoch(0);
-  final guestIsNewer = guestDate.isAfter(accountDate);
-  final sameWeek = account.week['k'] == guest.week['k'];
-  final week = sameWeek
-      ? <String, Object?>{
-          'k': account.week['k'],
-          'xp': (account.week['xp'] as num? ?? 0) + (guest.week['xp'] as num? ?? 0),
-        }
-      : Map<String, Object?>.from(guestIsNewer ? guest.week : account.week);
-
-  return account.copyWith(
-    xp: account.xp + guest.xp,
-    streak: account.streak > guest.streak ? account.streak : guest.streak,
-    last: guestIsNewer ? guest.last : account.last,
-    level: account.level ?? guest.level,
-    completed: completed,
-    mistakes: mistakes,
-    week: week,
-    accuracy: [account.accuracy[0] + guest.accuracy[0], account.accuracy[1] + guest.accuracy[1]],
-    days: [...{...account.days, ...guest.days}].take(60).toList(growable: false),
+    days: days,
     achievements: [...{...account.achievements, ...guest.achievements}],
     perfectLessons: account.perfectLessons + guest.perfectLessons,
     tested: account.tested > guest.tested ? account.tested : guest.tested,
