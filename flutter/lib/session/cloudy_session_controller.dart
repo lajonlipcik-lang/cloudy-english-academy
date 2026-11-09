@@ -191,6 +191,16 @@ class CloudySessionController extends ChangeNotifier {
     }
   }
 
+
+  /// Retries the account progress handshake after a network interruption.
+  /// The remote snapshot is fetched again before any write is attempted.
+  Future<void> retryAccountSync() async {
+    final currentUser = _user;
+    if (currentUser == null) return;
+    _publish(CloudySessionStatus.loadingAccount);
+    await _activateAccount(currentUser, currentUser.id);
+  }
+
   /// Persists the latest in-memory state before attempting any cloud write.
   Future<void> saveProgress(CloudyState next) async {
     _progress = next;
