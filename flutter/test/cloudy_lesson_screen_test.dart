@@ -21,7 +21,7 @@ void main() {
         onMatchingAttempt: onMatchingAttempt ?? (_, __, ___) {},
         onAdvance: onAdvance ?? () {},
         onComplete: onComplete ?? () {},
-        onPronunciationRequested: () {},
+        onPronunciationRequested: (_, __) {},
         onSpeak: (_) {},
         onSkipPronunciation: onSkipPronunciation ?? () {},
       ),
