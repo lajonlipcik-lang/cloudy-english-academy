@@ -49,10 +49,17 @@ class CloudySpeechRecognitionService {
   Future<bool> initialize() async {
     if (_initialized) return _available;
     _initialized = true;
-    _available = await _speech.initialize(
-      onStatus: _handleStatus,
-      onError: _handleError,
-    );
+    try {
+      _available = await _speech.initialize(
+        onStatus: _handleStatus,
+        onError: _handleError,
+      );
+    } catch (error) {
+      _initialized = false;
+      _available = false;
+      onError?.call(error.toString());
+      return false;
+    }
     if (!_available) return false;
 
     final locales = await _speech.locales();
