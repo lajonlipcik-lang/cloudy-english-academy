@@ -41,7 +41,7 @@ class CloudyExerciseFactory {
   static String _pick(List<String> values, Random random) =>
       values[random.nextInt(values.length)];
 
-  static CloudyChoiceExercise _choice(
+  static CloudyExercise _choice(
     String english,
     String russian,
     int mode,
@@ -57,8 +57,8 @@ class CloudyExerciseFactory {
     ], random);
 
     if (mode == 2) {
-      return CloudyChoiceExercise(
-        question: '', answer: english, english: english, speak: false,
+      return CloudyListeningExercise(
+        answer: english, english: english,
         options: options.map((pair) => pair.first).toList(growable: false),
         title: _pick(_listeningTitles, random),
       );
@@ -170,7 +170,7 @@ class CloudyExerciseFactory {
     result.add(CloudyVocabularyExercise(words: lesson.vocabulary));
     result.addAll(_guided(lessonIndex, rng));
 
-    for (final pair in _shuffle(lesson.vocabulary, rng).take(min(3, lesson.vocabulary.length))) {
+    for (final pair in _shuffle(lesson.vocabulary, rng).take(lesson.vocabulary.length < 3 ? lesson.vocabulary.length : 3)) {
       result.add(CloudyRecallExercise(
         question: pair.second, answer: pair.first, english: pair.first,
         title: 'Вспомни слово без подсказок',
