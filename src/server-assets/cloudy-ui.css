@@ -337,7 +337,7 @@ nav.dock{left:12px;right:12px;margin:0 auto;max-width:456px;bottom:calc(10px + e
   border:1px solid rgba(255,255,255,.14);box-shadow:0 14px 34px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.12);
   z-index:9;animation:dockIn .6s var(--ease-spring) both}
 @keyframes dockIn{from{transform:translateY(40px);opacity:0}}
-.dock-ind{position:absolute;z-index:0;top:6px;bottom:6px;left:6px;width:calc((100% - 12px)/5);border-radius:22px;
+.dock-ind{position:absolute;z-index:0;top:6px;bottom:6px;left:6px;width:calc((100% - 12px)/4);border-radius:22px;
   background:linear-gradient(180deg,rgba(255,255,255,.28),rgba(255,255,255,.12));box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
   transform:translateX(calc(var(--i,0)*100%));transition:transform .6s var(--ease-spring),opacity .3s}
 nav.dock.mid-on .dock-ind{opacity:0}
@@ -355,12 +355,6 @@ nav.dock .dock-mid{opacity:1}
 .dock-mid.on .mid-bub{transform:scale(1.1)}
 .dock-mid.plus .mid-bub{background:#fff;color:#06143a;box-shadow:-4px 0 0 #25f4ee,4px 0 0 #fe2c55;border-radius:12px}
 .dock-mid.plus .i{animation:none}
-
-/* dark flat dock on the video tab */
-nav.dock.dock-dark{left:0;right:0;bottom:0;max-width:480px;height:calc(var(--dock-h) + env(safe-area-inset-bottom,0px));
-  padding:6px 6px env(safe-area-inset-bottom,0px);border-radius:0;border:0;border-top:1px solid rgba(255,255,255,.1);
-  background:rgba(0,0,0,.78);box-shadow:none;animation:none}
-nav.dock.dock-dark .dock-ind{bottom:calc(6px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.1);box-shadow:none}
 
 /* ---------- Quests ---------- */
 .streak-card{border-radius:26px;padding:16px 16px 14px;margin-bottom:14px;background:linear-gradient(135deg,rgba(255,181,46,.3),rgba(255,125,58,.16));border:1px solid rgba(255,211,90,.32)}
