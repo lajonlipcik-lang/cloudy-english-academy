@@ -1,0 +1,334 @@
+import '../data/cloudy_mobile_api.dart';
+import '../domain/cloudy_exercise.dart';
+import '../domain/cloudy_learning_store.dart';
+import '../domain/cloudy_progress_engine.dart';
+import '../domain/cloudy_state.dart';
+import 'cloudy_local_progress_store.dart';
+
+class CloudyProgressSyncResult {
+  const CloudyProgressSyncResult({
+    required this.state,
+    required this.syncPaused,
+    required this.uploaded,
+    this.updatedAt,
+    this.error,
+  });
+
+  final CloudyState state;
+  final bool syncPaused;
+  final bool uploaded;
+  final String? updatedAt;
+  final String? error;
+}
+
+/// Coordinates the existing cl2 local store with the authenticated mobile API.
+/// Server XP remains authoritative for account lessons; guest XP stays local.
+class CloudyProgressSyncService {
+  CloudyProgressSyncService({
+    required this.localStore,
+    required this.api,
+  });
+
+  final CloudyLocalProgressStore localStore;
+  final CloudyMobileApi api;
+
+  String? _activeEmail;
+  String? _updatedAt;
+  CloudyState _baseState = CloudyState.defaults();
+  CloudyLearningStore? _learningStore;
+
+  String? get activeEmail => _activeEmail;
+
+  Future<CloudyLearningStore> get learningStore async {
+    _learningStore ??= await CloudyLearningStore.create(
+      scope: _activeEmail == null ? 'cl2' : 'cl2:$_activeEmail',
+    );
+    return _learningStore!;
+  }
+
+  Future<CloudyState> activateGuest() async {
+    await localStore.enterGuestMode();
+    _activeEmail = null;
+    _updatedAt = null;
+    _baseState = CloudyState.defaults();
+    _learningStore = await CloudyLearningStore.create(scope: 'cl2');
+    return localStore.loadGuest();
+  }
+
+  Future<CloudyProgressSyncResult> activateAccount({
+    required String email,
+  }) async {
+    final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail.isEmpty) {
+      throw ArgumentError.value(email, 'email', 'Account email must not be empty.');
+    }
+
+    final localExists = localStore.hasAccountSave(normalizedEmail);
+    final guestState = localStore.loadGuest();
+    CloudyRemoteProgress remote;
+    try {
+      remote = await api.loadProgress();
+    } catch (error) {
+      final activation = localStore.activateCloudAccount(
+        email: normalizedEmail,
+        remoteState: null,
+        remoteUpdatedAt: null,
+        progressLoadFailed: true,
+      );
+      await localStore.persistActivation(normalizedEmail, activation);
+      _activeEmail = normalizedEmail;
+      _updatedAt = activation.updatedAt;
+      _baseState = activation.baseState;
+      _learningStore = await CloudyLearningStore.create(
+        scope: 'cl2:$normalizedEmail',
+      );
+      return CloudyProgressSyncResult(
+        state: activation.state,
+        syncPaused: true,
+        uploaded: false,
+        updatedAt: activation.updatedAt,
+        error: error.toString(),
+      );
+    }
+
+    final profile = remote.learnerProfile;
+    final profileLevel = profile?['english_level'] is String
+        ? profile!['english_level'] as String
+        : null;
+    final placementCompleted = profile?['placement_test_completed'] == true;
+    final hasProfileLevel = CloudyProfileLevel.isValid(profileLevel);
+    final migratedGuest = !localExists &&
+        !remote.hasProgressRow &&
+        !hasProfileLevel &&
+        guestState.level != null;
+
+    final activation = localStore.activateCloudAccount(
+      email: normalizedEmail,
+      remoteState: remote.hasProgressRow ? remote.state.toJson() : null,
+      remoteUpdatedAt: remote.updatedAt,
+      progressLoadFailed: false,
+      profileLevel: profileLevel,
+      placementTestCompleted: placementCompleted,
+    );
+    await localStore.persistActivation(normalizedEmail, activation);
+    _activeEmail = normalizedEmail;
+    _updatedAt = activation.updatedAt;
+    _baseState = activation.baseState;
+    _learningStore = await CloudyLearningStore.create(
+      scope: 'cl2:$normalizedEmail',
+    );
+
+    if (activation.syncPaused) {
+      return CloudyProgressSyncResult(
+        state: activation.state,
+        syncPaused: true,
+        uploaded: false,
+        updatedAt: activation.updatedAt,
+      );
+    }
+    if (activation.shouldSync) {
+      return _saveWithConflict(
+        normalizedEmail,
+        activation.state,
+        activation.baseState,
+        activation.updatedAt,
+      );
+    }
+
+    await localStore.markSynced(
+      normalizedEmail,
+      noPendingChanges: true,
+    );
+    return CloudyProgressSyncResult(
+      state: activation.state,
+      syncPaused: false,
+      uploaded: false,
+      updatedAt: activation.updatedAt,
+    );
+  }
+
+  Future<CloudyProgressSyncResult> saveLocal(CloudyState state) async {
+    await localStore.saveActive(state);
+    final email = _activeEmail ?? localStore.activeAccountEmail;
+    if (email == null) {
+      return CloudyProgressSyncResult(
+        state: state,
+        syncPaused: false,
+        uploaded: false,
+      );
+    }
+    await localStore.markDirty(email);
+    return syncCurrent();
+  }
+
+  Future<CloudyProgressSyncResult> syncCurrent() async {
+    final email = _activeEmail ?? localStore.activeAccountEmail;
+    if (email == null) {
+      return CloudyProgressSyncResult(
+        state: localStore.loadGuest(),
+        syncPaused: false,
+        uploaded: false,
+      );
+    }
+    return _saveWithConflict(
+      email,
+      localStore.loadAccount(email),
+      _baseState,
+      _updatedAt,
+    );
+  }
+
+  Future<CloudyProgressSyncResult> _saveWithConflict(
+    String email,
+    CloudyState initialState,
+    CloudyState initialBase,
+    String? initialUpdatedAt,
+  ) async {
+    await localStore.markDirty(email);
+    var state = initialState;
+    var base = initialBase;
+    var expectedUpdatedAt = initialUpdatedAt;
+
+    try {
+      for (var attempt = 0; attempt < 3; attempt++) {
+        final result = await api.saveProgress(
+          state,
+          expectedUpdatedAt: expectedUpdatedAt,
+        );
+
+        if (result['conflict'] == true) {
+          final rawRemote = result['state'];
+          if (rawRemote is! Map) {
+            return CloudyProgressSyncResult(
+              state: state,
+              syncPaused: true,
+              uploaded: false,
+              updatedAt: expectedUpdatedAt,
+              error: 'Сервер сообщил о конфликте, но не вернул актуальный прогресс.',
+            );
+          }
+          final remote = CloudyState.fromJson(rawRemote);
+          state = mergeCloudyConflictProgress(remote, state, base);
+          base = remote;
+          expectedUpdatedAt = result['updated_at'] is String
+              ? result['updated_at'] as String
+              : expectedUpdatedAt;
+          await localStore.saveAccount(email, state);
+          continue;
+        }
+
+        if (result['ok'] != true) {
+          final message = result['error'];
+          return CloudyProgressSyncResult(
+            state: state,
+            syncPaused: true,
+            uploaded: false,
+            updatedAt: expectedUpdatedAt,
+            error: message is String ? message : 'Не удалось сохранить прогресс.',
+          );
+        }
+
+        final rawSaved = result['state'];
+        final savedState = rawSaved is Map
+            ? CloudyState.fromJson(rawSaved)
+            : state;
+        _updatedAt = result['updated_at'] is String
+            ? result['updated_at'] as String
+            : expectedUpdatedAt;
+        _baseState = savedState;
+        await localStore.saveAccount(email, savedState);
+        await localStore.markSynced(email, noPendingChanges: true);
+        return CloudyProgressSyncResult(
+          state: savedState,
+          syncPaused: false,
+          uploaded: true,
+          updatedAt: _updatedAt,
+        );
+      }
+      return CloudyProgressSyncResult(
+        state: state,
+        syncPaused: true,
+        uploaded: false,
+        updatedAt: expectedUpdatedAt,
+        error: 'Прогресс менялся одновременно на нескольких устройствах. Повтори синхронизацию.',
+      );
+    } catch (error) {
+      return CloudyProgressSyncResult(
+        state: state,
+        syncPaused: true,
+        uploaded: false,
+        updatedAt: expectedUpdatedAt,
+        error: error.toString(),
+      );
+    }
+  }
+
+  Future<CloudyState> awardLesson(
+    CloudyState state,
+    CloudySession session, {
+    DateTime? now,
+  }) async {
+    final email = _activeEmail ?? localStore.activeAccountEmail;
+    if (email == null) {
+      throw const CloudyMobileApiException(
+        'Начисление серверного опыта доступно только в аккаунте.',
+        statusCode: 401,
+      );
+    }
+    final level = state.level?.code;
+    if (level == null) {
+      throw const CloudyMobileApiException('Сначала пройди определение уровня.');
+    }
+    final award = await api.awardLesson(
+      lessonIndex: session.lesson,
+      level: level,
+    );
+    final updated = applyCloudyServerAward(
+      state,
+      session,
+      award,
+      now: now ?? DateTime.now(),
+    );
+    await localStore.saveAccount(email, updated);
+    _baseState = updated;
+    if (award['updated_at'] is String) {
+      _updatedAt = award['updated_at'] as String;
+    }
+    await localStore.markSynced(email, noPendingChanges: true);
+    return updated;
+  }
+
+  Future<Map<String, Object?>?> recordLearningAnswer(
+    CloudyExercise exercise, {
+    required bool correct,
+    bool retry = false,
+    bool skipped = false,
+    int? questionIndex,
+    num? responseSeconds,
+    String? selectedAnswer,
+    String? correctAnswer,
+    DateTime? now,
+  }) async {
+    final store = await learningStore;
+    return store.record(
+      exercise,
+      correct: correct,
+      retry: retry,
+      skipped: skipped,
+      questionIndex: questionIndex,
+      responseSeconds: responseSeconds,
+      selectedAnswer: selectedAnswer,
+      correctAnswer: correctAnswer,
+      now: now,
+    );
+  }
+
+  Future<int> syncLearningEvents() async {
+    if (_activeEmail == null) return 0;
+    final store = await learningStore;
+    final events = store.pending(limit: 50);
+    if (events.isEmpty) return 0;
+    final acceptedIds = await api.syncLearningEvents(events);
+    return store.acknowledge(acceptedIds);
+  }
+}
