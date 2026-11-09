@@ -214,9 +214,12 @@ export const deleteOwnShortPost = createServerFn({ method: "POST" })
     const {data:post,error}=await content.from("shorts_videos").select("id,author_id,storage_path")
       .eq("id",data.postId).eq("author_id",identity.user.id).maybeSingle();
     if(error||!post)throw new Error("Публикация не найдена или принадлежит другому аккаунту.");
+    if(post.storage_path){
+      const {error:storageError}=await content.storage.from("cloudy-shorts").remove([post.storage_path]);
+      if(storageError)throw new Error("Не удалось удалить видео из хранилища. Запись оставлена, чтобы публикацию можно было повторно удалить.");
+    }
     const {error:deleteError}=await content.from("shorts_videos").delete().eq("id",data.postId).eq("author_id",identity.user.id);
-    if(deleteError)throw new Error("Не удалось удалить публикацию.");
-    if(post.storage_path)await content.storage.from("cloudy-shorts").remove([post.storage_path]);
+    if(deleteError)throw new Error("Файл удалён из хранилища, но запись публикации не удалена. Повтори удаление.");
     return {ok:true,postId:data.postId};
   });
 

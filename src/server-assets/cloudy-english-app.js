@@ -923,7 +923,7 @@ let shortsSaved=new Set();
 function shorts(){
  
  const items=shortsFeedMode==="following"?shortsLiveItems.filter(x=>shortsFollowing.has(x.authorId)):shortsLiveItems;
- let h='<section class="shorts-screen"><div class="shorts-topbar"><div class="shorts-brand"><b>CLOUDY <i>SHORTS</i></b></div><div class="shorts-tabs"><button class="'+(shortsFeedMode==="following"?"active":"")+'" onclick="shortsSetMode(\'following\')">Подписки</button><button class="'+(shortsFeedMode==="for-you"?"active":"")+'" onclick="shortsSetMode(\'for-you\')">Для вас</button></div><button class="shorts-search" aria-label="Поиск" onclick="shortsSearch()">'+shortsIcon("search")+'</button></div><div class="shorts-feed" id="shorts-feed">';
+ let h='<section class="shorts-screen"><div class="shorts-topbar"><div class="shorts-tabs"><button class="'+(shortsFeedMode==="following"?"active":"")+'" onclick="shortsSetMode(\'following\')">Подписки</button><button class="'+(shortsFeedMode==="for-you"?"active":"")+'" onclick="shortsSetMode(\'for-you\')">Для вас</button></div><button class="shorts-search" aria-label="Поиск" onclick="shortsSearch()">'+shortsIcon("search")+'</button></div><div class="shorts-feed" id="shorts-feed">';
  if(!items.length)h+='<div class="shorts-empty-state">'+(shortsFeedLoading?'Загружаем публикации…':shortsFeedMode==="following"?'Здесь появятся публикации авторов, на которых ты подпишешься.':'Пока нет публикаций. Поделись первым учебным материалом!')+'</div>';
  items.forEach(x=>{
   const id=shortsEscapeText(x.id),author=shortsEscapeText(x.author),handle=shortsEscapeText(x.handle),caption=shortsEscapeText(x.caption),url=shortsEscapeText(x.videoUrl||x.imageUrl||""),initial=shortsEscapeText(x.initial);
@@ -1087,19 +1087,21 @@ async function shortsLoadLiveComments(id){
  } 
 }
 function shortsRenderComments(id){
- const x=shortsItems.find(v=>v.id===id)||{id,comments:0};
  const live=shortsIsLiveId(id);
  if(live&&shortsLiveCommentsVideoId!==id){void shortsLoadLiveComments(id);return;}
  const samples=live?[...shortsLiveComments]:[];
- if(shortsCommentSort==="new")samples.reverse();
- const rows=samples.map(c=>{
-  const name=shortsEscapeText(c.name||"Участник"),avatar=shortsEscapeText(c.avatar||String(c.name||"У").charAt(0)),text=shortsEscapeText(c.text),handle=shortsEscapeText(c.handle||""),time=shortsEscapeText(shortsCommentTime(c.time));
-  return '<div class="shorts-comment-row"><div class="shorts-comment-avatar">'+avatar+'</div><div class="shorts-comment-main"><div class="shorts-comment-user">'+name+' <span>'+handle+'</span></div><p>'+text+'</p><div class="shorts-comment-meta">'+time+'</div></div></div>';
- }).join("");
+ samples.sort((a,b)=>shortsCommentSort==="new"?(Date.parse(b.time||"")||0)-(Date.parse(a.time||"")||0):(Number(b.likes||0)-Number(a.likes||0))||((Date.parse(a.time||"")||0)-(Date.parse(b.time||"")||0)));
+ const renderRow=(c,nested=false)=>{
+  const commentId=shortsEscapeText(c.id),name=shortsEscapeText(c.name||"Участник"),avatar=shortsEscapeText(c.avatar||String(c.name||"У").charAt(0)),body=shortsEscapeText(c.text),time=shortsEscapeText(shortsCommentTime(c.time));
+  const actions='<div class="shorts-comment-actions"><button type="button" class="shorts-comment-like '+(c.isLiked?"liked":"")+'" onclick="shortsCommentLike(\''+commentId+'\')">♥ <span>'+shortsCount(c.likes,false)+'</span></button>'+(nested?'':'<button type="button" onclick="shortsReply(\''+commentId+'\')">Ответить</button>')+'</div>';
+  return '<div class="shorts-comment-row'+(nested?' nested':'')+'" data-comment-id="'+commentId+'"><div class="shorts-comment-avatar">'+avatar+'</div><div class="shorts-comment-main"><div class="shorts-comment-user">'+name+'</div><p>'+body+'</p><div class="shorts-comment-meta">'+time+'</div>'+actions+'</div></div>';
+ };
+ const roots=samples.filter(c=>!c.parentId);
+ const rows=roots.map(root=>renderRow(root)+samples.filter(reply=>reply.parentId===root.id).map(reply=>renderRow(reply,true)).join("")).join("");
  const sheetEl=$(".sb .sh");
  if(sheetEl){
   sheetEl.dataset.videoId=id;
-  sheetEl.innerHTML='<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><header class="shorts-comments-header"><div><b>Комментарии</b><span>'+shortsCount(live?samples.length:0,false)+'</span></div><button aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></header>'+(live?'<div class="shorts-comments-sort"><button class="'+(shortsCommentSort==="top"?"active":"")+'" onclick="shortsSortComments(\'top\',\''+id+'\')">Популярные</button><button class="'+(shortsCommentSort==="new"?"active":"")+'" onclick="shortsSortComments(\'new\',\''+id+'\')">Сначала новые</button></div>':'')+'<div class="shorts-comments-scroll">'+(rows||'<div class="shorts-comments-empty">'+(live?'Пока нет комментариев. Будь первым!':'Комментарии появятся вместе с реальными публикациями.')+'</div>')+'</div>'+(live?'<div class="shorts-comment-compose"><div class="shorts-compose-avatar">☁</div><input id="shorts-comment-input" maxlength="500" placeholder="Добавить комментарий…" onkeydown="if(event.key===\'Enter\')shortsSendComment()"><button aria-label="Отправить комментарий" onclick="shortsSendComment()">'+shortsIcon("share")+'</button></div>':'')+'</div>';
+  sheetEl.innerHTML='<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><header class="shorts-comments-header"><div><b>Комментарии</b><span>'+shortsCount(samples.length,false)+'</span></div><button aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></header>'+(live?'<div class="shorts-comments-sort"><button class="'+(shortsCommentSort==="top"?"active":"")+'" onclick="shortsSortComments(\'top\',\''+id+'\')">Популярные</button><button class="'+(shortsCommentSort==="new"?"active":"")+'" onclick="shortsSortComments(\'new\',\''+id+'\')">Сначала новые</button></div>':'')+'<div class="shorts-comments-scroll">'+(rows||'<div class="shorts-comments-empty">'+(live?'Пока нет комментариев. Будь первым!':'Комментарии появятся вместе с реальными публикациями.')+'</div>')+'</div>'+(live?'<div class="shorts-comment-compose"><div class="shorts-compose-avatar">☁</div><input id="shorts-comment-input" maxlength="500" placeholder="'+(shortsReplyTo?'Ответ для '+shortsEscapeText(shortsReplyTo.name)+'…':'Добавить комментарий…')+'" onkeydown="if(event.key===\'Enter\')shortsSendComment()"><button aria-label="Отправить комментарий" onclick="shortsSendComment()">'+shortsIcon("share")+'</button>'+(shortsReplyTo?'<button type="button" aria-label="Отменить ответ" onclick="shortsReplyTo=null;shortsRenderComments(\''+id+'\')">×</button>':'')+'</div>':'')+'</div>';
   shortsBindCommentSheetDismiss();
  }
 }
@@ -1144,10 +1146,21 @@ function shortsBindCommentSheetDismiss(){
   surface.addEventListener("pointercancel",cancel);
  });
 }
-function shortsComments(id){shortsLiveCommentsRequest++;shortsLiveCommentsLoading=false;shortsCommentSort="top";shortsReplyTo=null;shortsLiveCommentsVideoId=null;shortsLiveComments=[];sheet('<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><header class="shorts-comments-header"><div><b>Комментарии</b><span>'+shortsCount((shortsItems.find(v=>v.id===id)||{}).comments||0,false)+'</span></div><button aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></header><div class="shorts-comments-loading">Загружаем обсуждение…</div></div>');shortsRenderComments(id);}
+function shortsComments(id){shortsLiveCommentsRequest++;shortsLiveCommentsLoading=false;shortsCommentSort="top";shortsReplyTo=null;shortsLiveCommentsVideoId=null;shortsLiveComments=[];sheet('<div class="shorts-comments-panel"><div class="shorts-comments-grabber"></div><header class="shorts-comments-header"><div><b>Комментарии</b><span>'+shortsCount((shortsLiveItems.find(v=>v.id===id)||{}).comments||0,false)+'</span></div><button aria-label="Закрыть" onclick="closeSh()">'+shortsIcon("plus")+'</button></header><div class="shorts-comments-loading">Загружаем обсуждение…</div></div>');shortsRenderComments(id);}
 function shortsSortComments(sort,id){shortsCommentSort=sort;shortsRenderComments(id);}
-function shortsCommentLike(id){if(shortsCommentLikes.has(id))shortsCommentLikes.delete(id);else shortsCommentLikes.add(id);const videoId=$(".sb")?.dataset?.videoId||"say-tell";shortsRenderComments(videoId);}
-function shortsReply(id,name){shortsReplyTo={id,name};const input=$("#shorts-comment-input");if(input){input.placeholder="Ответ для "+name+"…";input.focus();}}
+async function shortsCommentLike(id){
+ const comment=shortsLiveComments.find(item=>item.id===id);if(!comment||comment.likePending)return;
+ if(!S.user||S.user.guest){toast("Войди в аккаунт, чтобы оценивать комментарии.",false);return;}
+ const previous=!!comment.isLiked,previousCount=Number(comment.likes||0),desired=!previous;
+ comment.isLiked=desired;comment.likes=Math.max(0,previousCount+(desired?1:-1));comment.likePending=true;
+ shortsRenderComments($(".sb .sh")?.dataset?.videoId||"");
+ try{
+  const response=await authRequest("shorts-comment-like-set",{payload:{commentId:id,like:desired}});
+  comment.isLiked=response.result?.isLiked===true;comment.likes=Number(response.result?.likes??comment.likes);
+ }catch(error){comment.isLiked=previous;comment.likes=previousCount;toast(error.message||"Не удалось сохранить лайк комментария.",false);}
+ finally{comment.likePending=false;shortsRenderComments($(".sb .sh")?.dataset?.videoId||"");}
+}
+function shortsReply(id){const comment=shortsLiveComments.find(item=>item.id===id);if(!comment)return;shortsReplyTo={id,name:String(comment.name||"Участник")};const input=$("#shorts-comment-input");if(input){input.placeholder="Ответ для "+shortsReplyTo.name+"…";input.focus();}}
 function shortsToggleReplies(id){const el=$("#shorts-replies-"+id);if(el)el.classList.toggle("open");}
 async function shortsSendComment(){
  const input=$("#shorts-comment-input"),body=String(input?.value||"").trim(),videoId=$(".sb .sh")?.dataset?.videoId||"";
@@ -1155,12 +1168,12 @@ async function shortsSendComment(){
  if(!shortsIsLiveId(videoId)){toast("Это демонстрационный ролик. Отправка комментариев появится после подключения реальных видео.",false);return;}
  const button=$(".shorts-comment-compose button");if(button){button.disabled=true;button.textContent="…";}
  try{
-  const response=await authRequest("shorts-comment-create",{payload:{videoId,body}});
+  const response=await authRequest("shorts-comment-create",{payload:{videoId,body,...(shortsReplyTo?.id?{parentCommentId:shortsReplyTo.id}:{})}});
   if(input)input.value="";
-  const status=response.result?.status;
-  if(status==="published")toast("Комментарий опубликован и виден всем.");
-  
-  else toast("Комментарий опубликован и виден всем.");
+  shortsReplyTo=null;
+  toast(response.result?.status==="published"?"Комментарий опубликован.":"Комментарий отправлен.");
+  const post=shortsLiveItems.find(item=>item.id===videoId);if(post)post.comments=Number(post.comments||0)+1;
+  const countButton=document.querySelector('[data-short-id="'+videoId+'"] .shorts-action[aria-label="Комментарии"] small');if(countButton&&post)countButton.textContent=shortsCount(post.comments,false);
   shortsLiveCommentsVideoId=null;await shortsLoadLiveComments(videoId);
  }catch(error){toast(error.message||"Не удалось отправить комментарий.",false);}
  finally{if(button){button.disabled=false;button.innerHTML=shortsIcon("share");}}
@@ -1301,8 +1314,8 @@ async function shortsSubmitImage(){
   const started=await authRequest("shorts-upload-start",{payload:{mediaType:"image",fileName:file.name,mimeType:file.type||(/\\.png$/i.test(file.name)?"image/png":/\\.webp$/i.test(file.name)?"image/webp":"image/jpeg"),sizeBytes:file.size,caption,durationSeconds:0}});
   const ticket=started?.result;if(!ticket?.signedUrl||!ticket?.publishableKey||!ticket?.contentUrl)throw new Error("Сервер не подготовил защищённую загрузку.");
   if(button)button.textContent="Загружаем фото…";
-  const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString(),body=new FormData();body.append("cacheControl","3600");body.append("",file);
-  const response=await fetch(uploadUrl,{method:"PUT",headers:{apikey:ticket.publishableKey,Authorization:"Bearer "+ticket.publishableKey,"x-upsert":"false"},body});
+  const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
+  const response=await fetch(uploadUrl,{method:"PUT",headers:{apikey:ticket.publishableKey,Authorization:"Bearer "+ticket.publishableKey,"Content-Type":file.type||"application/octet-stream","x-upsert":"false"},body:file});
   if(!response.ok)throw new Error("Не удалось загрузить фотографию.");
   if(button)button.textContent="Проверяет Cloudy AI…";
   const finalized=await authRequest("shorts-upload-image-finalize",{payload:{videoId:ticket.videoId}});
@@ -1342,8 +1355,7 @@ async function shortsSubmitUpload(){
   if(notice)notice.querySelector("small").textContent="Загружаем видео в приватное хранилище. Не закрывай это окно.";
   const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
   
-  const uploadBody=new FormData();uploadBody.append("cacheControl","3600");uploadBody.append("",file);
-  const response=await fetch(uploadUrl,{method:"PUT",headers:{"apikey":ticket.publishableKey,"Authorization":"Bearer "+ticket.publishableKey,"x-upsert":"false"},body:uploadBody});
+  const response=await fetch(uploadUrl,{method:"PUT",headers:{"apikey":ticket.publishableKey,"Authorization":"Bearer "+ticket.publishableKey,"Content-Type":file.type||"video/mp4","x-upsert":"false"},body:file});
   if(!response.ok){let detail="";try{detail=(await response.json()).message||"";}catch{}throw new Error(detail||"Не удалось загрузить видео в защищённое хранилище.");}
   if(button)button.textContent="Отправляем на проверку…";
   const finalized=await authRequest("shorts-upload-finalize",{payload:{videoId:ticket.videoId}});
@@ -1392,8 +1404,7 @@ async function shortsPublishExternal(detail){
  if(!ticket?.signedUrl||!ticket?.publishableKey||!ticket?.contentUrl||!ticket?.videoId||!ticket?.token)throw new Error("Сервер не подготовил защищённую загрузку.");
  progress(12);
  const uploadUrl=new URL(ticket.signedUrl,ticket.contentUrl).toString();
- const body=new FormData();body.append("cacheControl","3600");body.append("",file);
- const response=await fetch(uploadUrl,{method:"PUT",headers:{apikey:ticket.publishableKey,Authorization:"Bearer "+ticket.publishableKey,"x-upsert":"false"},body});
+ const response=await fetch(uploadUrl,{method:"PUT",headers:{apikey:ticket.publishableKey,Authorization:"Bearer "+ticket.publishableKey,"Content-Type":mimeType,"x-upsert":"false"},body:file});
  if(!response.ok){let message="";try{message=(await response.json()).message||"";}catch(_){}throw new Error(message||"Не удалось загрузить файл в защищённое хранилище.");}
  progress(78);
  const finalized=await authRequest(image?"shorts-upload-image-finalize":"shorts-upload-finalize",{payload:{videoId:ticket.videoId}});

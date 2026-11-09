@@ -1094,17 +1094,20 @@ export const analyzeShortVideoAudio = createServerFn({ method: "POST" })
     };
   });
 
-type ShortsCommentInput = { accessToken: string; videoId: string; body: string };
+type ShortsCommentInput = { accessToken: string; videoId: string; body: string; parentCommentId?: string };
 type ShortsCommentLookupInput = { accessToken: string; videoId: string };
+type ShortsCommentLikeInput = { accessToken: string; commentId: string; like: boolean };
 
 function validateShortsCommentInput(input: Partial<ShortsCommentInput>): ShortsCommentInput {
   const token = String(input?.accessToken ?? "");
   const videoId = String(input?.videoId ?? "");
   const body = typeof input?.body === "string" ? input.body.trim() : "";
+  const parentCommentId = input?.parentCommentId ? String(input.parentCommentId) : undefined;
   if (!token || token.length > 8192 || token.split(".").length !== 3) throw new Error("Unauthorized");
   if (!/^[0-9a-f-]{36}$/i.test(videoId)) throw new Error("Некорректное видео.");
   if (body.length > 500) throw new Error("Комментарий не должен превышать 500 символов.");
-  return { accessToken: token, videoId, body };
+  if (parentCommentId && !/^[0-9a-f-]{36}$/i.test(parentCommentId)) throw new Error("Некорректный ответ.");
+  return { accessToken: token, videoId, body, ...(parentCommentId ? { parentCommentId } : {}) };
 }
 
 /** Returns published comments and legacy comments that were waiting for review. */
@@ -1127,26 +1130,39 @@ export const getShortsComments = createServerFn({ method: "POST" })
     }
     const { data: comments, error } = await contentDb
       .from("shorts_comments")
-      .select("id,author_id,body,created_at")
+      .select("id,author_id,body,created_at,parent_comment_id")
       .eq("video_id", data.videoId)
       .in("status", ["published", "pending_review"])
       .order("created_at", { ascending: true })
       .limit(100);
     if (error) throw new Error("Не удалось загрузить комментарии.");
-    const authorIds = [...new Set((comments ?? []).map((item: any) => item.author_id))];
-    const profiles = authorIds.length
-      ? await db.from("community_public_profiles").select("id,display_name").in("id", authorIds)
-      : { data: [], error: null };
-    if (profiles.error) throw new Error("Не удалось загрузить авторов комментариев.");
-    const names = new Map((profiles.data ?? []).map((item: any) => [item.id, item.display_name || "Участник"]));
+    const commentIds = (comments ?? []).map((item: any) => item.id);
+    const [{ data: likeRows, error: likesError }, authorProfiles] = await Promise.all([
+      commentIds.length ? contentDb.from("shorts_comment_likes").select("comment_id,user_id").in("comment_id", commentIds) : Promise.resolve({ data: [], error: null }),
+      (async () => {
+        const authorIds = [...new Set((comments ?? []).map((item: any) => item.author_id))];
+        return authorIds.length
+          ? db.from("community_public_profiles").select("id,display_name").in("id", authorIds)
+          : { data: [], error: null };
+      })(),
+    ]);
+    if (likesError) throw new Error("Не удалось загрузить лайки комментариев.");
+    if (authorProfiles.error) throw new Error("Не удалось загрузить авторов комментариев.");
+    const names = new Map((authorProfiles.data ?? []).map((item: any) => [item.id, item.display_name || "Участник"]));
+    const likes = new Map<string, number>(), likedByMe = new Set<string>();
+    for (const like of likeRows ?? []) {
+      likes.set(like.comment_id, (likes.get(like.comment_id) ?? 0) + 1);
+      if (like.user_id === user.id) likedByMe.add(like.comment_id);
+    }
     return {
       comments: (comments ?? []).map((item: any) => ({
         id: item.id,
+        parentId: item.parent_comment_id || null,
         name: names.get(item.author_id) || (item.author_id === user.id ? "Вы" : "Участник"),
         text: item.body,
         time: item.created_at,
-        likes: 0,
-        replies: [],
+        likes: likes.get(item.id) ?? 0,
+        isLiked: likedByMe.has(item.id),
         isOwn: item.author_id === user.id,
       })),
     };
@@ -1184,11 +1200,50 @@ export const createShortComment = createServerFn({ method: "POST" })
     });
     if (blocked) throw new Error("Для аккаунта временно недоступны комментарии.");
 
+    if (data.parentCommentId) {
+      const { data: parent, error: parentError } = await contentDb.from("shorts_comments")
+        .select("id,video_id,status").eq("id", data.parentCommentId).maybeSingle();
+      if (parentError || !parent || parent.video_id !== data.videoId || parent.status !== "published") {
+        throw new Error("Комментарий, на который ты отвечаешь, недоступен.");
+      }
+    }
     const { data: inserted, error: insertError } = await contentDb
       .from("shorts_comments")
-      .insert({ video_id: data.videoId, author_id: user.id, body, status: "published", moderation_status: "approved", moderated_at: new Date(now).toISOString() })
+      .insert({ video_id: data.videoId, author_id: user.id, body, ...(data.parentCommentId ? { parent_comment_id: data.parentCommentId } : {}), status: "published", moderation_status: "approved", moderated_at: new Date(now).toISOString() })
       .select("id")
       .single();
     if (insertError || !inserted) throw new Error("Не удалось отправить комментарий.");
     return { id: inserted.id, status: "published" };
+  });
+
+/** Persists a like on an individual Shorts comment. */
+export const setShortCommentLike = createServerFn({ method: "POST" })
+  .inputValidator((input: Partial<ShortsCommentLikeInput>): ShortsCommentLikeInput => {
+    const accessToken = String(input?.accessToken ?? ""), commentId = String(input?.commentId ?? "");
+    if (!accessToken || accessToken.length > 8192 || accessToken.split(".").length !== 3) throw new Error("Unauthorized");
+    if (!/^[0-9a-f-]{36}$/i.test(commentId) || typeof input?.like !== "boolean") throw new Error("Некорректное действие с лайком комментария.");
+    return { accessToken, commentId, like: input.like };
+  })
+  .handler(async ({ data }) => {
+    const { user } = await ctx(data.accessToken);
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const contentDb = getCloudyContentAdmin();
+    const { data: comment, error: commentError } = await contentDb.from("shorts_comments")
+      .select("id,status").eq("id", data.commentId).maybeSingle();
+    if (commentError || !comment || comment.status !== "published") throw new Error("Комментарий недоступен для оценки.");
+    if (data.like) {
+      const { error } = await contentDb.from("shorts_comment_likes")
+        .upsert({ comment_id: data.commentId, user_id: user.id }, { onConflict: "comment_id,user_id", ignoreDuplicates: true });
+      if (error) throw new Error("Не удалось поставить лайк комментарию.");
+    } else {
+      const { error } = await contentDb.from("shorts_comment_likes")
+        .delete().eq("comment_id", data.commentId).eq("user_id", user.id);
+      if (error) throw new Error("Не удалось убрать лайк комментария.");
+    }
+    const [{ count }, { data: mine, error: mineError }] = await Promise.all([
+      contentDb.from("shorts_comment_likes").select("user_id", { count: "exact", head: true }).eq("comment_id", data.commentId),
+      contentDb.from("shorts_comment_likes").select("comment_id").eq("comment_id", data.commentId).eq("user_id", user.id).maybeSingle(),
+    ]);
+    if (mineError) throw new Error("Не удалось проверить лайк комментария.");
+    return { ok: true, isLiked: !!mine, likes: count ?? 0 };
   });
