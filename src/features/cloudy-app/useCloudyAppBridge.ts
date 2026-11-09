@@ -137,7 +137,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
 
       try {
         const accessToken = accessTokenRef.current;
-        if (["chat-history-get","chat-history-save","chat-history-delete","admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","admin-shorts-queue","admin-shorts-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-feed-get","shorts-moderate","shorts-frame-review","shorts-audio-review","shorts-comments-get","shorts-comment-create","shorts-upload-start","shorts-upload-finalize","shorts-upload-image-finalize","shorts-text-create","shorts-profile-get","shorts-post-delete","shorts-profile-update","shorts-profile-image-url","shorts-follow-set","shorts-like-set","shorts-save-set"].includes(String(message.action))) {
+        if (["chat-history-get","chat-history-save","chat-history-delete","admin-users","admin-providers","admin-provider-save","admin-provider-delete","admin-provider-test","admin-community-reports","admin-community-moderate","admin-shorts-queue","admin-shorts-moderate","ai-chat","tts","learning-exam-sync","learning-exam-profile","learning-exam-status","learning-exam-start","learning-exam-submit","learning-events","shorts-feed-get","shorts-moderate","shorts-frame-review","shorts-audio-review","shorts-comments-get","shorts-comment-create","shorts-comment-like-set","shorts-upload-start","shorts-upload-finalize","shorts-upload-image-finalize","shorts-text-create","shorts-profile-get","shorts-post-delete","shorts-profile-update","shorts-profile-image-url","shorts-follow-set","shorts-like-set","shorts-save-set"].includes(String(message.action))) {
           if (!accessToken) throw new Error("Сначала войдите в аккаунт.");
           const payload = { accessToken, ...(message.payload && typeof message.payload === "object" ? message.payload as Record<string, unknown> : {}) };
           if (message.action === "shorts-feed-get") { const feedApi = await import("@/lib/cloudy-shorts-feed.functions"); reply({ ok: true, result: await feedApi.listShortsFeed({ data: payload as never }) }); return; }
@@ -188,6 +188,7 @@ export function useCloudyAppBridge(frameRef: RefObject<HTMLIFrameElement | null>
           else if (message.action === "shorts-audio-review") result = await api.analyzeShortVideoAudio({ data: payload as never });
           else if (message.action === "shorts-comments-get") result = await api.getShortsComments({ data: payload as never });
           else if (message.action === "shorts-comment-create") result = await api.createShortComment({ data: payload as never });
+          else if (message.action === "shorts-comment-like-set") result = await api.setShortCommentLike({ data: payload as never });
           else if (String(message.action).startsWith("learning-exam-")) result = await api.cloudyPersonalExam({ data: { ...payload, accessToken, examAction: String(message.action).replace("learning-exam-", "") } as never });
           else result = await api.cloudyTutorChat({ data: payload as never });
           reply({ ok: true, result }); return;
