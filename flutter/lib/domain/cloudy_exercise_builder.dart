@@ -24,12 +24,6 @@ bool isCloudyLessonInLevel(int index, String level) =>
 List<int> cloudyLevelLessons(String level) =>
     List.unmodifiable(cloudyLessonsByLevel[level] ?? const <int>[]);
 
-int _number(Object? value, [int fallback = 0]) =>
-    value is num && value.isFinite ? value.toInt() : fallback;
-
-int _clampInt(num value, int min, int max) =>
-    (value.isFinite ? value.toInt() : min).clamp(min, max).toInt();
-
 List<T> cloudyShuffle<T>(List<T> input, {CloudyRand? random}) {
   final result = List<T>.of(input);
   final rand = random ?? math.Random().nextDouble;
