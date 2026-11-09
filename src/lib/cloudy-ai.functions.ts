@@ -216,7 +216,7 @@ function runCloudyExerciseAudit(){
     else examValid++;
   }
   const grammarEntries=Object.entries(CLOUDY_FOUNDATIONS).reduce((total,[,note]:any)=>total+(Array.isArray(note?.examples)?note.examples.filter((pair:any)=>Array.isArray(pair)&&pair.length>=2&&String(pair[0]??"").trim()&&String(pair[1]??"").trim()).length:0),0);
-  const grammarInvalid=Object.values(CLOUDY_FOUNDATIONS).reduce((total:any,note:any)=>total+(Array.isArray(note?.examples)?note.examples.filter((pair:any)=>!Array.isArray(pair)||pair.length<2||!String(pair[0]??"").trim()||!String(pair[1]??"").trim()).length:0:1),0);
+  const grammarInvalid=Object.values(CLOUDY_FOUNDATIONS).reduce((total:any,note:any)=>total+(Array.isArray(note?.examples)?note.examples.filter((pair:any)=>!Array.isArray(pair)||pair.length<2||!String(pair[0]??"").trim()||!String(pair[1]??"").trim()).length:1),0);
   const totalFailures=failures.length+examErrors+grammarInvalid;
   return {answer:[
     "ОТЧЁТ CLOUDY AI — ПОЛНЫЙ АУДИТ УЧЕБНЫХ ЗАДАНИЙ",
