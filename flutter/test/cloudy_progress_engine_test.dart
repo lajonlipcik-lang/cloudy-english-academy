@@ -77,6 +77,33 @@ void main() {
       expect(result.state.completed['A1'], 1);
     });
 
+    test('waits for the server XP ledger on authenticated lessons', () {
+      final initial = CloudyState.defaults().copyWith(level: CloudyLevel.a1);
+      const session = CloudySession(review: false, lesson: 0, exercises: []);
+      final completed = finishCloudyLesson(
+        initial, session, now: DateTime(2026, 11, 9, 12),
+        authenticated: true,
+        levelLessonIndices: const {'A1': [0, 1]},
+      );
+      expect(completed.gain, 24);
+      expect(completed.state.xp, 0);
+      expect(completed.state.today.xp, 0);
+      expect(completed.state.today.les, 1);
+      expect(completed.state.completed['A1'], 1);
+
+      final awarded = applyCloudyServerAward(
+        completed.state,
+        session,
+        const {'awarded': 24, 'total_xp': 124, 'week_key': '2026w45', 'week_xp': 24},
+        now: DateTime(2026, 11, 9, 12),
+      );
+      expect(awarded.xp, 124);
+      expect(awarded.today.xp, 24);
+      expect(awarded.week['xp'], 24);
+      expect(awarded.days, ['2026-11-9']);
+      expect(awarded.perfectLessons, 1);
+    });
+
     test('does not unlock an out-of-order lesson', () {
       final state = CloudyState.defaults().copyWith(
         level: CloudyLevel.a1,
