@@ -337,6 +337,7 @@ class CloudyAppController extends ChangeNotifier {
       levelLessonIndices: levelLessonIndices,
     );
     state = result.state;
+    var displayedGain = user == null ? result.gain : 0;
     await _local.saveActive(state);
     if (user != null) {
       await _local.markDirty(user!.email);
@@ -347,6 +348,7 @@ class CloudyAppController extends ChangeNotifier {
             lessonIndex: session.lesson,
             level: state.level!.code,
           );
+          displayedGain = award.awarded;
           state = applyCloudyServerAward(state, session, {
             'awarded': award.awarded,
             'total_xp': award.totalXp,
@@ -364,7 +366,7 @@ class CloudyAppController extends ChangeNotifier {
     notifyListeners();
     return CloudyLessonResult(
       state: state,
-      gain: result.gain,
+      gain: displayedGain,
       stars: result.stars,
       accuracy: result.accuracy,
     );
