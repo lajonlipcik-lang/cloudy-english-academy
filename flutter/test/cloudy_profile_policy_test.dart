@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:cloudy_english/domain/cloudy_profile_policy.dart';
+import 'package:cloudy_english/auth/cloudy_profile_policy.dart';
 
 void main() {
   group('Cloudy profile compatibility', () {
