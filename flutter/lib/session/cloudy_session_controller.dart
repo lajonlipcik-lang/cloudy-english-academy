@@ -11,6 +11,9 @@ import '../domain/cloudy_state.dart';
 import '../domain/cloudy_progress_engine.dart';
 import '../progress/cloudy_local_progress_store.dart';
 import '../services/cloudy_progress_sync_service.dart';
+import '../services/cloudy_media_service.dart';
+import '../services/cloudy_sound_service.dart';
+import '../services/cloudy_speech_recognition_service.dart';
 
 enum CloudySessionStatus {
   starting,
@@ -28,18 +31,21 @@ class CloudySessionController extends ChangeNotifier {
     required CloudyAuthRepository auth,
     required CloudyLocalProgressStore localProgress,
     required CloudyMobileApi mobileApi,
+    CloudyMediaService? media,
   })  : _auth = auth,
         _localProgress = localProgress,
         _mobileApi = mobileApi,
         _progressSync = CloudyProgressSyncService(
           localStore: localProgress,
           api: mobileApi,
-        );
+        ),
+        _media = media ?? CloudyMediaService();
 
   final CloudyAuthRepository _auth;
   final CloudyLocalProgressStore _localProgress;
   final CloudyMobileApi _mobileApi;
   final CloudyProgressSyncService _progressSync;
+  final CloudyMediaService _media;
 
   StreamSubscription<AuthState>? _authSubscription;
   CloudySessionStatus _status = CloudySessionStatus.starting;
@@ -62,6 +68,7 @@ class CloudySessionController extends ChangeNotifier {
   Future<void> start() async {
     if (_authSubscription != null) return;
     _progress = _localProgress.loadActive();
+    await _media.applySettings(_progress.settings);
     _publish(CloudySessionStatus.starting);
     _authSubscription = _auth.authChanges.listen(
       (event) {
@@ -86,6 +93,7 @@ class CloudySessionController extends ChangeNotifier {
       _loadedUserId = null;
       _user = null;
       _progress = await _progressSync.activateGuest();
+      await _media.applySettings(_progress.settings);
       _errorMessage = _pendingGuestError;
       _pendingGuestError = null;
       _publish(CloudySessionStatus.guest);
@@ -120,6 +128,7 @@ class CloudySessionController extends ChangeNotifier {
     if (_disposed || _user?.id != user.id) return;
 
     _progress = result.state;
+    await _media.applySettings(_progress.settings);
     _loadedUserId = userId;
     if (result.syncPaused) {
       _setError(
@@ -153,6 +162,7 @@ class CloudySessionController extends ChangeNotifier {
   Future<void> saveProgress(CloudyState next) async {
     final result = await _progressSync.saveLocal(next);
     _progress = result.state;
+    await _media.applySettings(_progress.settings);
     if (result.syncPaused && _user != null) {
       _setError(
         result.error ??
@@ -183,6 +193,7 @@ class CloudySessionController extends ChangeNotifier {
   Future<CloudyState> awardLesson(CloudySession session, {DateTime? now}) async {
     final updated = await _progressSync.awardLesson(_progress, session, now: now);
     _progress = updated;
+    await _media.applySettings(_progress.settings);
     _publish(_status);
     return updated;
   }
@@ -212,6 +223,24 @@ class CloudySessionController extends ChangeNotifier {
   Future<int> syncLearningEvents() => _progressSync.syncLearningEvents();
 
   Future<CloudyLearningStore> get learningStore => _progressSync.learningStore;
+
+  Future<void> speak(String text, {bool force = false}) =>
+      _media.speak(text, force: force);
+
+  Future<CloudySpeechRecognitionResult> recognizeAnswer(
+    String target, {
+    Duration listenFor = const Duration(seconds: 8),
+    Duration pauseFor = const Duration(seconds: 2),
+  }) => _media.recognizeAnswer(
+    target,
+    listenFor: listenFor,
+    pauseFor: pauseFor,
+  );
+
+  Future<void> playSound(CloudySound effect, {int combo = 0}) =>
+      _media.play(effect, combo: combo);
+
+  Future<void> stopMedia() => _media.stop();
 
   Future<void> enterGuestMode() async {
     await _auth.signOut();
