@@ -41,10 +41,11 @@ This is a plan to test on a disposable empty Supabase database, not authorizatio
 11. Content `0010_shorts_comment_interactions.sql` (give it a unique version in the canonical history).
 12. Content `0011_shorts_saved_posts_security.sql` (new additive hardening migration).
 13. Core `0016_shorts_publication_and_post_publish_review.sql`.
-14. Core `0017_shorts_caption_nonblocking.sql`.
+14. Core `0017_shorts_caption_nonblocking.sql` (keep this historical migration immutable).
 15. Core `0018_shorts_feed_and_review_rpc.sql`.
 16. Core `0019_cloudy_chat_history.sql`.
 17. Core `0020_secure_privacy_center_writes.sql`.
+18. Add a new Supabase CLI-generated migration after `0020` that replaces `apply_shorts_text_moderation` with the reviewed text-only implementation. Do not edit an already-applied historical migration; generate the new filename with `supabase migration new` once the CLI environment is available.
 
 The hardening migration is now present in the migration branch. It runs after the saved-posts table exists and before the application is enabled.
 
@@ -105,3 +106,18 @@ Do not apply the sequence to the connected destination until:
 5. application build, typecheck and tests pass against that schema.
 
 No SQL migrations or data imports have been applied by this proposal. It does not authorize production cutover, deletion, changes to `main`, or changes to the existing Lovable database.
+
+
+## Current application-side moderation fix (migration still pending)
+
+The migration branch now changes `moderateOwnShortContent` to:
+- verify the caller through Core Auth;
+- load the caller's own draft from the Content database;
+- accept only `media_type = 'text'` (photo/video captions cannot use this endpoint);
+- run the existing Core AI Vault moderation router;
+- call `apply_shorts_text_moderation` with the model decision, labels, confidence and policy metadata;
+- throw on provider/RPC errors so the upload handler moves the draft to `pending_review`.
+
+The upload handler's fail-closed fallback now updates only rows that are still `draft` and `pending`, avoiding overwriting a completed moderation decision.
+
+**Important deployment sequencing:** the historical Core `0017` migration remains unchanged to avoid checksum/schema-history drift in environments where it may already have been applied. It currently makes `apply_shorts_text_moderation` comment-only. Therefore text-only Shorts posts will safely fall back to manual review until the new additive SQL migration is generated and applied. Automatic text-post publication must remain disabled until that additive migration passes the disposable-database tests.
