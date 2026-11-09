@@ -42,6 +42,7 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
   late final Future<void> _learningSessionReady;
   Future<void> _progressQueue = Future<void>.value();
   Future<void> _learningQueue = Future<void>.value();
+  int _progressRevision = 0;
   bool _finishing = false;
   bool _finished = false;
 
@@ -74,9 +75,13 @@ class _CloudyLessonFlowState extends State<CloudyLessonFlow> {
   }
 
   void _queueProgressSave(CloudyState next) {
+    final revision = ++_progressRevision;
     _progress = next;
     _progressQueue = _progressQueue.then((_) async {
       await widget.controller.saveProgress(next);
+      if (mounted && revision == _progressRevision) {
+        _progress = widget.controller.progress;
+      }
     }).catchError((Object error, StackTrace stackTrace) {
       if (mounted) _showMessage('Не удалось сохранить прогресс. Повторим позже.');
     });
