@@ -114,3 +114,44 @@ export const createCloudyPrivacyRequest = createServerFn({ method: "POST" })
       },
     };
   });
+
+/** Self-service export from an explicit allowlist of the authenticated user's records. */
+export const exportCloudyPersonalData = createServerFn({ method: "POST" })
+  .inputValidator(validate)
+  .handler(async ({ data }) => {
+    const { user, db } = await getUserAndDb(data.accessToken);
+    const { data: requestRow, error: requestError } = await db.from("privacy_requests")
+      .insert({ user_id: user.id, request_type: "access_export", details: "Автоматически сформирован экспорт данных аккаунта.", status: "in_progress" })
+      .select("id").single();
+    if (requestError || !requestRow) throw new Error("Не удалось зарегистрировать запрос на экспорт данных.");
+    const results = await Promise.all([
+      db.from("profiles").select("id,display_name,english_level,placement_test_completed,is_public,bio,created_at").eq("id", user.id).maybeSingle(),
+      db.from("user_progress").select("state,total_xp,updated_at,week_key,week_xp").eq("user_id", user.id).maybeSingle(),
+      db.from("user_learning_profiles").select("profile,updated_at").eq("user_id", user.id).maybeSingle(),
+      db.from("user_progress_xp").select("daily_key,daily_lessons,total_xp,week_key,week_xp").eq("user_id", user.id).maybeSingle(),
+      db.from("user_progress_awards").select("award_day,created_at,lesson_index,level,xp_awarded").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
+      db.from("cloudy_learning_events").select("event_id,event_type,exercise_type,level,lesson_index,question_index,skill_id,is_correct,correct_answer,selected_answer,response_seconds,retry,session_id,session_type,occurred_at,created_at").eq("user_id", user.id).order("occurred_at", { ascending: false }).limit(10000),
+      db.from("cloudy_chat_threads").select("thread_id,title,messages,created_at,updated_at").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(1000),
+      db.from("community_posts").select("id,body,status,created_at,updated_at").eq("author_id", user.id).order("created_at", { ascending: false }).limit(5000),
+      db.from("community_comments").select("id,post_id,body,status,created_at,updated_at").eq("author_id", user.id).order("created_at", { ascending: false }).limit(5000),
+      db.from("community_reactions").select("post_id,reaction,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
+      db.from("optional_consent_events").select("purpose,action,document_version,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1000),
+      db.from("privacy_requests").select("id,request_type,details,status,created_at,updated_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1000),
+    ]);
+    const failed = results.find((result: any) => result.error);
+    if (failed?.error) throw new Error("Не удалось полностью собрать данные аккаунта. Запрос сохранён для проверки поддержкой.");
+    const [profile, progress, learnerProfile, progressXp, awards, learningEvents, chatThreads, communityPosts, communityComments, communityReactions, consentEvents, privacyRequests] = results.map((result: any) => result.data);
+    const exportData = {
+      format: "cloudy-personal-data-export", version: 1, exportedAt: new Date().toISOString(),
+      account: { id: user.id, email: user.email ?? null, createdAt: user.created_at ?? null, lastSignInAt: user.last_sign_in_at ?? null, name: typeof user.user_metadata?.name === "string" ? user.user_metadata.name : null, ageYears: Number.isInteger(Number(user.user_metadata?.age)) ? Number(user.user_metadata.age) : null },
+      profile,
+      learning: { progress, learnerProfile, xp: progressXp, awards: awards ?? [], events: learningEvents ?? [] },
+      aiChatHistory: chatThreads ?? [],
+      community: { posts: communityPosts ?? [], comments: communityComments ?? [], reactions: communityReactions ?? [] },
+      privacy: { optionalConsentEvents: consentEvents ?? [], requests: privacyRequests ?? [] },
+      scope: { included: "Данные аккаунта, учебный прогресс, история Cloudy AI, материалы сообщества и записи центра конфиденциальности из основной базы Cloudy English.", notIncluded: "Данные внешних поставщиков, отдельных инфраструктурных проектов и технические журналы, не связанные с аккаунтом в основной базе.", limits: "Отдельные журналы и списки ограничены последними 1 000–10 000 записями." },
+    };
+    const { error: completeError } = await db.from("privacy_requests").update({ status: "completed", updated_at: new Date().toISOString() }).eq("id", requestRow.id).eq("user_id", user.id);
+    if (completeError) throw new Error("Экспорт сформирован, но статус запроса не обновлён. Обратитесь в поддержку.");
+    return { ok: true, requestId: String(requestRow.id), data: exportData };
+  });
