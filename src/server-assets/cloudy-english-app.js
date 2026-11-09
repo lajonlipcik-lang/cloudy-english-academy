@@ -1093,7 +1093,7 @@ function shortsRenderComments(id){
  samples.sort((a,b)=>shortsCommentSort==="new"?(Date.parse(b.time||"")||0)-(Date.parse(a.time||"")||0):(Number(b.likes||0)-Number(a.likes||0))||((Date.parse(a.time||"")||0)-(Date.parse(b.time||"")||0)));
  const renderRow=(c,nested=false)=>{
   const commentId=shortsEscapeText(c.id),name=shortsEscapeText(c.name||"Участник"),avatar=shortsEscapeText(c.avatar||String(c.name||"У").charAt(0)),body=shortsEscapeText(c.text),time=shortsEscapeText(shortsCommentTime(c.time));
-  const actions='<div class="shorts-comment-actions"><button type="button" class="shorts-comment-like '+(c.isLiked?"liked":"")+'" onclick="shortsCommentLike(\''+commentId+'\')">♥ <span>'+shortsCount(c.likes,false)+'</span></button><button type="button" onclick="shortsReply(\''+commentId+'\')">Ответить</button></div>';
+  const actions='<div class="shorts-comment-actions"><button type="button" class="shorts-comment-like '+(c.isLiked?"liked":"")+'" onclick="shortsCommentLike(\''+commentId+'\')">♥ <span>'+shortsCount(c.likes,false)+'</span></button>'+(nested?'':'<button type="button" onclick="shortsReply(\''+commentId+'\')">Ответить</button>')+'</div>';
   return '<div class="shorts-comment-row'+(nested?' nested':'')+'" data-comment-id="'+commentId+'"><div class="shorts-comment-avatar">'+avatar+'</div><div class="shorts-comment-main"><div class="shorts-comment-user">'+name+'</div><p>'+body+'</p><div class="shorts-comment-meta">'+time+'</div>'+actions+'</div></div>';
  };
  const roots=samples.filter(c=>!c.parentId);
