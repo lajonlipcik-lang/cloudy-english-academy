@@ -1,15 +1,20 @@
 class CloudyPair {
-  const CloudyPair(this.first, this.second);
+  const CloudyPair(this.first, this.second, {this.extra});
   final String first, second;
+  final String? extra;
 
   factory CloudyPair.fromJson(Object? value) {
     if (value is List && value.length >= 2) {
-      return CloudyPair(value[0]?.toString() ?? '', value[1]?.toString() ?? '');
+      return CloudyPair(
+        value[0]?.toString() ?? '',
+        value[1]?.toString() ?? '',
+        extra: value.length > 2 ? value[2]?.toString() : null,
+      );
     }
     return const CloudyPair('', '');
   }
 
-  List<String> toJson() => [first, second];
+  List<String> toJson() => [first, second, if (extra != null) extra!];
 }
 
 /// Mirrors every exercise/study card emitted by the current browser runtime:
