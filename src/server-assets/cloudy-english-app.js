@@ -90,7 +90,7 @@ function queueCloudProgress(){
  try{cloudSyncPending={id:++cloudSyncSeq,revision:++cloudLocalRevision,state:cloneProgressState(S),baseState:cloneProgressState(cloudBaseState||{})}}catch(e){return}
  clearTimeout(cloudSyncTimer);cloudSyncTimer=setTimeout(()=>{cloudSyncTimer=0;flushCloudProgress()},650);
 }
-const requestCloudSession=()=>{if(cloudUserId&&!S.user?.guest&&cloudSyncPaused)window.parent.postMessage({channel:'cloudy-auth',type:'init'},location.origin)};
+const requestCloudSession=()=>{if(cloudUserId&&!S.user?.guest&&cloudSyncPaused)window.parent.postMessage({channel:'cloudy-auth',type:'init',state:'refresh'},location.origin)};
 window.addEventListener('online',()=>{clearTimeout(cloudSyncRetry);cloudSyncRetry=0;if(cloudSyncPaused)requestCloudSession();else flushCloudProgress()});
 window.addEventListener('pageshow',()=>{if(cloudUserId&&!S.user?.guest){if(cloudSyncPaused)requestCloudSession();else flushCloudProgress()}});
 document.addEventListener('visibilitychange',()=>{if(cloudUserId&&!S.user?.guest){if(document.hidden)flushCloudProgress();else if(cloudSyncPaused)requestCloudSession();else flushCloudProgress()}});
