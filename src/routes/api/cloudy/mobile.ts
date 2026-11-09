@@ -69,57 +69,44 @@ async function dispatchMobileAction(action: string, input: JsonRecord): Promise<
     const { data: identity, error: authError } = await client.auth.getUser(String(input.accessToken ?? ""));
     if (authError || !identity.user) throw new Error("Unauthorized");
     const uid = identity.user.id;
-    const { data: rows, error: subscriptionError } = await client.from("subscriptions")
-      .select("id,plan_id,status,current_period_start,current_period_end,cancel_at_period_end,canceled_at,created_at")
-      .eq("user_id", uid)
-      .in("status", ["trialing", "active", "canceled"])
-      .order("created_at", { ascending: false })
-      .limit(1);
-    if (subscriptionError) throw new Error("Не удалось проверить подписку аккаунта.");
-    const subscription = rows?.[0] ?? null;
-    if (!subscription) {
+    const { data: access, error: accessError } = await client
+      .from("my_subscription_access")
+      .select("id,status,has_access,current_period_start,current_period_end,cancel_at_period_end,canceled_at,plan_code,plan_name,plan_entitlements")
+      .maybeSingle();
+    if (accessError) throw new Error("Не удалось проверить подписку аккаунта.");
+    if (!access) {
       return { hasAccess: false, status: "inactive", subscription: null, plan: null, entitlements: [] };
     }
 
-    const periodEnd = typeof subscription.current_period_end === "string"
-      ? Date.parse(subscription.current_period_end)
-      : Number.NaN;
-    const status = String(subscription.status);
-    const withinPeriod = !Number.isFinite(periodEnd) || periodEnd > Date.now();
-    const hasAccess = withinPeriod && (
-      status === "active" || status === "trialing" ||
-      (status === "canceled" && Number.isFinite(periodEnd) && periodEnd > Date.now())
-    );
+    const hasAccess = access.has_access === true;
+    const { data: entitlements, error: entitlementError } = hasAccess
+      ? await client.from("subscription_entitlements")
+          .select("feature_key,enabled,usage_limit")
+          .eq("subscription_id", access.id)
+          .eq("user_id", uid)
+      : { data: [], error: null };
+    if (entitlementError) throw new Error("Не удалось загрузить права подписки.");
 
-    const [planResult, entitlementResult] = await Promise.all([
-      client.from("subscription_plans").select("code,name,entitlements")
-        .eq("id", subscription.plan_id).maybeSingle(),
-      hasAccess
-        ? client.from("subscription_entitlements")
-            .select("feature_key,enabled,usage_limit")
-            .eq("subscription_id", subscription.id)
-            .eq("user_id", uid)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
-    if (planResult.error || entitlementResult.error) {
-      throw new Error("Не удалось загрузить права подписки.");
-    }
+    const rawStatus = String(access.status);
+    const effectiveStatus = !hasAccess && ["active", "trialing", "canceled"].includes(rawStatus)
+      ? "expired"
+      : rawStatus;
     return {
       hasAccess,
-      status: hasAccess ? status : (withinPeriod ? status : "expired"),
+      status: effectiveStatus,
       subscription: {
-        id: subscription.id,
-        currentPeriodStart: subscription.current_period_start,
-        currentPeriodEnd: subscription.current_period_end,
-        cancelAtPeriodEnd: subscription.cancel_at_period_end === true,
-        canceledAt: subscription.canceled_at,
+        id: access.id,
+        currentPeriodStart: access.current_period_start,
+        currentPeriodEnd: access.current_period_end,
+        cancelAtPeriodEnd: access.cancel_at_period_end === true,
+        canceledAt: access.canceled_at,
       },
-      plan: planResult.data ? {
-        code: planResult.data.code,
-        name: planResult.data.name,
-        entitlements: objectValue(planResult.data.entitlements),
-      } : null,
-      entitlements: entitlementResult.data ?? [],
+      plan: {
+        code: access.plan_code,
+        name: access.plan_name,
+        entitlements: objectValue(access.plan_entitlements),
+      },
+      entitlements: entitlements ?? [],
     };
   }
 
