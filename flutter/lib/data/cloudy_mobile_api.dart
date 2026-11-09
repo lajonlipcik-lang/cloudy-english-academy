@@ -5,6 +5,61 @@ import 'package:http/http.dart' as http;
 import '../domain/cloudy_progress_engine.dart';
 import '../domain/cloudy_state.dart';
 
+class CloudySubscriptionAccess {
+  const CloudySubscriptionAccess({
+    required this.hasAccess,
+    required this.status,
+    this.planCode,
+    this.planName,
+    this.currentPeriodEnd,
+    this.cancelAtPeriodEnd = false,
+    this.planEntitlements = const {},
+    this.featureEntitlements = const [],
+  });
+
+  final bool hasAccess;
+  final String status;
+  final String? planCode;
+  final String? planName;
+  final String? currentPeriodEnd;
+  final bool cancelAtPeriodEnd;
+  final Map<String, Object?> planEntitlements;
+  final List<Map<String, Object?>> featureEntitlements;
+
+  factory CloudySubscriptionAccess.fromJson(Map<String, Object?> json) {
+    final subscription = json['subscription'] is Map
+        ? (json['subscription'] as Map).map((key, value) => MapEntry(key.toString(), value))
+        : const <String, Object?>{};
+    final plan = json['plan'] is Map
+        ? (json['plan'] as Map).map((key, value) => MapEntry(key.toString(), value))
+        : const <String, Object?>{};
+    final rawPlanEntitlements = plan['entitlements'];
+    final rawFeatureEntitlements = json['entitlements'];
+    return CloudySubscriptionAccess(
+      hasAccess: json['hasAccess'] == true,
+      status: json['status'] is String ? json['status'] as String : 'inactive',
+      planCode: plan['code'] is String ? plan['code'] as String : null,
+      planName: plan['name'] is String ? plan['name'] as String : null,
+      currentPeriodEnd: subscription['currentPeriodEnd'] is String
+          ? subscription['currentPeriodEnd'] as String
+          : null,
+      cancelAtPeriodEnd: subscription['cancelAtPeriodEnd'] == true,
+      planEntitlements: rawPlanEntitlements is Map
+          ? rawPlanEntitlements.map((key, value) => MapEntry(key.toString(), value))
+          : const {},
+      featureEntitlements: rawFeatureEntitlements is List
+          ? rawFeatureEntitlements
+              .whereType<Map>()
+              .map((row) => row.map((key, value) => MapEntry(key.toString(), value)))
+              .toList(growable: false)
+          : const [],
+    );
+  }
+
+  factory CloudySubscriptionAccess.inactive() =>
+      const CloudySubscriptionAccess(hasAccess: false, status: 'inactive');
+}
+
 class CloudyMobileApiException implements Exception {
   const CloudyMobileApiException(this.message, {this.statusCode});
   final String message;
@@ -59,6 +114,11 @@ class CloudyMobileApi {
           ? profile.map((key, value) => MapEntry(key.toString(), value))
           : null,
     );
+  }
+
+  Future<CloudySubscriptionAccess> loadSubscriptionAccess() async {
+    final result = await _post('subscription-status', const {});
+    return CloudySubscriptionAccess.fromJson(result);
   }
 
   Future<Map<String, Object?>> saveProgress(
