@@ -120,6 +120,10 @@ export interface FileRouteTypes {
     | '/legal'
     | '/sitemap.xml'
     | '/api/internal/support-ai'
+    | '/api/telegram/checkout'
+    | '/api/telegram/orders/resolve'
+    | '/api/telegram/orders/precheck'
+    | '/api/telegram/payments/events'
     | '/api/telegram/payments/events'
   fileRoutesById: FileRoutesById
 }
