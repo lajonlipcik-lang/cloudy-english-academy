@@ -126,8 +126,8 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
           }
 
           const message = readObject(update['message']) as TelegramMessage;
-          const chatId = message.chat?['id'];
-          const fromId = message['from']?['id'];
+          const chatId = message.chat?.['id'];
+          const fromId = message['from']?.['id'];
           const text = String(message.text ?? "");
           const linkMatch = /^\/start\s+link_([a-f0-9]{32})$/.exec(text);
           if (linkMatch && chatId && fromId) {
@@ -197,10 +197,10 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
               await admin['from']("subscription_payments")
                 .update({ status: "refunded", refunded_at: new Date().toISOString() })
                 .eq("id", paymentRow['id']);
-              if (paymentRow['subscription']_id) {
+              if (paymentRow.subscription_id) {
                 const { data: order } = await admin['from']("telegram_payment_orders")
                   .select("last_charge_id")
-                  .eq("subscription_id", paymentRow['subscription']_id)
+                  .eq("subscription_id", paymentRow.subscription_id)
                   .maybeSingle();
                 // Refunding an older installment must not revoke a subscription
                 // that has already been renewed with a later successful payment.
@@ -208,7 +208,7 @@ export const Route = createFileRoute("/api/telegram/stars-webhook")({
                   const now = new Date().toISOString();
                   await admin['from']("subscriptions")
                     .update({ status: "canceled", canceled_at: now, ended_at: now, updated_at: now })
-                    .eq("id", paymentRow['subscription']_id);
+                    .eq("id", paymentRow.subscription_id);
                 }
               }
             }
