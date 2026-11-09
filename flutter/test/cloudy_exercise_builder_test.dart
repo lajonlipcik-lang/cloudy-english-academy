@@ -60,21 +60,21 @@ void main() {
         'son', 'сын', 2,
         const [CloudyPair('son', 'сын'), CloudyPair('sun', 'солнце')],
         random: () => 0.25,
-      );
+      ) as CloudyListeningExercise;
       final russianToEnglish = cloudyChoiceQuestion(
         'son', 'сын', 0,
         const [CloudyPair('son', 'сын'), CloudyPair('sun', 'солнце')],
         random: () => 0.25,
-      );
+      ) as CloudyChoiceExercise;
       final englishToRussian = cloudyChoiceQuestion(
         'son', 'сын', 1,
         const [CloudyPair('son', 'сын'), CloudyPair('sun', 'солнце')],
         random: () => 0.25,
-      );
+      ) as CloudyChoiceExercise;
 
-      expect((listening as CloudyListeningExercise).title, 'Что вы слышите?');
-      expect((russianToEnglish as CloudyChoiceExercise).title, 'Переведите на английский');
-      expect((englishToRussian as CloudyChoiceExercise).title, 'Что это значит?');
+      expect(listening.title, 'Что вы слышите?');
+      expect(russianToEnglish.title, 'Переведите на английский');
+      expect(englishToRussian.title, 'Что это значит?');
       expect(
         isCloudyAnswerCorrect(
           listening,
