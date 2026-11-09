@@ -47,6 +47,7 @@ class CloudySessionController extends ChangeNotifier {
   CloudyState _progress = CloudyState.defaults();
   String? _errorMessage;
   String? _loadedUserId;
+  String? _pendingGuestError;
   bool _disposed = false;
   Future<void> _eventQueue = Future<void>.value();
 
@@ -85,19 +86,18 @@ class CloudySessionController extends ChangeNotifier {
       _loadedUserId = null;
       _user = null;
       _progress = await _progressSync.activateGuest();
-      _errorMessage = null;
+      _errorMessage = _pendingGuestError;
+      _pendingGuestError = null;
       _publish(CloudySessionStatus.guest);
       return;
     }
 
     final identity = session.user;
     if (CloudyAuthPolicy.isUnderMinimumAge(identity.userMetadata?['age'])) {
+      _pendingGuestError =
+          'Регистрация в Cloudy English Academy доступна с 13 лет. '
+          'Если возраст указан неверно, обратитесь в поддержку.';
       await _auth.signOut();
-      _setError(
-        'Регистрация в Cloudy English Academy доступна с 13 лет. '
-            'Если возраст указан неверно, обратитесь в поддержку.',
-        status: CloudySessionStatus.guest,
-      );
       return;
     }
     final nextUser = CloudyAuthUser.fromSupabase(identity);
@@ -109,6 +109,7 @@ class CloudySessionController extends ChangeNotifier {
       return;
     }
 
+    _pendingGuestError = null;
     _user = nextUser;
     _publish(CloudySessionStatus.loadingAccount);
     await _activateAccount(nextUser, identity.id);
