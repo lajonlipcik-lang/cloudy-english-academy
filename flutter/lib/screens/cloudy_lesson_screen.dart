@@ -399,7 +399,7 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
             onTap: _pendingLeft == null || _matchedRight.contains(p.first) ? null : () {
               final left = e.left.firstWhere((item) => item.first == _pendingLeft);
               final correct = left.second == p.second;
-              widget.onMatchingAttempt(left.second, correct, pairs);
+              widget.onMatchingAttempt(left.first, correct, pairs);
               setState(() {
                 if (correct) {
                   _matchedLeft.add(left.first);
