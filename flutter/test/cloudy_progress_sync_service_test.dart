@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloudy_english/data/cloudy_mobile_api.dart';
@@ -18,6 +20,8 @@ class _FakeCloudyApi extends CloudyMobileApi {
   final List<Map<String, Object?>> saveResponses;
   int saveCalls = 0;
   bool throwOnLoad = false;
+  Completer<void>? firstSaveGate;
+  final List<num> submittedXp = [];
 
   @override
   Future<CloudyRemoteProgress> loadProgress() async {
@@ -30,8 +34,12 @@ class _FakeCloudyApi extends CloudyMobileApi {
     CloudyState state, {
     String? expectedUpdatedAt,
   }) async {
-    final response = saveResponses[saveCalls++];
-    return response;
+    submittedXp.add(state.xp);
+    final call = saveCalls++;
+    if (call == 0 && firstSaveGate != null) {
+      await firstSaveGate!.future;
+    }
+    return saveResponses[call];
   }
 }
 
@@ -155,6 +163,38 @@ void main() {
       expect(result.state.mistakes['son'], 3);
       expect(result.state.accuracy, [13, 15]);
       expect(result.state.settings.vol, 0.4);
+    });
+
+    test('serializes rapid local saves so an older response cannot overwrite newer progress', () async {
+      final preferences = await SharedPreferences.getInstance();
+      final local = CloudyLocalProgressStore(preferences);
+      final api = _FakeCloudyApi(
+        remote: CloudyRemoteProgress(
+          state: CloudyState.defaults(),
+          hasProgressRow: true,
+          updatedAt: '2026-11-09T10:00:00Z',
+          learnerProfile: null,
+        ),
+        saveResponses: [
+          {'ok': true, 'state': {'xp': 10}, 'updated_at': '2026-11-09T10:01:00Z'},
+          {'ok': true, 'state': {'xp': 20}, 'updated_at': '2026-11-09T10:02:00Z'},
+        ],
+      );
+      final service = CloudyProgressSyncService(localStore: local, api: api);
+      await service.activateAccount(email: 'learner@example.com');
+      api.firstSaveGate = Completer<void>();
+
+      final first = service.saveLocal(CloudyState.defaults().copyWith(xp: 10));
+      final second = service.saveLocal(CloudyState.defaults().copyWith(xp: 20));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(api.submittedXp, [10]);
+      api.firstSaveGate!.complete();
+      final results = await Future.wait([first, second]);
+
+      expect(results.last.state.xp, 20);
+      expect(api.submittedXp, [10, 20]);
+      expect(local.loadAccount('learner@example.com').xp, 20);
     });
 
     test('pauses sync when the initial server progress load fails', () async {
