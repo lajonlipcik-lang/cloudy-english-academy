@@ -19,7 +19,11 @@ function isLocalRequest(request: Request): boolean {
  * Only Cloudflare's edge-generated country header is accepted.
  */
 function getTrustedCountry(request: Request): string | null {
-  const value = request.headers.get("cf-ipcountry")?.trim().toUpperCase();
+  // Cloudflare and Vercel inject edge-derived country headers.
+  const value = (
+    request.headers.get("cf-ipcountry")
+    ?? request.headers.get("x-vercel-ip-country")
+  )?.trim().toUpperCase();
   if (!value || !/^[A-Z]{2}$/.test(value) || value === "XX" || value === "T1") return null;
   return value;
 }
