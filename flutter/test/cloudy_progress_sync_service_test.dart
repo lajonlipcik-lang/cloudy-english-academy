@@ -17,9 +17,13 @@ class _FakeCloudyApi extends CloudyMobileApi {
   final CloudyRemoteProgress remote;
   final List<Map<String, Object?>> saveResponses;
   int saveCalls = 0;
+  bool throwOnLoad = false;
 
   @override
-  Future<CloudyRemoteProgress> loadProgress() async => remote;
+  Future<CloudyRemoteProgress> loadProgress() async {
+    if (throwOnLoad) throw Exception('network unavailable');
+    return remote;
+  }
 
   @override
   Future<Map<String, Object?>> saveProgress(
@@ -48,7 +52,7 @@ void main() {
         'dn': {'A1': 4},
       }));
       final api = _FakeCloudyApi(
-        remote: const CloudyRemoteProgress(
+        remote: CloudyRemoteProgress(
           state: CloudyState.defaults(),
           hasProgressRow: false,
           updatedAt: null,
