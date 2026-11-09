@@ -63,8 +63,6 @@ class CloudyProgressSyncService {
       throw ArgumentError.value(email, 'email', 'Account email must not be empty.');
     }
 
-    final localExists = localStore.hasAccountSave(normalizedEmail);
-    final guestState = localStore.loadGuest();
     CloudyRemoteProgress remote;
     try {
       remote = await api.loadProgress();
@@ -96,12 +94,6 @@ class CloudyProgressSyncService {
         ? profile!['english_level'] as String
         : null;
     final placementCompleted = profile?['placement_test_completed'] == true;
-    final hasProfileLevel = CloudyProfileLevel.isValid(profileLevel);
-    final migratedGuest = !localExists &&
-        !remote.hasProgressRow &&
-        !hasProfileLevel &&
-        guestState.level != null;
-
     final activation = localStore.activateCloudAccount(
       email: normalizedEmail,
       remoteState: remote.hasProgressRow ? remote.state.toJson() : null,
