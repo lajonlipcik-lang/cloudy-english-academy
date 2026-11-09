@@ -250,9 +250,9 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
           ...e.examples.map((p) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(entry.value.first, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
+              Text(p.first, style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w800)),
               const SizedBox(height: 3),
-              Text(entry.value.second, style: const TextStyle(color: Color(0xFFC9DDF7), fontSize: 14)),
+              Text(p.second, style: const TextStyle(color: Color(0xFFC9DDF7), fontSize: 14)),
             ]),
           )),
           if (e.tip.isNotEmpty) ...[
@@ -271,9 +271,9 @@ class _CloudyLessonScreenState extends State<CloudyLessonScreen> {
       ...e.words.map((p) => Padding(
         padding: const EdgeInsets.only(bottom: 10),
         child: _panel(Row(children: [
-          Expanded(child: Text(entry.value.first, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17))),
+          Expanded(child: Text(p.first, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17))),
           const SizedBox(width: 12),
-          Expanded(child: Text(entry.value.second, textAlign: TextAlign.end, style: const TextStyle(color: Color(0xFFC9DDF7), fontSize: 15))),
+          Expanded(child: Text(p.second, textAlign: TextAlign.end, style: const TextStyle(color: Color(0xFFC9DDF7), fontSize: 15))),
         ])),
       )),
     ],
