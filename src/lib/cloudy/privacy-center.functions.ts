@@ -135,19 +135,20 @@ export const exportCloudyPersonalData = createServerFn({ method: "POST" })
       db.from("community_posts").select("id,body,status,created_at,updated_at").eq("author_id", user.id).order("created_at", { ascending: false }).limit(5000),
       db.from("community_comments").select("id,post_id,body,status,created_at,updated_at").eq("author_id", user.id).order("created_at", { ascending: false }).limit(5000),
       db.from("community_reactions").select("post_id,reaction,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5000),
+      db.from("community_reports").select("id,post_id,comment_id,reason,details,status,created_at").eq("reporter_id", user.id).order("created_at", { ascending: false }).limit(1000),
       db.from("optional_consent_events").select("purpose,action,document_version,created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1000),
       db.from("privacy_requests").select("id,request_type,details,status,created_at,updated_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1000),
     ]);
     const failed = results.find((result: any) => result.error);
     if (failed?.error) throw new Error("Не удалось полностью собрать данные аккаунта. Запрос сохранён для проверки поддержкой.");
-    const [profile, progress, learnerProfile, progressXp, awards, learningEvents, chatThreads, communityPosts, communityComments, communityReactions, consentEvents, privacyRequests] = results.map((result: any) => result.data);
+    const [profile, progress, learnerProfile, progressXp, awards, learningEvents, chatThreads, communityPosts, communityComments, communityReactions, communityReports, consentEvents, privacyRequests] = results.map((result: any) => result.data);
     const exportData = {
       format: "cloudy-personal-data-export", version: 1, exportedAt: new Date().toISOString(),
       account: { id: user.id, email: user.email ?? null, createdAt: user.created_at ?? null, lastSignInAt: user.last_sign_in_at ?? null, name: typeof user.user_metadata?.name === "string" ? user.user_metadata.name : null, ageYears: Number.isInteger(Number(user.user_metadata?.age)) ? Number(user.user_metadata.age) : null },
       profile,
       learning: { progress, learnerProfile, xp: progressXp, awards: awards ?? [], events: learningEvents ?? [] },
       aiChatHistory: chatThreads ?? [],
-      community: { posts: communityPosts ?? [], comments: communityComments ?? [], reactions: communityReactions ?? [] },
+      community: { posts: communityPosts ?? [], comments: communityComments ?? [], reactions: communityReactions ?? [], reports: communityReports ?? [] },
       privacy: { optionalConsentEvents: consentEvents ?? [], requests: privacyRequests ?? [] },
       scope: { included: "Данные аккаунта, учебный прогресс, история Cloudy AI, материалы сообщества и записи центра конфиденциальности из основной базы Cloudy English.", notIncluded: "Данные внешних поставщиков, отдельных инфраструктурных проектов и технические журналы, не связанные с аккаунтом в основной базе.", limits: "Отдельные журналы и списки ограничены последними 1 000–10 000 записями." },
     };
