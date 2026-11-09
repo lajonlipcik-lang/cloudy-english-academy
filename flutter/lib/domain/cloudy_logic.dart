@@ -630,12 +630,14 @@ CloudyState sanitizeCloudyProgress(CloudyState input) {
     }
   }
 
-  final days = input.days
-      .takeLast(60)
-      .where((day) => RegExp(r'^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}
-  final boundedDays = days.length > 60 ? days.sublist(days.length - 60) : days;
-  final achievements = input.achievements
-      .where((id) => RegExp(r'^[a-z0-9_-]{1,24}
+  final validDays = input.days.where(
+    (day) => RegExp(r'^[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$').hasMatch(day),
+  );
+  final days = validDays.takeLast(60).toSet().toList();
+  final validAchievements = input.achievements.where(
+    (id) => RegExp(r'^[a-z0-9_-]{1,24}$', caseSensitive: false).hasMatch(id),
+  );
+  final achievements = validAchievements.take(32).toSet().toList();
 
   final settings = input.settings;
   final weekKey = input.week['k'] is String ? input.week['k'] as String : '';
@@ -643,17 +645,17 @@ CloudyState sanitizeCloudyProgress(CloudyState input) {
 
   return input.copyWith(
     streak: _clampInt(input.streak, 0, 3650),
-    last: input.last.substring(0, math.min(40, input.last.length)),
+    last: input.last.length > 40 ? input.last.substring(0, 40) : input.last,
     completed: completed,
     accuracy: [
       _clampInt(input.accuracy[0], 0, 1000000),
       _clampInt(input.accuracy[1], 0, 1000000),
     ],
     mistakes: mistakes,
-    days: boundedDays,
+    days: days,
     achievements: achievements,
     week: {
-      'k': weekKey.substring(0, math.min(16, weekKey.length)),
+      'k': weekKey.length > 16 ? weekKey.substring(0, 16) : weekKey,
       'xp': _clampInt(_number(input.week['xp']), 0, 1000000),
     },
     perfectLessons: _clampInt(input.perfectLessons, 0, 100000),
@@ -669,7 +671,7 @@ CloudyState sanitizeCloudyProgress(CloudyState input) {
       remT: validTime ? settings.remT : '19:00',
     ),
     today: CloudyToday(
-      d: input.today.d.substring(0, math.min(40, input.today.d.length)),
+      d: input.today.d.length > 40 ? input.today.d.substring(0, 40) : input.today.d,
       xp: _clampInt(input.today.xp, 0, 100000),
       les: _clampInt(input.today.les, 0, 1000),
       ok: _clampInt(input.today.ok, 0, 100000),
