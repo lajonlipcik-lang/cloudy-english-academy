@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloudy_english/data/cloudy_mobile_api.dart';
+import 'package:cloudy_english/domain/cloudy_exercise.dart';
 import 'package:cloudy_english/domain/cloudy_state.dart';
+import 'package:cloudy_english/domain/cloudy_progress_engine.dart';
 import 'package:cloudy_english/progress/cloudy_local_progress_store.dart';
 import 'package:cloudy_english/services/cloudy_progress_sync_service.dart';
 
@@ -22,6 +24,8 @@ class _FakeCloudyApi extends CloudyMobileApi {
   bool throwOnLoad = false;
   Completer<void>? firstSaveGate;
   final List<num> submittedXp = [];
+  int awardCalls = 0;
+  int eventSyncCalls = 0;
 
   @override
   Future<CloudyRemoteProgress> loadProgress() async {
@@ -40,6 +44,27 @@ class _FakeCloudyApi extends CloudyMobileApi {
       await firstSaveGate!.future;
     }
     return saveResponses[call];
+  }
+
+  @override
+  Future<Map<String, Object?>> awardLesson({
+    required int lessonIndex,
+    required String level,
+  }) async {
+    awardCalls++;
+    return {
+      'awarded': 24,
+      'total_xp': 124,
+      'week_key': '2026w45',
+      'week_xp': 24,
+      'updated_at': '2026-11-09T12:30:00Z',
+    };
+  }
+
+  @override
+  Future<List<String>> syncLearningEvents(List<Map<String, Object?>> events) async {
+    eventSyncCalls++;
+    return events.map((event) => event['eventId']).whereType<String>().toList();
   }
 }
 
@@ -195,6 +220,78 @@ void main() {
       expect(results.last.state.xp, 20);
       expect(api.submittedXp, [10, 20]);
       expect(local.loadAccount('learner@example.com').xp, 20);
+    });
+
+    test('applies server-authoritative XP after a lesson and skips review awards', () async {
+      final preferences = await SharedPreferences.getInstance();
+      final local = CloudyLocalProgressStore(preferences);
+      final remoteState = CloudyState.fromJson({'xp': 100, 'lv': 'A1'});
+      final api = _FakeCloudyApi(
+        remote: CloudyRemoteProgress(
+          state: remoteState,
+          hasProgressRow: true,
+          updatedAt: '2026-11-09T10:00:00Z',
+          learnerProfile: null,
+        ),
+        saveResponses: const [],
+      );
+      final service = CloudyProgressSyncService(localStore: local, api: api);
+      await service.activateAccount(email: 'learner@example.com');
+
+      final lesson = newCloudySession(0, const []).copyWith(correct: 5, total: 5);
+      final awarded = await service.awardLesson(
+        remoteState,
+        lesson,
+        now: DateTime(2026, 11, 9, 12),
+      );
+      expect(api.awardCalls, 1);
+      expect(awarded.xp, 124);
+      expect(awarded.week['xp'], 24);
+      expect(awarded.today.xp, 24);
+      expect(awarded.perfectLessons, 1);
+
+      final review = newCloudySession(-1, const [], review: true);
+      final unchanged = await service.awardLesson(awarded, review);
+      expect(api.awardCalls, 1);
+      expect(unchanged.toJson(), awarded.toJson());
+    });
+
+    test('acknowledges only server-confirmed learning events', () async {
+      final preferences = await SharedPreferences.getInstance();
+      final local = CloudyLocalProgressStore(preferences);
+      final api = _FakeCloudyApi(
+        remote: CloudyRemoteProgress(
+          state: CloudyState.fromJson({'xp': 100, 'lv': 'A1'}),
+          hasProgressRow: true,
+          updatedAt: '2026-11-09T10:00:00Z',
+          learnerProfile: null,
+        ),
+        saveResponses: const [],
+      );
+      final service = CloudyProgressSyncService(localStore: local, api: api);
+      await service.activateAccount(email: 'learner@example.com');
+      final exercise = const CloudyChoiceExercise(
+        question: 'сын',
+        answer: 'son',
+        english: 'son',
+        speak: false,
+        options: ['son', 'sun'],
+        title: 'Переведите на английский',
+      );
+      await service.recordLearningAnswer(
+        exercise,
+        correct: false,
+        selectedAnswer: 'sun',
+        correctAnswer: 'son',
+        now: DateTime(2026, 11, 9, 12),
+      );
+      final store = await service.learningStore;
+      expect(store.pending(), hasLength(1));
+
+      final acknowledged = await service.syncLearningEvents();
+      expect(api.eventSyncCalls, 1);
+      expect(acknowledged, 1);
+      expect(store.pending(), isEmpty);
     });
 
     test('pauses sync when the initial server progress load fails', () async {
