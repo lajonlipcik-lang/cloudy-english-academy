@@ -72,6 +72,7 @@ void main() {
       );
 
       final loaded = await api.loadProgress();
+      expect(loaded.hasProgressRow, isTrue);
       expect(loaded.state.xp, 75);
       expect(loaded.state.level?.code, 'A1');
       expect(loaded.updatedAt, '2026-11-09T10:00:00.000Z');
