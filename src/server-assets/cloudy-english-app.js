@@ -466,7 +466,7 @@ async function introFinish(){
   snd('win');view();
  }catch(e){if(error)error.textContent=e.message||'Не удалось сохранить профиль. Попробуй ещё раз.'}
 }
-let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false;
+let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false;let chatHistorySaveQueue=Promise.resolve();
 function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'><label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button><p style="margin:18px 0 0;font-size:12px;opacity:.72">Продолжая, ознакомьтесь с <a href="/legal" target="_top" style="color:#7fc2ff;text-decoration:underline">документами и правилами</a></p></div>`}
 async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap').value,er=$('#er'),b=$('#ab'),lbl=AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ',bad=m=>{er.textContent=m;er.classList.remove('shk');void er.offsetWidth;er.classList.add('shk');snd('bad')};
  if(!em.includes('@')||!em.includes('.'))return bad('Введите корректный email');if(pw.length<6)return bad('Пароль: минимум 6 символов');
@@ -687,7 +687,7 @@ function saveChatHistory(){
  chatThreads=chatThreads.slice(0,30);
  try{localStorage.setItem(chatHistoryKey(),JSON.stringify(chatThreads))}catch(e){}
  renderChatHistory();
- authRequest("chat-history-save",{payload:{thread:item}}).catch(error=>{
+ chatHistorySaveQueue=chatHistorySaveQueue.catch(()=>{}).then(()=>authRequest("chat-history-save",{payload:{thread:item}})).catch(error=>{
   console.warn("[cloudy-chat] thread save failed",error);
   if(!chatHistorySaveNotice){chatHistorySaveNotice=true;toast("Не удалось сохранить чат в аккаунте. Проверьте соединение.",false)}
  });
