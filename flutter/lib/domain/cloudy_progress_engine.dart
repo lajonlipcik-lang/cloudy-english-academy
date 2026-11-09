@@ -4,6 +4,9 @@ import 'cloudy_exercise.dart';
 import 'cloudy_exercise_builder.dart';
 import 'cloudy_state.dart';
 
+num _number(Object? value, [num fallback = 0]) =>
+    value is num && value.isFinite ? value : fallback;
+
 class CloudySession {
   const CloudySession({
     required this.review, required this.lesson, required this.exercises,
@@ -270,48 +273,6 @@ CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
     tested: account.tested > guest.tested ? account.tested : guest.tested,
   );
 }
-CloudyState mergeCloudyProgress(CloudyState guest, CloudyState? account) {
-  if (account == null) return guest;
-  final completed = <String, num>{};
-  for (final level in ['A1', 'A2', 'B1', 'B2']) {
-    final a = account.completed[level] ?? 0;
-    final g = guest.completed[level] ?? 0;
-    completed[level] = a > g ? a : g;
-  }
-
-  final mistakes = Map<String, num>.from(account.mistakes);
-  for (final entry in guest.mistakes.entries) {
-    mistakes[entry.key] = (mistakes[entry.key] ?? 0) + entry.value;
-  }
-
-  final guestDate = _parseCloudyDate(guest.last) ?? DateTime.fromMillisecondsSinceEpoch(0);
-  final accountDate = _parseCloudyDate(account.last) ?? DateTime.fromMillisecondsSinceEpoch(0);
-  final guestIsNewer = guestDate.isAfter(accountDate);
-  final sameWeek = account.week['k'] == guest.week['k'];
-  final week = sameWeek
-      ? <String, Object?>{
-          'k': account.week['k'],
-          'xp': (account.week['xp'] as num? ?? 0) + (guest.week['xp'] as num? ?? 0),
-        }
-      : Map<String, Object?>.from(guestIsNewer ? guest.week : account.week);
-
-  return account.copyWith(
-    xp: account.xp + guest.xp,
-    streak: account.streak > guest.streak ? account.streak : guest.streak,
-    last: guestIsNewer ? guest.last : account.last,
-    level: account.level ?? guest.level,
-    completed: completed,
-    mistakes: mistakes,
-    week: week,
-    accuracy: [account.accuracy[0] + guest.accuracy[0], account.accuracy[1] + guest.accuracy[1]],
-    days: [...{...account.days, ...guest.days}].take(60).toList(growable: false),
-    achievements: [...{...account.achievements, ...guest.achievements}],
-    perfectLessons: account.perfectLessons + guest.perfectLessons,
-    tested: account.tested > guest.tested ? account.tested : guest.tested,
-  );
-}
-
-
 /// Three-way conflict merge used by the current Cloudy multi-device sync.
 /// The remote XP ledger remains authoritative; local-only changes are merged
 /// against the last acknowledged base snapshot instead of overwriting peers.
