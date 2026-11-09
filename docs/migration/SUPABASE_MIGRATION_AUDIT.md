@@ -15,6 +15,10 @@ The newly connected Supabase project `vdzxsjvwowbmwqdamqus` was checked read-onl
 
 This is the new destination project, not the existing Lovable/Core database. No SQL migrations or data imports have been applied. Production, `main`, and the old database have not been changed.
 
+## Critical CLI target warning
+
+The checked-in `supabase/config.toml` currently contains project_id `wvdennjbthamhefjuhyl`, which is the old Core/Lovable Supabase project reference, not the new destination `vdzxsjvwowbmwqdamqus`. Do not run a CLI command that might link or push to the old project. Before any CLI apply, explicitly link the working copy to the new destination ref and verify the linked ref from the CLI output. Keep the old project reference available only as historical/source context; do not overwrite or mutate the old database.
+
 ## Repository findings
 
 ### Core and Content migration tracks
@@ -51,7 +55,7 @@ The migration runner's ordering and identity rules must be checked. A runner tha
 ## Required work before applying SQL
 
 1. Read the complete Core and Content migration files in order, including every `ALTER TABLE`, policy, grant, function, trigger, extension and Storage bucket operation.
-2. Inspect the migration runner/configuration and confirm how it identifies migration files, especially duplicate `0009` prefixes.
+2. Inspect the migration runner/configuration and confirm how it identifies migration files, especially duplicate `0009` prefixes. Verify the Supabase CLI is linked to destination `vdzxsjvwowbmwqdamqus`, never the old ref currently recorded in `supabase/config.toml`.
 3. Use the documented single-project target for this migration unless a new explicit architecture decision supersedes it. Keep the separate Content-project mode as a future option, not a second database to provision now.
 4. Reconcile duplicate/overlapping community objects and Shorts RPC dependencies for the selected topology.
 5. Ensure every RPC's referenced tables and columns exist before that RPC is created.
