@@ -54,7 +54,7 @@ class CloudyBackendClient {
       ).timeout(_timeoutFor(action));
     } on TimeoutException {
       throw const CloudyBackendException('Сервер Cloudy не ответил вовремя. Попробуйте ещё раз.');
-    } catch (_) {
+    } on http.ClientException {
       throw const CloudyBackendException('Не удалось подключиться к Cloudy. Проверьте интернет.');
     }
 
