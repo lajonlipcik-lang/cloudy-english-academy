@@ -44,6 +44,15 @@ void main() {
       expect(withMic.where((item) => item.kind == 'p'), hasLength(1));
       expect(withoutMic.where((item) => item.kind == 'p'), isEmpty);
 
+      expect(
+        withMic.whereType<CloudyChoiceExercise>().map((item) => item.title),
+        containsAll(['Переведите на английский', 'Что это значит?']),
+      );
+      expect(
+        withMic.whereType<CloudyListeningExercise>().single.title,
+        'Что вы услышали?',
+      );
+
       final builder = withMic.whereType<CloudyBuilderExercise>().single;
       expect(builder.question, 'Я пью воду');
       expect(builder.answer, 'I drink water');
