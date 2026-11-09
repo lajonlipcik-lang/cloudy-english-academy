@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -50,7 +51,9 @@ class CloudyBackendClient {
           'accept': 'application/json',
         },
         body: jsonEncode({'action': action, 'payload': payload}),
-      );
+      ).timeout(_timeoutFor(action));
+    } on TimeoutException {
+      throw const CloudyBackendException('Сервер Cloudy не ответил вовремя. Попробуйте ещё раз.');
     } catch (_) {
       throw const CloudyBackendException('Не удалось подключиться к Cloudy. Проверьте интернет.');
     }
@@ -111,6 +114,15 @@ class CloudyBackendClient {
     accessToken: accessToken,
     payload: {'events': events},
   );
+
+  Duration _timeoutFor(String action) {
+    if (action == 'ai-chat') return const Duration(seconds: 90);
+    if (action == 'tts') return const Duration(seconds: 45);
+    if (action.contains('review') || action == 'shorts-moderate') {
+      return const Duration(seconds: 60);
+    }
+    return const Duration(seconds: 25);
+  }
 
   void close() => _client.close();
 }
