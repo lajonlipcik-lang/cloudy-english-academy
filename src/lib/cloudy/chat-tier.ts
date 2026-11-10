@@ -47,6 +47,7 @@ export function limitCloudyChatHistory<T extends { role: string; content: string
 }
 
 type GroqProviderRow = {
+  id?: string;
   provider?: unknown;
   enabled?: unknown;
   priority?: unknown;
