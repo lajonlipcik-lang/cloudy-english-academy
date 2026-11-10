@@ -29,7 +29,7 @@ REVOKE ALL ON public.cloudy_token_reservations FROM anon, authenticated;
 CREATE OR REPLACE FUNCTION public.reserve_cloudy_daily_tokens(
   _user_id uuid, _request_id uuid, _estimated_tokens integer
 ) RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
 DECLARE
   v_date date := (now() AT TIME ZONE 'UTC')::date;
   v_row public.cloudy_daily_token_usage%ROWTYPE;
@@ -75,7 +75,7 @@ $$;
 CREATE OR REPLACE FUNCTION public.settle_cloudy_daily_tokens(
   _request_id uuid, _actual_tokens integer
 ) RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
 DECLARE
   v_res public.cloudy_token_reservations%ROWTYPE;
   v_row public.cloudy_daily_token_usage%ROWTYPE;
@@ -121,7 +121,7 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.get_cloudy_daily_token_quota(_user_id uuid)
 RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp AS $$
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, pg_temp AS $$
 DECLARE
   v_date date := (now() AT TIME ZONE 'UTC')::date;
   v_row public.cloudy_daily_token_usage%ROWTYPE;
