@@ -1,24 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { CloudyInstallGuide, isCloudyInstallRequired } from "@/features/cloudy-app/CloudyInstallGuide";
+import { useRef } from "react";
 import { useCloudyAppBridge } from "@/features/cloudy-app/useCloudyAppBridge";
 
 export function CloudyAppFrame() {
   const frameRef = useRef<HTMLIFrameElement | null>(null);
-  const [showInstallGuide, setShowInstallGuide] = useState<boolean | null>(null);
   useCloudyAppBridge(frameRef);
-
-  useEffect(() => {
-    const refreshInstallState = () => setShowInstallGuide(isCloudyInstallRequired());
-    refreshInstallState();
-    window.addEventListener("pageshow", refreshInstallState);
-    window.addEventListener("focus", refreshInstallState);
-    document.addEventListener("visibilitychange", refreshInstallState);
-    return () => {
-      window.removeEventListener("pageshow", refreshInstallState);
-      window.removeEventListener("focus", refreshInstallState);
-      document.removeEventListener("visibilitychange", refreshInstallState);
-    };
-  }, []);
 
   return (
     <main
@@ -44,12 +29,8 @@ export function CloudyAppFrame() {
           height: "100%",
           border: 0,
           background: "transparent",
-          visibility: showInstallGuide === false ? "visible" : "hidden",
         }}
       />
-      {showInstallGuide === true && (
-        <CloudyInstallGuide onInstalled={() => setShowInstallGuide(false)} />
-      )}
     </main>
   );
 }
