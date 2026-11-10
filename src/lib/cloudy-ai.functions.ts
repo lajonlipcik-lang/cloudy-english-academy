@@ -7,7 +7,7 @@ import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 import { normalizeUntrustedCloudyHistory } from "@/lib/cloudy/chat-history-security";
 import { formatGroqRateLimitMessage, getGroqRateLimitRetryMs, getCloudyChatTierConfig, limitCloudyChatHistory, selectAvailableGroqChatProviders, type CloudyChatTier } from "@/lib/cloudy/chat-tier";
-import { estimateCloudyTokenReservation } from "@/lib/cloudy/token-quota";
+import { cloudyQuotaDeniedMessage, estimateCloudyTokenReservation, trimMessagesToReservation } from "@/lib/cloudy/token-quota";
 const OWNER="lajonlipcik@gmail.com";
 type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;reportId?:string;status?:string;contentAction?:string;moderationNote?:string;message?:string;level?:string;chatModel?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
 function validate(v:Input){const t=String(v?.accessToken??"");if(!t||t.length>8192||t.split(".").length!==3)throw new Error("Unauthorized");return {...v,accessToken:t}}
@@ -60,7 +60,7 @@ async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
   const content=typeof raw==="string"?raw:Array.isArray(raw)?raw.map((part:any)=>typeof part?.text==="string"?part.text:"").join(""):"";
   const usage=data.usage&&typeof data.usage==="object"?{prompt_tokens:Number(data.usage.prompt_tokens)||0,completion_tokens:Number(data.usage.completion_tokens)||0,total_tokens:Number(data.usage.total_tokens)||0}:null;
   if(!content.trim()){
-    const error=Object.assign(new Error("Пустой ответ AI"),{usage});
+    const error=Object.assign(new Error("Пустой ответ AI"),{usage,provider,model});
     throw error;
   }
   return {content:content.trim(),provider,model,usage};
@@ -363,7 +363,7 @@ export const getCloudyChatModelAccess=createServerFn({method:"POST"}).inputValid
   if(!teacherAccess){
     const {data:quota,error}=await db.rpc("get_cloudy_daily_token_quota",{_user_id:user.id});
     if(error)throw new Error("Не удалось загрузить дневной лимит Cloudy.");
-    quotaWarning=Number(quota?.used_tokens??0)+Number(quota?.reserved_tokens??0)>=24000;
+    quotaWarning=quota?.warning===true;
   }
   return {teacherAccess,defaultModel:"lite",quotaWarning};
 });
@@ -432,17 +432,17 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     let quotaReservationId:string|null=null;
     let quotaEstimate=0;
     if(requestedChatModel==="lite"&&!hasTeacherAccess){
+      // Keep the free Lite per-request safety ceiling; trim old history before reserving.
+      const trimmedMessages=trimMessagesToReservation(messages,tierConfig.maxOutputTokens,24_000);
+      messages.splice(0,messages.length,...trimmedMessages);
       quotaEstimate=estimateCloudyTokenReservation(messages,tierConfig.maxOutputTokens);
       quotaReservationId=crypto.randomUUID();
       const {data:reservation,error:reserveError}=await db.rpc("reserve_cloudy_daily_tokens",{_user_id:user.id,_request_id:quotaReservationId,_estimated_tokens:quotaEstimate});
       if(reserveError)throw new Error("Не удалось проверить дневной лимит Cloudy. Повторите попытку.");
-      if(!reservation?.allowed){
-        const resetAt=Date.parse(String(reservation?.resets_at??""));
-        const seconds=Number.isFinite(resetAt)?Math.max(1,Math.ceil((resetAt-Date.now())/1000)):86400;
-        throw new Error("Дневной лимит бесплатного Cloudy Lite исчерпан. Отправка снова станет доступна через "+seconds+" сек.");
-      }
+      if(!reservation?.allowed)throw new Error(cloudyQuotaDeniedMessage(reservation));
     }
     let failedAttemptUsage={prompt_tokens:0,completion_tokens:0,total_tokens:0};
+    const failedAttemptSources:Array<{provider:string;model:string}>=[];
     let routed:{value:{content:string;provider:string;model:string;usage?:{prompt_tokens:number;completion_tokens:number;total_tokens:number}|null};providerId:string};
     try{
       routed=await runWithAiFallback(providers.map((r:any)=>({id:String(r.id),priority:Number(r.priority)||0})),async(candidate)=>{
@@ -466,6 +466,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
           failedAttemptUsage.prompt_tokens+=Number(failedUsage.prompt_tokens)||0;
           failedAttemptUsage.completion_tokens+=Number(failedUsage.completion_tokens)||0;
           failedAttemptUsage.total_tokens+=Number(failedUsage.total_tokens)||0;
+          failedAttemptSources.push({provider:String((error as any)?.provider??provider.provider??"unknown"),model:String((error as any)?.model??provider.model??"unknown")});
         }
         const status=Number((error as any)?.status)||0;
         const retryAfterMs=(error as any)?.retryAfterMs;
@@ -502,7 +503,11 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
             const {data:releaseResult,error:releaseError}=await db.rpc("settle_cloudy_daily_tokens",{
               _request_id:quotaReservationId,
               _actual_tokens:failedTokens,
-              _usage_source:"estimate",
+              _prompt_tokens:failedTokens>0?failedAttemptUsage.prompt_tokens:null,
+              _completion_tokens:failedTokens>0?failedAttemptUsage.completion_tokens:null,
+              _model:failedAttemptSources.length===1?failedAttemptSources[0].model:"multiple",
+              _provider:failedAttemptSources.length===1?failedAttemptSources[0].provider:"multiple",
+              _usage_source:failedTokens>0?"provider":"estimate",
             });
             if(!releaseError&&releaseResult?.ok){released=true;break;}
             if(attempt===2)console.error("[cloudy-ai] failed to settle unsuccessful provider attempts",releaseError);
@@ -533,6 +538,9 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       const totalTokens=failedAttemptUsage.total_tokens+(Number(successfulUsage?.total_tokens)||0);
       const hasProviderUsage=totalTokens>0;
       const actualTokens=hasProviderUsage?totalTokens:quotaEstimate;
+      const mixedProviderUsage=failedAttemptSources.some((source)=>source.provider!==a.provider||source.model!==a.model);
+      const ledgerProvider=mixedProviderUsage?"multiple":a.provider;
+      const ledgerModel=mixedProviderUsage?"multiple":a.model;
       let settled:any=null;
       let settleError:any=null;
       // Retry transient bookkeeping failures before returning a billable answer.
@@ -542,9 +550,9 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
           _actual_tokens:actualTokens,
           _prompt_tokens:hasProviderUsage?promptTokens:null,
           _completion_tokens:hasProviderUsage?completionTokens:null,
-          _model:a.model,
-          _provider:a.provider,
-          _usage_source:hasProviderUsage?"groq":"estimate",
+          _model:ledgerModel,
+          _provider:ledgerProvider,
+          _usage_source:hasProviderUsage?"provider":"estimate",
         });
         settled=result.data;
         settleError=result.error;
@@ -555,7 +563,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
         console.error("[cloudy-ai] CRITICAL: token usage settlement failed after retries",settleError);
         throw new Error("Не удалось сохранить учёт использования Cloudy. Ответ не отправлен; попробуйте ещё раз.");
       }
-      quotaWarning=Number(settled.used_tokens??0)+Number(settled.reserved_tokens??0)>=24000;
+      quotaWarning=settled.warning===true;
     }
     return {answer:a.content,chatModel:requestedChatModel,quotaWarning};
 });
