@@ -1809,3 +1809,7 @@ body:has(.shorts-screen) .amb{display:none!important}
 .chat-limit-notice{margin:0 0 8px;padding:11px 14px;border:1px solid rgba(255,190,115,.48);border-radius:14px;background:rgba(112,54,22,.28);color:#ffe2bd;font-size:13px;line-height:1.4;text-align:center}
 .chat-limit-notice[hidden]{display:none}
 .cloudy-main:disabled{opacity:.38;cursor:not-allowed;transform:none!important;filter:saturate(.45)}
+
+/* Daily Cloudy Lite token balance; visually subordinate to the existing composer. */
+.chat-token-quota{margin:0 0 7px;padding:0 5px;color:rgba(210,232,255,.76);font-size:11px;line-height:1.35;text-align:center;letter-spacing:.01em}
+.chat-token-quota[hidden]{display:none}
