@@ -60,13 +60,15 @@ export function trimMessagesToReservation<T extends CloudyTokenMessage>(
   let used = systemCost;
   const kept: T[] = [];
   for (let index = rest.length - 1; index >= 0; index -= 1) {
-    const cost = messageTokens(rest[index]);
+    const message = rest[index];
+    if (!message) continue;
+    const cost = messageTokens(message);
     if (kept.length > 0 && used + cost > budget) break;
     if (kept.length === 0 && used + cost > budget) {
       throw new Error("Последнее сообщение слишком длинное для одного запроса. Сократите его и попробуйте снова.");
     }
     used += cost;
-    kept.unshift(rest[index]);
+    kept.unshift(message);
   }
 
   const keepSet = new Set<T>([...system, ...kept]);
