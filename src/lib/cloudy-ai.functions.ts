@@ -436,7 +436,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       if(!reservation?.allowed){
         const resetAt=Date.parse(String(reservation?.resets_at??""));
         const seconds=Number.isFinite(resetAt)?Math.max(1,Math.ceil((resetAt-Date.now())/1000)):86400;
-        throw new Error("Вы превысили дневной лимит запросов к ИИ — 30 000 токенов. Отправка снова станет доступна через "+seconds+" сек.");
+        throw new Error("Дневной лимит Cloudy Lite исчерпан — 30 000 токенов. Отправка снова станет доступна через "+seconds+" сек.");
       }
     }
     let routed:{value:{content:string;provider:string;model:string;usage?:{prompt_tokens:number;completion_tokens:number;total_tokens:number}|null};providerId:string};
