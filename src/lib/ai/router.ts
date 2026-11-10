@@ -29,7 +29,9 @@ function cooldownFor(error: unknown, failures: number): number {
 
 export class AiProvidersUnavailableError extends Error {
   constructor(readonly lastError?: unknown) {
-    super("Все AI-провайдеры временно недоступны. Попробуйте ещё раз позже.");
+    const status = statusOf(lastError);
+    const detail = status ? ` (HTTP ${status})` : "";
+    super(`Все AI-провайдеры временно недоступны${detail}.`);
     this.name = "AiProvidersUnavailableError";
   }
 }
