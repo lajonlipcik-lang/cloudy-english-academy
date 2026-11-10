@@ -34,10 +34,10 @@ describe("Cloudy Groq chat tiers", () => {
     const teacher = limitCloudyChatHistory(messages, "teacher");
     expect(lite).toHaveLength(12);
     expect(lite[0]!.content.startsWith("78")).toBe(true);
-    expect(lite[0].content).toHaveLength(600);
+    expect(lite[0]!.content).toHaveLength(600);
     expect(teacher).toHaveLength(80);
     expect(teacher[0]!.content.startsWith("10")).toBe(true);
-    expect(teacher[0].content).toHaveLength(1200);
+    expect(teacher[0]!.content).toHaveLength(1200);
   });
 
   it("routes chat only through enabled Groq keys outside cooldown", () => {
