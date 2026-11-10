@@ -56,12 +56,9 @@ export async function runWithAiFallback<T>(
   if (ordered.length === 0) throw new AiProvidersUnavailableError();
 
   const ready = ordered.filter((provider) => (cooldowns.get(provider.id)?.until ?? 0) <= now);
-  // If every provider is cooling down, probe the one whose cooldown expires first.
-  const candidates = ready.length > 0
-    ? ready
-    : [ordered.reduce((a, b) =>
-        (cooldowns.get(a.id)?.until ?? 0) <= (cooldowns.get(b.id)?.until ?? 0) ? a : b,
-      )];
+  // Never probe a provider before its cooldown expires.
+  if (ready.length === 0) throw new AiProvidersUnavailableError();
+  const candidates = ready;
 
   let lastError: unknown;
   for (const provider of candidates) {
