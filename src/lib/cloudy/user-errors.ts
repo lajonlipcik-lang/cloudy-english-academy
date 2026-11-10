@@ -37,7 +37,6 @@ export function toUserErrorMessage(error: unknown, context: UserErrorContext = "
   if (context === "ai" && /http 429|\b429\b/.test(text)) return "ИИ-провайдер временно ограничил частоту запросов (429). Это ограничение внешнего сервиса, а не лимит Cloudy. Попробуйте позже.";
   if (context === "ai" && /http 401|http 403|\b401\b|\b403\b/.test(text)) return "ИИ-провайдер отклонил API-ключ или доступ к модели. Нужно проверить настройки ключа в Cloudy.";
   if (context === "ai" && /http 402|\b402\b/.test(text)) return "У ИИ-провайдера закончился доступный баланс или лимит тарифа. Нужно проверить аккаунт провайдера.";
-  if (context === "ai" && /http 404|\b404\b/.test(text)) return "Выбранная модель не найдена у ИИ-провайдера. Нужно проверить название модели.";
   if (context === "ai" && /http 5\d\d/.test(text)) return "ИИ-провайдер временно недоступен. Cloudy попробует подключиться снова позже.";
   if (/rate.?limit|too many requests|over_email_send_rate_limit/i.test(text)) {
     return "Слишком много попыток за короткое время. Подождите немного и повторите.";
