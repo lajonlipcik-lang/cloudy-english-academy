@@ -40,7 +40,7 @@ async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
       "Content-Type":"application/json",
       ...(provider==="openrouter"?{"HTTP-Referer":"https://cloudy-english-quest.lovable.app","X-Title":"Cloudy English Academy"}:{}),
     },
-    body:JSON.stringify({model,messages,...(provider==="gemini"?{reasoning_effort:"low"}:{temperature:.35}),max_tokens:Math.max(1,Math.min(Number(max_tokens)||700,2000))}),
+    body:JSON.stringify({model,messages,...(provider==="gemini"?{reasoning_effort:"low"}:{temperature:.35}),...(provider==="groq"&&model.startsWith("openai/gpt-oss-")?{max_completion_tokens:Math.max(1,Math.min(Number(max_tokens)||700,2000))}:{max_tokens:Math.max(1,Math.min(Number(max_tokens)||700,2000))})}),
     signal:AbortSignal.timeout(25000),
   });
   if(!res.ok){
