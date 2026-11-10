@@ -350,7 +350,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
   const prompt=String(data.message??"").trim().slice(0,2000);
   if(prompt.toLowerCase()==="/admin"||prompt.toLowerCase().startsWith("/admin "))return await executeCloudyAdminCommand(db,user,prompt);
   if(!prompt)throw new Error("Напишите сообщение.");
-  if(data.history!==undefined&&(!Array.isArray(data.history)||data.history.length>16))throw new Error("Слишком большой контекст чата.");
+  if(data.history!==undefined&&(!Array.isArray(data.history)||data.history.length>80))throw new Error("Слишком большой контекст чата.");
   if(data.exerciseContext!==undefined){
     let exerciseBytes=0;try{exerciseBytes=JSON.stringify(data.exerciseContext).length}catch{throw new Error("Некорректные данные упражнения.")}
     if(exerciseBytes>3000)throw new Error("Контекст упражнения слишком большой.");
@@ -360,16 +360,6 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     try{profileBytes=JSON.stringify(data.learnerProfile).length}catch{throw new Error("Некорректный профиль обучения.")}
     if(profileBytes>24_000)throw new Error("Профиль обучения слишком большой.");
   }
-  const requestId=crypto.randomUUID();
-  const {data:quota,error:quotaError}=await db.rpc("acquire_cloudy_ai_request",{_user_id:user.id,_request_id:requestId});
-  if(quotaError)throw new Error("Сервис ИИ временно недоступен. Попробуйте позже.");
-  if(!quota?.allowed){
-    const seconds=Math.max(1,Number(quota?.retry_after)||10);
-    if(quota?.reason==="daily")throw new Error("На сегодня лимит обращений к ИИ исчерпан. Попробуйте завтра.");
-    if(quota?.reason==="concurrent")throw new Error("У вас уже выполняются запросы к ИИ. Подождите немного.");
-    throw new Error(`Слишком много запросов к ИИ. Повторите через ${seconds} сек.`);
-  }
-  try{
     const [progressResult,profileResult,xpResult]=await Promise.all([
       db.from("user_progress").select("state,updated_at").eq("user_id",user.id).maybeSingle(),
       db.from("profiles").select("display_name").eq("id",user.id).maybeSingle(),
@@ -388,7 +378,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       if(profileError)throw new Error("Не удалось сохранить профиль обучения.");
     }
     const context=makeLearnerContext(user.id,state,xpResult.data,learnerProfile,requestedLevel,user.user_metadata?.["age"]);
-    const history=Array.isArray(data.history)?data.history.slice(-16).map((m:any)=>({role:m?.role==="assistant"?"assistant":"user",content:String(m?.content??"").slice(0,1200)})).filter((m:any)=>m.content):[];
+    const history=Array.isArray(data.history)?data.history.slice(-80).map((m:any)=>({role:m?.role==="assistant"?"assistant":"user",content:String(m?.content??"").slice(0,1200)})).filter((m:any)=>m.content):[];
     const providers=(await rows(db)).filter((x:any)=>x.enabled).sort((a:any,b:any)=>a.priority-b.priority);
     if(!providers.length)throw new Error("ИИ ещё не подключён администратором.");
     const displayName=safeContextText(profileResult.data?.display_name??user.user_metadata?.["name"]??state?.user?.name??"ученик",40)||"ученик";
@@ -407,9 +397,6 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     });
     const a=routed.value;
     return {answer:a.content,provider:a.provider,model:a.model,chatModel:requestedChatModel};
-  }finally{
-    await db.rpc("release_cloudy_ai_request",{_user_id:user.id,_request_id:requestId});
-  }
 });
 
 
