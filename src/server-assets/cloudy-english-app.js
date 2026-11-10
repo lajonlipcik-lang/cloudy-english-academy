@@ -888,6 +888,8 @@ function updateChatModelSelector(){
  if(trigger)trigger.setAttribute("aria-expanded",String(!$("#chatModelMenu")?.hidden));
 }
 async function loadChatModelAccess(){
+ chatTokenQuota=null;
+ renderChatTokenQuota();
  const key=chatModelStorageKey();
  try{const saved=localStorage.getItem(key);chatModelTier=saved==="teacher"?"teacher":"lite"}catch(e){chatModelTier="lite"}
  try{
@@ -897,7 +899,7 @@ async function loadChatModelAccess(){
   chatModelAccessLoaded=true;
   renderChatTokenQuota();
   if(chatModelTier==="teacher"&&!chatTeacherAccess){chatModelTier="lite";try{localStorage.setItem(key,"lite")}catch(e){}}
- }catch(error){chatTeacherAccess=false;chatModelAccessLoaded=true;if(chatModelTier==="teacher")chatModelTier="lite"}
+ }catch(error){chatTeacherAccess=false;chatTokenQuota=null;chatModelAccessLoaded=true;if(chatModelTier==="teacher")chatModelTier="lite";renderChatTokenQuota()}
  updateChatModelSelector();
 }
 function chatToggleModelMenu(){
