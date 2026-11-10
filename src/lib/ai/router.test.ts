@@ -63,6 +63,28 @@ describe("AI provider router", () => {
     expect(result.value).toBe("available");
   });
 
+  it("honors Retry-After and does not probe a sleeping provider", async () => {
+    let calls = 0;
+    await expect(runWithAiFallback(
+      [{ id: "groq", priority: 1 }],
+      async () => {
+        calls += 1;
+        const error = new Error("rate limited") as Error & { status: number; retryAfterMs: number };
+        error.status = 429;
+        error.retryAfterMs = 120_000;
+        throw error;
+      },
+      1_000,
+    )).rejects.toBeInstanceOf(AiProvidersUnavailableError);
+
+    await expect(runWithAiFallback(
+      [{ id: "groq", priority: 1 }],
+      async () => { calls += 1; return "unexpected"; },
+      120_999,
+    )).rejects.toBeInstanceOf(AiProvidersUnavailableError);
+    expect(calls).toBe(1);
+  });
+
   it("fails with a safe generic error when no providers are configured", async () => {
     await expect(runWithAiFallback([], async () => "never")).rejects.toThrow(
       "Все AI-провайдеры временно недоступны.",
