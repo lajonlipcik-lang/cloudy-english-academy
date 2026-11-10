@@ -20,3 +20,12 @@ CREATE INDEX IF NOT EXISTS ai_provider_secrets_provider_priority_idx
 ALTER TABLE public.ai_provider_secrets
   ADD COLUMN IF NOT EXISTS cooldown_until timestamptz,
   ADD COLUMN IF NOT EXISTS last_error_code integer;
+
+ALTER TABLE public.ai_provider_secrets
+  DROP CONSTRAINT IF EXISTS ai_provider_secrets_last_status_check;
+
+ALTER TABLE public.ai_provider_secrets
+  ADD CONSTRAINT ai_provider_secrets_last_status_check
+  CHECK (last_status = ANY (ARRAY[
+    'untested', 'ok', 'error', 'configured', 'rate_limited', 'cooldown'
+  ]));
