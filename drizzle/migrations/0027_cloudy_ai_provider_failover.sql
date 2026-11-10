@@ -16,3 +16,7 @@ END $$;
 
 CREATE INDEX IF NOT EXISTS ai_provider_secrets_provider_priority_idx
   ON public.ai_provider_secrets (provider, enabled, priority);
+
+ALTER TABLE public.ai_provider_secrets
+  ADD COLUMN IF NOT EXISTS cooldown_until timestamptz,
+  ADD COLUMN IF NOT EXISTS last_error_code integer;
