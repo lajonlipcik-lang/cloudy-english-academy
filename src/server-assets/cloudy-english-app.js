@@ -524,7 +524,7 @@ async function introFinish(){
  }catch(e){if(error)error.textContent=e.message||'Не удалось сохранить профиль. Попробуй ещё раз.'}
 }
 let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;
-let chatModelTier="lite",chatTeacherAccess=false,chatModelAccessLoaded=false;
+let chatModelTier="lite",chatTeacherAccess=false,chatModelAccessLoaded=false,chatTokenQuota=null;
 let chatLimitUntil=0,chatLimitTimer=null;
 let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false,chatHistoryGeneration=0;let chatHistorySaveQueue=Promise.resolve();
 function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'><label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button><p style="margin:18px 0 0;font-size:12px;opacity:.72">Продолжая, ознакомьтесь с <a href="/legal" target="_top" style="color:#7fc2ff;text-decoration:underline">документами и правилами</a></p></div>`}
@@ -830,6 +830,7 @@ function chatRender(){
     </div>
     <div id="msgs" class="chat-messages" aria-live="polite"></div>
     <div class="chat-composer-wrap">
+      <div class="chat-token-quota" id="chatTokenQuota" role="status" aria-live="polite" hidden></div>
       <div class="chat-limit-notice" id="chatLimitNotice" role="status" aria-live="polite" hidden></div>
       <div class="chat-composer cloudy-composer" id="cloudyComposer">
         <div class="cloudy-composer-bar" id="cloudyComposerBar">
@@ -892,7 +893,9 @@ async function loadChatModelAccess(){
  try{
   const response=await authRequest("chat-model-access");
   chatTeacherAccess=response.result?.teacherAccess===true;
+  chatTokenQuota=response.result?.tokenQuota&&typeof response.result.tokenQuota==="object"?response.result.tokenQuota:null;
   chatModelAccessLoaded=true;
+  renderChatTokenQuota();
   if(chatModelTier==="teacher"&&!chatTeacherAccess){chatModelTier="lite";try{localStorage.setItem(key,"lite")}catch(e){}}
  }catch(error){chatTeacherAccess=false;chatModelAccessLoaded=true;if(chatModelTier==="teacher")chatModelTier="lite"}
  updateChatModelSelector();
@@ -912,6 +915,15 @@ function chatChooseModel(tier){
  chatModelTier=tier;try{localStorage.setItem(chatModelStorageKey(),tier)}catch(e){}
  if(menu)menu.hidden=true;updateChatModelSelector();snd("pick");
 }
+function renderChatTokenQuota(){
+ const el=$("#chatTokenQuota");
+ if(!el)return;
+ if(!chatTokenQuota||chatModelTier!=="lite"||chatTeacherAccess){el.hidden=true;el.textContent="";return;}
+ const remaining=Math.max(0,Number(chatTokenQuota.remaining_tokens)||0);
+ const limit=Math.max(1,Number(chatTokenQuota.limit_tokens)||30000);
+ el.hidden=false;
+ el.textContent="Осталось "+remaining.toLocaleString("ru-RU")+" из "+limit.toLocaleString("ru-RU")+" токенов сегодня";
+}
 function renderChatLimitState(){
  const notice=$("#chatLimitNotice"),main=$("#cloudyMain");
  const remaining=Math.max(0,chatLimitUntil-Date.now());
@@ -927,7 +939,7 @@ function renderChatLimitState(){
 function setChatLimitNotice(message){
  const match=String(message||"").match(/через\s+(\d+)\s+сек/i);
  const retryAfterMs=match?Number(match[1])*1000:60_000;
- chatLimitUntil=Date.now()+Math.max(1_000,Math.min(15*60_000,retryAfterMs));
+ chatLimitUntil=Date.now()+Math.max(1_000,Math.min(24*60*60_000,retryAfterMs));
  renderChatLimitState();
 }
 function chatSuggestion(value){const input=$("#ci");if(input&&chatLimitUntil<=Date.now()){input.value=value;csend()}}
@@ -935,9 +947,11 @@ function scrollChat(){const box=$('#msgs');if(box)box.scrollTop=box.scrollHeight
 function bub(r,t,scroll=true){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);if(scroll)requestAnimationFrame(scrollChat);return d}
 function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
 async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await new Promise(resolve=>setTimeout(resolve,text.length>500?9:16))}el.classList.remove('chat-type-cursor')}
-async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bub('u',u);saveChatHistory()}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',chatModel:chatModelTier,history:CH.slice(-80).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});saveChatHistory();snd('pick')}catch(e){
+async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bub('u',u);saveChatHistory()}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',chatModel:chatModelTier,history:CH.slice(-80).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});if(result.result?.tokenQuota){chatTokenQuota=result.result.tokenQuota;renderChatTokenQuota()}const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});saveChatHistory();snd('pick')}catch(e){
   const message=String(e?.message||"Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.");
   if(/^Вы превысили лимит запросов к ИИ/i.test(message)){
+   chatTokenQuota={...(chatTokenQuota||{}),used_tokens:30000,reserved_tokens:0,remaining_tokens:0,limit_tokens:30000};
+   renderChatTokenQuota();
    el.remove();
    if(u){
     const last=CH[CH.length-1];
