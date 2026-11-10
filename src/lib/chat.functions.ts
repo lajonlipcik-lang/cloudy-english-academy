@@ -89,6 +89,7 @@ export const claudyReply = createServerFn({ method: "POST" })
       const candidates = readyRows.map((row: any) => ({ id: String(row.id), priority: Number(row.priority) || 10 }));
       if (process.env["LOVABLE_API_KEY"]) candidates.push({ id: "lovable-gateway", priority: 10_000 });
       if (!candidates.length) return { ok: false, error: configuredRows.length ? "rate_limit" : "not_configured" };
+      let groqOrganizationCoolingDown = false;
       const routed = await runWithAiFallback(candidates, async (candidate) => {
         if (candidate.id === "lovable-gateway") {
           const { generateResponse } = await import("@lovable.dev/ai-gateway");
@@ -103,6 +104,9 @@ export const claudyReply = createServerFn({ method: "POST" })
         }
         const provider = readyRows.find((row: any) => String(row.id) === candidate.id);
         if (!provider) throw new Error("AI provider configuration changed.");
+        if (String(provider.provider) === "groq" && groqOrganizationCoolingDown) {
+          throw new Error("Groq organization is cooling down after HTTP 429.");
+        }
         try {
           const answer = await askVaultProvider(provider as VaultProvider, messages);
           await db.from("ai_provider_secrets").update({
@@ -120,11 +124,20 @@ export const claudyReply = createServerFn({ method: "POST" })
             : error instanceof Error && /timeout|network|fetch failed|socket|econn/i.test(error.message) ? 15_000
             : 0;
           if (cooldownMs > 0) {
-            await db.from("ai_provider_secrets").update({
-              cooldown_until: new Date(Date.now() + cooldownMs).toISOString(),
+            const cooldownUntil = new Date(Date.now() + cooldownMs).toISOString();
+            const update = {
+              cooldown_until: cooldownUntil,
               last_status: status === 429 ? "rate_limited" : "cooldown",
               last_error_code: status ?? null,
-            }).eq("id", provider.id);
+            };
+            if (String(provider.provider) === "groq" && status === 429) {
+              // Groq limits are shared at the organization level: do not rotate
+              // into another Groq key to bypass the same organization's 429.
+              groqOrganizationCoolingDown = true;
+              await db.from("ai_provider_secrets").update(update).eq("provider", "groq").eq("enabled", true);
+            } else {
+              await db.from("ai_provider_secrets").update(update).eq("id", provider.id);
+            }
           }
           throw error;
         }
