@@ -58,8 +58,11 @@ async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
   const data=await res.json() as any;
   const raw=data.choices?.[0]?.message?.content;
   const content=typeof raw==="string"?raw:Array.isArray(raw)?raw.map((part:any)=>typeof part?.text==="string"?part.text:"").join(""):"";
-  if(!content.trim())throw new Error("Пустой ответ AI");
   const usage=data.usage&&typeof data.usage==="object"?{prompt_tokens:Number(data.usage.prompt_tokens)||0,completion_tokens:Number(data.usage.completion_tokens)||0,total_tokens:Number(data.usage.total_tokens)||0}:null;
+  if(!content.trim()){
+    const error=Object.assign(new Error("Пустой ответ AI"),{usage});
+    throw error;
+  }
   return {content:content.trim(),provider,model,usage};
 }
 export const listCloudyUsers=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);const {data:u,error}=await db.auth.admin.listUsers({page:1,perPage:200});if(error)throw new Error("Не удалось загрузить пользователей.");const ids=(u.users??[]).map((x:any)=>x.id);const [p,g]=await Promise.all([db.from("profiles").select("id,display_name").in("id",ids),db.from("user_progress").select("user_id,total_xp,week_xp,updated_at").in("user_id",ids)]);const pm=new Map((p.data??[]).map((x:any)=>[x.id,x])),gm=new Map((g.data??[]).map((x:any)=>[x.user_id,x]));return {users:(u.users??[]).map((x:any)=>({id:x.id,email:x.email??"",name:(pm.get(x.id) as any)?.display_name??x.user_metadata?.["name"]??"Ученик",created_at:x.created_at,last_sign_in_at:x.last_sign_in_at??null,confirmed:!!x.email_confirmed_at,total_xp:(gm.get(x.id) as any)?.total_xp??0,week_xp:(gm.get(x.id) as any)?.week_xp??0}))}});
@@ -439,6 +442,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
         throw new Error("Дневной лимит бесплатного Cloudy Lite исчерпан. Отправка снова станет доступна через "+seconds+" сек.");
       }
     }
+    let failedAttemptUsage={prompt_tokens:0,completion_tokens:0,total_tokens:0};
     let routed:{value:{content:string;provider:string;model:string;usage?:{prompt_tokens:number;completion_tokens:number;total_tokens:number}|null};providerId:string};
     try{
       routed=await runWithAiFallback(providers.map((r:any)=>({id:String(r.id),priority:Number(r.priority)||0})),async(candidate)=>{
@@ -457,6 +461,12 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
         }
         return result;
       }catch(error){
+        const failedUsage=(error as any)?.usage;
+        if(failedUsage&&Number(failedUsage.total_tokens)>0){
+          failedAttemptUsage.prompt_tokens+=Number(failedUsage.prompt_tokens)||0;
+          failedAttemptUsage.completion_tokens+=Number(failedUsage.completion_tokens)||0;
+          failedAttemptUsage.total_tokens+=Number(failedUsage.total_tokens)||0;
+        }
         const status=Number((error as any)?.status)||0;
         const retryAfterMs=(error as any)?.retryAfterMs;
         const transient=status===408||status===409||status===425||status>=500||
@@ -501,24 +511,35 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const a=routed.value;
     let quotaWarning=false;
     if(quotaReservationId){
-      const hasProviderUsage=Number.isInteger(a.usage?.prompt_tokens)&&Number.isInteger(a.usage?.completion_tokens)&&Number(a.usage?.total_tokens)>0;
-      const actualTokens=hasProviderUsage?Number(a.usage!.total_tokens):quotaEstimate;
-      const {data:settled,error:settleError}=await db.rpc("settle_cloudy_daily_tokens",{
-        _request_id:quotaReservationId,
-        _actual_tokens:actualTokens,
-        _prompt_tokens:hasProviderUsage?Number(a.usage!.prompt_tokens):null,
-        _completion_tokens:hasProviderUsage?Number(a.usage!.completion_tokens):null,
-        _model:a.model,
-        _provider:a.provider,
-        _usage_source:hasProviderUsage?"groq":"estimate",
-      });
-      if(settleError||!settled?.ok){
-        console.error("[cloudy-ai] token usage settlement failed; reservation retained",settleError);
-        const {data:quota}=await db.rpc("get_cloudy_daily_token_quota",{_user_id:user.id});
-        quotaWarning=Number(quota?.used_tokens??0)+Number(quota?.reserved_tokens??0)>=24000;
-      }else{
-        quotaWarning=Number(settled.used_tokens??0)+Number(settled.reserved_tokens??0)>=24000;
+      const successfulUsage=a.usage;
+      const promptTokens=failedAttemptUsage.prompt_tokens+(Number(successfulUsage?.prompt_tokens)||0);
+      const completionTokens=failedAttemptUsage.completion_tokens+(Number(successfulUsage?.completion_tokens)||0);
+      const totalTokens=failedAttemptUsage.total_tokens+(Number(successfulUsage?.total_tokens)||0);
+      const hasProviderUsage=totalTokens>0;
+      const actualTokens=hasProviderUsage?totalTokens:quotaEstimate;
+      let settled:any=null;
+      let settleError:any=null;
+      // Retry transient bookkeeping failures before returning a billable answer.
+      for(let attempt=0;attempt<3;attempt++){
+        const result=await db.rpc("settle_cloudy_daily_tokens",{
+          _request_id:quotaReservationId,
+          _actual_tokens:actualTokens,
+          _prompt_tokens:hasProviderUsage?promptTokens:null,
+          _completion_tokens:hasProviderUsage?completionTokens:null,
+          _model:a.model,
+          _provider:a.provider,
+          _usage_source:hasProviderUsage?"groq":"estimate",
+        });
+        settled=result.data;
+        settleError=result.error;
+        if(!settleError&&settled?.ok)break;
+        if(attempt<2)await new Promise(resolve=>setTimeout(resolve,150*(attempt+1)));
       }
+      if(settleError||!settled?.ok){
+        console.error("[cloudy-ai] CRITICAL: token usage settlement failed after retries",settleError);
+        throw new Error("Не удалось сохранить учёт использования Cloudy. Ответ не отправлен; попробуйте ещё раз.");
+      }
+      quotaWarning=Number(settled.used_tokens??0)+Number(settled.reserved_tokens??0)>=24000;
     }
     return {answer:a.content,chatModel:requestedChatModel,quotaWarning};
 });
