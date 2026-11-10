@@ -43,9 +43,9 @@ describe("Cloudy daily token quota helpers", () => {
     const middle = { role: "assistant", content: "middle ".repeat(300) };
     const newest = { role: "user", content: "привет" };
     const full = [system, oldest, middle, newest];
-    const trimmed = trimMessagesToReservation(full, 100, 800);
+    const trimmed = trimMessagesToReservation(full, 100, 400);
     expect(trimmed).toEqual([system, newest]);
-    expect(estimateCloudyTokenReservation(trimmed, 100)).toBeLessThanOrEqual(800);
+    expect(estimateCloudyTokenReservation(trimmed, 100)).toBeLessThanOrEqual(400);
   });
 
   it("rejects a newest message that cannot fit instead of sending an oversized request", () => {
