@@ -90,14 +90,17 @@ export function normalizeCloudyTokenQuota(
   const used = Math.max(0, Number(quota["used_tokens"]) || 0);
   const reserved = Math.max(0, Number(quota["reserved_tokens"]) || 0);
   const fallbackRemaining = Math.max(0, limit - used - reserved);
+  const hasSnapshot = value !== null && typeof value === "object";
   const reportedRemaining = Number(quota["remaining_tokens"]);
   return {
     limit_tokens: limit,
     used_tokens: used,
     reserved_tokens: reserved,
-    remaining_tokens: Number.isFinite(reportedRemaining)
-      ? Math.max(0, Math.min(limit, reportedRemaining))
-      : fallbackRemaining,
+    remaining_tokens: !hasSnapshot
+      ? 0
+      : Number.isFinite(reportedRemaining)
+        ? Math.max(0, Math.min(limit, reportedRemaining))
+        : fallbackRemaining,
     resets_at: typeof quota["resets_at"] === "string" ? quota["resets_at"] : null,
   };
 }
