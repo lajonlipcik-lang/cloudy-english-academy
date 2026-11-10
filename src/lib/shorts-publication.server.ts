@@ -20,8 +20,8 @@ export async function reviewStoredShort(content: any, storagePath: string, video
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const {data:providers,error} = await supabaseAdmin.from("ai_provider_secrets").select("provider,api_key,priority").eq("enabled",true).order("priority");
     if (error) return fallback;
-    const endpoints: Record<string,string> = {groq:"https://api.groq.com/openai/v1/chat/completions",openai:"https://api.openai.com/v1/chat/completions",openrouter:"https://openrouter.ai/api/v1/chat/completions"};
-    const models: Record<string,string> = {groq:"meta-llama/llama-4-scout-17b-16e-instruct",openai:"gpt-4o-mini",openrouter:"openai/gpt-4o-mini"};
+    const endpoints: Record<string,string> = {groq:"https://api.groq.com/openai/v1/chat/completions",openai:"https://api.openai.com/v1/chat/completions",openrouter:"https://openrouter.ai/api/v1/chat/completions",gemini:"https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"};
+    const models: Record<string,string> = {groq:"meta-llama/llama-4-scout-17b-16e-instruct",openai:"gpt-4o-mini",openrouter:"openai/gpt-4o-mini",gemini:"gemini-3.8-flash"};
     // Use a vision-capable model without changing the text model saved in Vault.
     const provider = providers?.find(p => p.api_key && endpoints[p.provider]);
     const endpoint = provider ? endpoints[provider.provider] : undefined;
