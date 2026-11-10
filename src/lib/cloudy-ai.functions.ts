@@ -7,6 +7,7 @@ import { buildKnownGrammar } from "@/lib/cloudy/exam-curriculum";
 import { normalizeCloudyLearningEvents } from "@/lib/cloudy-learning-events";
 import { normalizeUntrustedCloudyHistory } from "@/lib/cloudy/chat-history-security";
 import { formatGroqRateLimitMessage, getGroqRateLimitRetryMs, getCloudyChatTierConfig, limitCloudyChatHistory, selectAvailableGroqChatProviders, type CloudyChatTier } from "@/lib/cloudy/chat-tier";
+import { estimateCloudyTokenReservation } from "@/lib/cloudy/token-quota";
 const OWNER="lajonlipcik@gmail.com";
 type Input={accessToken:string;provider?:string;apiKey?:string;label?:string;model?:string;priority?:number;id?:string;reportId?:string;status?:string;contentAction?:string;moderationNote?:string;message?:string;level?:string;chatModel?:string;history?:Array<{role:string;content:string}>;learnerProfile?:unknown;exerciseContext?:unknown;examAction?:string;examId?:string;answers?:Array<{questionId:string;selectedIndex:number}>;events?:unknown};
 function validate(v:Input){const t=String(v?.accessToken??"");if(!t||t.length>8192||t.split(".").length!==3)throw new Error("Unauthorized");return {...v,accessToken:t}}
@@ -428,8 +429,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     let quotaReservationId:string|null=null;
     let quotaEstimate=0;
     if(requestedChatModel==="lite"&&!hasTeacherAccess){
-      const inputBytes=messages.reduce((sum:any,message:any)=>sum+new TextEncoder().encode(String(message.content??"")).length,0);
-      quotaEstimate=Math.max(1,Math.ceil(inputBytes/3)+tierConfig.maxOutputTokens);
+      quotaEstimate=estimateCloudyTokenReservation(messages,tierConfig.maxOutputTokens);
       quotaReservationId=crypto.randomUUID();
       const {data:reservation,error:reserveError}=await db.rpc("reserve_cloudy_daily_tokens",{_user_id:user.id,_request_id:quotaReservationId,_estimated_tokens:quotaEstimate});
       if(reserveError)throw new Error("Не удалось проверить дневной лимит Cloudy. Повторите попытку.");
@@ -499,8 +499,8 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       throw new Error("Cloudy сейчас временно недоступен. Попробуйте отправить сообщение ещё раз через минуту.");
     }
     const a=routed.value;
-    let tokenQuota=null;
-    let tokenUsage=null;
+    let tokenQuota:any=null;
+    let tokenUsage:any=null;
     if(quotaReservationId){
       const hasProviderUsage=Number.isInteger(a.usage?.total_tokens)&&Number(a.usage?.total_tokens)>0;
       const actualTokens=hasProviderUsage?Number(a.usage!.total_tokens):quotaEstimate;
