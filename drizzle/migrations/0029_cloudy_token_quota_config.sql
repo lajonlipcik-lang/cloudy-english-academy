@@ -19,6 +19,15 @@ ALTER TABLE public.cloudy_token_usage_events
   ADD CONSTRAINT cloudy_token_usage_events_usage_source_check
   CHECK (usage_source IN ('groq', 'gemini', 'provider', 'estimate'));
 
+-- Cost fields are list-price estimates for the attributed provider/model, not invoice data.
+-- In particular, a provider's free-tier allowance may make the actual billed amount zero.
+COMMENT ON COLUMN public.cloudy_token_usage_events.input_cost_usd IS
+  'Estimated USD equivalent using the provider/model public input rate; not an invoice charge.';
+COMMENT ON COLUMN public.cloudy_token_usage_events.output_cost_usd IS
+  'Estimated USD equivalent using the provider/model public output rate; not an invoice charge.';
+COMMENT ON COLUMN public.cloudy_token_usage_events.total_cost_usd IS
+  'Estimated USD equivalent using public provider/model rates; not an invoice charge.';
+
 CREATE OR REPLACE FUNCTION public.cloudy_daily_token_limit()
 RETURNS integer
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
