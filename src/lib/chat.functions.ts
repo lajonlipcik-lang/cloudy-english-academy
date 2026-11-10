@@ -88,11 +88,11 @@ export const claudyReply = createServerFn({ method: "POST" })
       const routed = await runWithAiFallback(candidates, async (candidate) => {
         if (candidate.id === "lovable-gateway") {
           const { generateResponse } = await import("@lovable.dev/ai-gateway");
-          const historyText = data.history.map((m) => (m.r === "u" ? "Ученик: " : "Клауди: ") + m.t).join("\\n");
+          const historyText = data.history.map((m) => (m.r === "u" ? "Ученик: " : "Клауди: ") + m.t).join("\n");
           const response = await generateResponse({
             model: "openai/gpt-6-astra",
             instructions: sys,
-            input: "Диалог:\\n" + (historyText || "(пока пусто, начни разговор)") + "\\n\\nНапиши следующую реплику Клауди.",
+            input: "Диалог:\n" + (historyText || "(пока пусто, начни разговор)") + "\n\nНапиши следующую реплику Клауди.",
           });
           const out = (response as { output?: Array<{ type: string; content?: Array<{ type: string; text?: string }> }> }).output ?? [];
           return out.filter((o) => o.type === "message").flatMap((o) => o.content ?? []).filter((c) => c.type === "output_text").map((c) => c.text ?? "").join("").trim();
@@ -108,7 +108,9 @@ export const claudyReply = createServerFn({ method: "POST" })
       console.error("claudy chat failed", name);
       if (name === "ConfigurationError" || name === "AuthenticationError") return { ok: false, error: "not_configured" };
       if (name === "PaymentRequiredError") return { ok: false, error: "credits" };
-      if (name === "RateLimitError") return { ok: false, error: "rate_limit" };
+      const status = (cause as { status?: number })?.status;
+      if (name === "RateLimitError" || status === 429) return { ok: false, error: "rate_limit" };
+      if (status === 401 || status === 403) return { ok: false, error: "not_configured" };
       return { ok: false, error: "failed" };
     }
   });
