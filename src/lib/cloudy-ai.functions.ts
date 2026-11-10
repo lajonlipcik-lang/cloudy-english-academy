@@ -418,7 +418,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const exerciseRules=exercise?"\\nWhen discussing the current exercise, explain the exact target and learner response, teach the relevant word/sound/grammar point at the learner level, then give one short parallel practice prompt. Do not claim to have heard raw audio; the supplied response is browser speech recognition text.":"";
     const messages=[{role:"system",content:system+exercisePrompt+exerciseRules},...history];
     if(!history.length||history[history.length-1]?.role!=="user")messages.push({role:"user",content:prompt});
-    let routed:Awaited<ReturnType<typeof runWithAiFallback<{content:string;provider:string;model:string}>>>;
+    let routed:{value:{content:string;provider:string;model:string};providerId:string};
     try{
       routed=await runWithAiFallback(providers.map((r:any)=>({id:String(r.id),priority:Number(r.priority)||0})),async(candidate)=>{
       const provider=providers.find((r:any)=>String(r.id)===candidate.id);
