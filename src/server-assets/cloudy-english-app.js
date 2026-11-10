@@ -798,8 +798,11 @@ function chatRender(){
   <main class="chat-main">
     <header class="chat-topbar">
       <button class="chat-menu-button" onclick="chatToggleDrawer()" aria-label="Открыть историю"><span aria-hidden="true">☰</span></button>
-      <div class="chat-top-title"><b>Клауди AI</b><small>Твой помощник по английскому</small></div>
-      <span class="chat-level-pill">${S.lv||"A1"}</span>
+      <div class="chat-top-center">
+        <span class="chat-top-cloud" aria-hidden="true">${mascot()}</span>
+        <span class="chat-level-pill">${S.lv||"A1"}</span>
+      </div>
+      <div class="chat-top-actions">
       <div class="chat-flag" title="English" aria-label="Флаг Великобритании">
         <svg viewBox="0 0 60 40" width="100%" height="100%" role="img" aria-hidden="true">
           <clipPath id="chat-flag-clip"><rect width="60" height="40" rx="3"/></clipPath>
@@ -813,6 +816,7 @@ function chatRender(){
         </svg>
       </div>
       <button class="chat-close-button" onclick="snd('tab');view()" aria-label="Закрыть чат">${ic('x')}</button>
+      </div>
     </header>
     <div class="chat-model-switcher chat-model-switcher-top">
       <button class="chat-model-trigger" id="chatModelTrigger" type="button" aria-expanded="false" aria-controls="chatModelMenu" onclick="chatToggleModelMenu()">
