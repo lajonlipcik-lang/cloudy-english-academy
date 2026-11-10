@@ -75,8 +75,8 @@ BEGIN
     RETURNING reserved_tokens
   )
   UPDATE public.cloudy_daily_token_usage
-  SET reserved_tokens = pg_catalog.greatest(
-    0, reserved_tokens - (SELECT pg_catalog.coalesce(pg_catalog.sum(reserved_tokens), 0) FROM expired)
+  SET reserved_tokens = greatest(
+    0, reserved_tokens - (SELECT coalesce(pg_catalog.sum(reserved_tokens), 0) FROM expired)
   ), updated_at = pg_catalog.now()
   WHERE user_id = _user_id AND usage_date = v_date;
 
@@ -93,7 +93,7 @@ BEGIN
       'allowed', false, 'reason', 'daily',
       'used_tokens', v_row.used_tokens,
       'reserved_tokens', v_row.reserved_tokens,
-      'remaining_tokens', pg_catalog.greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
+      'remaining_tokens', greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
       'limit_tokens', 30000,
       'resets_at', ((v_date + 1)::timestamp AT TIME ZONE 'UTC')
     );
@@ -105,7 +105,7 @@ BEGIN
   RETURN pg_catalog.jsonb_build_object(
     'allowed', true, 'used_tokens', v_row.used_tokens,
     'reserved_tokens', v_row.reserved_tokens,
-    'remaining_tokens', pg_catalog.greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
+    'remaining_tokens', greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
     'limit_tokens', 30000,
     'resets_at', ((v_date + 1)::timestamp AT TIME ZONE 'UTC')
   );
@@ -125,7 +125,7 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
 DECLARE
   v_res public.cloudy_token_reservations%ROWTYPE;
   v_row public.cloudy_daily_token_usage%ROWTYPE;
-  v_actual integer := pg_catalog.greatest(0, pg_catalog.least(pg_catalog.coalesce(_actual_tokens, 0), 1000000));
+  v_actual integer := greatest(0, least(coalesce(_actual_tokens, 0), 1000000));
   v_input_rate numeric(18, 10);
   v_output_rate numeric(18, 10);
   v_input_cost numeric(18, 10);
@@ -143,7 +143,7 @@ BEGIN
     RETURN pg_catalog.jsonb_build_object(
       'ok', true, 'used_tokens', v_row.used_tokens,
       'reserved_tokens', v_row.reserved_tokens,
-      'remaining_tokens', pg_catalog.greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
+      'remaining_tokens', greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
       'limit_tokens', 30000,
       'resets_at', ((v_res.usage_date + 1)::timestamp AT TIME ZONE 'UTC')
     );
@@ -168,27 +168,29 @@ BEGIN
   END IF;
 
   UPDATE public.cloudy_daily_token_usage
-  SET reserved_tokens = pg_catalog.greatest(0, reserved_tokens - v_res.reserved_tokens),
+  SET reserved_tokens = greatest(0, reserved_tokens - v_res.reserved_tokens),
       used_tokens = used_tokens + v_actual,
       updated_at = pg_catalog.now()
   WHERE user_id = v_res.user_id AND usage_date = v_res.usage_date
   RETURNING * INTO v_row;
 
-  INSERT INTO public.cloudy_token_usage_events(
-    request_id, user_id, usage_date, provider, model,
-    prompt_tokens, completion_tokens, total_tokens, usage_source,
-    input_cost_usd, output_cost_usd, total_cost_usd
-  ) VALUES (
-    _request_id, v_res.user_id, v_res.usage_date,
-    pg_catalog.left(pg_catalog.coalesce(_provider, 'groq'), 40),
-    pg_catalog.left(pg_catalog.coalesce(_model, 'unknown'), 120),
-    CASE WHEN _usage_source = 'groq' THEN _prompt_tokens ELSE NULL END,
-    CASE WHEN _usage_source = 'groq' THEN _completion_tokens ELSE NULL END,
-    v_actual,
-    CASE WHEN _usage_source = 'groq' THEN 'groq' ELSE 'estimate' END,
-    v_input_cost, v_output_cost,
-    CASE WHEN v_input_cost IS NOT NULL AND v_output_cost IS NOT NULL THEN v_input_cost + v_output_cost ELSE NULL END
-  ) ON CONFLICT (request_id) DO NOTHING;
+  IF v_actual > 0 THEN
+    INSERT INTO public.cloudy_token_usage_events(
+      request_id, user_id, usage_date, provider, model,
+      prompt_tokens, completion_tokens, total_tokens, usage_source,
+      input_cost_usd, output_cost_usd, total_cost_usd
+    ) VALUES (
+      _request_id, v_res.user_id, v_res.usage_date,
+      pg_catalog.left(coalesce(_provider, 'groq'), 40),
+      pg_catalog.left(coalesce(_model, 'unknown'), 120),
+      CASE WHEN _usage_source = 'groq' THEN _prompt_tokens ELSE NULL END,
+      CASE WHEN _usage_source = 'groq' THEN _completion_tokens ELSE NULL END,
+      v_actual,
+      CASE WHEN _usage_source = 'groq' THEN 'groq' ELSE 'estimate' END,
+      v_input_cost, v_output_cost,
+      CASE WHEN v_input_cost IS NOT NULL AND v_output_cost IS NOT NULL THEN v_input_cost + v_output_cost ELSE NULL END
+    ) ON CONFLICT (request_id) DO NOTHING;
+  END IF;
 
   UPDATE public.cloudy_token_reservations
   SET settled = true, settled_at = pg_catalog.now()
@@ -197,7 +199,7 @@ BEGIN
   RETURN pg_catalog.jsonb_build_object(
     'ok', true, 'used_tokens', v_row.used_tokens,
     'reserved_tokens', v_row.reserved_tokens,
-    'remaining_tokens', pg_catalog.greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
+    'remaining_tokens', greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
     'limit_tokens', 30000,
     'resets_at', ((v_res.usage_date + 1)::timestamp AT TIME ZONE 'UTC')
   );
@@ -223,7 +225,7 @@ BEGIN
   RETURN pg_catalog.jsonb_build_object(
     'used_tokens', v_row.used_tokens,
     'reserved_tokens', v_row.reserved_tokens,
-    'remaining_tokens', pg_catalog.greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
+    'remaining_tokens', greatest(0, 30000 - v_row.used_tokens - v_row.reserved_tokens),
     'limit_tokens', 30000,
     'resets_at', ((v_date + 1)::timestamp AT TIME ZONE 'UTC')
   );
