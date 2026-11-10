@@ -418,7 +418,9 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     const exerciseRules=exercise?"\\nWhen discussing the current exercise, explain the exact target and learner response, teach the relevant word/sound/grammar point at the learner level, then give one short parallel practice prompt. Do not claim to have heard raw audio; the supplied response is browser speech recognition text.":"";
     const messages=[{role:"system",content:system+exercisePrompt+exerciseRules},...history];
     if(!history.length||history[history.length-1]?.role!=="user")messages.push({role:"user",content:prompt});
-    const routed=await runWithAiFallback(providers.map((r:any)=>({id:String(r.id),priority:Number(r.priority)||0})),async(candidate)=>{
+    let routed:Awaited<ReturnType<typeof runWithAiFallback<{content:string;provider:string;model:string}>>>;
+    try{
+      routed=await runWithAiFallback(providers.map((r:any)=>({id:String(r.id),priority:Number(r.priority)||0})),async(candidate)=>{
       const provider=providers.find((r:any)=>String(r.id)===candidate.id);
       if(!provider)throw new Error("AI provider configuration changed.");
       try{
@@ -448,7 +450,14 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
         }
         throw error;
       }
-    });
+      });
+    }catch(error){
+      // Provider HTTP details (especially 429/401) are operational data, not chat copy.
+      // Keep the UI response stable whether every key failed or is still cooling down.
+      const status=Number((error as any)?.lastError?.status??(error as any)?.status)||0;
+      if(status)console.warn("[cloudy-ai] all configured providers unavailable; last status:",status);
+      throw new Error("Cloudy сейчас временно недоступен. Попробуйте отправить сообщение ещё раз через минуту.");
+    }
     const a=routed.value;
     return {answer:a.content,provider:a.provider,model:a.model,chatModel:requestedChatModel};
 });
