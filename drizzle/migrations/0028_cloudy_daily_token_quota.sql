@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS public.cloudy_token_reservations (
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   usage_date date NOT NULL,
   reserved_tokens integer NOT NULL CHECK (reserved_tokens > 0),
-  settled boolean NOT NULL DEFAULT false,
+  status text NOT NULL DEFAULT 'reserved' CHECK (status IN ('reserved', 'expired', 'released', 'settled')),
   created_at timestamptz NOT NULL DEFAULT now(),
   settled_at timestamptz,
   expires_at timestamptz NOT NULL DEFAULT (now() + interval '10 minutes')
@@ -69,9 +69,9 @@ BEGIN
   -- current UTC-day reservations are eligible for cleanup.
   WITH expired AS (
     UPDATE public.cloudy_token_reservations
-    SET settled = true, settled_at = pg_catalog.now()
+    SET status = 'expired', settled_at = pg_catalog.now()
     WHERE user_id = _user_id AND usage_date = v_date
-      AND settled = false AND expires_at <= pg_catalog.now()
+      AND status = 'reserved' AND expires_at <= pg_catalog.now()
     RETURNING reserved_tokens
   )
   UPDATE public.cloudy_daily_token_usage
@@ -137,7 +137,7 @@ BEGIN
     RETURN pg_catalog.jsonb_build_object('ok', false, 'reason', 'reservation_not_found');
   END IF;
 
-  IF v_res.settled THEN
+  IF v_res.status = 'settled' THEN
     SELECT * INTO v_row FROM public.cloudy_daily_token_usage
     WHERE user_id = v_res.user_id AND usage_date = v_res.usage_date;
     RETURN pg_catalog.jsonb_build_object(
@@ -147,6 +147,10 @@ BEGIN
       'limit_tokens', 30000,
       'resets_at', ((v_res.usage_date + 1)::timestamp AT TIME ZONE 'UTC')
     );
+  END IF;
+
+  IF v_res.status = 'released' THEN
+    RETURN pg_catalog.jsonb_build_object('ok', false, 'reason', 'reservation_released');
   END IF;
 
   IF _usage_source = 'groq' AND _prompt_tokens IS NOT NULL AND _completion_tokens IS NOT NULL THEN
@@ -168,7 +172,9 @@ BEGIN
   END IF;
 
   UPDATE public.cloudy_daily_token_usage
-  SET reserved_tokens = greatest(0, reserved_tokens - v_res.reserved_tokens),
+  SET reserved_tokens = CASE WHEN v_res.status = 'reserved'
+        THEN greatest(0, reserved_tokens - v_res.reserved_tokens)
+        ELSE reserved_tokens END,
       used_tokens = used_tokens + v_actual,
       updated_at = pg_catalog.now()
   WHERE user_id = v_res.user_id AND usage_date = v_res.usage_date
@@ -193,7 +199,7 @@ BEGIN
   END IF;
 
   UPDATE public.cloudy_token_reservations
-  SET settled = true, settled_at = pg_catalog.now()
+  SET status = 'settled', settled_at = pg_catalog.now()
   WHERE request_id = _request_id;
 
   RETURN pg_catalog.jsonb_build_object(
