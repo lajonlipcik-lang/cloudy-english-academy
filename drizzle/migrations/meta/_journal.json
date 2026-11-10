@@ -204,6 +204,13 @@
       "when": 1794350000000,
       "tag": "0028_cloudy_daily_token_quota",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1794360000000,
+      "tag": "0029_cloudy_token_quota_config",
+      "breakpoints": true
     }
   ]
 }
