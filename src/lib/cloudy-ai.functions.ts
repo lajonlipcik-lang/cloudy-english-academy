@@ -41,7 +41,33 @@ async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
     signal:AbortSignal.timeout(25000),
   });
   if(!res.ok){
-    const error=new Error(provider+" API: HTTP "+res.status) as Error & {status:number};
+    let message=provider+" API: HTTP "+res.status;
+    if(provider==="gemini"){
+      let detail="";
+      try{
+        const raw=await res.text();
+        try{
+          const payload=JSON.parse(raw) as any;
+          detail=String(payload?.error?.message??payload?.message??"");
+          if(!detail&&payload?.error?.status)detail=String(payload.error.status);
+        }catch{
+          detail=raw;
+        }
+      }catch{
+        detail="";
+      }
+      detail=detail
+        .replace(/Bearer\\s+[A-Za-z0-9._-]+/gi,"Bearer [redacted]")
+        .replace(/AIza[0-9A-Za-z_-]{20,}/g,"[redacted API key]")
+        .replace(/[\\u0000-\\u001f\\u007f]/g," ")
+        .replace(/\\s+/g," ")
+        .trim();
+      const secret=key.trim();
+      if(secret.length>=8)detail=detail.split(secret).join("[redacted API key]");
+      detail=detail.slice(0,500);
+      if(detail)message+=" — "+detail;
+    }
+    const error=new Error(message) as Error & {status:number};
     error.status=res.status;
     throw error;
   }
