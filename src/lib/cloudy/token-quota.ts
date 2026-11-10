@@ -4,12 +4,15 @@ export function estimateCloudyTokenReservation(
   messages: CloudyTokenMessage[],
   maxOutputTokens: number,
 ): number {
+  // UTF-8 byte count is a conservative upper bound for ordinary tokenizer
+  // pieces; add per-message framing overhead and the full output allowance.
+  // This is intentionally more conservative than a chars/3 heuristic.
   const inputBytes = messages.reduce(
-    (sum, message) => sum + new TextEncoder().encode(String(message.content ?? "")).length,
+    (sum, message) => sum + new TextEncoder().encode(String(message.content ?? "")).length + 16,
     0,
   );
   const outputReserve = Math.max(1, Math.min(2000, Math.ceil(Number(maxOutputTokens) || 1)));
-  return Math.max(1, Math.ceil(inputBytes / 3) + outputReserve);
+  return Math.max(1, inputBytes + outputReserve);
 }
 
 export function normalizeCloudyTokenQuota(value: unknown) {
