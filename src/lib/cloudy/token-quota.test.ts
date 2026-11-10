@@ -9,14 +9,14 @@ describe("Cloudy daily token quota helpers", () => {
       { role: "assistant", content: "world" },
     ];
     expect(estimateCloudyTokenReservation(messages, 350)).toBe(
-      Math.ceil(3010 / 3) + 350,
+      3010 + 3 * 16 + 350,
     );
   });
 
   it("counts UTF-8 bytes rather than assuming every language uses four characters per token", () => {
     const messages = [{ content: "Привет, Cloudy!" }];
     expect(estimateCloudyTokenReservation(messages, 100)).toBe(
-      Math.ceil(new TextEncoder().encode("Привет, Cloudy!").length / 3) + 100,
+      new TextEncoder().encode("Привет, Cloudy!").length + 16 + 100,
     );
   });
 
@@ -46,3 +46,13 @@ describe("Cloudy daily token quota helpers", () => {
     });
   });
 });
+
+  
+  it("adds framing overhead for every message and never under-reserves UTF-8 bytes", () => {
+    const messages = [
+      { role: "system", content: "инструкция" },
+      { role: "user", content: "hello" },
+    ];
+    const bytes = new TextEncoder().encode("инструкция").length + new TextEncoder().encode("hello").length;
+    expect(estimateCloudyTokenReservation(messages, 200)).toBe(bytes + 2 * 16 + 200);
+  });
