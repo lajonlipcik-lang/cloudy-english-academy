@@ -1653,3 +1653,55 @@ body:has(.shorts-screen) .amb{display:none!important}
   .chat-model-switcher-top{min-height:39px;padding:2px 13px 6px}
   .chat-model-switcher-top .chat-model-menu{left:11px;width:min(250px,calc(100vw - 28px))}
 }
+
+/* Mobile drawer layering: keep the drawer above every chat control. */
+@media(max-width:760px){
+  .chat-shell{position:relative;isolation:isolate}
+  .chat-main{position:relative;z-index:1}
+  .chat-sidebar-backdrop{
+    position:absolute;
+    inset:0;
+    z-index:40;
+    display:block;
+    width:100%;
+    height:100%;
+    border:0;
+    padding:0;
+    background:rgba(1,6,22,.58);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    transition:opacity .25s ease,visibility .25s ease;
+  }
+  .chat-sidebar{
+    position:absolute;
+    inset:0 auto 0 0;
+    z-index:50;
+    width:min(360px,88vw);
+    max-width:88vw;
+    height:100%;
+    padding-top:calc(22px + env(safe-area-inset-top,0px));
+    padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));
+    transform:translateX(-105%);
+    transition:transform .25s ease;
+    overflow:hidden;
+  }
+  .chat-shell.drawer-open .chat-sidebar{transform:translateX(0)}
+  .chat-shell.drawer-open .chat-sidebar-backdrop{
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+  }
+  .chat-model-switcher-top{
+    z-index:2;
+    background:linear-gradient(180deg,rgba(4,13,40,.98),rgba(7,22,53,.96))!important;
+    border-bottom:1px solid rgba(255,255,255,.07);
+  }
+  .chat-model-switcher-top .chat-model-menu{
+    z-index:3;
+    background:#0a1735!important;
+    border:1px solid rgba(155,190,235,.18)!important;
+    box-shadow:0 12px 30px rgba(0,0,0,.38);
+  }
+  .chat-model-switcher-top .chat-model-option.selected{background:rgba(255,255,255,.09)!important}
+}
