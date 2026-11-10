@@ -366,7 +366,8 @@ export const getCloudyChatModelAccess=createServerFn({method:"POST"}).inputValid
 export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
   const requestedChatModel=data.chatModel==="teacher"?"teacher":"lite";
-  if(requestedChatModel==="teacher"&&!(await hasActiveCloudyTeacherAccess(db,user.id))){
+  const hasTeacherAccess=await hasActiveCloudyTeacherAccess(db,user.id);
+  if(requestedChatModel==="teacher"&&!hasTeacherAccess){
     throw new Error("Для Cloudy Teacher 4.4 нужна активная подписка. Выберите Cloudy Lite 2.2 или оформите подписку.");
   }
   const prompt=String(data.message??"").trim().slice(0,2000);
@@ -426,7 +427,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     if(!normalizedHistory.currentPromptIncluded)messages.push({role:"user",content:prompt});
     let quotaReservationId:string|null=null;
     let quotaEstimate=0;
-    if(requestedChatModel==="lite"){
+    if(requestedChatModel==="lite"&&!hasTeacherAccess){
       const inputBytes=messages.reduce((sum:any,message:any)=>sum+new TextEncoder().encode(String(message.content??"")).length,0);
       quotaEstimate=Math.max(1,Math.ceil(inputBytes/3)+tierConfig.maxOutputTokens);
       quotaReservationId=crypto.randomUUID();
