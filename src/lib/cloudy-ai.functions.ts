@@ -26,8 +26,8 @@ async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
   const key=String(r.api_key??"").trim()||(r.ciphertext&&r.iv?await legacyUnseal(r.ciphertext,r.iv):"");
   if(!key)throw new Error("Для провайдера не сохранён API-ключ. Добавьте его в админ-панели.");
   const provider=String(r.provider??"");
-  const model=String(modelOverride??"").trim()||String(r.model??"").trim()||(provider==="groq"?"openai/gpt-oss-120b":provider==="openrouter"?"openrouter/auto":"gpt-4o-mini");
-  const endpoints:Record<string,string>={groq:"https://api.groq.com/openai/v1",openrouter:"https://openrouter.ai/api/v1",openai:"https://api.openai.com/v1"};
+  const model=String(modelOverride??"").trim()||String(r.model??"").trim()||(provider==="gemini"?"gemini-3.8-flash":provider==="groq"?"openai/gpt-oss-120b":provider==="openrouter"?"openrouter/auto":"gpt-4o-mini");
+  const endpoints:Record<string,string>={groq:"https://api.groq.com/openai/v1",openrouter:"https://openrouter.ai/api/v1",openai:"https://api.openai.com/v1",gemini:"https://generativelanguage.googleapis.com/v1beta/openai"};
   const base=endpoints[provider];
   if(!base)throw new Error("Провайдер не поддерживается.");
   const res=await fetch(base+"/chat/completions",{
@@ -37,7 +37,7 @@ async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
       "Content-Type":"application/json",
       ...(provider==="openrouter"?{"HTTP-Referer":"https://cloudy-english-quest.lovable.app","X-Title":"Cloudy English Academy"}:{}),
     },
-    body:JSON.stringify({model,messages,temperature:.35,max_tokens:Math.max(1,Math.min(Number(max_tokens)||700,2000))}),
+    body:JSON.stringify({model,messages,...(provider==="gemini"?{reasoning_effort:"low"}:{temperature:.35}),max_tokens:Math.max(1,Math.min(Number(max_tokens)||700,2000))}),
     signal:AbortSignal.timeout(25000),
   });
   if(!res.ok){
@@ -53,7 +53,7 @@ async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
 }
 export const listCloudyUsers=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);const {data:u,error}=await db.auth.admin.listUsers({page:1,perPage:200});if(error)throw new Error("Не удалось загрузить пользователей.");const ids=(u.users??[]).map((x:any)=>x.id);const [p,g]=await Promise.all([db.from("profiles").select("id,display_name").in("id",ids),db.from("user_progress").select("user_id,total_xp,week_xp,updated_at").in("user_id",ids)]);const pm=new Map((p.data??[]).map((x:any)=>[x.id,x])),gm=new Map((g.data??[]).map((x:any)=>[x.user_id,x]));return {users:(u.users??[]).map((x:any)=>({id:x.id,email:x.email??"",name:(pm.get(x.id) as any)?.display_name??x.user_metadata?.["name"]??"Ученик",created_at:x.created_at,last_sign_in_at:x.last_sign_in_at??null,confirmed:!!x.email_confirmed_at,total_xp:(gm.get(x.id) as any)?.total_xp??0,week_xp:(gm.get(x.id) as any)?.week_xp??0}))}});
 export const listAiProviders=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);return {providers:(await rows(db)).map(safe)}});
-export const saveAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db,user}=await ctx(data.accessToken,true),provider=String(data.provider??"");if(!["openai","groq","openrouter"].includes(provider))throw new Error("Провайдер не поддерживается.");const secret=String(data.apiKey??"").trim();if(secret.length<12||secret.length>500)throw new Error("Проверьте API-ключ.");const {data:r,error}=await db.from("ai_provider_secrets").upsert({provider,
+export const saveAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db,user}=await ctx(data.accessToken,true),provider=String(data.provider??"");if(!["openai","groq","openrouter","gemini"].includes(provider))throw new Error("Провайдер не поддерживается.");const secret=String(data.apiKey??"").trim();if(secret.length<12||secret.length>500)throw new Error("Проверьте API-ключ.");const {data:r,error}=await db.from("ai_provider_secrets").upsert({provider,
     api_key: secret,
     ciphertext: null,
     iv: null,
@@ -265,7 +265,7 @@ async function executeCloudyAdminCommand(db:any,user:any,raw:string){
   const isAdmin=(email===OWNER&&!!user.email_confirmed_at)||user.app_metadata?.["role"]==="admin";
   if(!isAdmin)throw new Error("Команды администратора доступны только владельцу и администраторам Cloudy.");
   const parts=raw.trim().split(/\s+/),command=(parts[1]??"help").toLowerCase();
-  if(command==="help")return {answer:["Команды администратора Cloudy:"," /admin audit-exercises — пройти каталог упражнений и выдать полный отчёт","/admin users — пользователи и XP","/admin reports — последние жалобы","/admin providers — состояние AI-провайдеров","/admin provider <groq|openai|openrouter> <enable|disable> — управление провайдером","/admin report <UUID> <resolve|dismiss> [hide|restore] — обработка жалобы"].join("\n")};
+  if(command==="help")return {answer:["Команды администратора Cloudy:"," /admin audit-exercises — пройти каталог упражнений и выдать полный отчёт","/admin users — пользователи и XP","/admin reports — последние жалобы","/admin providers — состояние AI-провайдеров","/admin provider <groq|openai|openrouter|gemini> <enable|disable> — управление провайдером","/admin report <UUID> <resolve|dismiss> [hide|restore] — обработка жалобы"].join("\n")};
   if(command==="audit-exercises")return runCloudyExerciseAudit();
   if(command==="users"){
     const {data:list,error}=await db.auth.admin.listUsers({page:1,perPage:50});if(error)throw new Error("Не удалось загрузить пользователей.");
@@ -287,7 +287,7 @@ async function executeCloudyAdminCommand(db:any,user:any,raw:string){
   }
   if(command==="provider"){
     const provider=String(parts[2]??"").toLowerCase(),action=String(parts[3]??"").toLowerCase();
-    if(!["groq","openai","openrouter"].includes(provider)||!["enable","disable"].includes(action))throw new Error("Формат: /admin provider <groq|openai|openrouter> <enable|disable>");
+    if(!["groq","openai","openrouter","gemini"].includes(provider)||!["enable","disable"].includes(action))throw new Error("Формат: /admin provider <groq|openai|openrouter|gemini> <enable|disable>");
     const {data:updated,error}=await db.from("ai_provider_secrets").update({enabled:action==="enable",updated_by:user.id,updated_at:new Date().toISOString()}).eq("provider",provider).select("provider,enabled").maybeSingle();
     if(error)throw new Error("Не удалось изменить состояние AI-провайдера.");if(!updated)throw new Error("Провайдер не найден в AI Vault.");
     return {answer:"Провайдер "+provider+" "+(updated.enabled?"включён":"отключён")+".",executed:true};
@@ -329,10 +329,11 @@ function cloudyChatModel(provider:any,tier:"lite"|"teacher"){
     if(configured)return configured;
     const saved=String(provider.model??"").trim();
     if(saved)return saved;
-    return provider.provider==="groq"?"openai/gpt-oss-20b":provider.provider==="openrouter"?"openai/gpt-4o-mini":"gpt-4o-mini";
+    return provider.provider==="gemini"?"gemini-3.8-flash":provider.provider==="groq"?"openai/gpt-oss-20b":provider.provider==="openrouter"?"openai/gpt-4o-mini":"gpt-4o-mini";
   }
   const configured=String(process.env["CLOUDY_TEACHER_MODEL"]??"").trim();
   if(configured)return configured;
+  if(provider.provider==="gemini")return "gemini-3.8-flash";
   if(provider.provider==="groq")return "openai/gpt-oss-120b";
   if(provider.provider==="openrouter")return "openai/gpt-4o";
   return "gpt-4o";
@@ -949,6 +950,7 @@ export const analyzeShortVideoFrames = createServerFn({ method: "POST" })
             groq: "meta-llama/llama-4-scout-17b-16e-instruct",
             openrouter: "openrouter/auto",
             openai: "gpt-4o-mini",
+            gemini: "gemini-3.8-flash",
           };
           const visionModel = String(provider.model ?? "").trim() || visionDefaults[String(provider.provider)] || "";
           if (!visionModel) throw new Error("Vision model is not configured.");
