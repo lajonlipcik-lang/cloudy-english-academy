@@ -505,9 +505,9 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
               _actual_tokens:failedTokens,
               _prompt_tokens:failedTokens>0?failedAttemptUsage.prompt_tokens:null,
               _completion_tokens:failedTokens>0?failedAttemptUsage.completion_tokens:null,
-              _model:failedAttemptSources.length===1?failedAttemptSources[0].model:"multiple",
-              _provider:failedAttemptSources.length===1?failedAttemptSources[0].provider:"multiple",
-              _usage_source:failedTokens>0?"provider":"estimate",
+              _model:failedAttemptSources.length>0&&new Set(failedAttemptSources.map((source)=>source.model)).size===1?failedAttemptSources[0].model:"multiple",
+              _provider:failedAttemptSources.length>0&&new Set(failedAttemptSources.map((source)=>source.provider)).size===1?failedAttemptSources[0].provider:"multiple",
+              _usage_source:failedTokens>0&&new Set(failedAttemptSources.map((source)=>source.provider)).size===1?(failedAttemptSources[0].provider==="groq"?"groq":failedAttemptSources[0].provider==="gemini"?"gemini":"provider"):"provider",
             });
             if(!releaseError&&releaseResult?.ok){released=true;break;}
             if(attempt===2)console.error("[cloudy-ai] failed to settle unsuccessful provider attempts",releaseError);
@@ -541,6 +541,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       const mixedProviderUsage=failedAttemptSources.some((source)=>source.provider!==a.provider||source.model!==a.model);
       const ledgerProvider=mixedProviderUsage?"multiple":a.provider;
       const ledgerModel=mixedProviderUsage?"multiple":a.model;
+      const usageSource=mixedProviderUsage?"provider":a.provider==="groq"?"groq":a.provider==="gemini"?"gemini":"provider";
       let settled:any=null;
       let settleError:any=null;
       // Retry transient bookkeeping failures before returning a billable answer.
@@ -552,7 +553,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
           _completion_tokens:hasProviderUsage?completionTokens:null,
           _model:ledgerModel,
           _provider:ledgerProvider,
-          _usage_source:hasProviderUsage?"provider":"estimate",
+          _usage_source:hasProviderUsage?usageSource:"estimate",
         });
         settled=result.data;
         settleError=result.error;
