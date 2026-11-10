@@ -1804,3 +1804,8 @@ body:has(.shorts-screen) .amb{display:none!important}
 .cloudy-main{border:0!important;outline:0!important;box-shadow:none!important}
 @media(max-width:760px){.chat-topbar{gap:8px;padding:0 13px}.chat-top-center{gap:7px}.chat-top-cloud,.chat-top-cloud .ms{width:32px;height:30px}.chat-top-actions{gap:7px}.chat-topbar .chat-flag{width:27px;height:18px}}
 @media(prefers-reduced-motion:reduce){.chat-top-cloud .ms,.chat-topbar .chat-flag,.chat-composer.cloudy-composer:before{animation:none!important}}
+
+/* Explicit Groq quota feedback; keep the existing Cloudy chat visual language. */
+.chat-limit-notice{margin:0 0 8px;padding:11px 14px;border:1px solid rgba(255,190,115,.48);border-radius:14px;background:rgba(112,54,22,.28);color:#ffe2bd;font-size:13px;line-height:1.4;text-align:center}
+.chat-limit-notice[hidden]{display:none}
+.cloudy-main:disabled{opacity:.38;cursor:not-allowed;transform:none!important;filter:saturate(.45)}
