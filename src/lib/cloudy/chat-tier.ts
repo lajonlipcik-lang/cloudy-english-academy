@@ -67,3 +67,15 @@ export function selectAvailableGroqChatProviders<T extends GroqProviderRow>(
     })
     .sort((a, b) => (Number(a.priority) || 0) - (Number(b.priority) || 0));
 }
+
+/** Normalize provider Retry-After values to a bounded client cooldown. */
+export function getGroqRateLimitRetryMs(value: unknown, fallback = 60_000): number {
+  const parsed = Number(value);
+  const candidate = Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  return Math.max(1_000, Math.min(15 * 60_000, candidate));
+}
+
+export function formatGroqRateLimitMessage(retryAfterMs: number): string {
+  const seconds = Math.max(1, Math.ceil(getGroqRateLimitRetryMs(retryAfterMs) / 1_000));
+  return `Вы превысили лимит запросов к ИИ. Повторите попытку через ${seconds} сек.`;
+}
