@@ -1758,3 +1758,27 @@ body:has(.shorts-screen) .amb{display:none!important}
 
 .chat-composer.cloudy-composer.sent{animation:cloudyComposerSent .5s cubic-bezier(.3,1.4,.5,1)}
 @keyframes cloudyComposerSent{40%{transform:scale(.97)}}
+
+
+/* Compact, restrained chat composer — remove the oversized glow treatment. */
+.chat-composer-wrap{padding:6px 20px calc(8px + env(safe-area-inset-bottom,0px))}
+.chat-composer.cloudy-composer{padding:1px;border-radius:28px;background:rgba(255,255,255,.12);transition:none}
+.chat-composer.cloudy-composer:before{display:none;content:none;animation:none}
+.chat-composer.cloudy-composer.rec{transform:none}
+.chat-composer.cloudy-composer.rec:before{animation:none}
+.cloudy-composer-bar{gap:5px;padding:4px 6px;border-radius:26px;background:rgba(4,13,40,.94);border:0;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.cloudy-round{width:34px;height:34px;background:transparent;color:rgba(255,255,255,.78);transition:background .18s,opacity .18s}
+.cloudy-round:active{transform:scale(.94);background:rgba(255,255,255,.08)}
+.cloudy-round svg,.cloudy-ico svg{width:16px;height:16px}
+.cloudy-composer-field{height:38px;min-height:38px;padding:0 4px;font-size:15px}
+.cloudy-composer-field::placeholder{color:rgba(255,255,255,.48)}
+.cloudy-main{width:34px;height:34px;background:rgba(77,179,255,.16);color:#b9e2ff;box-shadow:none;transition:background .18s,transform .18s}
+.cloudy-main:before{display:none;background:none}
+.cloudy-main:active{transform:scale(.94);background:rgba(77,179,255,.26);box-shadow:none}
+.cloudy-composer-bar.typing .cloudy-main{background:rgba(77,179,255,.24);box-shadow:none}
+.cloudy-composer-bar.typing .cloudy-main:before{opacity:0}
+.cloudy-composer.rec .cloudy-main{box-shadow:none;animation:none}
+.cloudy-composer.rec .cloudy-wave rect{animation:none}
+.cloudy-composer.rec .cloudy-composer-field::placeholder{opacity:.65}
+@media(max-width:760px){.chat-composer-wrap{padding:5px 14px calc(7px + env(safe-area-inset-bottom,0px))}.cloudy-composer-field{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.chat-composer.cloudy-composer,.cloudy-round,.cloudy-ico,.cloudy-wave rect{animation:none!important;transition:none!important}}
