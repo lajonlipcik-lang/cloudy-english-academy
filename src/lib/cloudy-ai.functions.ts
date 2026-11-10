@@ -495,7 +495,23 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       });
     }catch(error){
       if(quotaReservationId){
-        try{await db.rpc("settle_cloudy_daily_tokens",{_request_id:quotaReservationId,_actual_tokens:0});}catch(settleError){console.error("[cloudy-ai] failed to release token reservation",settleError);}
+        const failedTokens=failedAttemptUsage.total_tokens;
+        let released=false;
+        for(let attempt=0;attempt<3;attempt++){
+          try{
+            const {data:releaseResult,error:releaseError}=await db.rpc("settle_cloudy_daily_tokens",{
+              _request_id:quotaReservationId,
+              _actual_tokens:failedTokens,
+              _usage_source:"estimate",
+            });
+            if(!releaseError&&releaseResult?.ok){released=true;break;}
+            if(attempt===2)console.error("[cloudy-ai] failed to settle unsuccessful provider attempts",releaseError);
+          }catch(settleError){
+            if(attempt===2)console.error("[cloudy-ai] failed to settle unsuccessful provider attempts",settleError);
+          }
+          if(attempt<2)await new Promise(resolve=>setTimeout(resolve,150*(attempt+1)));
+        }
+        if(!released)console.error("[cloudy-ai] reservation remains pending expiry cleanup",quotaReservationId);
         quotaReservationId=null;
       }
       // Provider HTTP details (especially 429/401) are operational data, not chat copy.
