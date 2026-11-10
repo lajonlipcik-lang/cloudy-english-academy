@@ -1,29 +1,27 @@
+import { encodeChat } from "gpt-tokenizer";
+
 export type CloudyTokenMessage = { role?: unknown; content?: unknown };
 
 export const CLOUDY_DEFAULT_DAILY_TOKEN_LIMIT = 30_000;
 export const CLOUDY_QUOTA_WARNING_RATIO = 0.8;
-export const CLOUDY_MESSAGE_FRAMING_TOKENS = 16;
 export const CLOUDY_MAX_OUTPUT_RESERVE = 2000;
+export const CLOUDY_LITE_TOKENIZER_MODEL = "gpt-oss-20b" as const;
+
+const tokenizerOptions = { disallowedSpecial: new Set<string>() };
 
 /**
- * Lightweight preflight estimate, not a provider tokenizer.
- * ASCII text is estimated at roughly one token per three characters;
- * non-ASCII code points are counted individually. This intentionally avoids
- * charging Cyrillic by raw UTF-8 bytes. Provider usage remains authoritative
- * for settlement whenever the API returns it.
+ * Count the complete GPT-OSS 20B chat payload using its o200k_harmony tokenizer.
+ * This is a model-specific local preflight count. Groq's returned usage remains
+ * authoritative for final accounting because its server-side request wrapper
+ * may add provider-specific tokens.
  */
-export function estimateCloudyTextTokens(text: string): number {
-  let ascii = 0;
-  let other = 0;
-  for (const ch of text) {
-    if ((ch.codePointAt(0) ?? 0) < 128) ascii += 1;
-    else other += 1;
-  }
-  return Math.ceil(ascii / 3) + other;
-}
-
-function messageTokens(message: CloudyTokenMessage): number {
-  return estimateCloudyTextTokens(String(message.content ?? "")) + CLOUDY_MESSAGE_FRAMING_TOKENS;
+export function countCloudyChatTokens(messages: CloudyTokenMessage[]): number {
+  if (messages.length === 0) return 0;
+  const normalized = messages.map((message) => ({
+    role: String(message.role ?? "user"),
+    content: typeof message.content === "string" ? message.content : String(message.content ?? ""),
+  }));
+  return encodeChat(normalized as never, CLOUDY_LITE_TOKENIZER_MODEL, tokenizerOptions).length;
 }
 
 export function clampCloudyOutputReserve(maxOutputTokens: number): number {
@@ -34,15 +32,14 @@ export function estimateCloudyTokenReservation(
   messages: CloudyTokenMessage[],
   maxOutputTokens: number,
 ): number {
-  const input = messages.reduce((sum, message) => sum + messageTokens(message), 0);
+  const input = countCloudyChatTokens(messages);
   return Math.max(1, input + clampCloudyOutputReserve(maxOutputTokens));
 }
 
 /**
  * Keep system instructions and the newest contiguous history that fits the
- * per-request budget. The current user message is never silently discarded.
- * If system instructions + the current message cannot fit, fail explicitly
- * instead of sending a request that SQL will reject as an exhausted quota.
+ * per-request budget. Count the whole candidate chat each time: BPE token
+ * counts are not safely additive across message boundaries.
  */
 export function trimMessagesToReservation<T extends CloudyTokenMessage>(
   messages: T[],
@@ -52,23 +49,22 @@ export function trimMessagesToReservation<T extends CloudyTokenMessage>(
   const budget = maxReservation - clampCloudyOutputReserve(maxOutputTokens);
   const system = messages.filter((message) => message.role === "system");
   const rest = messages.filter((message) => message.role !== "system");
-  const systemCost = system.reduce((sum, message) => sum + messageTokens(message), 0);
-  if (budget < 0 || systemCost > budget) {
+  if (budget < 0 || countCloudyChatTokens(system) > budget) {
     throw new Error("Системный контекст Cloudy слишком велик для одного запроса. Попробуйте позже.");
   }
 
-  let used = systemCost;
-  const kept: T[] = [];
+  let kept: T[] = [];
   for (let index = rest.length - 1; index >= 0; index -= 1) {
     const message = rest[index];
     if (!message) continue;
-    const cost = messageTokens(message);
-    if (kept.length > 0 && used + cost > budget) break;
-    if (kept.length === 0 && used + cost > budget) {
-      throw new Error("Последнее сообщение слишком длинное для одного запроса. Сократите его и попробуйте снова.");
+    const candidate = [message, ...kept];
+    if (countCloudyChatTokens([...system, ...candidate]) > budget) {
+      if (kept.length === 0) {
+        throw new Error("Последнее сообщение слишком длинное для одного запроса. Сократите его и попробуйте снова.");
+      }
+      break;
     }
-    used += cost;
-    kept.unshift(message);
+    kept = candidate;
   }
 
   const keepSet = new Set<T>([...system, ...kept]);
