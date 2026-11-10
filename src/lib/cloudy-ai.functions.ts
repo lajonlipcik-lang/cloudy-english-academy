@@ -26,7 +26,7 @@ async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
   const key=String(r.api_key??"").trim()||(r.ciphertext&&r.iv?await legacyUnseal(r.ciphertext,r.iv):"");
   if(!key)throw new Error("Для провайдера не сохранён API-ключ. Добавьте его в админ-панели.");
   const provider=String(r.provider??"");
-  const model=String(modelOverride??"").trim()||String(r.model??"").trim()||(provider==="gemini"?"gemini-3.8-flash":provider==="groq"?"openai/gpt-oss-120b":provider==="openrouter"?"openrouter/auto":"gpt-4o-mini");
+  const model=String(modelOverride??"").trim()||String(r.model??"").trim()||(provider==="gemini"?"gemini-2.5-flash":provider==="groq"?"openai/gpt-oss-120b":provider==="openrouter"?"openrouter/auto":"gpt-4o-mini");
   const endpoints:Record<string,string>={groq:"https://api.groq.com/openai/v1",openrouter:"https://openrouter.ai/api/v1",openai:"https://api.openai.com/v1",gemini:"https://generativelanguage.googleapis.com/v1beta/openai"};
   const base=endpoints[provider];
   if(!base)throw new Error("Провайдер не поддерживается.");
@@ -341,17 +341,17 @@ async function hasActiveCloudyTeacherAccess(db:any,userId:string){
   });
 }
 function cloudyChatModel(provider:any,tier:"lite"|"teacher"){
-  if(provider.provider==="gemini")return String(provider.model??"").trim()||"gemini-3.8-flash";
+  if(provider.provider==="gemini")return String(provider.model??"").trim()||"gemini-2.5-flash";
   if(tier==="lite"){
     const configured=String(process.env["CLOUDY_LITE_MODEL"]??"").trim();
     if(configured)return configured;
     const saved=String(provider.model??"").trim();
     if(saved)return saved;
-    return provider.provider==="gemini"?"gemini-3.8-flash":provider.provider==="groq"?"openai/gpt-oss-20b":provider.provider==="openrouter"?"openai/gpt-4o-mini":"gpt-4o-mini";
+    return provider.provider==="gemini"?"gemini-2.5-flash":provider.provider==="groq"?"openai/gpt-oss-20b":provider.provider==="openrouter"?"openai/gpt-4o-mini":"gpt-4o-mini";
   }
   const configured=String(process.env["CLOUDY_TEACHER_MODEL"]??"").trim();
   if(configured)return configured;
-  if(provider.provider==="gemini")return "gemini-3.8-flash";
+  if(provider.provider==="gemini")return "gemini-2.5-flash";
   if(provider.provider==="groq")return "openai/gpt-oss-120b";
   if(provider.provider==="openrouter")return "openai/gpt-4o";
   return "gpt-4o";
@@ -968,7 +968,7 @@ export const analyzeShortVideoFrames = createServerFn({ method: "POST" })
             groq: "meta-llama/llama-4-scout-17b-16e-instruct",
             openrouter: "openrouter/auto",
             openai: "gpt-4o-mini",
-            gemini: "gemini-3.8-flash",
+            gemini: "gemini-2.5-flash",
           };
           const visionModel = String(provider.model ?? "").trim() || visionDefaults[String(provider.provider)] || "";
           if (!visionModel) throw new Error("Vision model is not configured.");
