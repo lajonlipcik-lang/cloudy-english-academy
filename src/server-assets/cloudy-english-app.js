@@ -839,7 +839,7 @@ function chatRender(){
         </div>
         <button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button>
       </div>
-      <div class="chat-composer-meta"><div class="chat-disclaimer">Клауди помогает практиковать английский</div></div>
+      <div class="chat-composer-meta"><div class="chat-disclaimer">ИИ может ошибаться</div></div>
     </div>
   </main>
 </section>`;
