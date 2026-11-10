@@ -74,17 +74,21 @@ export const claudyReply = createServerFn({ method: "POST" })
     ];
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: vaultRows, error: vaultError } = await supabaseAdmin
+      const db = supabaseAdmin as any;
+      const { data: vaultRows, error: vaultError } = await db
         .from("ai_provider_secrets")
-        .select("id,provider,api_key,model,priority,enabled")
+        .select("id,provider,api_key,model,priority,enabled,cooldown_until")
         .eq("enabled", true)
         .order("priority", { ascending: true });
       if (vaultError) throw vaultError;
-      const candidates = (vaultRows ?? [])
-        .filter((row: any) => ["groq", "openai", "openrouter", "gemini"].includes(String(row.provider)) && String(row.api_key ?? "").trim())
-        .map((row: any) => ({ id: String(row.id), priority: Number(row.priority) || 10 }));
+      const configuredRows = (vaultRows ?? []).filter((row: any) =>
+        ["groq", "openai", "openrouter", "gemini"].includes(String(row.provider)) && String(row.api_key ?? "").trim()
+      );
+      const now = Date.now();
+      const readyRows = configuredRows.filter((row: any) => !row.cooldown_until || Date.parse(row.cooldown_until) <= now);
+      const candidates = readyRows.map((row: any) => ({ id: String(row.id), priority: Number(row.priority) || 10 }));
       if (process.env["LOVABLE_API_KEY"]) candidates.push({ id: "lovable-gateway", priority: 10_000 });
-      if (!candidates.length) return { ok: false, error: "not_configured" };
+      if (!candidates.length) return { ok: false, error: configuredRows.length ? "rate_limit" : "not_configured" };
       const routed = await runWithAiFallback(candidates, async (candidate) => {
         if (candidate.id === "lovable-gateway") {
           const { generateResponse } = await import("@lovable.dev/ai-gateway");
@@ -97,9 +101,33 @@ export const claudyReply = createServerFn({ method: "POST" })
           const out = (response as { output?: Array<{ type: string; content?: Array<{ type: string; text?: string }> }> }).output ?? [];
           return out.filter((o) => o.type === "message").flatMap((o) => o.content ?? []).filter((c) => c.type === "output_text").map((c) => c.text ?? "").join("").trim();
         }
-        const provider = (vaultRows ?? []).find((row: any) => String(row.id) === candidate.id);
+        const provider = readyRows.find((row: any) => String(row.id) === candidate.id);
         if (!provider) throw new Error("AI provider configuration changed.");
-        return askVaultProvider(provider as VaultProvider, messages);
+        try {
+          const answer = await askVaultProvider(provider as VaultProvider, messages);
+          await db.from("ai_provider_secrets").update({
+            cooldown_until: null, last_status: "ok", last_error_code: null,
+          }).eq("id", provider.id);
+          return answer;
+        } catch (error) {
+          const status = (error as { status?: number })?.status;
+          const retryAfterMs = (error as { retryAfterMs?: number })?.retryAfterMs;
+          const cooldownMs = typeof retryAfterMs === "number" && Number.isFinite(retryAfterMs)
+            ? Math.max(1_000, Math.min(15 * 60_000, retryAfterMs))
+            : status === 429 ? 60_000
+            : status === 401 || status === 403 ? 5 * 60_000
+            : status === 408 || (typeof status === "number" && status >= 500) ? 15_000
+            : error instanceof Error && /timeout|network|fetch failed|socket|econn/i.test(error.message) ? 15_000
+            : 0;
+          if (cooldownMs > 0) {
+            await db.from("ai_provider_secrets").update({
+              cooldown_until: new Date(Date.now() + cooldownMs).toISOString(),
+              last_status: status === 429 ? "rate_limited" : "cooldown",
+              last_error_code: status ?? null,
+            }).eq("id", provider.id);
+          }
+          throw error;
+        }
       });
       return routed.value ? { ok: true, text: routed.value } : { ok: false, error: "failed" };
     } catch (e) {
