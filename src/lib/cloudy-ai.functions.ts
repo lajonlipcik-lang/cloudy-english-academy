@@ -356,13 +356,13 @@ async function hasActiveCloudyTeacherAccess(db:any,userId:string){
 export const getCloudyChatModelAccess=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
   const teacherAccess=await hasActiveCloudyTeacherAccess(db,user.id);
-  let tokenQuota=null;
+  let quotaWarning=false;
   if(!teacherAccess){
     const {data:quota,error}=await db.rpc("get_cloudy_daily_token_quota",{_user_id:user.id});
     if(error)throw new Error("Не удалось загрузить дневной лимит Cloudy.");
-    tokenQuota=quota;
+    quotaWarning=Number(quota?.used_tokens??0)+Number(quota?.reserved_tokens??0)>=24000;
   }
-  return {teacherAccess,defaultModel:"lite",tokenQuota};
+  return {teacherAccess,defaultModel:"lite",quotaWarning};
 });
 export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
@@ -436,7 +436,7 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       if(!reservation?.allowed){
         const resetAt=Date.parse(String(reservation?.resets_at??""));
         const seconds=Number.isFinite(resetAt)?Math.max(1,Math.ceil((resetAt-Date.now())/1000)):86400;
-        throw new Error("Дневной лимит Cloudy Lite исчерпан — 30 000 токенов. Отправка снова станет доступна через "+seconds+" сек.");
+        throw new Error("Дневной лимит бесплатного Cloudy Lite исчерпан. Отправка снова станет доступна через "+seconds+" сек.");
       }
     }
     let routed:{value:{content:string;provider:string;model:string;usage?:{prompt_tokens:number;completion_tokens:number;total_tokens:number}|null};providerId:string};
@@ -499,22 +499,28 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       throw new Error("Cloudy сейчас временно недоступен. Попробуйте отправить сообщение ещё раз через минуту.");
     }
     const a=routed.value;
-    let tokenQuota:any=null;
-    let tokenUsage:any=null;
+    let quotaWarning=false;
     if(quotaReservationId){
-      const hasProviderUsage=Number.isInteger(a.usage?.total_tokens)&&Number(a.usage?.total_tokens)>0;
+      const hasProviderUsage=Number.isInteger(a.usage?.prompt_tokens)&&Number.isInteger(a.usage?.completion_tokens)&&Number(a.usage?.total_tokens)>0;
       const actualTokens=hasProviderUsage?Number(a.usage!.total_tokens):quotaEstimate;
-      const {data:settled,error:settleError}=await db.rpc("settle_cloudy_daily_tokens",{_request_id:quotaReservationId,_actual_tokens:actualTokens});
+      const {data:settled,error:settleError}=await db.rpc("settle_cloudy_daily_tokens",{
+        _request_id:quotaReservationId,
+        _actual_tokens:actualTokens,
+        _prompt_tokens:hasProviderUsage?Number(a.usage!.prompt_tokens):null,
+        _completion_tokens:hasProviderUsage?Number(a.usage!.completion_tokens):null,
+        _model:a.model,
+        _provider:a.provider,
+        _usage_source:hasProviderUsage?"groq":"estimate",
+      });
       if(settleError||!settled?.ok){
         console.error("[cloudy-ai] token usage settlement failed; reservation retained",settleError);
         const {data:quota}=await db.rpc("get_cloudy_daily_token_quota",{_user_id:user.id});
-        tokenQuota=quota??null;
+        quotaWarning=Number(quota?.used_tokens??0)+Number(quota?.reserved_tokens??0)>=24000;
       }else{
-        tokenQuota=settled;
-        tokenUsage={promptTokens:a.usage?.prompt_tokens??null,completionTokens:a.usage?.completion_tokens??null,totalTokens:actualTokens,source:hasProviderUsage?"groq":"reserved-estimate"};
+        quotaWarning=Number(settled.used_tokens??0)+Number(settled.reserved_tokens??0)>=24000;
       }
     }
-    return {answer:a.content,chatModel:requestedChatModel,tokenQuota,tokenUsage};
+    return {answer:a.content,chatModel:requestedChatModel,quotaWarning};
 });
 
 
