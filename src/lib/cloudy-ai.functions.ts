@@ -425,10 +425,15 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
       if(!provider)throw new Error("AI provider configuration changed.");
       try{
         const result=await ask(provider,messages,700,cloudyChatModel(provider,requestedChatModel));
-        const {error:updateError}=await db.from("ai_provider_secrets").update({
-          cooldown_until:null,last_status:"ok",last_error_code:null,
-        }).eq("id",provider.id);
-        if(updateError)console.error("[cloudy-ai] provider success state could not be persisted");
+        // A bookkeeping failure must never turn a successful AI response into a retry.
+        try{
+          const {error:updateError}=await db.from("ai_provider_secrets").update({
+            cooldown_until:null,last_status:"ok",last_error_code:null,
+          }).eq("id",provider.id);
+          if(updateError)console.error("[cloudy-ai] provider success state could not be persisted");
+        }catch{
+          console.error("[cloudy-ai] provider success state update failed");
+        }
         return result;
       }catch(error){
         const status=Number((error as any)?.status)||0;
@@ -441,12 +446,18 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
           :status===401||status===403?5*60_000
           :transient?15_000:0;
         if(cooldownMs>0){
-          const {error:updateError}=await db.from("ai_provider_secrets").update({
-            cooldown_until:new Date(Date.now()+cooldownMs).toISOString(),
-            last_status:status===429?"rate_limited":status===401||status===403?"error":"cooldown",
-            last_error_code:status||null,
-          }).eq("id",provider.id);
-          if(updateError)console.error("[cloudy-ai] provider cooldown could not be persisted");
+          // Cooldown persistence is best-effort; preserve the original provider error
+          // so the router can classify it and continue to the next independent key.
+          try{
+            const {error:updateError}=await db.from("ai_provider_secrets").update({
+              cooldown_until:new Date(Date.now()+cooldownMs).toISOString(),
+              last_status:status===429?"rate_limited":status===401||status===403?"error":"cooldown",
+              last_error_code:status||null,
+            }).eq("id",provider.id);
+            if(updateError)console.error("[cloudy-ai] provider cooldown could not be persisted");
+          }catch{
+            console.error("[cloudy-ai] provider cooldown persistence failed");
+          }
         }
         throw error;
       }
