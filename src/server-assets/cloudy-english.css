@@ -1754,3 +1754,6 @@ body:has(.shorts-screen) .amb{display:none!important}
 @keyframes cloudyComposerRing{70%{box-shadow:0 0 0 14px rgba(255,255,255,0),0 4px 0 #8fbfe8}100%{box-shadow:0 0 0 0 rgba(255,255,255,0),0 4px 0 #8fbfe8}}
 @media(max-width:760px){.chat-composer-wrap{padding:8px 13px calc(10px + env(safe-area-inset-bottom,0px))}.cloudy-composer-field{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.chat-composer.cloudy-composer,.chat-composer.cloudy-composer:before,.cloudy-round,.cloudy-ico,.cloudy-wave rect{animation:none!important;transition:none!important}}
+
+.chat-composer.cloudy-composer.sent{animation:cloudyComposerSent .5s cubic-bezier(.3,1.4,.5,1)}
+@keyframes cloudyComposerSent{40%{transform:scale(.97)}}
