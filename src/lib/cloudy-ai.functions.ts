@@ -533,11 +533,16 @@ export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(vali
     let quotaWarning=false;
     if(quotaReservationId){
       const successfulUsage=a.usage;
+      const successfulTokens=Number(successfulUsage?.total_tokens)||0;
+      const failedTokens=failedAttemptUsage.total_tokens;
+      const allBillableAttemptsHaveUsage=failedTokens===0||successfulTokens>0;
       const promptTokens=failedAttemptUsage.prompt_tokens+(Number(successfulUsage?.prompt_tokens)||0);
       const completionTokens=failedAttemptUsage.completion_tokens+(Number(successfulUsage?.completion_tokens)||0);
-      const totalTokens=failedAttemptUsage.total_tokens+(Number(successfulUsage?.total_tokens)||0);
-      const hasProviderUsage=totalTokens>0;
-      const actualTokens=hasProviderUsage?totalTokens:quotaEstimate;
+      const totalTokens=failedTokens+successfulTokens;
+      const hasProviderUsage=allBillableAttemptsHaveUsage&&totalTokens>0;
+      // If the successful provider omitted usage, account for its reserved estimate
+      // in addition to any exact usage already reported by failed attempts.
+      const actualTokens=hasProviderUsage?totalTokens:failedTokens+quotaEstimate;
       const mixedProviderUsage=failedAttemptSources.some((source)=>source.provider!==a.provider||source.model!==a.model);
       const ledgerProvider=mixedProviderUsage?"multiple":a.provider;
       const ledgerModel=mixedProviderUsage?"multiple":a.model;
