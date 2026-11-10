@@ -15,9 +15,13 @@ function statusOf(error: unknown): number | undefined {
 }
 
 function cooldownFor(error: unknown, failures: number): number {
+  const retryAfterMs = (error as { retryAfterMs?: unknown } | null)?.retryAfterMs;
+  if (typeof retryAfterMs === "number" && Number.isFinite(retryAfterMs)) {
+    return Math.max(1_000, Math.min(15 * 60_000, retryAfterMs));
+  }
   const status = statusOf(error);
   if (status === 401 || status === 403) return 60_000;
-  if (status === 429) return 30_000;
+  if (status === 429) return 60_000;
   if (status === 408 || status === 409 || status === 425 || (status !== undefined && status >= 500)) {
     return Math.min(60_000, DEFAULT_COOLDOWN_MS * failures);
   }
