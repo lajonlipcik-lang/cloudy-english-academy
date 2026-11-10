@@ -20,7 +20,7 @@ async function legacyUnseal(ciphertext:string,iv:string){
   const buf=await crypto.subtle.decrypt({name:"AES-GCM",iv:bytes(iv)},key,bytes(ciphertext));
   return new TextDecoder().decode(buf);
 }
-const safe=(r:any)=>({id:r.id,provider:r.provider,label:r.label,model:r.model,enabled:r.enabled,priority:r.priority,key_hint:r.key_hint,last_tested_at:r.last_tested_at,last_status:r.last_status});
+const safe=(r:any)=>({id:r.id,provider:r.provider,label:r.label,model:r.model,enabled:r.enabled,priority:r.priority,key_hint:r.key_hint,last_tested_at:r.last_tested_at,last_status:r.last_status,cooldown_until:r.cooldown_until});
 async function rows(db:any){const {data,error}=await db.from("ai_provider_secrets").select("*").order("priority");if(error)throw new Error("AI Vault не создан. Примените миграцию 0001_cloudy_ai_vault.");return data??[]}
 async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
   const key=String(r.api_key??"").trim()||(r.ciphertext&&r.iv?await legacyUnseal(r.ciphertext,r.iv):"");
@@ -64,7 +64,7 @@ export const saveAiProvider=createServerFn({method:"POST"}).inputValidator(valid
     model:String(data.model??"").slice(0,120),
     key_hint:secret.slice(0,4)+"••••"+secret.slice(-4),
     enabled:true,priority:Number(data.priority)||10,
-    updated_by:user.id,updated_at:new Date().toISOString(),
+    updated_by:user.id,updated_at:new Date().toISOString(),cooldown_until:null,last_status:"configured",last_error_code:null,
   };
   const existingId=String(data.id??"").trim();
   let query:any;
