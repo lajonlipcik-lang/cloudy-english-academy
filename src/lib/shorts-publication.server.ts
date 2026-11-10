@@ -27,7 +27,7 @@ export async function reviewStoredShort(content: any, storagePath: string, video
     const endpoint = provider ? endpoints[provider.provider] : undefined;
     const model = provider ? models[provider.provider] : undefined;
     if (!provider?.api_key || !endpoint || !model) return fallback;
-    const upstream = await fetch(endpoint, {method:"POST",headers:{Authorization:"Bearer " + provider.api_key,"Content-Type":"application/json"},body:JSON.stringify({model,temperature:0,max_tokens:350,messages:[{role:"system",content:SHORTS_VISUAL_PROMPT},{role:"user",content:[{type:"text",text:"Проверь только явный сексуальный контент 18+. Верни JSON с decision, labels, confidence и reason."},...frames.map(url=>({type:"image_url",image_url:{url,detail:"low"}}))]}]}),signal:AbortSignal.timeout(25000)});
+    const upstream = await fetch(endpoint, {method:"POST",headers:{Authorization:"Bearer " + provider.api_key,"Content-Type":"application/json"},body:JSON.stringify({model,...(provider.provider==="gemini"?{reasoning_effort:"low"}:{temperature:0}),max_tokens:350,messages:[{role:"system",content:SHORTS_VISUAL_PROMPT},{role:"user",content:[{type:"text",text:"Проверь только явный сексуальный контент 18+. Верни JSON с decision, labels, confidence и reason."},...frames.map(url=>({type:"image_url",image_url:{url,detail:"low"}}))]}]}),signal:AbortSignal.timeout(25000)});
     if (!upstream.ok) return fallback;
     const response = await upstream.json() as {choices?: {message?: {content?: string}}[]};
     const raw = response.choices?.[0]?.message?.content;
