@@ -190,6 +190,13 @@
       "when": 1794319200002,
       "tag": "0026_cloudy_ai_gemini_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794334004773,
+      "tag": "0027_cloudy_ai_provider_failover",
+      "breakpoints": true
     }
   ]
 }
