@@ -1640,7 +1640,15 @@ body:has(.shorts-screen) .amb{display:none!important}
 .chat-model-switcher-top .chat-model-check{color:#d4d4d4}
 .chat-model-switcher-top .chat-model-option>span:first-child{display:block;min-width:0}
 .chat-model-switcher-top .chat-model-option-icon,.chat-model-switcher-top .chat-model-dot{display:none!important}
-.chat-composer-meta{justify-content:flex-end}
+.chat-composer-meta{justify-content:center}
+.chat-composer-meta .chat-disclaimer{
+  display:block;
+  flex:1 1 100%;
+  width:100%;
+  margin:0;
+  padding:0;
+  text-align:center;
+}
 @media(max-width:520px){
   .chat-model-switcher-top{min-height:39px;padding:2px 13px 6px}
   .chat-model-switcher-top .chat-model-menu{left:11px;width:min(250px,calc(100vw - 28px))}
