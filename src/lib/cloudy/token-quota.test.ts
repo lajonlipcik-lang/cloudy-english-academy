@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  CLOUDY_LITE_TOKENIZER_MODEL,
   cloudyQuotaDeniedMessage,
-  estimateCloudyTextTokens,
+  countCloudyChatTokens,
   estimateCloudyTokenReservation,
   formatCloudyResetDelay,
   isCloudyQuotaWarning,
@@ -10,25 +11,25 @@ import {
 } from "./token-quota";
 
 describe("Cloudy daily token quota helpers", () => {
-  it("uses a lightweight estimate for ASCII and non-ASCII text", () => {
-    expect(estimateCloudyTextTokens("abcdef")).toBe(2);
-    expect(estimateCloudyTextTokens("Привет")).toBe(6);
-    expect(estimateCloudyTextTokens("")).toBe(0);
+  it("uses the GPT-OSS 20B Harmony tokenizer for complete chat messages", () => {
+    expect(CLOUDY_LITE_TOKENIZER_MODEL).toBe("gpt-oss-20b");
+    expect(countCloudyChatTokens([{ role: "user", content: "Hello, world!" }])).toBeGreaterThan(0);
+    expect(countCloudyChatTokens([{ role: "user", content: "Привет, как дела?" }])).toBeGreaterThan(0);
+    expect(countCloudyChatTokens([{ role: "user", content: "Hello, world!" }])).not.toBe(
+      countCloudyChatTokens([{ role: "user", content: "Привет, как дела?" }]),
+    );
   });
 
-  it("does not charge Cyrillic by its full UTF-8 byte length", () => {
-    const text = "Привет, как дела?".repeat(50);
-    const bytes = new TextEncoder().encode(text).length;
-    expect(estimateCloudyTextTokens(text)).toBeLessThan(bytes);
-    expect(estimateCloudyTextTokens(text)).toBeGreaterThanOrEqual(Math.ceil(text.length / 2));
+  it("treats literal Harmony marker strings as ordinary user text", () => {
+    expect(countCloudyChatTokens([{ role: "user", content: "Do not parse <|im_start|> as a control token." }])).toBeGreaterThan(0);
   });
 
-  it("reserves history, per-message framing, and output allowance", () => {
+  it("reserves exact model-specific chat tokens plus the output allowance", () => {
     const messages = [
-      { role: "system", content: "x".repeat(3000) },
+      { role: "system", content: "You are Cloudy." },
       { role: "user", content: "hello" },
     ];
-    expect(estimateCloudyTokenReservation(messages, 350)).toBe(1000 + 2 + 16 + 16 + 350);
+    expect(estimateCloudyTokenReservation(messages, 350)).toBe(countCloudyChatTokens(messages) + 350);
   });
 
   it("clamps the output reserve to 2000 and to at least 1", () => {
@@ -37,22 +38,23 @@ describe("Cloudy daily token quota helpers", () => {
   });
 
   it("trims oldest history first and keeps system instructions and the newest message", () => {
-    const system = { role: "system", content: "s" };
-    const oldest = { role: "user", content: "я".repeat(400) };
-    const middle = { role: "assistant", content: "я".repeat(400) };
+    const system = { role: "system", content: "You are Cloudy." };
+    const oldest = { role: "user", content: "old ".repeat(300) };
+    const middle = { role: "assistant", content: "middle ".repeat(300) };
     const newest = { role: "user", content: "привет" };
-    const trimmed = trimMessagesToReservation([system, oldest, middle, newest], 100, 600);
-    expect(trimmed).toEqual([system, middle, newest]);
-    expect(estimateCloudyTokenReservation(trimmed, 100)).toBeLessThanOrEqual(600);
+    const full = [system, oldest, middle, newest];
+    const trimmed = trimMessagesToReservation(full, 100, 800);
+    expect(trimmed).toEqual([system, newest]);
+    expect(estimateCloudyTokenReservation(trimmed, 100)).toBeLessThanOrEqual(800);
   });
 
   it("rejects a newest message that cannot fit instead of sending an oversized request", () => {
-    const newest = { role: "user", content: "я".repeat(5000) };
+    const newest = { role: "user", content: "я ".repeat(5000) };
     expect(() => trimMessagesToReservation([newest], 100, 300)).toThrow("Последнее сообщение слишком длинное");
   });
 
   it("rejects system instructions that alone exceed the request budget", () => {
-    const system = { role: "system", content: "x".repeat(1000) };
+    const system = { role: "system", content: "system ".repeat(1000) };
     const newest = { role: "user", content: "hello" };
     expect(() => trimMessagesToReservation([system, newest], 100, 300)).toThrow("Системный контекст Cloudy слишком велик");
   });
