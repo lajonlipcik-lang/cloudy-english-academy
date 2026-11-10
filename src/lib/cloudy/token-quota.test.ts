@@ -74,7 +74,7 @@ describe("Cloudy daily token quota helpers", () => {
   });
 
   it("uses safe defaults for a missing snapshot", () => {
-    expect(normalizeCloudyTokenQuota(null).remaining_tokens).toBe(30000);
+    expect(normalizeCloudyTokenQuota(null).remaining_tokens).toBe(0);
     expect(normalizeCloudyTokenQuota(null, 5000).limit_tokens).toBe(5000);
   });
 
