@@ -53,17 +53,34 @@ async function ask(r:any,messages:any[],max_tokens=700,modelOverride?:string){
 }
 export const listCloudyUsers=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);const {data:u,error}=await db.auth.admin.listUsers({page:1,perPage:200});if(error)throw new Error("Не удалось загрузить пользователей.");const ids=(u.users??[]).map((x:any)=>x.id);const [p,g]=await Promise.all([db.from("profiles").select("id,display_name").in("id",ids),db.from("user_progress").select("user_id,total_xp,week_xp,updated_at").in("user_id",ids)]);const pm=new Map((p.data??[]).map((x:any)=>[x.id,x])),gm=new Map((g.data??[]).map((x:any)=>[x.user_id,x]));return {users:(u.users??[]).map((x:any)=>({id:x.id,email:x.email??"",name:(pm.get(x.id) as any)?.display_name??x.user_metadata?.["name"]??"Ученик",created_at:x.created_at,last_sign_in_at:x.last_sign_in_at??null,confirmed:!!x.email_confirmed_at,total_xp:(gm.get(x.id) as any)?.total_xp??0,week_xp:(gm.get(x.id) as any)?.week_xp??0}))}});
 export const listAiProviders=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);return {providers:(await rows(db)).map(safe)}});
-export const saveAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db,user}=await ctx(data.accessToken,true),provider=String(data.provider??"");if(!["openai","groq","openrouter","gemini"].includes(provider))throw new Error("Провайдер не поддерживается.");const secret=String(data.apiKey??"").trim();if(secret.length<12||secret.length>500)throw new Error("Проверьте API-ключ.");const {data:r,error}=await db.from("ai_provider_secrets").upsert({provider,
-    api_key: secret,
-    ciphertext: null,
-    iv: null,
-    label: String(data.label ?? provider).slice(0, 50),
-    model: String(data.model ?? "").slice(0, 120),
-    key_hint: secret.slice(0, 4) + "••••" + secret.slice(-4),
-    enabled: true,
-    priority: Number(data.priority) || 10,
-    updated_by: user.id,
-    updated_at: new Date().toISOString(),},{onConflict:"provider"}).select("*").single();if(error)throw new Error("Не удалось сохранить API: "+error.message);return {provider:safe(r)}});
+export const saveAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
+  const {db,user}=await ctx(data.accessToken,true),provider=String(data.provider??"");
+  if(!["openai","groq","openrouter","gemini"].includes(provider))throw new Error("Провайдер не поддерживается.");
+  const secret=String(data.apiKey??"").trim();
+  if(secret.length<12||secret.length>500)throw new Error("Проверьте API-ключ.");
+  const payload={
+    provider,api_key:secret,ciphertext:null,iv:null,
+    label:String(data.label??provider).slice(0,50),
+    model:String(data.model??"").slice(0,120),
+    key_hint:secret.slice(0,4)+"••••"+secret.slice(-4),
+    enabled:true,priority:Number(data.priority)||10,
+    updated_by:user.id,updated_at:new Date().toISOString(),
+  };
+  const existingId=String(data.id??"").trim();
+  let query:any;
+  if(existingId){
+    query=db.from("ai_provider_secrets").update(payload).eq("id",existingId);
+  }else if(provider==="groq"){
+    query=db.from("ai_provider_secrets").insert(payload);
+  }else{
+    const {data:existing,error:lookupError}=await db.from("ai_provider_secrets").select("id").eq("provider",provider).limit(1).maybeSingle();
+    if(lookupError)throw new Error("Не удалось проверить существующий API.");
+    query=existing?db.from("ai_provider_secrets").update(payload).eq("id",existing.id):db.from("ai_provider_secrets").insert(payload);
+  }
+  const {data:r,error}=await query.select("*").single();
+  if(error)throw new Error("Не удалось сохранить API: "+error.message);
+  return {provider:safe(r)};
+});
 export const deleteAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true);const {error}=await db.from("ai_provider_secrets").delete().eq("id",String(data.id??""));if(error)throw new Error("Не удалось удалить API.");return {ok:true}});
 export const testAiProvider=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{const {db}=await ctx(data.accessToken,true),r=(await rows(db)).find((x:any)=>x.id===String(data.id??""));if(!r)throw new Error("Провайдер не найден.");try{const a=await ask(r,[{role:"user",content:"Ответь одним словом: Cloudy работает."}],20);await db.from("ai_provider_secrets").update({last_tested_at:new Date().toISOString(),last_status:"ok"}).eq("id",r.id);return {ok:true,provider:a.provider,model:a.model,response:a.content}}catch(e){await db.from("ai_provider_secrets").update({last_tested_at:new Date().toISOString(),last_status:"error"}).eq("id",r.id);throw e}});
 const safeContextText=(value:unknown,max:number)=>String(value??"").replace(/[\u0000-\u001f\u007f]/g," ").replace(/\s+/g," ").trim().slice(0,max);
