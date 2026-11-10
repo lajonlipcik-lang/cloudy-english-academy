@@ -833,11 +833,20 @@ function chatRender(){
     </div>
     <div id="msgs" class="chat-messages" aria-live="polite"></div>
     <div class="chat-composer-wrap">
-      <div class="chat-composer">
-        <div class="chat-composer-box">
-          <input id="ci" placeholder="Напишите Клауди..." autocomplete="off" onkeydown="if(event.key=='Enter'){event.preventDefault();csend()}">
+      <div class="chat-composer cloudy-composer" id="cloudyComposer">
+        <div class="cloudy-composer-bar" id="cloudyComposerBar">
+          <button class="cloudy-round cloudy-plus" type="button" aria-label="Добавить">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+          <input class="cloudy-composer-field" id="ci" type="text" placeholder="Зажмите и говорите" autocomplete="off" aria-label="Сообщение" onkeydown="if(event.key=='Enter'&&!event.isComposing){event.preventDefault();csend()}">
+          <button class="cloudy-round cloudy-mic" id="cloudyMic" type="button" aria-label="Микрофон">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          </button>
+          <button class="cloudy-round cloudy-main" id="cloudyMain" type="button" aria-label="Говорить или отправить">
+            <span class="cloudy-ico cloudy-wave"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="9.5" width="2.6" height="5" rx="1.3"/><rect x="7.6" y="6.5" width="2.6" height="11" rx="1.3"/><rect x="12.2" y="3.5" width="2.6" height="17" rx="1.3"/><rect x="16.8" y="7.5" width="2.6" height="9" rx="1.3"/><rect x="21" y="10" width="2.2" height="4" rx="1.1" transform="translate(-1.1 0)"/></svg></span>
+            <span class="cloudy-ico cloudy-send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></span>
+          </button>
         </div>
-        <button class="spk" aria-label="Отправить сообщение" onclick="csend()">${ic('send')}</button>
       </div>
       <div class="chat-composer-meta"><div class="chat-disclaimer">ИИ может ошибаться</div></div>
     </div>
@@ -848,6 +857,21 @@ function chatRender(){
  if(CH.length){CH.forEach(m=>bub(m.r,m.t,false));scrollChat()}
  else{$("#msgs").innerHTML='<div class="chat-welcome"><div class="chat-welcome-mascot">'+mascot()+'</div><h2>Привет! Я Клауди.</h2><p>Давай практиковать английский. Я буду подбирать общение под твой уровень <b>'+(S.lv||"A1")+'</b>.</p><div class="chat-suggestions"><button onclick="chatSuggestion(\'Let’s practice introductions\')">Познакомимся на английском</button><button onclick="chatSuggestion(\'Help me improve my English grammar\')">Разберём грамматику</button><button onclick="chatSuggestion(\'Ask me an easy question for my level\')">Задай мне вопрос</button></div></div>'}
  const input=$("#ci");if(input)input.focus();
+ const composerBar=$("#cloudyComposerBar"),main=$("#cloudyMain");
+ if(composerBar&&input&&main){
+  const syncComposer=()=>{const typing=!!input.value.trim();composerBar.classList.toggle("typing",typing);$("#cloudyMic")?.classList.toggle("gone",typing);const mic=$("#cloudyMic");if(mic)mic.tabIndex=typing?-1:0};
+  input.addEventListener("input",syncComposer);
+  let holding=false;
+  const startVoiceHold=event=>{if(input.value.trim())return;holding=true;$("#cloudyComposer")?.classList.add("rec");try{main.setPointerCapture(event.pointerId)}catch(error){}};
+  const stopVoiceHold=()=>{if(!holding)return;holding=false;$("#cloudyComposer")?.classList.remove("rec")};
+  main.addEventListener("pointerdown",startVoiceHold);
+  main.addEventListener("pointerup",stopVoiceHold);
+  main.addEventListener("pointercancel",stopVoiceHold);
+  main.addEventListener("lostpointercapture",stopVoiceHold);
+  main.addEventListener("click",()=>{if(input.value.trim())csend()});
+  main.addEventListener("contextmenu",event=>event.preventDefault());
+  syncComposer();
+ }
 }
 async function chat(){if(S.user?.guest){toast("Для практики с Клауди войдите в аккаунт");return authV()}const account=String(cloudUserId||"");if(!account){toast("Сначала войдите в аккаунт.",false);return authV()}if(chatHistoryAccountId!==account){resetChatHistoryState();}try{await loadChatHistory()}catch(e){toast("История скрыта до безопасной загрузки из аккаунта.",false);return}if(String(cloudUserId||"")!==account||chatHistoryAccountId!==account)return;if(!CH.length&&chatThreads.length){const latest=chatThreads[0];activeChatId=latest.id;CH=latest.messages.slice()}if(!activeChatId)activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatRender()}
 function chatStartNew(){CH=[];activeChatId=String(Date.now())+"-"+Math.random().toString(36).slice(2,7);chatDrawerOpen=false;chatRender();snd("tab")}
@@ -895,7 +919,7 @@ function bub(r,t,scroll=true){const d=document.createElement('div');d.className=
 function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
 async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await new Promise(resolve=>setTimeout(resolve,text.length>500?9:16))}el.classList.remove('chat-type-cursor')}
 async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bub('u',u);saveChatHistory()}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',chatModel:chatModelTier,history:CH.slice(-16).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});saveChatHistory();snd('pick')}catch(e){el.classList.remove('typ');el.textContent=e?.message||'Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.';el.classList.add('error')}scrollChat()}
-async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';busy=1;snd('send');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
+async function csend(){const el=$('#ci');if(!el||busy)return;const v=el.value.trim();if(!v)return;el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));busy=1;snd('send');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
 setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
 function amb(){const l=S.lv||"A1",a=$(".amb");document.body.dataset.lv=l;document.body.dataset.th="dark";if(a.dataset.l==l)return;a.dataset.l=l;a.innerHTML="";const n={A1:5,A2:16,B1:28,B2:4}[l],r=Math.random;for(let k=0;k<n;k++){const u=document.createElement("u"),z={A1:200+r()*220,A2:14+r()*40,B1:3+r()*6,B2:90}[l];u.style.cssText=`left:${r()*100}%;top:${r()*100}%;width:${z}px;height:${z}px;animation-delay:-${r()*12}s;animation-duration:${l=="A2"?7+r()*8:l=="B1"?2+r()*3:l=="B2"?12+r()*8:14+r()*8}s`;a.appendChild(u)}}
 function splash(l){const s=document.createElement("div");s.className="spl "+l;s.innerHTML=`<div class="lc ${l}">${l}</div><h2>${LI[l][0]}</h2>`;document.body.appendChild(s);setTimeout(()=>s.remove(),1800)}
