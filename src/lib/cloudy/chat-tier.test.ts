@@ -3,6 +3,8 @@ import {
   CLOUDY_CHAT_TIER_CONFIG,
   getCloudyChatTierConfig,
   limitCloudyChatHistory,
+  formatGroqRateLimitMessage,
+  getGroqRateLimitRetryMs,
   selectAvailableGroqChatProviders,
 } from "./chat-tier";
 
@@ -57,5 +59,18 @@ describe("Cloudy Groq chat tiers", () => {
       { id: "groq", provider: "groq", enabled: true, priority: 1, cooldown_until: "2026-11-11T01:00:00.000Z" },
     ];
     expect(selectAvailableGroqChatProviders(rows, Date.parse("2026-11-11T02:00:00.000Z"))).toHaveLength(1);
+  });
+});
+
+describe("Groq rate-limit messaging", () => {
+  it("normalizes Retry-After and caps the client cooldown", () => {
+    expect(getGroqRateLimitRetryMs(5_000)).toBe(5_000);
+    expect(getGroqRateLimitRetryMs(0)).toBe(60_000);
+    expect(getGroqRateLimitRetryMs(2_000_000)).toBe(15 * 60_000);
+  });
+
+  it("shows an actionable limit message with a rounded-up wait", () => {
+    expect(formatGroqRateLimitMessage(1_001)).toContain("через 2 сек.");
+    expect(formatGroqRateLimitMessage(60_000)).toContain("Вы превысили лимит");
   });
 });
