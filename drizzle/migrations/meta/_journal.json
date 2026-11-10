@@ -183,6 +183,13 @@
       "when": 1794319200001,
       "tag": "0025_cloudy_teacher_stars_price",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794319200002,
+      "tag": "0026_cloudy_ai_gemini_provider",
+      "breakpoints": true
     }
   ]
 }
