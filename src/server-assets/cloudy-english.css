@@ -1782,3 +1782,25 @@ body:has(.shorts-screen) .amb{display:none!important}
 .cloudy-composer.rec .cloudy-composer-field::placeholder{opacity:.65}
 @media(max-width:760px){.chat-composer-wrap{padding:5px 14px calc(7px + env(safe-area-inset-bottom,0px))}.cloudy-composer-field{font-size:15px}}
 @media(prefers-reduced-motion:reduce){.chat-composer.cloudy-composer,.cloudy-round,.cloudy-ico,.cloudy-wave rect{animation:none!important;transition:none!important}}
+
+
+/* Chat header alignment, subtle blue motion, and clean icon edges. */
+.chat-topbar{gap:12px}
+.chat-top-center{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:9px}
+.chat-top-cloud{display:grid;place-items:center;width:38px;height:34px;flex:none}
+.chat-top-cloud .ms{display:block;width:38px;height:34px;margin:0;animation:chatCloudFloat 2.8s ease-in-out infinite}
+@keyframes chatCloudFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.chat-top-center .chat-level-pill{padding:4px 9px;border:0;background:rgba(116,190,255,.14);color:#d9efff;font-size:11px}
+.chat-top-actions{display:flex;align-items:center;gap:10px;flex:none}
+.chat-topbar .chat-flag{width:30px;height:21px;border-radius:4px;box-shadow:none;animation:flagWave 3s ease-in-out infinite alternate}
+.chat-topbar .chat-close-button,.chat-topbar .chat-menu-button{border:0!important;outline:0!important;box-shadow:none!important;-webkit-appearance:none;appearance:none;background:transparent!important}
+.chat-topbar .chat-close-button:focus,.chat-topbar .chat-menu-button:focus{outline:0!important;box-shadow:none!important}
+.chat-topbar .chat-close-button:focus-visible,.chat-topbar .chat-menu-button:focus-visible{background:rgba(110,185,255,.14)!important}
+.chat-composer.cloudy-composer{padding:1px;border-radius:27px;background:transparent;isolation:isolate}
+.chat-composer.cloudy-composer:before{display:block;content:"";position:absolute;inset:-100%;width:300%;height:300%;pointer-events:none;background:conic-gradient(from 0deg,transparent 0 68%,rgba(24,67,151,.12) 76%,rgba(44,133,238,.72) 84%,rgba(115,202,255,.95) 89%,transparent 96% 100%);animation:cloudyComposerSpin 4.8s linear infinite;z-index:0}
+.cloudy-composer-bar{position:relative;z-index:1;border:0!important;box-shadow:none!important}
+.cloudy-round,.cloudy-round:hover,.cloudy-round:focus,.cloudy-round:focus-visible{border:0!important;outline:0!important;box-shadow:none!important;-webkit-appearance:none;appearance:none}
+.cloudy-round:focus-visible{background:rgba(95,177,255,.14)!important}
+.cloudy-main{border:0!important;outline:0!important;box-shadow:none!important}
+@media(max-width:760px){.chat-topbar{gap:8px;padding:0 13px}.chat-top-center{gap:7px}.chat-top-cloud,.chat-top-cloud .ms{width:32px;height:30px}.chat-top-actions{gap:7px}.chat-topbar .chat-flag{width:27px;height:18px}}
+@media(prefers-reduced-motion:reduce){.chat-top-cloud .ms,.chat-topbar .chat-flag,.chat-composer.cloudy-composer:before{animation:none!important}}
