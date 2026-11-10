@@ -324,6 +324,7 @@ async function hasActiveCloudyTeacherAccess(db:any,userId:string){
   });
 }
 function cloudyChatModel(provider:any,tier:"lite"|"teacher"){
+  if(provider.provider==="gemini")return String(provider.model??"").trim()||"gemini-3.8-flash";
   if(tier==="lite"){
     const configured=String(process.env["CLOUDY_LITE_MODEL"]??"").trim();
     if(configured)return configured;
