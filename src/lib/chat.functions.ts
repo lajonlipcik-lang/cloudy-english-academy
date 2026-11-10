@@ -42,7 +42,8 @@ async function askVaultProvider(provider: VaultProvider, messages: Array<{ role:
     if (retryAfter) {
       const seconds = Number(retryAfter);
       const dateDelay = Date.parse(retryAfter) - Date.now();
-      error.retryAfterMs = Number.isFinite(seconds) ? seconds * 1000 : Number.isFinite(dateDelay) ? Math.max(0, dateDelay) : undefined;
+      if (Number.isFinite(seconds)) error.retryAfterMs = seconds * 1000;
+      else if (Number.isFinite(dateDelay)) error.retryAfterMs = Math.max(0, dateDelay);
     }
     throw error;
   }
