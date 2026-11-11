@@ -976,8 +976,8 @@ function showTyping(el){el.textContent='';el.classList.add('typ');const dots=doc
 async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await new Promise(resolve=>setTimeout(resolve,text.length>500?9:16))}el.classList.remove('chat-type-cursor')}
 async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bub('u',u);saveChatHistory()}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',chatModel:chatModelTier,history:CH.slice(-80).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});if(typeof result.result?.quotaWarning==="boolean"){chatBudgetWarning=result.result.quotaWarning;renderChatBudgetWarning()}const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});saveChatHistory();snd('pick')}catch(e){
   const message=String(e?.message||"Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.");
-  if(/^Вы превысили лимит запросов к ИИ|^Дневной лимит Cloudy Lite исчерпан/i.test(message)){
-   if(/^Дневной лимит Cloudy Lite исчерпан/i.test(message)){
+  if(/^Вы превысили лимит запросов к ИИ|^Дневной лимит (?:бесплатного )?Cloudy Lite исчерпан/i.test(message)){
+   if(/^Дневной лимит (?:бесплатного )?Cloudy Lite исчерпан/i.test(message)){
     chatBudgetWarning=false;
     renderChatBudgetWarning();
    }
