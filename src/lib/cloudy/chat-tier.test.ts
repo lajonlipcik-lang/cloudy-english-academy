@@ -45,13 +45,15 @@ describe("Cloudy chat tiers and provider routing", () => {
   it("routes across enabled Groq, OpenAI and OpenRouter providers outside cooldown", () => {
     const rows = [
       { id: "openai", provider: "openai", enabled: true, priority: 0 },
+      { id: "openrouter", provider: "openrouter", enabled: true, priority: 6 },
+      { id: "gemini", provider: "gemini", enabled: true, priority: 7 },
       { id: "disabled", provider: "groq", enabled: false, priority: 1 },
       { id: "cooling", provider: "groq", enabled: true, priority: 2, cooldown_until: "2026-11-11T03:00:00.000Z" },
       { id: "groq-2", provider: "groq", enabled: true, priority: 5 },
       { id: "groq-1", provider: "groq", enabled: true, priority: 3 },
     ];
     const selected = selectAvailableAiChatProviders(rows, Date.parse("2026-11-11T02:00:00.000Z"));
-    expect(selected.map((row) => row.id)).toEqual(["openai", "groq-1", "groq-2"]);
+    expect(selected.map((row) => row.id)).toEqual(["openai", "groq-1", "groq-2", "openrouter"]);
   });
 
   it("makes a key available again when its cooldown has expired", () => {
