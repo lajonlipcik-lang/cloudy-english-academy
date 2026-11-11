@@ -188,7 +188,7 @@
       "idx": 26,
       "version": "7",
       "when": 1794319200002,
-      "tag": "0026_cloudy_ai_gemini_provider",
+      "tag": "0026_cloudy_ai_provider_allowlist",
       "breakpoints": true
     },
     {
@@ -217,6 +217,13 @@
       "version": "7",
       "when": 1794370000000,
       "tag": "0030_cloudy_ai_learner_context",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794401606928,
+      "tag": "0031_secure_privacy_center_writes",
       "breakpoints": true
     }
   ]
