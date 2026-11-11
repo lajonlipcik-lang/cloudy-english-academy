@@ -223,7 +223,7 @@ function runCloudyExerciseAudit(){
             const options=Array.isArray(ex.o)?ex.o:[];
             if(!String(ex.a??"").trim()||options.filter((option:any)=>option===ex.a).length!==1)issue="правильный ответ отсутствует или дублируется в вариантах";
           }else if(ex.k==="b"){
-            const expected=String(ex.a??"").split(/\\s+/).filter(Boolean),available=Array.isArray(ex.o)?ex.o:[];
+            const expected=String(ex.a??"").split(/\s+/).filter(Boolean),available=Array.isArray(ex.o)?ex.o:[];
             const counts=new Map<string,number>();available.forEach((token:any)=>counts.set(String(token),(counts.get(String(token))??0)+1));
             const needed=new Map<string,number>();expected.forEach(token=>needed.set(token,(needed.get(token)??0)+1));
             if(!expected.length||[...needed].some(([token,count])=>(counts.get(token)??0)<count))issue="в конструкторе отсутствует часть правильного предложения";
@@ -256,7 +256,7 @@ function runCloudyExerciseAudit(){
         else {simulatedCompletions++;simulatedXp+=finished.gain;}
         lessonAccuracy+=finished.acc;lessonStars+=finished.stars;lessonXp+=finished.gain;
       }
-      rows.push("• "+lesson.t+": "+lessonTasks+" проверок, "+(lessonErrors?"ошибок "+lessonErrors:"структура корректна")+", точность "+Math.round(lessonAccuracy/3)+"% средняя точность, "+(lessonStars/3).toFixed(1)+" звезды в среднем, "+lessonXp+" XP за 3 прогона (тестовая симуляция)");
+      rows.push("• "+lesson.t+": "+lessonTasks+" проверок, "+(lessonErrors?"ошибок "+lessonErrors:"структура корректна")+", контрольный сценарий с заранее правильными ответами: "+Math.round(lessonAccuracy/3)+"% (НЕ оценка качества), "+(lessonStars/3).toFixed(1)+" звезды в среднем, "+lessonXp+" XP за 3 прогона (тестовая симуляция)");
     }
     levelRows.push(level+" ("+lessonIds.length+" уроков):\n"+rows.join("\n"));
   }
@@ -274,9 +274,10 @@ function runCloudyExerciseAudit(){
     "Режим: изолированный тест генератора; прогресс, XP и аккаунты учеников не изменялись.",
     "Каталог: "+D.length+" уроков; проверено назначение по уровням: "+lessonCount+" уроков.",
     "Сгенерировано тестовых вариантов: "+variantCount+" (3 варианта на каждый урок).",
-    "Симуляция прохождения: "+simulatedCompletions+" завершённых уроков, расчётный XP "+simulatedXp+" (только в памяти, не начислялся аккаунтам).",
+    "Контрольная симуляция: "+simulatedCompletions+" завершённых уроков. Все ответы заранее подставлялись из ключей; 100% не измеряет качество упражнений. Расчётный XP "+simulatedXp+" (только в памяти, не начислялся аккаунтам).",
     "Проверено упражнений: "+exerciseCount+". Типы: "+Object.entries(typeTotals).map(([key,value])=>key+"="+value).join(", ")+".",
     "Произношение: "+manualPronunciation+" заданий проверены только на наличие эталонного слова; реальное распознавание речи требует микрофона и отдельного теста на устройстве.",
+    "Reading (r): "+typeTotals.r+" упражнений сгенерировано. Ноль означает отсутствие этого типа в текущем генераторе, а не доказанную ошибку каталога.",
     "Экзаменационный банк: "+examValid+" из "+TQ.length+" вопросов имеют корректную структуру; структурных ошибок: "+examErrors+".",
     "Грамматические примеры: "+grammarEntries+" корректно заполненных пар; ошибок структуры: "+grammarInvalid+".",
     "Результат: "+(totalFailures===0?"структурных ошибок не обнаружено.":"обнаружено проблем: "+totalFailures+"."),
