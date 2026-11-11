@@ -2,76 +2,78 @@
 
 **Audit date:** 2026-11-11  
 **Target database:** Lovable project `Cloudyenglishru` (`ea4a45c3-e064-48dc-9c89-4de1e8a4a27a`)  
-**Repository ref inspected:** `fix/cloudy-cross-provider-failover`  
-**Scope:** Drizzle migration journal, migration SQL inventory, and read-only database metadata inspection.
+**Repository ref:** `fix/cloudy-cross-provider-failover`  
+**Scope:** Drizzle migration journal, migration SQL inventory, database catalog inspection, and guarded forward repairs.
 
 ## Executive result
 
-The migration ledger is not synchronized with the repository journal.
+The migration ledger is still behind the repository journal.
 
-- Repository journal: 31 entries, `0000` through `0030`.
-- Database `drizzle.__drizzle_migrations`: 5 rows.
-- The 5 database timestamps correspond to journal entries `0000` and `0014`–`0017`.
-- A second SQL file, `0020_secure_privacy_center_writes.sql`, exists in the migrations directory but has no matching entry in `drizzle/migrations/meta/_journal.json`. It is therefore not part of the normal Drizzle journal sequence.
-- Quota/learner-context objects introduced by later migrations are present in the database, but their migration history rows are absent. This is evidence of schema changes having been applied outside the recorded Drizzle sequence; it does **not** prove that every statement in those migrations was applied exactly as written.
+- Repository journal now contains 32 entries, `0000` through `0031`.
+- The last successful ledger read returned 5 rows, matching `0000` and `0014`–`0017`.
+- The database already contained most objects from `0019`–`0030), but not every migration statement had been applied.
+- The orphan `0020_secure_privacy_center_writes.sql` was removed and its intended security change was rehomed as the ordered migration `0031_secure_privacy_center_writes.sql`.
+- Migration `0026` was renamed to `0026_cloudy_ai_provider_allowlist.sql` and changed to allow only `groq`, `openai`, and `openrouter`. Gemini remains excluded, consistent with the current runtime direction.
 
-**Do not run all missing migrations blindly. Do not insert synthetic rows into `drizzle.__drizzle_migrations` yet.** Both actions can conceal schema drift or cause duplicate/unsafe DDL.
+**Do not manually insert synthetic migration ledger rows.** The database migration runner should reconcile entries only after the current schema is verified and the forward migrations are run in order.
+
+## Changes executed against the target database
+
+The Lovable database tool accepted these four SQL migrations without returning SQL errors:
+
+| Migration | Change submitted | Result / verification |
+|---|---|---|
+| `0018_shorts_feed_and_review_rpc` | Replaced Shorts publication and moderation RPCs with the repository's v3 definitions and service-role-only execution grants | SQL accepted; post-write catalog verification blocked |
+| `0025_cloudy_teacher_stars_price` | Set the active 30-day Cloudy Teacher plan to 300 XTR, guarded by its USD 4.00/month plan shape | SQL accepted; post-write data verification blocked |
+| `0026_cloudy_ai_provider_allowlist` | Added provider CHECK constraint allowing Groq, OpenAI, and OpenRouter only | SQL accepted; post-write catalog verification blocked |
+| `0031_secure_privacy_center_writes` | Revoked all direct table privileges from PUBLIC/anon/authenticated, granted authenticated read-only access, removed owner INSERT policies, retained owner-scoped SELECT policies, and granted service_role full access | SQL accepted; post-write privilege/policy verification blocked |
+
+No paid Supabase branch or paid database resource was created.
 
 ## Per-entry reconciliation
 
 Status meanings:
-- **Recorded applied** — matching timestamp exists in the database migration ledger.
-- **Objects present; full diff pending** — relevant objects were found, but every statement/definition has not yet been compared.
-- **Not recorded; application unknown** — no matching ledger row; this is not proof that the SQL was never applied.
+- **Recorded applied** — matching timestamp was present in the last successful database ledger read.
+- **Objects present / compared** — key objects and definitions were inspected; not every historical statement is independently proven.
+- **Applied; verification pending** — SQL was submitted successfully, but the post-write catalog query was blocked by the Lovable action quota.
+- **Historical ledger gap** — no ledger row; timestamp predates the latest recorded migration, so the current Drizzle migrator's next step is after `0017`, not a blind replay of these older entries.
 
-| Journal idx | Migration | Database evidence | Status |
+| Journal idx | Migration | Current evidence | Status |
 |---:|---|---|---|
-| 0 | `0000_cloudy_core` | Matching ledger timestamp | Recorded applied |
-| 1 | `0001_cloudy_ai_vault` | No ledger row; detailed schema comparison blocked by DB action quota | Not recorded; application unknown |
-| 2 | `0002_cloudy_ai_vault_admin_rls` | No ledger row; policy-level comparison pending | Not recorded; application unknown |
-| 3 | `0003_cloudy_ai_provider_api_key` | No ledger row; column/index comparison pending | Not recorded; application unknown |
-| 4 | `0004_server_authoritative_xp` | No ledger row; function/trigger comparison pending | Not recorded; application unknown |
-| 5 | `0005_progress_sync_concurrency` | No ledger row; function/index comparison pending | Not recorded; application unknown |
-| 6 | `0006_cloudy_ai_rate_limits` | No ledger row; table/function comparison pending | Not recorded; application unknown |
-| 7 | `0007_progress_account_cascade` | No ledger row; FK comparison pending | Not recorded; application unknown |
-| 8 | `0008_persist_learner_level_and_fix_progress_version` | No ledger row; schema/function comparison pending | Not recorded; application unknown |
-| 9 | `0009_return_xp_progress_version` | No ledger row; function comparison pending | Not recorded; application unknown |
-| 10 | `0010_extend_a1_lesson_xp` | No ledger row; function/data comparison pending | Not recorded; application unknown |
-| 11 | `0011_expand_a2_curriculum` | No ledger row; function/data comparison pending | Not recorded; application unknown |
-| 12 | `0012_complete_a2_curriculum` | No ledger row; function/data comparison pending | Not recorded; application unknown |
-| 13 | `0013_cloudy_learning_event_journal` | No ledger row; table/function comparison pending | Not recorded; application unknown |
-| 14 | `0014_community_and_privacy_rights` | Matching ledger timestamp | Recorded applied |
-| 15 | `0015_expand_a1_a2_curriculum` | Matching ledger timestamp | Recorded applied |
-| 16 | `0016_shorts_publication_and_post_publish_review` | Matching ledger timestamp | Recorded applied |
-| 17 | `0017_shorts_caption_nonblocking` | Matching ledger timestamp | Recorded applied |
-| 18 | `0018_shorts_feed_and_review_rpc` | No ledger row; function/table comparison pending | Not recorded; application unknown |
-| 19 | `0019_cloudy_chat_history` | No ledger row; table/index comparison pending | Not recorded; application unknown |
-| 20 | `0020_cloudy_subscriptions` | No ledger row; table/function comparison pending | Not recorded; application unknown |
-| — | `0020_secure_privacy_center_writes` | File exists but is absent from the journal | Orphan SQL; application unknown |
-| 21 | `0021_telegram_stars_payments` | No ledger row; table/function comparison pending | Not recorded; application unknown |
-| 22 | `0022_cloudy_plans_and_telegram_checkout_bridge` | No ledger row; table/function comparison pending | Not recorded; application unknown |
-| 23 | `0023_telegram_stars_refunds` | No ledger row; table/function comparison pending | Not recorded; application unknown |
-| 24 | `0024_cloudy_lite_fallback` | No ledger row; config/function comparison pending | Not recorded; application unknown |
-| 25 | `0025_cloudy_teacher_stars_price` | No ledger row; config/data comparison pending | Not recorded; application unknown |
-| 26 | `0026_cloudy_ai_gemini_provider` | No ledger row; provider schema comparison pending | Not recorded; application unknown |
-| 27 | `0027_cloudy_ai_provider_failover` | No ledger row; provider schema/function comparison pending | Not recorded; application unknown |
-| 28 | `0028_cloudy_daily_token_quota` | Quota usage, reservations and events tables plus quota RPC functions exist; exact SQL diff pending | Objects present; full diff pending |
-| 29 | `0029_cloudy_token_quota_config` | Config table exists; observed daily limit 30,000 and warning ratio 0.800; exact SQL diff pending | Objects present; full diff pending |
-| 30 | `0030_cloudy_ai_learner_context` | `user_learning_profiles` exists; duplicate equivalent CHECK constraints observed | Objects present; full diff pending |
+| 0 | `0000_cloudy_core` | Matching ledger timestamp and hash | Recorded applied |
+| 1–13 | `0001`–`0013` | No ledger rows; older than latest recorded timestamp `0017` | Historical ledger gap; detailed historical comparison not completed |
+| 14 | `0014_community_and_privacy_rights` | Matching ledger timestamp and hash | Recorded applied |
+| 15 | `0015_expand_a1_a2_curriculum` | Matching ledger timestamp and hash | Recorded applied |
+| 16 | `0016_shorts_publication_and_post_publish_review` | Matching ledger timestamp and hash | Recorded applied |
+| 17 | `0017_shorts_caption_nonblocking` | Matching ledger timestamp and hash | Recorded applied |
+| 18 | `0018_shorts_feed_and_review_rpc` | Database had v2 function bodies; v3 migration SQL was submitted | Applied; verification pending |
+| 19 | `0019_cloudy_chat_history` | Table, constraints, index, and owner-scoped CRUD policies present | Objects present / compared |
+| 20 | `0020_cloudy_subscriptions` | Subscription tables, constraints, indexes, and policies present; subscription view was subsequently replaced by `0024` | Objects present / compared |
+| 21 | `0021_telegram_stars_payments` | Telegram tables, indexes, and payment/link RPC definitions present | Objects present / compared |
+| 22 | `0022_cloudy_plans_and_telegram_checkout_bridge` | Plan column, payment-token table, and checkout RPC definition present | Objects present / compared |
+| 23 | `0023_telegram_stars_refunds` | Refund RPC definition present and matches the migration body inspected | Objects present / compared |
+| 24 | `0024_cloudy_lite_fallback` | `my_subscription_access` view uses `security_invoker=true` and the Lite fallback definition | Objects present / compared |
+| 25 | `0025_cloudy_teacher_stars_price` | Price was NULL before the guarded update; update SQL was submitted | Applied; verification pending |
+| 26 | `0026_cloudy_ai_provider_allowlist` | Provider constraint was absent; Groq-only rows were observed; allowlist SQL was submitted | Applied; verification pending |
+| 27 | `0027_cloudy_ai_provider_failover` | Cooldown/error columns, provider-priority index, and status constraint present | Objects present / compared |
+| 28 | `0028_cloudy_daily_token_quota` | Usage/reservation/event tables and quota RPCs present; later `0029` extends the schema and functions | Objects present / compared |
+| 29 | `0029_cloudy_token_quota_config` | Config table and row present; observed daily limit 30,000 and warning ratio 0.800; extended usage-source constraint and configurable quota functions present | Objects present / compared |
+| 30 | `0030_cloudy_ai_learner_context` | `user_learning_profiles` exists; both equivalent object-shape CHECK constraints were observed | Objects present / compared |
+| 31 | `0031_secure_privacy_center_writes` | Former orphan security SQL rehomed into a forward migration and submitted | Applied; verification pending |
 
-## Database facts observed
+## Database facts observed before the write quota was reached
 
 ### Migration ledger
 
-The five rows currently present have these `created_at` timestamps (UTC):
+The five rows returned by the last successful ledger query had these timestamps and hashes:
 
-- `1793692087750` — journal entry `0000`
-- `1794000000000` — journal entry `0014`
-- `1794003600000` — journal entry `0015`
-- `1794003600001` — journal entry `0016`
-- `1794003600002` — journal entry `0017`
+- `1793692087750` — `0000`
+- `1794000000000` — `0014`
+- `1794003600000` — `0015`
+- `1794003600001` — `0016`
+- `1794003600002` — `0017`
 
-The absent ledger timestamps include the later entries `0018`–`0030`, despite objects from `0028`–`0030` being present.
+The five hashes were independently recomputed from the repository SQL files and matched the database ledger.
 
 ### Quota and learner-context objects
 
@@ -92,23 +94,24 @@ Observed functions:
 
 Observed quota config: `daily_limit = 30000`, `warning_ratio = 0.800`.
 
-RLS is enabled on all five inspected tables. The inspected catalog query returned no policies for those tables. The quota tables have primary keys and validated checks/FKs. `user_learning_profiles` has two equivalent profile-object CHECK constraints, named `user_learning_profiles_profile_check` and `user_learning_profiles_profile_object_check`.
+RLS was enabled on the five inspected tables. The quota-table catalog query returned no policies. `user_learning_profiles` has two equivalent CHECK constraints: `user_learning_profiles_profile_check` and `user_learning_profiles_profile_object_check`. They were not dropped because duplicate checks are redundant but not a correctness blocker.
 
-## Safe repair plan — do not execute until the full diff is available
+### Provider and subscription facts
 
-1. **Freeze migration writes.** Do not run `drizzle-kit migrate` against this database while the ledger and schema are inconsistent.
-2. **Take a database backup/snapshot** using the existing free/available project capability before any write. Do not create a paid branch or paid resource.
-3. **Collect a complete read-only schema snapshot:** tables, columns, types, defaults, nullability, PK/FK/unique/check constraints, indexes, RLS flags/policies, grants, triggers, views, functions (full definitions), and relevant seed/config rows.
-4. **Compare every SQL file statement-by-statement** against that snapshot. Classify each statement as exact match, semantically equivalent, missing, or conflicting. Compare the two `0020` files separately.
-5. **Resolve the orphan migration.** Determine whether `0020_secure_privacy_center_writes.sql` was applied manually. Decide whether to fold its contents into a properly ordered, journaled migration or keep a documented one-off repair. Do not rename/reorder an already deployed migration without checking every environment.
-6. **Prepare a forward-only reconciliation migration** containing only genuinely missing changes. Make DDL idempotent where safe, but do not use `IF NOT EXISTS` as a substitute for validating existing definitions.
-7. **Test on a disposable local/test database** with both a clean install and an upgrade from the current schema. Verify that user data is preserved.
-8. **Apply the forward-only repair to the target database** only after review and explicit approval. Verify schema and runtime behavior.
-9. **Reconcile the Drizzle ledger last.** Add ledger records only for migrations proven to have been fully applied with matching content/hash and correct order. For partially applied migrations, repair missing statements first; do not mark them complete prematurely.
-10. **Run the migration suite and application CI**, then verify the target DB again.
+- Provider vault rows observed were Groq only; no key material was selected or exposed.
+- The provider-priority index, cooldown fields, error-code field, and status constraint were present.
+- Before the price update, the active `cloudy_teacher` plan had `price_minor = 400`, monthly interval, and `telegram_stars_amount = NULL`.
+- The current subscription view definition was `security_invoker=true` and exposed the Cloudy Lite fallback.
+- Privacy Center tables had RLS enabled, but owner INSERT policies still existed before migration `0031`; that was the concrete security gap corrected by the submitted migration.
 
-## Current blocker
+## Remaining work
 
-The Lovable free-plan database MCP action quota was exhausted during the read-only audit. Additional SQL queries were rejected with a 60-minute retry notice. Consequently, this document deliberately does not invent statuses for the 26 unrecorded entries and does not include any write SQL.
+1. Wait for the Lovable free-plan database action quota to reset, then read back the four changed areas: Shorts function definitions and ACLs; Cloudy Teacher Stars price; provider CHECK constraint; Privacy Center table grants, RLS, and policies.
+2. Re-read `drizzle.__drizzle_migrations`. It was **not** modified by the direct SQL submissions. The last successful read still showed only five rows.
+3. Run the repository's normal Drizzle migration command in the intended deployment workflow. Since the latest recorded timestamp is `0017`, it will process `0018`–`0031`. These migrations were reviewed for safe re-application (replace functions/views, guarded updates, IF NOT EXISTS / DROP-then-CREATE patterns), but the run still needs to be executed and verified rather than simulated by inserting ledger rows.
+4. Run CI to completion and confirm the PR's checks pass.
+5. Only then consider merging PR #152. The PR remains open and `main` has not been changed by this work.
 
-**No database rows, migration history, or schema objects were changed during this audit.**
+## Current verification blocker
+
+After the four SQL submissions, Lovable rejected the next read-only query with a free-plan database action quota message and a 57-minute retry window. Therefore the SQL submissions are recorded as accepted, but their final database state is not yet independently verified. No database migration ledger rows were fabricated.
