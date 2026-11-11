@@ -969,7 +969,7 @@ function setChatLimitNotice(message){
  chatLimitUntil=Date.now()+Math.max(1_000,Math.min(24*60*60_000,retryAfterMs));
  renderChatLimitState();
 }
-function chatSuggestion(value){const input=$("#ci");if(input&&!chatQuotaResetAt&&!chatLimitUntil){input.value=value;csend()}}
+function chatSuggestion(value){const input=$("#ci");if(input&&!(chatModelTier==="lite"&&!chatTeacherAccess&&chatQuotaResetAt>Date.now())&&chatLimitUntil<=Date.now()){input.value=value;csend()}}
 function scrollChat(){const box=$('#msgs');if(box)box.scrollTop=box.scrollHeight}
 function bub(r,t,scroll=true){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);if(scroll)requestAnimationFrame(scrollChat);return d}
 function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
