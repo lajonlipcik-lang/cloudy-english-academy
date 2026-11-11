@@ -360,12 +360,16 @@ export const getCloudyChatModelAccess=createServerFn({method:"POST"}).inputValid
   const {db,user}=await ctx(data.accessToken);
   const teacherAccess=await hasActiveCloudyTeacherAccess(db,user.id);
   let quotaWarning=false;
+  let quotaExhausted=false;
+  let quotaResetsAt:string|null=null;
   if(!teacherAccess){
     const {data:quota,error}=await db.rpc("get_cloudy_daily_token_quota",{_user_id:user.id});
     if(error)throw new Error("Не удалось загрузить дневной лимит Cloudy.");
     quotaWarning=quota?.warning===true;
+    quotaExhausted=Number(quota?.remaining_tokens)<=0;
+    quotaResetsAt=typeof quota?.resets_at==="string"?quota.resets_at:null;
   }
-  return {teacherAccess,defaultModel:"lite",quotaWarning};
+  return {teacherAccess,defaultModel:"lite",quotaWarning,quotaExhausted,quotaResetsAt};
 });
 export const cloudyTutorChat=createServerFn({method:"POST"}).inputValidator(validate).handler(async({data})=>{
   const {db,user}=await ctx(data.accessToken);
