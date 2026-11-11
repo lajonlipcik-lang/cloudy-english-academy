@@ -365,7 +365,7 @@ export const getCloudyChatModelAccess=createServerFn({method:"POST"}).inputValid
   if(!teacherAccess){
     const {data:quota,error}=await db.rpc("get_cloudy_daily_token_quota",{_user_id:user.id});
     if(error)throw new Error("Не удалось загрузить дневной лимит Cloudy.");
-    quotaWarning=quota?.warning===true;
+    quotaWarning=(Number(quota?.used_tokens)||0)+(Number(quota?.reserved_tokens)||0)>=Math.ceil((Number(quota?.limit_tokens)||30_000)*0.8);
     quotaExhausted=Number(quota?.remaining_tokens)<=0;
     quotaResetsAt=typeof quota?.resets_at==="string"?quota.resets_at:null;
   }
