@@ -54,13 +54,13 @@ type GroqProviderRow = {
   cooldown_until?: unknown;
 };
 
-export function selectAvailableGroqChatProviders<T extends GroqProviderRow>(
+export function selectAvailableAiChatProviders<T extends GroqProviderRow>(
   providers: T[],
   now = Date.now(),
 ): T[] {
   return providers
     .filter((provider) => {
-      if (provider.provider !== "groq" || !provider.enabled) return false;
+      if (!provider.enabled || !["groq", "openai", "openrouter"].includes(String(provider.provider))) return false;
       if (!provider.cooldown_until) return true;
       const cooldownUntil = Date.parse(String(provider.cooldown_until));
       return !Number.isFinite(cooldownUntil) || cooldownUntil <= now;
