@@ -90,4 +90,46 @@ describe("AI provider router", () => {
       "Все AI-провайдеры временно недоступны.",
     );
   });
+  it.each([401, 403, 429, 500, 503])("falls back to the next provider after HTTP %i", async (status) => {
+    const tried: string[] = [];
+    const result = await runWithAiFallback(
+      [{ id: "groq", priority: 1 }, { id: "openai", priority: 2 }],
+      async (provider) => {
+        tried.push(provider.id);
+        if (provider.id === "groq") {
+          throw Object.assign(new Error("provider request failed"), { status });
+        }
+        return "backup response";
+      },
+    );
+    expect(tried).toEqual(["groq", "openai"]);
+    expect(result).toEqual({ value: "backup response", providerId: "openai" });
+  });
+
+  it("falls back after timeout and network errors", async () => {
+    const tried: string[] = [];
+    const result = await runWithAiFallback(
+      [{ id: "groq", priority: 1 }, { id: "openrouter", priority: 2 }],
+      async (provider) => {
+        tried.push(provider.id);
+        if (provider.id === "groq") throw new Error("The operation timed out");
+        return "backup response";
+      },
+    );
+    expect(tried).toEqual(["groq", "openrouter"]);
+    expect(result.value).toBe("backup response");
+  });
+
+  it("returns a safe unavailable error only after every provider fails", async () => {
+    const tried: string[] = [];
+    await expect(runWithAiFallback(
+      [{ id: "groq", priority: 1 }, { id: "openai", priority: 2 }],
+      async (provider) => {
+        tried.push(provider.id);
+        throw Object.assign(new Error("private provider detail"), { status: 503 });
+      },
+    )).rejects.toBeInstanceOf(AiProvidersUnavailableError);
+    expect(tried).toEqual(["groq", "openai"]);
+  });
+
 });

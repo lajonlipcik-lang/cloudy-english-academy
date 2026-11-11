@@ -525,7 +525,7 @@ async function introFinish(){
 }
 let AM='in',busy=0,CH=[],SM=null,chatThreads=[],activeChatId=null,chatDrawerOpen=false;
 let chatModelTier="lite",chatTeacherAccess=false,chatModelAccessLoaded=false,chatBudgetWarning=false;
-let chatLimitUntil=0,chatLimitTimer=null;
+let chatLimitUntil=0,chatQuotaResetAt=0,chatLimitTimer=null;
 let chatHistoryLoaded=false,chatHistoryAccountId=null,chatHistoryLoading=null,chatHistorySaveNotice=false,chatHistoryGeneration=0;let chatHistorySaveQueue=Promise.resolve();
 function authV(){app.innerHTML=`<div class='scr res'>${mascot()}<div class='big2'>Cloudy English</div><div class='seg'><button class='${AM=='in'?'on':''}' onclick="AM='in';authV()">Вход</button><button class='${AM=='up'?'on':''}' onclick="AM='up';authV()">Регистрация</button></div><div class='fm'><label>Email<input id='ae' type='email' autocomplete='email' placeholder='you@mail.com'></label><label>Пароль<input id='ap' type='password' autocomplete='${AM=='up'?'new-password':'current-password'}' placeholder='Минимум 6 символов'></label><div class='err' id='er'></div><button class='btn' id='ab' onclick='authGo()'>${AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ'}</button></div><div class='or'>или</div><button class='btn ghost' onclick="$('#er').textContent='Вход через Google появится после подключения Supabase в Lovable'">ВОЙТИ ЧЕРЕЗ GOOGLE</button><br><br><button class='btn ghost' onclick='authG()'>ПРОДОЛЖИТЬ КАК ГОСТЬ</button><p style="margin:18px 0 0;font-size:12px;opacity:.72">Продолжая, ознакомьтесь с <a href="/legal" target="_top" style="color:#7fc2ff;text-decoration:underline">документами и правилами</a></p></div>`}
 async function authGo(){const em=$('#ae').value.trim().toLowerCase(),pw=$('#ap').value,er=$('#er'),b=$('#ab'),lbl=AM=='up'?'СОЗДАТЬ АККАУНТ':'ВОЙТИ',bad=m=>{er.textContent=m;er.classList.remove('shk');void er.offsetWidth;er.classList.add('shk');snd('bad')};
@@ -897,6 +897,13 @@ async function loadChatModelAccess(){
   chatTeacherAccess=response.result?.teacherAccess===true;
   chatBudgetWarning=response.result?.quotaWarning===true;
   chatModelAccessLoaded=true;
+  if(!chatTeacherAccess&&response.result?.quotaExhausted===true){
+   const resetAt=Date.parse(String(response.result?.quotaResetsAt||""));
+   if(Number.isFinite(resetAt)&&resetAt>Date.now())chatQuotaResetAt=resetAt;
+  }else if(!chatTeacherAccess){
+   chatQuotaResetAt=0;
+  }
+  renderChatLimitState();
   renderChatBudgetWarning();
   if(chatModelTier==="teacher"&&!chatTeacherAccess){chatModelTier="lite";try{localStorage.setItem(key,"lite")}catch(e){}}
  }catch(error){chatTeacherAccess=false;chatBudgetWarning=false;chatModelAccessLoaded=true;if(chatModelTier==="teacher")chatModelTier="lite";renderChatBudgetWarning()}
@@ -926,31 +933,51 @@ function renderChatBudgetWarning(){
 }
 function renderChatLimitState(){
  const notice=$("#chatLimitNotice"),main=$("#cloudyMain");
- const remaining=Math.max(0,chatLimitUntil-Date.now());
- if(main){main.disabled=remaining>0;main.setAttribute("aria-disabled",String(remaining>0));main.setAttribute("aria-label",remaining>0?"Отправка временно недоступна из-за лимита":"Говорить или отправить")}
+ const now=Date.now();
+ if(chatQuotaResetAt<=now)chatQuotaResetAt=0;
+ if(chatLimitUntil<=now)chatLimitUntil=0;
+ const dailyRemaining=chatModelTier==="lite"&&!chatTeacherAccess?Math.max(0,chatQuotaResetAt-now):0;
+ const temporaryRemaining=Math.max(0,chatLimitUntil-now);
+ const remaining=Math.max(dailyRemaining,temporaryRemaining);
+ const dailyLocked=dailyRemaining>0;
+ if(main){main.disabled=remaining>0;main.setAttribute("aria-disabled",String(remaining>0));main.setAttribute("aria-label",remaining>0?"Отправка недоступна до сброса лимита":"Говорить или отправить");main.title=remaining>0?(dailyLocked?"Дневной лимит исчерпан":"Временное ограничение"): ""}
  if(notice){
-  if(remaining>0){notice.hidden=false;notice.textContent="Вы превысили лимит запросов к ИИ. Отправка снова станет доступна через "+Math.ceil(remaining/1000)+" сек."}
-  else{notice.hidden=true;notice.textContent=""}
+  if(dailyLocked){
+   const resetLabel=new Date(chatQuotaResetAt).toLocaleTimeString("ru-RU",{timeZone:"UTC",hour:"2-digit",minute:"2-digit"});
+   notice.hidden=false;notice.textContent="Дневной лимит Cloudy Lite исчерпан. Отправка заблокирована до сброса лимита в "+resetLabel+" UTC.";
+  }else if(temporaryRemaining>0){
+   notice.hidden=false;notice.textContent="Вы превысили лимит запросов к ИИ. Отправка снова станет доступна через "+Math.ceil(temporaryRemaining/1000)+" сек.";
+  }else{notice.hidden=true;notice.textContent=""}
  }
  if(chatLimitTimer)clearTimeout(chatLimitTimer);
  chatLimitTimer=null;
  if(remaining>0)chatLimitTimer=setTimeout(renderChatLimitState,Math.min(1000,remaining));
 }
 function setChatLimitNotice(message){
- const match=String(message||"").match(/через\s+(\d+)\s+сек/i);
+ const value=String(message||"");
+ if(/^Дневной лимит бесплатного Cloudy Lite исчерпан|^Дневной лимит Cloudy Lite исчерпан/i.test(value)){
+  const hours=value.match(/через\s+(\d+)\s*ч/i),minutes=value.match(/(?:ч|через)\s*\d+\s*ч\s*(\d+)\s*мин|через\s+(\d+)\s*мин/i);
+  const delay=(Number(hours?.[1]||0)*60+Number(minutes?.[1]||minutes?.[2]||0))*60_000;
+  chatQuotaResetAt=Date.now()+Math.max(60_000,delay||24*60*60_000);
+  chatLimitUntil=0;
+  renderChatLimitState();
+  void loadChatModelAccess();
+  return;
+ }
+ const match=value.match(/через\s+(\d+)\s+сек/i);
  const retryAfterMs=match?Number(match[1])*1000:60_000;
  chatLimitUntil=Date.now()+Math.max(1_000,Math.min(24*60*60_000,retryAfterMs));
  renderChatLimitState();
 }
-function chatSuggestion(value){const input=$("#ci");if(input&&chatLimitUntil<=Date.now()){input.value=value;csend()}}
+function chatSuggestion(value){const input=$("#ci");if(input&&!(chatModelTier==="lite"&&!chatTeacherAccess&&chatQuotaResetAt>Date.now())&&chatLimitUntil<=Date.now()){input.value=value;csend()}}
 function scrollChat(){const box=$('#msgs');if(box)box.scrollTop=box.scrollHeight}
 function bub(r,t,scroll=true){const d=document.createElement('div');d.className='bub '+r;d.textContent=t;$('#msgs').appendChild(d);if(scroll)requestAnimationFrame(scrollChat);return d}
 function showTyping(el){el.textContent='';el.classList.add('typ');const dots=document.createElement('span');dots.className='chat-typing';dots.innerHTML='<i></i><i></i><i></i>';el.appendChild(dots)}
 async function typeChatReply(el,text){el.classList.remove('typ');el.textContent='';el.classList.add('chat-type-cursor');const step=text.length>500?3: text.length>220?2:1;for(let i=0;i<text.length;i+=step){el.textContent=text.slice(0,i+step);scrollChat();await new Promise(resolve=>setTimeout(resolve,text.length>500?9:16))}el.classList.remove('chat-type-cursor')}
 async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bub('u',u);saveChatHistory()}const el=bub('a','',true);showTyping(el);try{const result=await authRequest('ai-chat',{payload:{message:u||'Начни разговор на английском с учеником. Поздоровайся и задай один простой вопрос.',level:S.lv||'A1',chatModel:chatModelTier,history:CH.slice(-80).map(m=>({role:m.r==='u'?'user':'assistant',content:m.t})),learnerProfile:window.CloudyLearning?.profile(KEY)||null}});if(typeof result.result?.quotaWarning==="boolean"){chatBudgetWarning=result.result.quotaWarning;renderChatBudgetWarning()}const reply=String(result.result?.answer||'').trim();if(!reply)throw new Error('ИИ вернул пустой ответ. Попробуйте ещё раз.');await typeChatReply(el,reply);CH.push({r:'a',t:reply});saveChatHistory();snd('pick')}catch(e){
   const message=String(e?.message||"Не удалось подключиться к ИИ. Проверьте соединение и повторите попытку.");
-  if(/^Вы превысили лимит запросов к ИИ|^Дневной лимит Cloudy Lite исчерпан/i.test(message)){
-   if(/^Дневной лимит Cloudy Lite исчерпан/i.test(message)){
+  if(/^Вы превысили лимит запросов к ИИ|^Дневной лимит (?:бесплатного )?Cloudy Lite исчерпан/i.test(message)){
+   if(/^Дневной лимит (?:бесплатного )?Cloudy Lite исчерпан/i.test(message)){
     chatBudgetWarning=false;
     renderChatBudgetWarning();
    }
@@ -967,7 +994,7 @@ async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bu
    setChatLimitNotice(message);
   }else{el.classList.remove('typ');el.textContent=message;el.classList.add('error')}
  }scrollChat()}
-async function csend(){const el=$('#ci');if(!el||busy||chatLimitUntil>Date.now())return;const v=el.value.trim();if(!v)return;el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));const wrap=$('#cloudyComposer');if(wrap){wrap.classList.remove('sent');void wrap.offsetWidth;wrap.classList.add('sent')}busy=1;snd('send');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
+async function csend(){const el=$('#ci');if(!el||busy||chatLimitUntil>Date.now()||(chatModelTier==="lite"&&!chatTeacherAccess&&chatQuotaResetAt>Date.now()))return;const v=el.value.trim();if(!v)return;el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));const wrap=$('#cloudyComposer');if(wrap){wrap.classList.remove('sent');void wrap.offsetWidth;wrap.classList.add('sent')}busy=1;snd('send');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
 setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
 function amb(){const l=S.lv||"A1",a=$(".amb");document.body.dataset.lv=l;document.body.dataset.th="dark";if(a.dataset.l==l)return;a.dataset.l=l;a.innerHTML="";const n={A1:5,A2:16,B1:28,B2:4}[l],r=Math.random;for(let k=0;k<n;k++){const u=document.createElement("u"),z={A1:200+r()*220,A2:14+r()*40,B1:3+r()*6,B2:90}[l];u.style.cssText=`left:${r()*100}%;top:${r()*100}%;width:${z}px;height:${z}px;animation-delay:-${r()*12}s;animation-duration:${l=="A2"?7+r()*8:l=="B1"?2+r()*3:l=="B2"?12+r()*8:14+r()*8}s`;a.appendChild(u)}}
 function splash(l){const s=document.createElement("div");s.className="spl "+l;s.innerHTML=`<div class="lc ${l}">${l}</div><h2>${LI[l][0]}</h2>`;document.body.appendChild(s);setTimeout(()=>s.remove(),1800)}
