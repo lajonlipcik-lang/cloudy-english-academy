@@ -936,7 +936,7 @@ function renderChatLimitState(){
  const now=Date.now();
  if(chatQuotaResetAt<=now)chatQuotaResetAt=0;
  if(chatLimitUntil<=now)chatLimitUntil=0;
- const dailyRemaining=Math.max(0,chatQuotaResetAt-now);
+ const dailyRemaining=chatModelTier==="lite"&&!chatTeacherAccess?Math.max(0,chatQuotaResetAt-now):0;
  const temporaryRemaining=Math.max(0,chatLimitUntil-now);
  const remaining=Math.max(dailyRemaining,temporaryRemaining);
  const dailyLocked=dailyRemaining>0;
@@ -994,7 +994,7 @@ async function ask(u){if(u){$('.chat-welcome')?.remove();CH.push({r:'u',t:u});bu
    setChatLimitNotice(message);
   }else{el.classList.remove('typ');el.textContent=message;el.classList.add('error')}
  }scrollChat()}
-async function csend(){const el=$('#ci');if(!el||busy||chatLimitUntil>Date.now()||chatQuotaResetAt>Date.now())return;const v=el.value.trim();if(!v)return;el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));const wrap=$('#cloudyComposer');if(wrap){wrap.classList.remove('sent');void wrap.offsetWidth;wrap.classList.add('sent')}busy=1;snd('send');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
+async function csend(){const el=$('#ci');if(!el||busy||chatLimitUntil>Date.now()||(chatModelTier==="lite"&&!chatTeacherAccess&&chatQuotaResetAt>Date.now()))return;const v=el.value.trim();if(!v)return;el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));const wrap=$('#cloudyComposer');if(wrap){wrap.classList.remove('sent');void wrap.offsetWidth;wrap.classList.add('sent')}busy=1;snd('send');try{await ask(v)}finally{busy=0;if(el.isConnected)el.focus()}}
 setInterval(()=>{try{const n=new Date(),k='rn'+dk(n),hm=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');if(S.user&&S.set.rem&&S.last!=n.toDateString()&&hm>=S.set.remT&&!ls(k)&&window.Notification&&Notification.permission=='granted'){new Notification('Cloudy English',{body:'Пора позаниматься! Не потеряйте серию.'});ls(k,1)}}catch(e){}},30000);
 function amb(){const l=S.lv||"A1",a=$(".amb");document.body.dataset.lv=l;document.body.dataset.th="dark";if(a.dataset.l==l)return;a.dataset.l=l;a.innerHTML="";const n={A1:5,A2:16,B1:28,B2:4}[l],r=Math.random;for(let k=0;k<n;k++){const u=document.createElement("u"),z={A1:200+r()*220,A2:14+r()*40,B1:3+r()*6,B2:90}[l];u.style.cssText=`left:${r()*100}%;top:${r()*100}%;width:${z}px;height:${z}px;animation-delay:-${r()*12}s;animation-duration:${l=="A2"?7+r()*8:l=="B1"?2+r()*3:l=="B2"?12+r()*8:14+r()*8}s`;a.appendChild(u)}}
 function splash(l){const s=document.createElement("div");s.className="spl "+l;s.innerHTML=`<div class="lc ${l}">${l}</div><h2>${LI[l][0]}</h2>`;document.body.appendChild(s);setTimeout(()=>s.remove(),1800)}
