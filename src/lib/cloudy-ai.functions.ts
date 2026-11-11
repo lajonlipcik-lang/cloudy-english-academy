@@ -1009,8 +1009,53 @@ export const moderateOwnShortContent = createServerFn({ method: "POST" })
     return { ...input, accessToken: token, id, contentType };
   })
   .handler(async ({ data }) => {
-    await ctx(data.accessToken);
-    return { ok: true, decision: "allow", reason: "Подписи и комментарии не проходят предварительную модерацию.", moderationApplied: false, mediaReviewed: false };
+    const { user, db } = await ctx(data.accessToken);
+    const { getCloudyContentAdmin } = await import("@/integrations/supabase/content.server");
+    const contentDb = getCloudyContentAdmin();
+    const { data: post, error: postError } = await contentDb.from("shorts_videos")
+      .select("id,author_id,media_type,status,text_content,caption")
+      .eq("id", data.id).eq("author_id", user.id).maybeSingle();
+    if (postError || !post || post.status !== "draft" || post.media_type !== "text") {
+      throw new Error("Текстовая публикация не найдена или уже обработана.");
+    }
+
+    let review: ContentModerationDecision & { model?: string } ;
+    let model = "";
+    try {
+      const result = await runCloudyContentTextModeration(db, "short_video", String(post.text_content || post.caption || ""));
+      review = result;
+      model = result.model || result.provider || "";
+    } catch (error) {
+      review = {
+        decision: "review",
+        reason: "Автоматическая проверка текста временно недоступна. Публикация ожидает ручной проверки.",
+        labels: ["text_review_unavailable"],
+        confidence: 0,
+      };
+    }
+
+    const { data: applied, error: applyError } = await contentDb.rpc("apply_shorts_text_moderation", {
+      p_content_type: "short_video",
+      p_content_id: post.id,
+      p_decision: review.decision,
+      p_reason: review.reason,
+      p_labels: review.labels,
+      p_confidence: review.confidence,
+      p_model: model,
+      p_policy_version: "cloudy-content-text-v1",
+    });
+    if (applyError || !applied) throw new Error("Не удалось сохранить результат проверки текста.");
+    return {
+      ok: true,
+      decision: review.decision,
+      reason: review.reason,
+      labels: review.labels,
+      confidence: review.confidence,
+      moderationApplied: true,
+      published: review.decision === "allow",
+      mediaReviewed: false,
+      status: review.decision === "allow" ? "approved" : review.decision === "reject" ? "removed" : "pending_review",
+    };
   });
 
 
@@ -1346,7 +1391,7 @@ export const getShortsComments = createServerFn({ method: "POST" })
       .from("shorts_comments")
       .select("id,author_id,body,created_at,parent_comment_id")
       .eq("video_id", data.videoId)
-      .in("status", ["published", "pending_review"])
+      .eq("status", "published")
       .order("created_at", { ascending: true })
       .limit(100);
     if (error) throw new Error("Не удалось загрузить комментарии.");
@@ -1421,13 +1466,19 @@ export const createShortComment = createServerFn({ method: "POST" })
         throw new Error("Комментарий, на который ты отвечаешь, недоступен.");
       }
     }
-    const { data: inserted, error: insertError } = await contentDb
-      .from("shorts_comments")
-      .insert({ video_id: data.videoId, author_id: user.id, body, ...(data.parentCommentId ? { parent_comment_id: data.parentCommentId } : {}), status: "published", moderation_status: "approved", moderated_at: new Date(now).toISOString() })
-      .select("id")
-      .single();
-    if (insertError || !inserted) throw new Error("Не удалось отправить комментарий.");
-    return { id: inserted.id, status: "published" };
+    const { data: insertedId, error: insertError } = await contentDb.rpc("create_shorts_comment_rate_limited", {
+      p_video_id: data.videoId,
+      p_author_id: user.id,
+      p_body: body,
+      p_parent_comment_id: data.parentCommentId ?? null,
+    });
+    if (insertError || !insertedId) {
+      if (insertError?.message?.includes("COMMENT_RATE_LIMIT")) {
+        throw new Error("Слишком много комментариев. Подожди минуту и попробуй снова.");
+      }
+      throw new Error("Не удалось отправить комментарий.");
+    }
+    return { id: insertedId, status: "published" };
   });
 
 /** Persists a like on an individual Shorts comment. */

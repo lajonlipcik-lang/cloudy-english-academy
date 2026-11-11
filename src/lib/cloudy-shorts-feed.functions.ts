@@ -41,13 +41,18 @@ export const listShortsFeed = createServerFn({ method: "POST" })
     const ids = [...new Set((rows ?? []).map((row: any) => row.author_id))];
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: profiles, error: profileError } = ids.length
-      ? await supabaseAdmin.from("profiles").select("id,display_name").in("id", ids)
+      ? await supabaseAdmin.from("profiles").select("id,display_name,is_public").in("id", ids)
       : { data: [], error: null };
     if (profileError) throw new Error("Не удалось загрузить авторов Shorts.");
     const names = new Map((profiles ?? []).map((profile: any) => [
       profile.id,
       String(profile.display_name || "Участник").slice(0, 80),
     ]));
+    // Private creators must not leak their approved posts into the public feed.
+    const visibleAuthorIds = new Set((profiles ?? [])
+      .filter((profile: any) => profile.is_public === true || profile.id === viewerId)
+      .map((profile: any) => profile.id));
+    const visibleRows = (rows ?? []).filter((row: any) => visibleAuthorIds.has(row.author_id));
     const authorAvatars = new Map<string, string>();
     await Promise.all(ids.map(async (authorId: string) => {
       try {
@@ -67,11 +72,11 @@ export const listShortsFeed = createServerFn({ method: "POST" })
       }
     }));
 
-    const postIds = (rows ?? []).map((row: any) => row.id);
-    const authorIds = [...new Set((rows ?? []).map((row: any) => row.author_id))];
+    const postIds = visibleRows.map((row: any) => row.id);
+    const authorIds = [...new Set(visibleRows.map((row: any) => row.author_id))];
     const [{ data: likeRows, error: likesError }, { data: commentRows, error: commentsError }, { data: followRows, error: followsError }, { data: savedRows, error: savedError }] = await Promise.all([
       postIds.length ? content.from("shorts_likes").select("video_id,user_id").in("video_id", postIds) : Promise.resolve({ data: [], error: null }),
-      postIds.length ? content.from("shorts_comments").select("video_id").in("video_id", postIds).in("status", ["published", "pending_review"]) : Promise.resolve({ data: [], error: null }),
+      postIds.length ? content.from("shorts_comments").select("video_id").in("video_id", postIds).eq("status", "published") : Promise.resolve({ data: [], error: null }),
       viewerId && authorIds.length ? content.from("shorts_follows").select("following_id").eq("follower_id", viewerId).in("following_id", authorIds) : Promise.resolve({ data: [], error: null }),
       viewerId && postIds.length ? content.from("shorts_saved_posts").select("video_id").eq("user_id", viewerId).in("video_id", postIds) : Promise.resolve({ data: [], error: null }),
     ]);
@@ -82,7 +87,7 @@ export const listShortsFeed = createServerFn({ method: "POST" })
     for (const comment of commentRows ?? []) commentCounts.set(comment.video_id, (commentCounts.get(comment.video_id) ?? 0) + 1);
     for (const follow of followRows ?? []) followedAuthorIds.add(follow.following_id);
     for (const saved of savedRows ?? []) savedIds.add(saved.video_id);
-    const videos = await Promise.all((rows ?? []).map(async (row: any) => {
+    const videos = await Promise.all(visibleRows.map(async (row: any) => {
       let mediaUrl: string | null = null;
       if (row.media_type !== "text" && row.storage_path) {
         const { data: signed, error: signedError } = await content.storage
