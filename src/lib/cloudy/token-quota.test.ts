@@ -97,4 +97,15 @@ describe("Cloudy daily token quota helpers", () => {
     const now = Date.parse("2026-11-11T20:00:00Z");
     expect(cloudyQuotaDeniedMessage({ reason: "daily", resets_at: "2026-11-12T00:00:00Z" }, now)).toContain("через 4 ч");
   });
+
+  it("exposes the authoritative reset timestamp in quota snapshots", () => {
+    const reset = "2026-11-12T00:00:00.000Z";
+    expect(normalizeCloudyTokenQuota({
+      limit_tokens: 30000,
+      used_tokens: 30000,
+      reserved_tokens: 0,
+      remaining_tokens: 0,
+      resets_at: reset,
+    })).toMatchObject({ remaining_tokens: 0, resets_at: reset });
+  });
 });
